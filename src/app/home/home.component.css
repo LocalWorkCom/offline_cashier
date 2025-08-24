@@ -1,0 +1,72 @@
+/* login-logout cash amount modal   */
+.user img{
+    height:auto;
+    margin-left: 1rem;
+        border-radius: 50%;
+
+  }
+  
+  .input-group input{
+    border: 1px solid #f1eff1;
+    border-radius: 15px;
+  }
+  .input-group:not(.has-validation) > .dropdown-toggle:nth-last-child(n+3), .input-group:not(.has-validation) > .form-floating:not(:last-child) > .form-control, .input-group:not(.has-validation) > .form-floating:not(:last-child) > .form-select, .input-group:not(.has-validation) > :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu):not(.form-floating) {
+    border-top-right-radius: 15px !important;
+    border-bottom-right-radius: 15px !important;
+  }
+  .input-group input::placeholder{
+   color: #808080;
+   font-size: 0.8rem;
+  }
+/* .sidebar {
+  height: 100%;
+  box-shadow: 4px 4px 12px 0 rgba(0, 0, 0, 0.08);
+  padding-inline: 1rem;
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+} */
+.sidebar {
+    position: sticky;     
+    top: 0;
+    right: 0;
+    height: 100vh; 
+    box-shadow: 4px 4px 12px 0 rgba(0, 0, 0, 0.08);
+    padding-inline: 1rem;
+    padding-top: 1rem;
+     display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  
+  .sidebar-logo {
+    width: 100%;
+    height: 100px;
+    object-fit: contain;
+  }
+  
+  .sidebar-item .sidebar-link {
+    padding: 0.75rem;
+    border-radius: 1rem;
+    width: 100%;
+    display: inline-block;
+    font-weight: 600;
+  }
+  
+ /* Fix for modal backdrop */
+.modal-backdrop {
+  opacity: 0.5 !important;
+  background-color: #000 !important;
+}
+
+.modal-backdrop.show {
+  opacity: 0.5 !important;
+}  
+.user-img-modal{
+  width: 100px ;
+}
+/* test  */
+.custom-cursor[readonly] {
+  cursor: not-allowed; /* شكل ممنوع عند readonly */
+}

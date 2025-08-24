@@ -1,0 +1,14 @@
+.main{
+  width: 100%;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+}
+.spinner-border {
+  border-color:  #FE0000;
+  border-right-color: transparent;
+  --bs-spinner-width: 3rem;
+  --bs-spinner-height: 3rem;
+}

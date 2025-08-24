@@ -1,0 +1,489 @@
+<!-- <div class="card p-3 mt-3" appShowLoaderUntilPageLoaded [isReady]="isAllLoading">
+  <ul class="nav nav-pills mb-3 px-0 row" id="pills-tab1" role="tablist">
+    <li class="nav-item col-md-6" role="presentation">
+      <button class="nav-link main active w-100 mb-2" id="pills-orders-tab" data-bs-toggle="pill"
+        data-bs-target="#pills-orders" type="button" role="tab" aria-controls="pills-orders" aria-selected="true">
+        <img src="assets/images/orders-icon.png" alt="" />
+        <span> الطلبات </span>
+      </button>
+    </li>
+    <li class="nav-item col-md-6" role="presentation">
+      <button class="nav-link main w-100 mb-2" id="pills-pills-tab" data-bs-toggle="pill" data-bs-target="#pills-pills"
+        type="button" role="tab" aria-controls="pills-pills" aria-selected="false">
+        <img src="assets/images/pills-icon.png" alt="" />
+        <span>الفواتير</span>
+      </button>
+    </li>
+  </ul>
+  <div class="tab-content" id="pills-tabContent1">
+    <div class="tab-pane fade show active" id="pills-orders" role="tabpanel" aria-labelledby="pills-orders-tab">
+      <ul class="nav nav-pills mb-3 px-0" id="order-type-tab" role="tablist">
+       
+        <li class="nav-item" role="presentation">
+          <button class="nav-link sub mb-2" id="pills-dinein-tab" data-bs-toggle="pill" data-bs-target="#pills-dinein"
+            [ngClass]="{ active: selectedOrderType === 'dine-in' }" (click)="selectOrderType('dine-in')">
+            <figure class="mb-0">
+              <img src="assets/images/in.png" alt="" />
+            </figure>
+
+            <div *ngIf="selectedStatusx === 'static'; else dynamicDineIn">
+              <span>في المطعم ({{ orderTypeStaticCounts['dine-in'] }})</span>
+            </div>
+
+            <ng-template #dynamicDineIn>
+              <span>في المطعم ({{ orderTypeCounts['dine-in'] }})</span>
+            </ng-template>
+          </button>
+        </li> 
+        <li class="nav-item" role="presentation">
+          <button class="nav-link sub mb-2" id="pills-takeaway-tab" data-bs-toggle="pill"
+            data-bs-target="#pills-takeaway" [ngClass]="{ active: selectedOrderType === 'Takeaway' }"
+            (click)="selectOrderType('Takeaway')">
+            <figure class="mb-0">
+              <img src="assets/images/out.png" alt="" />
+            </figure>
+
+            <div *ngIf="selectedStatusx === 'static'; else dynamicTakeAway">
+              <span> إستلام ({{ orderTypeStaticCounts["Takeaway"] }})</span>
+            </div>
+
+            <ng-template #dynamicTakeAway>
+              <span> إستلام ({{ orderTypeCounts["Takeaway"] }})</span>
+            </ng-template>
+          </button>
+        </li>
+
+
+ 
+        <li class="nav-item" role="presentation">
+          <button class="nav-link sub mb-2" id="pills-delivery-tab" data-bs-toggle="pill"
+            data-bs-target="#pills-delivery" [ngClass]="{ active: selectedOrderType === 'Delivery' }"
+            (click)="selectOrderType('Delivery')">
+            <figure class="mb-0">
+              <img src="assets/images/delivery.png" alt="" />
+            </figure>
+
+            <div *ngIf="selectedStatusx === 'static'; else dynamicDelivery">
+              <span>توصيل ({{ orderTypeStaticCounts["Delivery"] }})</span>
+            </div>
+
+            <ng-template #dynamicDelivery>
+              <span>توصيل ({{ orderTypeCounts["Delivery"] }})</span>
+            </ng-template>
+          </button>
+        </li>
+      </ul>
+
+
+      <ul class="nav nav-pills mb-3 px-0" id="status-tab" role="tablist">
+        <li class="nav-item col-md-2" role="presentation">
+          <button #statusFirst class="nav-link sub-sub w-100 mb-2" [ngClass]="{ active: selectedStatusx === 'all' }"
+            id="pills-all-tab" data-bs-toggle="pill" data-bs-target="#pills-all" type="button" role="tab"
+            [attr.aria-controls]="'pills-all'" [attr.aria-selected]="selectedStatusx === 'all'"
+            (click)="selectStatus('all')">
+            <span>كل الطلبات</span>
+          </button>
+        </li>
+      </ul>
+      <div class="tab-content" id="pills-tabContent2" appShowLoaderUntilPageLoaded [isReady]="isFilterdFromClientSide">
+        <div class="tab-pane fade show active" id="pills-in" role="tabpanel">
+          <div class="tab-content sub-sub-content" id="pills-tabContent3">
+            <div class="tab-pane fade" id="pills-all" role="tabpanel" aria-labelledby="pills-all-tab">
+              <div class="row g-3">
+                <div class="col-sm-6 col-md-6 col-lg-6 col-xl-3 mb-2"
+                  *ngFor="let order of filteredOrdersByOrderType.slice(0,4)" style="cursor: pointer"
+                  [routerLink]="getRedirectUrl(order)">
+                  <div class="card h-100">
+                    <div class="d-flex flex-wrap justify-content-between mb-2">
+                      <p class="text-dark "> <small>رقم الطلب</small></p>
+                      <p class="text-muted text-start fw-bold mb-0"><small>{{ order.order_number }}</small></p>
+                    </div>
+
+                    <div class="d-flex flex-wrap justify-content-between mb-2">
+                      <h6 class="text-muted mb-0">{{ order.order_items_count }}عناصر</h6>
+                      <h6 class="text-muted mb-0">{{ order.order_time }}دقايق</h6>
+                    </div>
+                    <div class="d-flex flex-wrap justify-content-between mb-2">
+                      <p class="btn-static bg-main text-white w-auto mb-0 d-flex align-items-center justify-content-center mt-2 px-2"
+                        *ngIf="selectedOrderType === 'dine-in'" style="height: 40px;">
+                        <small class="fw-bold"> طاولة {{order.table_number }} </small>
+                      </p>
+                      <p [ngClass]="{
+                        'btn-static-secondary ': order.status === 'completed',
+                         'btn-static-success': order.status === 'readyForPickup',
+                        'btn-static-danger ': order.status === 'cancelled',
+                        'btn-static-primary': order.status === 'on_way',
+                        'btn-static-warning': order.status === 'pending' ,
+                        'btn-static-purple': order.status === 'delivered',
+                        'btn-static-progress': order.status === 'packing'|| order.status==='in_progress',
+                      }"
+                        class="rounded text-dark fs-6 px-1 w-auto d-flex align-items-center justify-content-center mt-2"
+                        style="height: 40px;">
+                        <small class="fw-bold"> {{ getTranslatedStatusOrder(order.status, order.order_type) }}</small>
+
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="tab-pane fade" id="pills-pending" role="tabpanel" aria-labelledby="pills-pending-tab">
+              <div class="row  g-3">
+                <div class="col-sm-6 col-md-6 col-lg-6 col-xl-3 mb-2"
+                  *ngFor="let order of filteredOrdersByOrderType.slice(0, 4)">
+                  <div class="card">
+                    <div class="d-flex justify-content-between flex-wrap mb-2">
+                      <p class="text-dark "> <small>رقم الطلب</small></p>
+                      <p class="text-muted text-wrap"><small>{{ order.order_number }}</small></p>
+                    </div>
+                    <div class="d-flex justify-content-between flex-wrap mb-2">
+                      <h6 class="text-muted ">{{ order.order_items_count }}عناصر</h6>
+                      <h6 class="text-muted ">{{ order.order_time }}دقايق</h6>
+                    </div>
+                    <div class="d-flex justify-content-between flex-wrap mb-2">
+                      <p [ngClass]="{
+                        'btn-static-success ': order.status === 'completed',
+                        'btn-static-warning ': order.status === 'pending',
+                        'btn-static-danger': order.status === 'cancelled',
+                        'btn-static-primary': order.status === 'on_way',
+                        'btn-static-purple': order.status === 'delivered',
+                        'btn-static-warning': order.status === 'packing'
+                      }" class="badge rounded text-dark py-1 text-wrap">
+                        {{ getTranslatedStatusOrder(order.status) }}
+                      </p>
+                      <p class="btn-static btn-static-danger  text-center" *ngIf="selectedOrderType==='dine-in'">طاولة
+                        {{order.table_number}}</p>
+                    </div>
+                  </div>
+
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+       </div>
+      <div class="all d-flex justify-content-end align-items-center mt-4">
+        <a routerLink="/orders" class="sidebar-link" routerLinkActive="active_link"
+          [routerLinkActiveOptions]="{ exact: true }">
+          <span class="fs-5 fw-bold ms-3">عرض الكل</span>
+          <img src="assets/images/arrow-right.svg" alt="" />
+        </a>
+      </div>
+    </div>
+    <ul class="nav nav-pills mb-4 px-0" role="tablist">
+      @for (statusGroup of pillsByStatus; track $index) {
+      <li class="nav-item" role="presentation">
+        <button class="nav-link sub" [class.active]="selectedStatus === $index" (click)="selectStatusGroup($index)"
+          [id]="'pills-' + statusGroup.status + '-tab-' + $index" data-bs-toggle="pill"
+          [attr.data-bs-target]="'#pills-' + statusGroup.status + '-' + $index" type="button" role="tab"
+          [attr.aria-selected]="selectedStatus === $index">
+          {{ getTranslatedStatus(statusGroup.status) }}
+          ({{ statusGroup.pills.length }})
+        </button>
+      </li>
+      }
+    </ul>
+
+    <div class="tab-content second-sub">
+      @for (statusGroup of pillsByStatus; track $index) {
+      <div class="tab-pane fade" [class.show]="selectedStatus === $index" [class.active]="selectedStatus === $index"
+        [id]="'pills-' + statusGroup.status + '-' + $index" role="tabpanel"
+        [attr.aria-labelledby]="'pills-' + statusGroup.status + '-tab-' + $index">
+        <div class="row m-0" *ngIf="statusGroup.pills.length > 0; else noItems">
+          @for (pill of statusGroup.pills.slice(0, 4); track pill.order_number) {
+          <div class="col-sm-6 col-md-6 col-lg-6 col-xl-3 mb-4">
+            <div class="card h-100">
+              <div class="d-flex flex-wrap justify-content-between mb-2">
+                <p class="text-dark"><small>رقم الطلب</small></p>
+                <p class="text-muted"><small>{{ pill.order_number }}</small></p>
+              </div>
+
+              <div class="d-flex justify-content-between mb-2">
+                <h6 class="text-muted">
+                  <small>{{ pill.order_items_count }} عناصر</small>
+                </h6>
+                <h6 class="text-muted">
+                  <small>{{ pill.order_time }} دقايق</small>
+                </h6>
+              </div>
+
+              <div class="d-flex flex-column text-center mb-3 gap-2 mt-auto">
+                <a class="btn-static btn-static-main text-white w-100 py-2"
+                  [routerLink]="'/pill-details/' + pill.invoice_id" routerLinkActive="active"
+                  [routerLinkActiveOptions]="{ exact: true }">
+                  تفاصيل الفاتورة
+                </a>
+                @if (pill.invoice_type != 'credit_note' && pill.invoice_print_status !== 'done' ) {
+                <a class="btn-static text-main btn-transparent border-1 w-100 py-2"
+                  [routerLink]="'/pill-edit/' + pill.invoice_id" routerLinkActive="active"
+                  [routerLinkActiveOptions]="{ exact: true }">
+                  تعديل الفاتورة
+                </a>
+                }
+              </div>
+            </div>
+          </div>
+          }
+        </div>
+
+        <ng-template #noItems>
+          <p class="text-center text-muted">
+            لا يوجد طلبات {{ getTranslatedStatus(statusGroup.status) }}
+          </p>
+        </ng-template>
+      </div>
+      }
+    </div>
+    <div class="all d-flex justify-content-end align-items-center mt-4">
+      <a routerLink="/pills" class="sidebar-link" routerLinkActive="active_link"
+        [routerLinkActiveOptions]="{ exact: true }">
+        <span class="fs-5 fw-bold ms-3">عرض الكل</span>
+        <img src="assets/images/arrow-right.svg" alt="Arrow Right" />
+      </a>
+    </div>
+  </div>
+</div> -->
+
+<div class="card p-3 mt-3" appShowLoaderUntilPageLoaded [isReady]="isAllLoading">
+  <!-- Main Tabs (Orders / Invoices) -->
+  <ul class="nav nav-pills mb-3 px-0 row" id="pills-tab1" role="tablist">
+    <li class="nav-item col-md-6" role="presentation">
+      <button class="nav-link main active w-100 mb-2" id="pills-orders-tab" data-bs-toggle="pill"
+        data-bs-target="#pills-orders" type="button" role="tab" aria-controls="pills-orders" aria-selected="true">
+        <img src="assets/images/orders-icon.png" alt="Orders Icon" />
+        <span> الطلبات </span>
+      </button>
+    </li>
+    <li class="nav-item col-md-6" role="presentation">
+      <button class="nav-link main w-100 mb-2" id="pills-pills-tab" data-bs-toggle="pill" data-bs-target="#pills-pills"
+        type="button" role="tab" aria-controls="pills-pills" aria-selected="false">
+        <img src="assets/images/pills-icon.png" alt="Pills Icon" />
+        <span> الفواتير </span>
+      </button>
+    </li>
+  </ul>
+
+  <!-- Tab Content (Orders / Invoices) -->
+  <div class="tab-content" id="pills-tabContent1">
+    <!-- ================= ORDERS TAB ================= -->
+    <div class="tab-pane fade show active" id="pills-orders" role="tabpanel" aria-labelledby="pills-orders-tab">
+      <!-- Order Types -->
+      <ul class="nav nav-pills mb-3 px-0" id="order-type-tab" role="tablist">
+        <!-- Dine-in -->
+        <li class="nav-item" role="presentation">
+          <button class="nav-link sub mb-2" id="pills-dinein-tab" data-bs-toggle="pill" data-bs-target="#pills-dinein"
+            [ngClass]="{ active: selectedOrderType === 'dine-in' }" (click)="selectOrderType('dine-in')">
+            <figure class="mb-0">
+              <img src="assets/images/in.png" alt="" />
+            </figure>
+
+            <div *ngIf="selectedStatusx === 'static'; else dynamicDineIn">
+              <span>في المطعم ({{ orderTypeStaticCounts['dine-in'] }})</span>
+            </div>
+            <ng-template #dynamicDineIn>
+              <span>في المطعم ({{ orderTypeCounts['dine-in'] }})</span>
+            </ng-template>
+          </button>
+        </li>
+
+        <!-- Takeaway -->
+        <li class="nav-item" role="presentation">
+          <button class="nav-link sub mb-2" id="pills-takeaway-tab" data-bs-toggle="pill"
+            data-bs-target="#pills-takeaway" [ngClass]="{ active: selectedOrderType === 'Takeaway' }"
+            (click)="selectOrderType('Takeaway')">
+            <figure class="mb-0">
+              <img src="assets/images/out.png" alt="" />
+            </figure>
+
+            <div *ngIf="selectedStatusx === 'static'; else dynamicTakeAway">
+              <span> إستلام ({{ orderTypeStaticCounts['Takeaway'] }})</span>
+            </div>
+            <ng-template #dynamicTakeAway>
+              <span> إستلام ({{ orderTypeCounts['Takeaway'] }})</span>
+            </ng-template>
+          </button>
+        </li>
+
+        <!-- Delivery -->
+        <li class="nav-item" role="presentation">
+          <button class="nav-link sub mb-2" id="pills-delivery-tab" data-bs-toggle="pill"
+            data-bs-target="#pills-delivery" [ngClass]="{ active: selectedOrderType === 'Delivery' }"
+            (click)="selectOrderType('Delivery')">
+            <figure class="mb-0">
+              <img src="assets/images/delivery.png" alt="" />
+            </figure>
+
+            <div *ngIf="selectedStatusx === 'static'; else dynamicDelivery">
+              <span>توصيل ({{ orderTypeStaticCounts['Delivery'] }})</span>
+            </div>
+            <ng-template #dynamicDelivery>
+              <span>توصيل ({{ orderTypeCounts['Delivery'] }})</span>
+            </ng-template>
+          </button>
+        </li>
+      </ul>
+
+      <!-- Status Filter -->
+      <ul class="nav nav-pills mb-3 px-0" id="status-tab" role="tablist">
+        <li class="nav-item col-md-2" role="presentation">
+          <button #statusFirst class="nav-link sub-sub w-100 mb-2" [ngClass]="{ active: selectedStatusx === 'all' }"
+            id="pills-all-tab" data-bs-toggle="pill" data-bs-target="#pills-all" type="button" role="tab"
+            [attr.aria-controls]="'pills-all'" [attr.aria-selected]="selectedStatusx === 'all'"
+            (click)="selectStatus('all')">
+            <span>كل الطلبات</span>
+          </button>
+        </li>
+      </ul>
+
+      <!-- Orders Content -->
+      <div class="tab-content" id="pills-tabContent2" appShowLoaderUntilPageLoaded [isReady]="isFilterdFromClientSide">
+        <div class="tab-pane fade show active" id="pills-in" role="tabpanel">
+          <div class="tab-content sub-sub-content" id="pills-tabContent3">
+            <!-- All Orders -->
+            <div class="tab-pane fade show active" id="pills-all" role="tabpanel" aria-labelledby="pills-all-tab">
+              <div class="row g-3">
+                <div class="col-sm-6 col-md-6 col-lg-6 col-xl-3 mb-2"
+                  *ngFor="let order of filteredOrdersByOrderType.slice(0,4)" style="cursor: pointer"
+                  [routerLink]="getRedirectUrl(order)">
+                  <div class="card h-100">
+                    <div class="d-flex flex-wrap justify-content-between mb-2">
+                      <p class="text-dark"><small>رقم الطلب</small></p>
+                      <p class="text-muted fw-bold mb-0">
+                        <small>{{ order.order_number }}</small>
+                      </p>
+                    </div>
+
+                    <div class="d-flex flex-wrap justify-content-between mb-2">
+                      <h6 class="text-muted mb-0">
+                        {{ order.order_items_count }} عناصر
+                      </h6>
+                      <h6 class="text-muted mb-0">
+                        {{ order.order_time }} دقايق
+                      </h6>
+                    </div>
+
+                    <div class="d-flex flex-wrap justify-content-between mb-2">
+                      <p class="btn-static bg-main text-white w-auto mb-0 d-flex align-items-center justify-content-center mt-2 px-2"
+                        *ngIf="selectedOrderType === 'dine-in'" style="height: 40px">
+                        <small class="fw-bold">
+                          طاولة {{ order.table_number }}
+                        </small>
+                      </p>
+                      <p [ngClass]="{
+                          'btn-static-secondary': order.status === 'completed',
+                          'btn-static-success': order.status === 'readyForPickup',
+                          'btn-static-danger': order.status === 'cancelled',
+                          'btn-static-primary': order.status === 'on_way',
+                          'btn-static-warning': order.status === 'pending',
+                          'btn-static-purple': order.status === 'delivered',
+                          'btn-static-progress': order.status === 'packing' || order.status==='in_progress'
+                        }"
+                        class="rounded text-dark fs-6 px-1 w-auto d-flex align-items-center justify-content-center mt-2"
+                        style="height: 40px">
+                        <small class="fw-bold">
+                          {{ getTranslatedStatusOrder(order.status, order.order_type) }}
+                        </small>
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- /All Orders -->
+          </div>
+        </div>
+      </div>
+
+      <div class="all d-flex justify-content-end align-items-center mt-4">
+        <a routerLink="/orders" class="sidebar-link" routerLinkActive="active_link"
+          [routerLinkActiveOptions]="{ exact: true }">
+          <span class="fs-5 fw-bold ms-3">عرض الكل</span>
+          <img src="assets/images/arrow-right.svg" alt="" />
+        </a>
+      </div>
+    </div>
+    <!-- ================= END ORDERS TAB ================= -->
+
+    <!-- ================= INVOICES TAB ================= -->
+    <div class="tab-pane fade" id="pills-pills" role="tabpanel" aria-labelledby="pills-pills-tab">
+      <ul class="nav nav-pills mb-4 px-0" role="tablist">
+        @for (statusGroup of pillsByStatus; track $index) {
+        <li class="nav-item" role="presentation">
+          <button class="nav-link sub" [class.active]="selectedStatus === $index" (click)="selectStatusGroup($index)"
+            [id]="'pills-' + statusGroup.status + '-tab-' + $index" data-bs-toggle="pill"
+            [attr.data-bs-target]="'#pills-' + statusGroup.status + '-' + $index" type="button" role="tab"
+            [attr.aria-selected]="selectedStatus === $index">
+            {{ getTranslatedStatus(statusGroup.status) }}
+            ({{ statusGroup.pills.length }})
+          </button>
+        </li>
+        }
+      </ul>
+
+      <div class="tab-content second-sub">
+        @for (statusGroup of pillsByStatus; track $index) {
+        <div class="tab-pane fade" [class.show]="selectedStatus === $index" [class.active]="selectedStatus === $index"
+          [id]="'pills-' + statusGroup.status + '-' + $index" role="tabpanel"
+          [attr.aria-labelledby]="'pills-' + statusGroup.status + '-tab-' + $index">
+          <div class="row m-0" *ngIf="statusGroup.pills.length > 0; else noItems">
+            @for (pill of statusGroup.pills.slice(0, 4); track pill.order_number) {
+            <div class="col-sm-6 col-md-6 col-lg-6 col-xl-3 mb-4">
+              <div class="card h-100">
+                <div class="d-flex flex-wrap justify-content-between mb-2">
+                  <p class="text-dark"><small>رقم الطلب</small></p>
+                  <p class="text-muted"><small>{{ pill.order_number }}</small></p>
+                </div>
+
+                <div class="d-flex justify-content-between mb-2">
+                  <h6 class="text-muted">
+                    <small>{{ pill.order_items_count }} عناصر</small>
+                  </h6>
+                  <h6 class="text-muted">
+                    <small>{{ pill.order_time }} دقايق</small>
+                  </h6>
+                </div>
+
+                <div class="d-flex flex-column text-center mb-3 gap-2 mt-auto">
+                  <a class="btn-static btn-static-main text-white w-100 py-2"
+                    [routerLink]="'/pill-details/' + pill.invoice_id" routerLinkActive="active"
+                    [routerLinkActiveOptions]="{ exact: true }">
+                    تفاصيل الفاتورة
+                  </a>
+                  @if ((pill.invoice_type != 'credit_note') && (pill.invoice_print_status !== 'done') &&
+                  (pill.invoice_print_status !== 'cancelled')) { 
+                    <a
+                    class="btn-static text-main btn-transparent border-1 w-100 py-2"
+                    [routerLink]="'/pill-edit/' + pill.invoice_id" routerLinkActive="active"
+                    [routerLinkActiveOptions]="{ exact: true }">
+                    تعديل الفاتورة
+                  </a>
+                  }
+                </div>
+              </div>
+            </div>
+            }
+          </div>
+
+          <ng-template #noItems>
+            <p class="text-center text-muted">
+              لا يوجد طلبات {{ getTranslatedStatus(statusGroup.status) }}
+            </p>
+          </ng-template>
+        </div>
+        }
+      </div>
+
+      <div class="all d-flex justify-content-end align-items-center mt-4">
+        <a routerLink="/pills" class="sidebar-link" routerLinkActive="active_link"
+          [routerLinkActiveOptions]="{ exact: true }">
+          <span class="fs-5 fw-bold ms-3">عرض الكل</span>
+          <img src="assets/images/arrow-right.svg" alt="Arrow Right" />
+        </a>
+      </div>
+    </div>
+    <!-- ================= END INVOICES TAB ================= -->
+  </div>
+</div>

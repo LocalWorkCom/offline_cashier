@@ -1,0 +1,17 @@
+{
+  "login": {
+    "welcome": "Welcome!",
+    "loginPrompt": "Log in easily",
+    "errorMessage": "Error message will appear here",
+    "phonePlaceholder": "Enter your phone number, e.g., 01029063398",
+    "searchPlaceholder": "Search",
+    "passwordPlaceholder": "Enter password",
+    "loginButton": "Log In",
+    "selectCountry": "Select Country"
+  },
+  "notification": {
+  "heading": " all notifications" ,"noNotifications": "No notifications"
+
+
+  }
+}

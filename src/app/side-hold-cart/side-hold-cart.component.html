@@ -1,0 +1,305 @@
+@if (order) {
+<div class="card p-3 m-3">
+    <ul class="nav nav-pills px-0 align-items-center" id="pillss-tab" role="tablist">
+        <!-- Dine-in Tab -->
+        <li class="nav-item mb-2">
+            <h5 class="nav-link sub" [class.active]="order.type === 'dine-in'">
+                <figure class="mb-0">
+                    <img src="assets/images/in.png" alt="" />
+                </figure>
+                <span>في المطعم</span>
+            </h5>
+        </li>
+
+        <!-- Takeaway Tab -->
+        <li class="nav-item mb-2" role="presentation">
+            <h5 class="nav-link sub" [class.active]="order.type === 'Takeaway'">
+                <figure class="mb-0">
+                    <img src="assets/images/out.png" alt="" />
+                </figure>
+                <span> إستلام</span>
+            </h5>
+        </li>
+
+        <!-- Delivery Tab -->
+        <li class="nav-item mb-2" role="presentation">
+            <h5 class="nav-link sub" [class.active]="order.type === 'Delivery'">
+                <figure class="mb-0">
+                    <img src="assets/images/delivery.png" alt="" />
+                </figure>
+                <span>توصيل</span>
+            </h5>
+        </li>
+    </ul>
+    <div class="tab-content py-2" id="pills-tabContent">
+        <!-- Dine-in Tab Pane -->
+        <div class="tab-pane fade" [class.active]="order.type === 'dine-in'" [class.show]="order.type === 'dine-in'"
+            id="pills-side-in" role="tabpanel" aria-labelledby="pills-side-in-tab">
+            <span class="d-flex align-items-center mb-2 justify-content-between">
+                @if (order.tableNumber) {
+                <div class="text-muted fw-bold">
+                    الطاولة المختارة :
+                    <small class="fw-medium">{{ order.tableNumber }}</small>
+                </div>
+                }
+            </span>
+        </div>
+
+        <!-- Delivery Tab Pane -->
+        <div class="tab-pane fade" [class.active]="order.type === 'Delivery'" [class.show]="order.type === 'Delivery'"
+            id="pills-side-delivery" role="tabpanel" aria-labelledby="pills-side-delivery-tab">
+            <!-- <pre>{{FormDataDetails }}</pre> -->
+            <!-- @if (FormDataDetails ) {
+      <div>
+        <small class="fw-bold text-muted">الاسم : </small>
+        <small class="text-muted">{{FormDataDetails.client_name}}</small>
+      </div>
+
+      <div>
+        <small class="fw-bold text-muted">العنوان : </small>
+        <small class="text-muted">{{
+          FormDataDetails.address || "لم يتم تحديد العنوان"
+          }}</small>
+      </div>
+      <div>
+        <small class="fw-bold text-muted">رقم الهاتف : </small>
+        <small class="text-muted">{{FormDataDetails.address_phone}}</small>
+      </div>
+
+      } -->
+            @if (FormDataDetails) {
+            <div>
+                <small class="fw-bold text-muted">الاسم : </small>
+                <small class="text-muted"></small>
+            </div>
+            }
+            <div *ngIf="address">
+                <small class="fw-bold text-muted">العنوان : </small>
+                <small class="text-muted">{{
+                    address || "لم يتم تحديد العنوان"
+                    }}</small>
+            </div>
+            @if (addressPhone ) {
+            <div>
+                <small class="fw-bold text-muted">رقم الهاتف : </small>
+                <small class="text-muted">{{addressPhone}}</small>
+            </div>
+            }
+        </div>
+    </div>
+</div>
+<div class="card p-3 m-3">
+    <div class="d-flex justify-content-between mb-1">
+        <h5 class="fw-bold">تفاصيل الطلب</h5>
+    </div>
+    <div class="d-flex justify-content-between mb-1">
+        <div class="d-flex">
+            <p> رقم الطلب </p>
+            <p class="text-muted me-2">{{ order.orderId }}</p>
+        </div>
+        <p>{{ order.order_items_count }} عناصر</p>
+    </div>
+
+    @for ( item of order.items; track i; let i = $index) {
+    <div class="sideCart-plate p-3 mb-3">
+        <div class="d-flex flex-column flex-lg-row">
+
+            <figure class="sideCart-plate-img m-0">
+                <img [src]="item.dish_image || 'assets/images/no-image.png'" [alt]="item.dish_name" />
+            </figure>
+            <div class="cart-details pe-0 pe-lg-3">
+
+                <h5> <span>x</span>{{ item.quantity }}{{ item.dish_name || "اسم غير متوفر" }}</h5>
+                <!-- <p class="text-muted">{{ item.dish?.description || 'لا يوجد وصف' }}</p> -->
+                @if (item.size_name) {
+                <small class="text-muted">
+                    {{ item.size_name }}
+                </small>
+                }
+                @if (item.addon_categories && item.addon_categories.length > 0) {
+                <div class="mt-2">
+                    <small class="text-muted">الإضافات:</small>
+                    <ul class="list-unstyled p-0">
+                        @for (addonCategory of item.addon_categories; track $index) {
+                        <li class="text-muted">
+                            <small class="fw-bold">{{ addonCategory.name }}:</small>
+                            @if (addonCategory.addons && addonCategory.addons.length > 0) {
+                            <ul class="list-unstyled px-2">
+                                @for (addon of addonCategory.addons; track $index) {
+                                <li>
+                                    <small>- {{ addon.name }} (+{{ addon.price }} {{ currencySymbol }})</small>
+                                </li>
+                                }
+                            </ul>
+                            }
+                        </li>
+                        }
+                    </ul>
+                </div>
+                }
+                @if (item.note) {
+                <small class="text-muted"> ملاحظات: {{ item.note }} </small>
+                }
+            </div>
+        </div>
+        <p class="fw-bold text-start">
+            {{ item.final_price || 0 }}
+            {{ currencySymbol }}
+        </p>
+    </div>
+    }
+    @if (order.note) {
+    <div class="bg-grey px-3 py-2 fw-bold my-3">
+        <i class="fas fa-file-alt main-color"></i>
+        {{ order.note }}
+    </div>
+    }
+    <ul class="list-unstyled p-0 m-0">
+        <li class="order-list fw-bold">
+            <p>المجموع</p>
+            <p class="fw-bold">{{ order.invoiceSummary.subtotal_price }} {{ currencySymbol }}</p>
+        </li>
+        @if (order.invoiceSummary.coupon_value) {
+        <li class="order-list">
+            <p class="main-color fw-bold">
+                كوبون خصم
+            </p>
+            @if (order.invoiceSummary.coupon_value > 0 ) {
+            <p class="fw-bold main-color">
+                -
+                {{ order.invoiceSummary.coupon_value }} {{ currencySymbol }}
+            </p>
+            }
+        </li>
+        } @if (order.type === 'في المطعم' || order.type ===
+        'dine-in') {
+        <li class="order-list">
+            <p>رسوم الخدمة</p>
+            <p class="fw-bold">
+                {{order.invoiceSummary.service_fee }}
+                {{ currencySymbol }}
+            </p>
+
+        </li>
+        } @if (order.type === 'توصيل' || order.type === 'Delivery')
+        {
+        <li class="order-list fw-bold">
+            <p>رسوم التوصيل</p>
+            <p class="fw-bold">
+                {{ order.invoiceSummary.delivery_fees }} {{ currencySymbol }}
+            </p>
+        </li>
+        }
+    </ul>
+
+    <div class="message bg-lightYellow p-2 rounded-3 mb-3">
+        <small>
+            تضاف ضريبة القيمة المضافة
+            <span class="fw-bold">{{ order.invoiceSummary.tax_percentage }}% </span>بمعنى أخر
+            <span class="main-color fw-bold">
+                {{ order.invoiceSummary.tax_value.toFixed(2) }}{{ currencySymbol }}
+            </span>
+        </small>
+    </div>
+    
+
+    <div class="total">
+        <p class="fw-bold">المجموع الكلى</p>
+        <p class="fw-bold">
+            {{ order.invoiceSummary.total_price.toFixed(2) }} {{ currencySymbol }}
+        </p>
+    </div>
+
+
+    <!-- <div class="card-body p-md-0 p-4">
+        @if (order.items.length > 3) {
+        <div class="all d-flex justify-content-end align-items-center">
+            <a class="sidebar-link" (click)="openCartItemsModal()">
+                <span class="fs-5 fw-bold ms-3">عرض الكل</span>
+                <img src="assets/images/arrow-right.svg" alt="" />
+            </a>
+        </div>
+        }
+        <div class="d-flex flex-md-row flex-column justify-content-between mt-3 flex-wrap">
+            <button class="btn reversed main-color d-flex align-items-center mx-2 mb-3" data-bs-toggle="modal"
+                data-bs-target="#couponModal">
+                <i class="fa fa-plus" aria-hidden="true"></i>
+                <span class="mb-0 w-100"> أضف كوبون </span>
+            </button>
+
+            <button class="btn reversed main-color d-flex align-items-center mx-2 mb-3" data-bs-toggle="modal"
+                data-bs-target="#noteModal">
+                <i class="fa fa-plus" aria-hidden="true"></i>
+                <span class="mb-0 w-100"> أضف ملاحظة </span>
+            </button>
+        </div>
+        @if (applyAdditionalNote()) {
+        <div class="bg-grey px-3 py-2 fw-bold my-3">
+            <i class="fas fa-file-alt main-color"></i>
+            {{ applyAdditionalNote() }}
+        </div>
+        }
+        <ul class="list-unstyled p-0 m-0">
+            <li class="order-list fw-bold">
+                <p>المجموع</p>
+                <p class="fw-bold">{{ getTotal() }} {{ currencySymbol }}</p>
+            </li>
+            @if (discountAmount) {
+            <li class="order-list">
+                <p class="main-color fw-bold">
+                    كوبون خصم
+                </p>
+                @if (discountAmount > 0 ) {
+                <p class="fw-bold main-color">
+                    -
+                    {{ discountAmount.toFixed(2) }} {{ currencySymbol }}
+                </p>
+                }
+            </li>
+            } @if (order.type === 'في المطعم' || order.type ===
+            'dine-in') {
+            <li class="order-list">
+                <p>رسوم الخدمة</p>
+                @if (branchData.service_fees) {
+                <p class="fw-bold">
+                    @if (!branchData?.coupon_application && !branchData?.tax_application
+                    && this.appliedCoupon) {
+                    {{ getServiceOnAmountAfterCoupon() }}
+                    } @else {
+                    {{ getServiceFeeAmount() }}
+                    }{{ currencySymbol }}
+                </p>
+                }
+            </li>
+            } @if (order.type === 'توصيل' || order.type === 'Delivery')
+            {
+            <li class="order-list fw-bold">
+                <p>رسوم التوصيل</p>
+                <p class="fw-bold">
+                    {{ branchData.delivery_fees }} {{ currencySymbol }}
+                </p>
+            </li>
+            }
+        </ul>
+
+        @if (branchData?.tax_application === false) {
+        <div class="message bg-lightYellow p-2 rounded-3 mb-3">
+            <small>
+                تضاف ضريبة القيمة المضافة
+                <span class="fw-bold">{{ branchData.tax_percentage }}% </span>بمعنى أخر
+                <span class="main-color fw-bold">
+                    {{ getTax() | number : "1.2-2" }}{{ currencySymbol }}
+                </span>
+            </small>
+        </div>
+        }
+
+        <div class="total">
+            <p class="fw-bold">المجموع الكلى</p>
+            <p class="fw-bold">
+                {{ getCartTotal().toFixed(1) }} {{ currencySymbol }}
+            </p>
+        </div>
+    </div> -->
+</div>
+}

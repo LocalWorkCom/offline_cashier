@@ -1,0 +1,319 @@
+.login-background {
+    position: relative;
+    background: url(/assets/images/login-background.png);
+    background-repeat: no-repeat;
+    background-size: cover;
+    border-radius: 10px 0 0 10px;
+    background-color: #FFEBC5;
+
+}
+.btn {
+    box-shadow: none;
+    color: #fff;
+    background-color: #FE0000;
+    border-radius: 10px;
+    transition: all 0.3s ease-in-out;
+    font-weight: bold;
+    opacity: 1;
+}
+.login-background img {
+    width: 100%;
+    height: auto;
+    object-fit: cover;
+    padding-top: 100px;
+}
+
+.right-side {
+    box-shadow: 0px 4px 12px 0px #0000001A;
+    border-top-right-radius: 20px;
+    border-bottom-right-radius: 20px;
+    z-index: 1000;
+}
+
+.form-control {
+    position: relative;
+    border-radius: 10px !important;
+    padding: 0.75rem;
+
+}
+
+.sidenav {
+    height: 100%;
+    width: 0;
+    position: fixed;
+    z-index: 1;
+    top: 0;
+    left: 0;
+    background-color: #ffffff;
+    overflow-x: hidden;
+    padding-top: 60px;
+    transition: 0.5s;
+}
+
+.sidenav a {
+    padding: 8px 8px 8px 32px;
+    text-decoration: none;
+    font-size: 25px;
+    color: #fe0000;
+    display: block;
+    transition: 0.3s;
+}
+
+.navbar-light .navbar-toggler {
+    color: rgb(255 255 255);
+    border-color: rgb(242 242 242) !important;
+    border-radius: 10px;
+}
+
+.input-group input {
+    border: 1px solid #DFDFDF;
+    
+}
+.custom-dropdown input {
+        height: 2rem;
+
+}
+
+.input-group-eye {
+    position: absolute;
+    inset-inline-start: 5px;
+    /* left: 5px; */
+    top: 50%;
+    transform: translateY(-50%);
+    background-color: transparent;
+    border: none;
+    color: #808080;
+    display: block;
+    cursor: pointer;
+    z-index: 10;
+}
+
+input::placeholder {
+    font-size: 13px;
+    font-weight: 400;
+}
+
+.country-dropdown {
+    background-color: transparent;
+    border: 1px solid #DFDFDF;
+    border-radius: 10px !important;
+}
+
+a:hover {
+    cursor: pointer;
+}
+
+.social-media-btn {
+    box-shadow: none;
+    border-radius: 10px;
+    background-color: #FAFAFA;
+    transition: all 0.3s ease-in-out;
+    font-weight: bold;
+    opacity: 1;
+    padding: 0.3rem 3rem;
+}
+
+/* forget-reset-pass styles  */
+
+.back-home:hover {
+    color: #BF0000;
+}
+
+.back-home {
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none;
+    color: #000;
+    transition: color 0.3s ease-in-out;
+}
+
+.back-arrow-img {
+    transition: transform 0.3s ease-in-out;
+}
+
+.back-home:hover .back-arrow-img {
+    transform: translateX(-5px);
+}
+
+.forget-pass .container {
+    max-width: 80rem;
+}
+
+.forget-pass .login-background img {
+    max-height: 550px;
+    width: 100%;
+    object-fit: contain;
+}
+
+.bg-gray {
+    background-color: #FAFAFA;
+}
+
+.bg-white {
+    background-color: #FFFFFF;
+}
+
+
+.forget-pass .meat {
+    position: absolute;
+    top: 165px;
+    right: 0px;
+}
+
+.forget-pass .spoon {
+    position: absolute;
+    bottom: 0px;
+    left: 0px;
+}
+.main-color {
+    color: #FE0000 !important;
+}
+.ipv_selected-item {
+    position: relative;
+    padding: 0 0px 0 0px !important;
+    /* height: 40px; */
+    line-height: 40px;
+    border: 1px solid #a6a6a6;
+    background: #fff;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+}
+
+.custom-dropdown {
+    border: 1px solid #dfdfdf;
+    border-radius: 10px !important;
+    padding: 8px;
+    /* width: 7rem; */ 
+    margin-right: 8px;
+}
+.dropdown-list li:hover {
+    background: #f0f0f0;
+  }
+  .flag-icon,   .flag-icon[_ngcontent-ng-c3690399966] {
+    width: 25px;
+    height: 15px;
+        margin-inline: 4px;
+  }
+   .input-group {
+    position: relative;
+  }
+.dropdown-list{
+    height: 20vh;
+    overflow: auto;
+    border-radius: 10px;
+}
+  .dropdown-list[_ngcontent-ng-c3720490783]  {
+    position: absolute;
+    top: 104%;
+    background: white;
+    border: 1px solid #ccc;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 1000;
+    width: 7rem;
+    left: 0px;
+    border-radius: 10px;
+}
+  .dropdown-list li {
+    padding: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+  }
+
+  .dropdown-list li:hover {
+    background: #f0f0f0;
+  }
+    
+  .password-toggle-btn {
+    position: absolute;
+    inset-inline-end: 10px;
+    /* left: 10px; */
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;display: block;
+    z-index: 10;  
+  }
+  ::-webkit-scrollbar {
+    width: 6px;
+}
+
+::selection {
+    background-color: #FE0000;
+    -webkit-text-fill-color: #ffffff;
+    color: #ffffff;
+}
+
+::-moz-selection {
+    background-color: #FE0000;
+    color: #ffffff;
+    -webkit-text-fill-color: #ffffff;
+
+}
+
+::-webkit-selection {
+    background-color: #FE0000;
+    -webkit-text-fill-color: #ffffff;
+    color: #ffffff;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #FE0000;
+}
+ @media (max-width:1600px) {
+    .forget-pass .login-background img  {
+        max-height: 480px;
+    }  
+ }
+ @media (max-width:1440px) {
+    .forget-pass .login-background img  {
+        max-height: 410px;
+        
+    }  
+    .forget-pass[_ngcontent-ng-c1763819975] .meat[_ngcontent-ng-c1763819975] {
+        position: absolute;
+        top: 11px;
+        right: 0px;
+        width: 8rem;
+    }
+    .form-control {
+        position: relative;
+        border-radius: 10px !important;
+        padding: 0.5rem;
+    
+    }
+ }
+/* .password-toggle-btn {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: block;
+    z-index: 10;  
+} */
+
+/* Add this to ensure the input doesn't overlap the button */
+.input-group input {
+    padding-inline-end: 35px !important; /* Make space for the eye icon */
+}
+
+ 
+input[type="password"]::-ms-reveal {
+  display: none;
+}

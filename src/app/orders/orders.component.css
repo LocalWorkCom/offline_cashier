@@ -1,0 +1,214 @@
+.nav-pills .nav-link.main {
+    font-size: 1.25rem;
+}
+
+.nav-pills .nav-link.main.active img {
+    filter: brightness(0) invert(1);
+
+}
+
+.nav-pills .nav-link.sub {
+    background-color: #fff;
+    box-shadow: -4px -4px 12px 0 rgba(0, 0, 0, 0.08), 4px 4px 12px 0 rgba(0, 0, 0, 0.08);
+}
+
+.nav-pills .nav-link.sub figure {
+    background-color: #fe0000;
+    border-radius: 50%;
+    padding: 0.2rem;
+    height: 25px;
+    width: 25px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.nav-pills .nav-link img {
+    height: 20px;
+}
+
+.nav-pills .nav-link.active.sub figure {
+    background-color: #fff;
+}
+
+.nav-pills .nav-link.sub-sub {
+    background-color: transparent;
+}
+
+.nav-pills .nav-link.sub-sub.active {
+    background: none;
+    color: #fe0000;
+    border-bottom: 2px solid;
+    border-radius: 0;
+}
+
+.sub-sub-content .card,
+.second-sub .card {
+    padding: 0.5rem;
+}
+
+.sub-sub-content .card p,
+.second-sub .card p {
+    margin: 0;
+}
+
+.all img {
+    height: 25px;
+}
+
+.nav-pills .nav-link span {
+    margin-right: 0.5rem;
+}
+
+.nav-pills .nav-link.active,
+.nav-pills .show>.nav-link {
+    background-color: #fe0000;
+    color: #fff;
+}
+
+@media (max-width:1440px) {
+    .nav-pills .nav-link.main {
+        font-size: 1rem;
+    }
+
+    .nav-pills .nav-link {
+        border-radius: 1rem;
+        margin-left: 0.75rem;
+    }
+}
+
+/* Style for the images */
+img {
+    width: 24px;
+    /* Set image size */
+    height: 24px;
+    margin-right: 8px;
+    /* Space between image and text */
+}
+
+/* Optional: Style for the badges */
+.badge.bg-light {
+    font-size: 14px;
+    /* Adjust the size */
+    padding: 0.2em 0.5em;
+    /* Adjust the padding */
+    background-color: #f0f0f0;
+    /* You can customize the background */
+    color: #333;
+    /* Adjust the text color */
+}
+
+.highlight-order {
+
+    transition: background-color 0.3s ease;
+}
+
+
+@media screen and (max-width:490px) {
+
+    .nav-requests,
+    .mini-tabs {
+        width: 90px !important;
+        font-weight: normal;
+        font-size: 10px;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center
+    }
+
+    .mini-tabs {
+        width: 320px !important;
+
+    }
+}
+
+.input-group-text {
+    background-color: transparent;
+    border-right: 0px;
+    border-top-left-radius: 8px !important;
+    border-bottom-left-radius: 8px !important;
+    border-top-right-radius: 0px !important;
+    border-bottom-right-radius: 0px !important;
+}
+
+.input-group>.form-control,
+.input-group>.form-floating,
+.input-group>.form-select {
+    border-top-left-radius: 0px !important;
+    border-bottom-left-radius: 0px !important;
+    border-left: 0px;
+}
+
+.trash {
+    background-color: #FE0000;
+    height: 25px;
+    width: 25px;
+    border-radius: 50%;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: small;
+}
+
+.cancel-icon {
+    height: 4rem;
+    width: 100%;
+    object-fit: contain;
+}
+
+input[type="checkbox"]:checked {
+    accent-color: #FE0000 !important;
+    background-color: #FE0000 !important;
+    border: none;
+
+}
+
+input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+}
+
+:host ::ng-deep .p-accordioncontent-content,
+:host ::ng-deep .p-accordionheader {
+    background-color: inherit !important;
+    color: inherit !important;
+}
+
+.qty {
+    display: flex;
+    align-items: center;
+}
+
+.dec,
+.inc {
+    background-color: #FE0000;
+    height: 25px;
+    width: 25px;
+    border-radius: 50%;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: small;
+}
+
+.order-items {
+    max-height: 225px;
+    overflow: scroll;
+}
+::-webkit-scrollbar {
+    width: 5px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: rgb(219, 219, 219);
+    border-radius: 20px;
+}
+::-webkit-scrollbar-thumb{
+    background: rgb(254, 0, 0);
+}
+::-webkit-scrollbar-track {
+    background: rgb(241, 241, 241);
+}

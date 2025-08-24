@@ -1,0 +1,41 @@
+<div class="position-relative " (clickOutside)="op.toggle($event)" >
+
+  <p-button (click)="op.toggle($event)" icon="pi pi-bell" label="" />
+
+  @if (allNotificaions) {
+  <span class="notification_number"> {{unreadMessages}} </span>
+  }
+    <p-popover  #op   >
+
+    <div class="flex flex-col notifications_body"  [ngStyle]="{'direction': dir} ">
+      @if (allNotificaions&&allNotificaions.length>0) {
+      <h4 class="text-center text-capitalize">{{'notification.heading' |translate}}</h4>
+      @for (item of allNotificaions; track item.date+$index) {
+
+         <p class="day"> {{item.date}}</p>
+        @for (notification of item.notifications ; track $index) {
+      <div [id]="'notification_'+notification.id" class="notification py-2 d-flex justify-content-between align-items-center border-bottom "  (click)="onNotificationClick(notification.statusId,notification.notification_type,notification.id,op)">
+          <div class="d-flex align-items-start gap-2 w-100 "
+>
+          <i class="fa-solid fa-bell main-color ms-2"></i>
+          <div class="content d-flex gap-1 justify-content-between flex-grow-1">
+
+            <div class="message">
+              <h5 class="m-0 title"> {{notification.title}} </h5>
+              <p class="m-0"> {{notification.description}} </p>
+            </div>
+            <!-- <p class="statusKeyword"
+              (click)="onNotificationClick(notification.statusId,notification.notification_type,op)"> Go to
+              {{notification.notification_type}} </p>-->
+          </div>
+        </div>
+      </div>
+      }
+      }
+      }@else {
+      <h4 class="text-center w-100 "> {{'notification.noNotifications' |translate}}  </h4>
+      }
+
+    </div>
+  </p-popover>
+</div>

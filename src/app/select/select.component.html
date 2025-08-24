@@ -1,0 +1,48 @@
+
+ <div [ngStyle]="{ width: width }">
+
+  <p class="title" *ngIf="title">{{ title  }}</p>
+
+  <p-select
+    [resetFilterOnHide]="true"
+    [emptyMessage]="'NO_DATA' "
+    [emptyFilterMessage]="'NO_RESULTS' "
+    [filterPlaceholder]="'SEARCH_HERE' "
+    [filter]="filter"
+    [title]="titleDropdown"
+    [formControl]="control"
+    [name]="name"
+    [options]="options"
+    optionLabel="name"
+
+    [placeholder]="placeholder ">
+
+
+   <ng-template let-country pTemplate="item">
+      <div class="d-flex items-center gap-2">
+        <span
+        *ngIf="country?.countryFlag"
+        class="option-icon flag-icon country-emoji"
+        [ngClass]="'flag-icon-' + country.countryFlag.toLowerCase()">
+      </span>
+
+        <span>{{ country?.name }}</span>
+      </div>
+    </ng-template>
+
+    <!-- Template for selected item -->
+    <ng-template let-country pTemplate="selectedItem">
+      <div class="d-flex items-center gap-2">
+        <span
+          *ngIf="country?.countryFlag"
+          class="option-icon flag-icon country-emoji"
+          [ngClass]="'flag-icon-' + country.countryFlag.toLowerCase()">
+        </span>
+        <span>{{ country?.name }}</span>
+      </div>
+    </ng-template>
+
+
+  </p-select>
+
+</div>

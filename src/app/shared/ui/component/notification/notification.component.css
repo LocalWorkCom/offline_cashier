@@ -1,0 +1,88 @@
+:host ::ng-deep .p-button {
+  /* color: #fe0000;
+  background-color: transparent; */
+  background: #fe0000;
+  color: #fff;
+  border: none;
+  padding: 0;
+}
+
+:host ::ng-deep .pi:before {
+  font-size: 25px;
+}
+
+:host ::ng-deep .p-button:not(:disabled):hover {
+  background: #fe0000;
+  color: #fff;
+  border: none;
+}
+
+.notifications {
+  position: relative;
+}
+
+.notification_number {
+  position: absolute;
+  background-color: #aeaeae;
+  color: #fe0000;
+  padding: 0 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 12px;
+  top: -25%;
+  inset-inline-start: -10px;
+}
+
+.statusKeyword {
+  background: #fe0000;
+  cursor: pointer;
+  width: max-content;
+  padding: 2px 7px;
+  border-radius: 7px;
+  height: max-content;
+  color: #fff;
+}
+
+.read {
+  background: #eb9b9b38;
+}
+
+.notifications_body {
+  max-height: 90vh;
+  overflow: auto;
+  padding: 10px ;
+  font-size: 20px;
+  width: max-content;
+  background-color: #fff;
+}
+.title{
+  color: #263238;
+font-size: 20px;
+font-style: normal;
+font-weight: 700;
+}
+:host .p-popover-content {
+  padding: 0 !important;
+}
+::ng-deep body .p-popover {
+  position: fixed !important;
+  width: 100vw;
+    height: -webkit-fill-available !important;
+  /* height: 100vh; */
+  border: none;
+  display: flex !important;
+  background: rgba(26, 25, 25, 0.8) !important;
+overflow: hidden;
+  justify-content: center;
+  border-radius: 0 !important;
+}
+.day{
+  color: #fe0000;
+font-size: 20px;
+font-style: normal;
+font-weight: 700;
+padding-inline-start: 30px;
+margin: 10px 0 0;
+}

@@ -1,0 +1,16 @@
+{
+  "login": {
+    "welcome": "مرحبا بك!",
+    "loginPrompt": "سجل دخولك بكل سهولة",
+    "errorMessage": "ستظهر رسالة الخطأ هنا",
+    "phonePlaceholder": "ادخل رقم الهاتف ,مثال 01029063398",
+    "searchPlaceholder": "ابحث",
+    "passwordPlaceholder": "ادخل كلمة المرور",
+    "loginButton": "تسجيل الدخول",
+    "selectCountry": "اختر الدولة"
+  }, 
+  "notification": {
+    "heading": "كل الاشعارات", "noNotifications": "لا توجد إشعارات"
+
+  }
+}

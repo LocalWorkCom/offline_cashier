@@ -1,0 +1,105 @@
+.nav-pills .nav-link.sub{
+    background-color: #fff;
+    box-shadow: -4px -4px 12px 0 rgba(0, 0, 0, 0.08), 4px 4px 12px 0 rgba(0, 0, 0, 0.08);
+}
+
+.nav-pills .nav-link.active, .nav-pills .show > .nav-link{
+    background-color: #fe0000;
+    color: #fff;
+}
+.sub-sub-content .card,
+.second-sub .card{
+    padding: 0.5rem;
+}
+.sub-sub-content .card p,
+.second-sub .card p{
+    margin: 0;
+}
+
+.nav-pills .nav-link.main{
+  font-size: 1.25rem;
+}
+.nav-pills .nav-link.main.active img{
+  filter: brightness(0) invert(1);
+
+}
+.nav-pills .nav-link.sub{
+  background-color: #fff;
+  box-shadow: -4px -4px 12px 0 rgba(0, 0, 0, 0.08), 4px 4px 12px 0 rgba(0, 0, 0, 0.08);
+}
+.nav-pills .nav-link.sub figure{
+  background-color: #fe0000;
+  border-radius: 50%;
+  padding: 0.2rem;
+  height: 25px;
+  width: 25px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.nav-pills .nav-link img{
+  height: 20px;
+}
+.nav-pills .nav-link.active.sub figure{
+  background-color: #fff;
+}
+.nav-pills .nav-link.sub-sub{
+  background-color: transparent;
+}
+.nav-pills .nav-link.sub-sub.active {
+  background: none;
+  color: #fe0000;
+  border-bottom: 2px solid;
+  border-radius: 0;
+}
+.sub-sub-content .card,
+.second-sub .card{
+  padding: 0.5rem;
+}
+.sub-sub-content .card p,
+.second-sub .card p{
+  margin: 0;
+}
+
+.all img{
+  height: 25px;
+}
+.nav-pills .nav-link span{
+  margin-right: 0.5rem;
+}
+.nav-pills .nav-link.active, .nav-pills .show > .nav-link{
+  background-color: #fe0000;
+  color: #fff;
+}
+@media (max-width:1440px) {
+  .nav-pills .nav-link.main {
+      font-size: 1rem;
+  }
+  .nav-pills .nav-link {
+      border-radius: 1rem;
+      margin-left: 0.75rem;
+  }
+
+}
+@media (max-width:460px) {
+
+  .delivery{
+    margin-top: 2%;
+  }
+}
+
+
+ .input-group-text {
+    background-color: transparent;
+    border-right: 0px;
+    border-top-left-radius:8px !important;
+    border-bottom-left-radius:8px !important;
+    border-top-right-radius:0px !important;
+    border-bottom-right-radius:0px !important;
+}
+.input-group>.form-control, .input-group>.form-floating, .input-group>.form-select
+ {
+ border-top-left-radius:0px !important;
+    border-bottom-left-radius:0px !important;
+    border-left: 0px;
+} 

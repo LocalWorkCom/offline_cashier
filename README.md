@@ -1,1 +1,2 @@
-# offline_cashier i
+# cashier
+Cashier angular 

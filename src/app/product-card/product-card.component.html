@@ -1,0 +1,21 @@
+<a data-bs-toggle="modal" data-bs-target="#productModal" (click)="openModal(item)">
+    <div class="plate">
+        <figure class="plate-img m-0">
+            <img [src]="item.image ? item.image : 'assets/images/no-image.png'" alt />
+        </figure>
+        <div class="text-center pt-3">
+            <h6 class="mb-0">{{item.name}}</h6>
+            <div class="py-2">
+                <!-- <span class="discount"> {{product.discountPercentage}} ج . م</span> -->
+                <span>{{item.price}} {{ item.currency_symbol }}</span>
+            </div>
+            <button class="btn">
+                + إضافة
+            </button>
+            <!-- <button class="btn me-2" (click)="deleteProduct(product.id)">
+             ازالة
+        </button> -->
+        </div>
+    </div>
+</a>
+
