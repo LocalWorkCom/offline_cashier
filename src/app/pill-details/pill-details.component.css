@@ -1,0 +1,77 @@
+.accordion-button:not(.collapsed) {
+    color: var(--bs-accordion-active-color);
+    background-color: #fff !important;
+    box-shadow: inset 0 calc(-1* var(--bs-accordion-border-width)) 0 #fff !important;
+}
+.accordion-button:focus {
+    z-index: 3;
+    outline: 0;
+    box-shadow: none !important;
+}
+.card-img img{
+    width: 10vw;
+}
+
+.btn-white {
+    box-shadow: none;
+    color: #1A1919;
+    background-color:  #FAFAFA;
+    border-radius: 10px;
+    transition: all 0.3s ease-in-out;
+    font-weight: bold;
+    box-shadow: 4px 4px 12px 0px #00000014, -4px -4px 12px 0px #00000014;
+
+    border: none;
+    padding-block: 0.65rem ;
+}
+
+  /* Set the width of the print section to fit the receipt printer */
+  .printSection {
+    width: 90mm;
+    font-size: 8px !important;
+    margin: 0;
+    padding: 0;
+    height: auto;
+    /* overflow: visible; */
+  }
+  .printSection h6{
+    font-size: 0.8rem !important;
+  }
+  .card-img img {
+    width: 150px;
+    height: auto;
+  }
+
+  .table {
+    width: 100%;
+    font-size: 10px;
+  }
+
+  .card-img-qr img {
+    width: 50px;
+    height: auto;
+  }
+
+
+
+:host ::ng-deep .p-button {
+  background-color: #FE0000 !important;
+  border: none !important;
+}
+:host ::ng-deep .p-button:not(:disabled):hover {
+    background: #FE0000;
+    border: none;
+    color: #fff;
+}
+
+:host ::ng-deep .final{
+  font-size: 20px;
+  color: #FE0000;
+}
+.final{
+  text-decoration: underline;
+      color: red;
+      font-weight: bold;
+      font-size: 16px; 
+      text-align:center;
+}

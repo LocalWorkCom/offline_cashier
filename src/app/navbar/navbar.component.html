@@ -1,0 +1,257 @@
+<nav class="navbar py-3">
+  <div class="row m-0 align-items-center w-100">
+    <div class="col-md-7">
+      <!-- <div class="input-wrapper form-control">
+          <i class="fa-solid fa-magnifying-glass text-muted"></i>
+          <input type="text" placeholder="ابحث...">
+        </div> -->
+    </div>
+
+    <div class="col-md-5 d-flex justify-content-evenly align-items-center">
+
+      <app-notification></app-notification>
+      <!-- <div cl ass="notifications" data-bs-toggle="modal" data-bs-target="#notificationModal">
+        <i class="fa-solid fa-bell main-color fa-lg"></i>
+       
+      </div> -->
+
+      <div class="user" data-bs-toggle="modal" data-bs-target="#profileModal">
+        <img [src]="imageUrl" (error)="imageUrl = 'assets/images/user.png'" alt="User Image">
+        <div class="user-info">
+          <h6>{{ authService.fullName$|async }}</h6>
+          <small class="text-muted">
+            <span>{{ shiftData?.day || 'التاريخ' }}</span>,
+            <span>{{ shiftData?.time || 'التوقيت' }}</span>
+          </small>
+
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- profile modal  -->
+<div class="modal fade profileModal" id="profileModal" tabindex="-1" aria-labelledby="profileModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-left">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <button type="button" class="btn btn-close p-2" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body ">
+        <div class="d-flex justify-content-between align-items-center py-2 border-bottom mb-2">
+          <div class="d-flex align-items-center">
+            <i class="fas fa-user-circle fs-5 main-color me-1 ms-3"></i>
+            <div class="user-info m-0">
+              <h6>{{ fullName || 'الاسم' }}</h6>
+              <small class="text-muted">
+                <span>{{ phoneNumber || 'الهاتف' }}</span>
+              </small>
+            </div>
+          </div>
+          <a routerLink="/settings" class="btn-edit-profile p-1" routerLinkActive="active_link"
+            [routerLinkActiveOptions]="{exact:true}" data-bs-dismiss="modal">تعديل الملف الشخصى</a>
+        </div>
+
+        <div class="d-flex py-2">
+          <i class="fas fa-file-alt fs-5 main-color me-1 ms-3"></i>
+          <h6 routerLink="/orders" routerLinkActive="active_link" [routerLinkActiveOptions]="{exact:true}"
+            data-bs-dismiss="modal">الطلبات</h6>
+        </div>
+        <!-- <div class="d-flex py-2">
+        <i class="fas fa-headset fs-5 main-color me-1 ms-3"></i>
+        <h6 routerLink="/" routerLinkActive="active_link" [routerLinkActiveOptions]="{exact:true}" data-bs-dismiss="modal">الدعم </h6>
+        <img  class="whatsapp-icon" src="assets/images/logos_whatsapp-icon.png"  >
+      </div> -->
+        <div class="d-flex py-2">
+          <i class="fas fa-arrow-circle-left fs-5 main-color me-1 ms-3"></i>
+          <h6 data-bs-toggle="modal" data-bs-target="#logoutModal" data-bs-dismiss="modal">تسجيل خروج</h6>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ==================== Logout Confirmation Modal ==================== -->
+<div class="modal fade logoutModal" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <button type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <i class="fa-solid fa-right-from-bracket main-color fs-2"></i>
+        <h5 class="fw-bold">سيتم تسجيل خروجك ؟</h5>
+      </div>
+      <div class="modal-footer border-0 justify-content-center gap-5">
+        <!-- Bind تأكيد button to confirmLogout method -->
+        <button type="button" class="btn btn text-white w-25" (click)="confirmLogout()">تأكيد</button>
+        <button type="button" class="btn btn-transparent w-25" data-bs-dismiss="modal">إلغاء</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- ==================== close Balance Out Modal ==================== -->
+<!-- <div class="modal fade balanceoutModal" id="balanceoutModal" tabindex="-1" aria-labelledby="balanceoutModalLabel"
+  aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content">
+      <div class="modal-body">
+        <div class="d-flex justify-content-center border-0">
+          <img src="assets/images/logo-with-white-bg.png" alt="Placeholder Logo" height="70">
+        </div>
+        <h5 class="text-dark fw-bold text-center">مرحبا</h5>
+        <h5 class="main-color fw-bold text-center">فرع <span>{{ branch || 'الفرع' }} </span></h5>
+        <div class="card p-3 my-2">
+          <div class="row">
+            <div class="col-12">
+              <p class="text-muted">
+                <span>تاريخ اليوم: {{ shiftData?.day || 'التاريخ' }}</span>,
+                <span>{{ shiftData?.time || 'التوقيت' }}</span>
+              </p>
+            </div>
+            <div class="col-6 user d-flex  justify-content-start">
+              <img [src]="imageUrl" (error)="imageUrl = 'assets/images/user.png'" alt="User Image">
+              <div class="user-info">
+                <h6>{{ fullName || 'الاسم' }}</h6>
+                <h6 class="text-muted"><small>كاشير</small></h6>
+              </div>
+            </div>
+            <div class="col-6">
+              <h6 class="fw-bold"><i class="fa-solid fa-clock main-color"></i> مواعيد العمل</h6>
+              <h6 class="fw-bold">شفت<span> {{ shiftData?.shift_type || 'Shift Type' }}</span></h6>
+              <h6 class="text-muted">
+                <small>
+                  من الساعة
+                  <span>{{ formatTime(shiftData?.shift_start) }}</span>
+                  إلى
+                  <span>{{ formatTime(shiftData?.shift_end) }}</span>
+                </small>
+              </h6>
+            </div>
+          </div>
+        </div>
+        <div class="data p-2">
+          <h5>من فضلك أدخل البيانات التالية</h5>
+          <h6 class=" text-danger"> برجاء ادخال المبلغ الموجود في الدرج حاليا لغلق الوردية </h6>
+          <h6><small><i class="fa-solid fa-money-bill main-color ms-1"></i>المبلغ النقدي الحالي</small></h6>
+          <div class="input-group position-relative mb-3">
+            <input type="number" class="form-control" id="cashInput" (input)="onCashInput($event)"
+              placeholder="أدخل المبلغ النقدي">
+          </div>
+          <h6 class="error-msg main-color" *ngIf="errorMessage">
+            <small>{{ errorMessage }}</small>
+          </h6>
+          <h6><small><i class="fa-solid fa-money-bills main-color ms-1"></i>إجمالي مدفوعات البطاقة</small></h6>
+          <h5 class="fw-bold">{{ closeVisa || '0'}} {{ currency_Symbol }}</h5>
+        </div>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn text-white w-100" (click)="validateAndSave()">
+          حفظ
+        </button>
+      </div>
+    </div>
+  </div>
+</div> -->
+
+<section id="down-sidebar" class="mt-5">
+  <nav class="navbar fixed-bottom navbar-expand bg-white d-flex bottom-0">
+    <div class="collapse navbar-collapse w-100">
+      <ul class="navbar-nav w-100 d-flex justify-content-between align-items-center text-center px-3">
+
+        <!-- Home -->
+        <li class="sidebar-item active">
+          <a routerLink="/home" class="sidebar-link d-flex flex-column align-items-center justify-content-center"
+            routerLinkActive="active_link" [routerLinkActiveOptions]="{ exact: true }">
+            <img src="assets/images/chicken.png" />
+            <span class="pt-1">القائمة</span>
+          </a>
+        </li>
+
+        <!-- Orders -->
+        <li class="sidebar-item">
+          <a routerLink="/orders" class="sidebar-link d-flex flex-column align-items-center justify-content-center"
+            routerLinkActive="active_link" [routerLinkActiveOptions]="{ exact: true }">
+            <img src="assets/images/orders-icon.png" />
+            <span class="pt-1">الطلبات</span>
+          </a>
+        </li>
+
+        <!-- Tables -->
+        <li class="sidebar-item">
+          <a routerLink="/tables" class="sidebar-link d-flex flex-column align-items-center justify-content-center"
+            routerLinkActive="active_link" [routerLinkActiveOptions]="{ exact: true }">
+            <img src="assets/images/tables-icon.png" />
+            <span class="pt-1">الطاولات</span>
+          </a>
+        </li>
+
+        <!-- Bills -->
+        <li class="sidebar-item">
+          <a routerLink="/pills" class="sidebar-link d-flex flex-column align-items-center justify-content-center"
+            routerLinkActive="active_link" [routerLinkActiveOptions]="{ exact: true }">
+            <img src="assets/images/pills-icon.png" />
+            <span class="pt-1">الفواتير</span>
+          </a>
+        </li>
+
+        <!-- More Dropdown -->
+        <!-- <li ngbDropdown class="nav-item dropup dropdown">
+          <a ngbDropdownToggle
+            class="nav-link dropdown-toggle d-flex flex-column align-items-center justify-content-center" role="button"
+            data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fa-solid fa-layer-group fs-5 text-black p-1"></i>
+            <span class="pt-1">المزيد</span>
+          </a>
+
+          <ul ngbDropdownMenu class="dropdown-menu dropdown-menu-start text-end">
+            <li ngbDropdownItem class="sidebar-item">
+              <a routerLink="/settings" class="sidebar-link d-flex align-items-center" routerLinkActive="active_link"
+                [routerLinkActiveOptions]="{ exact: true }">
+                <img src="assets/images/settings.png" class="me-2" />
+                <span>الإعدادات</span>
+              </a>
+            </li>
+
+            <li ngbDropdownItem class="sidebar-item">
+              <a data-bs-toggle="modal" data-bs-target="#logoutModal" class="sidebar-link d-flex align-items-center">
+                <img src="assets/images/logout.png" class="me-2" />
+                <span>تسجيل الخروج</span>
+              </a>
+            </li>
+          </ul>
+        </li> -->
+        <!-- Dropdown -->
+        <li class="nav-item dropdown dropup">
+          <a class="nav-link dropdown-toggle d-flex flex-column align-items-center rounded-3" href="#" role="button"
+            data-bs-toggle="dropdown" aria-expanded="false">
+            <i class="fa-solid fa-layer-group fs-5 text-black p-1"></i>
+            <span class="pt-1 fw-semibold text-black">المزيد</span>
+          </a>
+          <ul class="dropdown-menu dropup-menu-start">
+            <li class="my-2">
+              <button class="dropdown-item text-end">
+                <a routerLink="/settings">
+                  <img src="assets/images/settings.png" class="mx-2" />
+                  <span>الإعدادات</span>
+                </a>
+              </button>
+            </li>
+            <li>
+              <button class="dropdown-item d-flex" data-bs-toggle="modal" data-bs-target="#Logout">
+                <img src="assets/images/logout.png" class="mx-2" />
+                <span>تسجيل الخروج</span>
+              </button>
+            </li>
+          </ul>
+        </li>
+      </ul>
+    </div>
+  </nav>
+</section>

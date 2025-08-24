@@ -1,0 +1,119 @@
+<div class="d-flex justify-content-between my-4">
+  <h2>القائمة</h2>
+  <button *ngIf="categories.length > 1" class="btn reversed border-0 main-color d-flex align-items-center"
+    data-bs-toggle="modal" data-bs-target="#showAll">
+
+    <span class="fs-5 fw-bold ms-3">عرض الكل</span>
+    <img src="assets/images/arrow-right.svg" alt />
+  </button>
+
+</div>
+<div class="input-wrapper form-control">
+  <i class="fa-solid fa-magnifying-glass text-muted"></i>
+  <input type="text" placeholder="ابحث..." [(ngModel)]="searchOrderNumber" (ngModelChange)="filterOrders()" />
+</div>
+<div class="categories py-3"  appShowLoaderUntilPageLoaded [isReady]="isAllLoading">
+  <ul class="nav nav-pills mb-3 px-0 align-items-center" id="pills-tab" role="tablist">
+    <!-- <li class="nav-item mb-2" role="presentation">
+      <button class="nav-link" [ngClass]="{ active: !selectedCategory }" (click)="clearSelection()"
+        id="pills-offers-tab" data-bs-toggle="pill" data-bs-target="#pills-offers" type="button" role="tab"
+        aria-controls="pills-offers" aria-selected="true">
+        <div class="category-button">
+          <img src="assets/images/offers.png" alt class="offer-img" />
+          <p class="mb-0">العروض</p>
+        </div>
+      </button>
+    </li> -->
+    @for (category of categories; track $index) {
+    <li class="nav-item mb-2" role="presentation">
+      <button class="nav-link" [ngClass]="{ active: selectedCategory?.id === category.id }"
+        (click)="onCategorySelect(category)" id="pills-{{ category.id }}-tab" data-bs-toggle="pill"
+        [attr.data-bs-target]="'#pills-' + category.id" type="button" role="tab"
+        [attr.aria-controls]="'pills-' + category.id" [attr.aria-selected]="selectedCategory?.id === category.id">
+        <div class="category-button">
+          <img [src]="category.image_path" alt="" class="category-img" />
+          <p class="mb-0">{{ category.name }}</p>
+        </div>
+      </button>
+    </li>
+    }
+  </ul>
+
+  
+  <div class="tab-content pt-4" id="pills-tabContent">
+    <!-- <div class="tab-pane fade" [ngClass]="{ 'show active': !selectedCategory }" id="pills-offers" role="tabpanel"
+      aria-labelledby="pills-offers-tab">
+      <div class="row mx-0">
+        @for (offer of offers; track $index) {
+        <div class="col-md-6 col-lg-4 mb-4">
+          <app-offer-card [offer]="offer"></app-offer-card>
+        </div>
+        }@empty {
+        <p>there is no products</p>
+        }
+      </div>
+    </div> -->
+    @for (category of categories; track $index) {
+    <div class="tab-pane fade" [ngClass]="{ 'show active': selectedCategory?.id === category.id }"
+      [id]="'pills-' + category.id" role="tabpanel">
+      <div class="row mx-0">
+        @for (product of filteredOrders; track $index ) {
+        <div class="col-lg-4 col-md-6 mb-4">
+          <app-product-card [item]="product" (sendToCategories)="recieveFromProduct($event)"></app-product-card>
+        </div>
+        }
+        <!-- <ng-container *ngFor="let product of filteredOrders; trackBy: trackById">
+          <div class="col-md-4 mb-4">
+            <app-product-card [item]="product" (sendToCategories)="recieveFromProduct($event)"></app-product-card>
+          </div>
+        </ng-container> -->
+        @if (filteredOrders.length === 0) {
+        <p>لا يوجد منتجات</p>
+        }
+      </div>
+
+    </div>
+    }
+  </div>
+</div>
+
+<div class="modal fade" id="showAll" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <button type="button" #closebutton class="btn-close bg-main" aria-label="Close"
+          data-bs-dismiss="modal"></button>
+      </div>
+
+      <h1 class="modal-title fs-5 text-center" id="all-categories">قائمة الطعام</h1>
+
+      <div class="modal-body">
+        <div class="input-wrapper form-control my-2">
+          <i class="fa-solid fa-magnifying-glass text-muted"></i>
+          <input type="text" placeholder="ابحث..." [(ngModel)]="searchOrderCategoreis"
+            (ngModelChange)="filterOrderCategories()" class="form-control-sm" />
+        </div>
+        <ul class="nav nav-pills mb-3 px-0 align-items-center d-flex flex-wrap justify-content-center" id="pills-tab"
+          role="tablist">
+          @for (category of filterCategories; track $index) {
+          <li class="nav-item mb-2" role="presentation">
+            <button class="nav-link" [ngClass]="{ active: selectedCategory?.id === category.id }"
+              (click)="onCategorySelect(category)" id="pills-{{ category.id }}-tab" data-bs-toggle="pill"
+              [attr.data-bs-target]="'#pills-' + category.id" type="button" role="tab"
+              [attr.aria-controls]="'pills-' + category.id" [attr.aria-selected]="selectedCategory?.id === category.id">
+              <div class="category-button">
+                <img [src]="category.image_path" alt="" class="category-img" />
+                <p class="mb-0">{{ category.name }}</p>
+              </div>
+            </button>
+          </li>
+
+          }
+          @if (filterCategories.length === 0) {
+          <p>لا يوجد أقسام</p>
+          }
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

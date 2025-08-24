@@ -1,0 +1,17 @@
+<a data-bs-toggle="modal" data-bs-target="#offerModal" (click)="openModal(offer)">
+    <div class="plate">
+        <figure class="plate-img m-0">
+            <img [src]="offer.image ? offer.image : 'assets/images/no-image.png'" alt />
+        </figure>
+        <div class="text-center pt-3">
+            <h6 class="mb-0">{{offer.name}}</h6>
+            <div class="py-2">
+                <span class="discount"> {{offer.discount_value}} ج . م</span>
+                <span>{{offer.price}}ج . م</span>
+            </div>
+            <button class="btn">
+                + إضافة
+            </button>
+        </div>
+    </div>
+</a>

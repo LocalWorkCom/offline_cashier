@@ -1,0 +1,66 @@
+<div class="modal-header">
+    <button type="button" class="btn btn-close" aria-label="Close" (click)="closeModal()">
+    </button>  
+       <h4 class="modal-title">🛒 جميع العناصر في العربة</h4>
+
+</div>
+
+<div class="modal-body">   
+    @if (cartItems.length) {
+    @for (item of cartItems; track item.id; let i = $index) {
+    <div class="sideCart-plate p-3 mb-3">
+        <div class="d-flex flex-column flex-lg-row">
+            <figure class="sideCart-plate-img m-0">
+                <img [src]="item.dish?.image || 'assets/images/no-image.png'" [alt]="item.dish?.name">
+            </figure>
+            <div class="cart-details pe-0 pe-lg-3">
+                <h5>{{ item.dish?.name || 'اسم غير متوفر' }}</h5>
+                <p class="text-muted">{{ item.dish?.description || 'لا يوجد وصف' }}</p>
+                @if (item.selectedSize) {
+                <small class="text-muted">
+                    الحجم: {{ item.selectedSize.name }}
+                </small>
+                }
+                @if (item.selectedAddons && item.selectedAddons.length > 0) {
+                <div class="mt-2">
+                    <small class="text-muted">الإضافات:</small>
+                    <ul class="list-unstyled p-0">
+                        @for (addon of item.selectedAddons; track $index) {
+                        <li class="text-muted">
+                            <small>{{ addon.name }} - {{ addon.price }} ج.م </small>
+                        </li>
+                        }
+                    </ul>
+                </div>
+                }
+                @if (item.note) {
+                <small class="text-muted">
+                    ملاحظات: {{ item.note }}
+                </small>
+                }
+                <div class="qty mt-3">
+                    <span class="dec minus" (click)="decreaseQuantity(i)">
+                        <i [class.fa-trash]="item.quantity === 1" [class.fa-minus]="item.quantity > 1" class="fa"
+                            aria-hidden="true"></i>
+                    </span>
+                    <span class="num">
+                        {{ item.quantity }}
+                    </span>
+                    <span class="inc plus" (click)="increaseQuantity(i)">
+                        <i class="fa fa-plus" aria-hidden="true"></i>
+                    </span>
+                </div>
+            </div>
+        </div>
+        <p class="fw-bold text-start">{{ getItemTotal(item) }} ج . م</p>
+    </div>
+    }
+
+    } @else {
+    <p>العربة فارغة 🛒</p>
+    }
+</div>
+
+<div class="modal-footer">
+    <button class="btn btn-secondary" (click)="closeModal()">إغلاق</button>
+</div>

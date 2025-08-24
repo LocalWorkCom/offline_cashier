@@ -1,0 +1,216 @@
+<div class="p-3" appShowLoaderUntilPageLoaded [isReady]="isAllLoading">
+  <nav class="inner-header">
+    <nav style="--bs-breadcrumb-divider: '>'" aria-label="breadcrumb">
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item">الطلبات</li>
+        <li class="breadcrumb-item active" aria-current="page">تفاصيل الطلب</li>
+      </ol>
+    </nav>
+  </nav>
+
+  <div class="my-2">
+    <h4 class="fw-bold">تفاصيل الطلب <span class="badge text-bg-danger"
+        *ngIf="orderDetails.status == 'cancelled' || orderDetails.status == 'cancel'">ملغي</span></h4>
+
+  </div>
+  @if (orderDetails?.status === "pending") {
+<div class="d-flex justify-content-between align-items-center gap-2">
+<!--     <button class="btn reversed main-color px-5 my-2 w-50">
+      <span><i class="fa-solid fa-pen px-1"></i></span>
+    تعديل الطلب
+  </button> -->
+  <!-- <button class="btn reversed main-color px-5 my-2"  (click)="cancelOrder()">
+    <span><i class="fa-solid fa-trash-can px-1"></i></span>
+    حذف الطلب
+  </button>  -->
+
+</div>
+  }
+  <p class="fs-4  text-center" [ngClass]="status_order? 'text-success' : 'main-color' ">{{errorMessage}}</p>
+  <div *ngIf="loading" class="card px-4 py-2 my-2">
+    <div class="d-flex justify-content-between">
+      <div class="w-75">
+        <div class="skeleton bg-light" style="height: 1.5rem; width: 70%"></div>
+
+        <div class="skeleton bg-light" style="height: 1rem; width: 50%; margin-top: 1rem"></div>
+
+        <div class="skeleton bg-light" style="height: 1rem; width: 40%; margin-top: 0.5rem"></div>
+      </div>
+      <div class="w-25">
+        <div class="skeleton bg-light" style="height: 2rem; width: 100px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="!loading && orderDetails" class="card p-3 my-2">
+    <h5><i class="fas fa-file-alt main-color fs-4 ps-2"></i>معلومات الدفع</h5>
+    <div class="d-flex justify-content-between align-items-center">
+      <div *ngIf="orderDetails.transactions.length == 1">
+        <h5>
+          <span class="badge bg-success text-white">
+            {{
+            paymenMethod === "cash"
+            ? "نقدا"
+            : paymenMethod === "credit"
+            ? " اونلاين"
+            : paymenMethod
+            }}
+          </span>
+        </h5>
+
+      </div>
+      <div>
+        <p class="fw-bold">
+          {{ orderDetails.transactions[0].payment_status === 'unpaid' ? 'غير مدفوعة' : 'مدفوعة' }}
+        </p>
+      </div>
+
+    </div>
+    <!-- Cash - visa -->
+    <div *ngIf="orderDetails.transactions.length>1">
+      <div *ngFor="let inv of orderDetails.transactions">
+        <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
+          *ngIf="orderDetails.transactions[0].payment_status == 'paid'">
+          <div>
+            {{ inv.payment_method === 'cash' ? ' الكاش' : ' الفيزا' }}
+          </div>
+          <div>{{ inv.paid }} {{currencySymbol}}</div>
+        </div>
+
+      </div>
+    </div>
+    <!-- Cash - visa -->
+  </div>
+
+  <div *ngIf="loading" class="card p-3 my-2">
+    <div class="skeleton bg-light" style="height: 3rem; width: 80%"></div>
+    <div class="skeleton bg-light" style="height: 1rem; width: 70%; margin-top: 1rem"></div>
+    <div class="skeleton bg-light" style="height: 1rem; width: 60%; margin-top: 0.5rem"></div>
+  </div>
+
+  <div *ngIf="!loading && orderItems.length > 0" class="card p-3 my-2">
+    <div class="accordion accordion-flush" id="accordionFlushExample">
+      <div class="accordion-item">
+        <h2 class="accordion-header" id="flush-headingOne">
+          <button class="accordion-button collapsed p-2" type="button" data-bs-toggle="collapse"
+            data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
+            <h5>
+              <i class="fas fa-file-alt main-color fs-4 ps-2"></i> تفاصيل الطلب
+            </h5>
+          </button>
+        </h2>
+        <div id="flush-collapseOne" class="accordion-collapse collapse show" aria-labelledby="flush-headingOne"
+          data-bs-parent="#accordionFlushExample">
+          <div class="accordion-body p-0">
+            <div class="d-flex justify-content-between  mb-1 align-items-start" *ngFor="let item of orderItems">
+              <div class="d-flex flex-column">
+                <h6>
+                  <span class="badge bg-lightgray text-dark ms-2">{{
+                    item.quantity
+                    }}</span>
+                  x
+                  <span>{{ item.dish_name }}</span>
+                </h6>
+                <h6 class="text-muted mx-5 fw-medium" *ngIf="item.size">
+                  الحجم: {{ item.size }}
+                </h6>
+                <h6 class="text-muted mx-5 fw-medium" *ngIf="item.addons.length > 0">
+                  إضافة: {{ item.addons }}
+                </h6>
+
+                <h6 class="text-muted mx-5 fw-medium" *ngIf="item.note">
+                  ملاحظات: {{ item.note }}
+                </h6>
+              </div>
+              <h6 class="fw-bold">
+                <span>{{ item.total_dish_price }}</span> {{ currencySymbol }}
+              </h6>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div *ngIf="loading" class="card p-3 my-2">
+    <div class="skeleton bg-light" style="height: 3rem; width: 70%"></div>
+    <div class="skeleton bg-light" style="height: 1rem; width: 60%; margin-top: 1rem"></div>
+    <div class="skeleton bg-light" style="height: 1rem; width: 60%; margin-top: 0.5rem"></div>
+    <div class="skeleton bg-light" style="height: 1rem; width: 50%; margin-top: 0.5rem"></div>
+  </div>
+  <div class="card p-3 my-2" *ngIf="deliveryData">
+    <h5>
+      <i class="fas fa-file-alt main-color fs-4 ps-2"></i>معلومات التوصيل
+    </h5>
+
+    <p *ngIf="deliveryData?.client_address">
+      <span class="fw-bold">عنوان :{{deliveryData?.client_address }}</span>
+
+    </p>
+
+    <p *ngIf="deliveryData.client_phone ">
+      <span class="fw-bold">رقم التلفون :</span>
+      {{ deliveryData?.
+      client_address_phone
+      }}
+    </p>
+
+    <p *ngIf=" deliveryData?.client_name ">
+      <span class="fw-bold">الاسم :</span>
+      {{ deliveryData?.client_name }}
+    </p>
+
+    <p *ngIf=" deliveryData?.delivery_name ">
+      <small class="fw-bold text-muted">السائق المختار: </small>
+      <small class="text-muted">{{ deliveryData.delivery_name || "لا يوجد" }}</small>
+    </p>
+
+  </div>
+  <div *ngIf="!loading && orderSummary" class="card p-3 my-2">
+    <h5><i class="fas fa-file-alt main-color fs-4 ps-2"></i> الفاتورة</h5>
+    <div class="d-flex justify-content-between px-2 mb-1">
+      <h6>مجموع طلبى</h6>
+      <h6>
+        <span>{{ orderSummary.subtotal_price }}</span> {{ currencySymbol }}
+      </h6>
+    </div>
+    <div class="d-flex justify-content-between px-2 mb-1 main-color" *ngIf="!isCouponZero">
+      <h6>كوبون خصم
+        <span class="btn-static-secondary p-1 rounded">{{ orderSummary.coupon_title
+          }} </span>
+      </h6>
+      <h6>
+        <span>- {{ orderSummary.coupon_value }}</span> {{ currencySymbol }}
+      </h6>
+    </div>
+    <div class="d-flex justify-content-between px-2 mb-1 " *ngIf="orderSummary.delivery_fees">
+      <h6> رسوم التوصيل</h6>
+      <h6>
+        <span>{{ orderSummary.delivery_fees }}</span> {{ currencySymbol }}
+      </h6>
+    </div>
+    <div class="d-flex justify-content-between px-2 mb-1 " *ngIf="hasServiceFees">
+      <h6> رسوم الخدمة <span class="main-color">بنسبة {{orderSummary.service_percentage}} % </span></h6>
+      <h6>
+        <span>{{ orderSummary.service_fees }} {{ currencySymbol }}</span>
+      </h6>
+    </div>
+    <div class="px-2 mb-1" *ngIf="orderSummary.tax_application">
+      <h6>سعر الوجبات يشتمل على ضريبة القيمة المضافة</h6>
+    </div>
+
+    <div class="px-2 mb-1" *ngIf="!orderSummary.tax_application">
+      <h6>
+        تضاف ضريبة القيمة المضافة
+        <span class="main-color">بنسبة {{ orderSummary.tax_percentage }}% </span> بمعنى اخر
+        {{ orderSummary.tax_value }} {{currencySymbol }}
+      </h6>
+    </div>
+    <div class="d-flex justify-content-between px-2 mb-1 border-top py-2">
+      <h4>المجموع الكلى</h4>
+      <h4>
+        <span>{{ orderSummary.total_price }}</span> {{ currencySymbol }}
+      </h4>
+    </div>
+  </div>
+

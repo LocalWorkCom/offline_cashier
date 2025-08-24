@@ -1,0 +1,37 @@
+.totals{
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fill,minmax(150px,1fr));
+}
+.payment-card {
+  width: 100%;
+  /* display: flex;
+  align-items: center;
+  gap: 30px; */
+     box-shadow: -4px -4px 12px 0 rgba(0, 0, 0, 0.08), 4px 4px 12px 0 rgba(0, 0, 0, 0.08);
+    border-radius: 18px;
+  font-weight: bold;
+}
+/* .icon-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0px 18px 18px 0;
+  width: 60px;
+  height: 100%;
+  font-size: 30px;
+     background-color: #fe0000;
+} */
+.payment-body{
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 30px;
+  font-size: 20px;
+  text-transform: capitalize;
+}
+.method{
+  color: #fe0000;
+}

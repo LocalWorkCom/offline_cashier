@@ -1,0 +1,15 @@
+
+<div class="totals mt-3">
+  <div *ngFor="let pay of paymentSummary"
+       class="payment-card ">
+    <!-- <div class="icon-wrapper ">
+      {{ pay.icon }}
+    </div> -->
+    <div class="payment-body">
+      <div class="method">{{ pay.name }}</div>
+      <div class=" ">{{ pay.value|number }} ج.م</div>
+    </div>
+  <!-- </div> -->
+  
+</div>
+

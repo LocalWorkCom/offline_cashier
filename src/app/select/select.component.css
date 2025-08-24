@@ -1,0 +1,96 @@
+
+p{margin: 0;}
+:host ::ng-deep .p-select {
+  width: 100%;
+  height: 46px;
+  font-size: 16px;
+  align-items: center;
+    /* border-radius: 7px ; */
+    /* border-color: #e5e5e5; */
+    /* box-shadow: 0.5px 0.5px 6px 0px rgba(0, 0, 0, 0.1); */
+  /* border: none; */
+  border-radius: 8px;
+border: 1px solid #ccc;
+background: #f9f9f9 ;
+}
+
+:host ::ng-deep .p-select-select  {
+  color: #000;
+}
+:host ::ng-deep .p-select-panel {
+  margin-top: 3px;
+  border-radius:0px 0px 15px 15px;
+}
+:host ::ng-deep .p-select:not(.p-disabled).p-focus {
+box-shadow: none;
+border-color: var(--activeBorder);
+}
+:host ::ng-deep  .p-calendar:not(.p-calendar-disabled).p-focus > .p-inputtext {
+  outline: 0 none;
+  outline-offset: 0;
+  box-shadow: 0 0 0 0.2rem #BFDBFE;
+  border-color: #3B82F6;
+}
+:host ::ng-deep  .p-select .p-select-label {
+  color: var(--black);
+font-size: 16px;
+font-style: normal;
+/* font-weight: 700; */
+line-height: normal;
+}
+:host ::ng-deep .p-select .p-select-trigger{
+  width: max-content;
+  position: absolute;
+  color: #000;
+  right: 12px;
+}
+[dir='ltr'] :host ::ng-deep .p-select .p-select-trigger{
+  right: 12px;
+}
+[dir='rtl'] :host ::ng-deep .p-select .p-select-trigger{
+  left: 12px;
+}
+:host ::ng-deep .p-select-panel .p-select-items .p-select-item.p-highlight,
+:host ::ng-deep .p-select-panel .p-select-items .p-select-item:not(.p-highlight):not(.p-disabled).p-focus {
+  /* color: #027180; */
+  /* background: rgb(231, 235, 229); */
+  background: #FE0000 ;
+  color: #656565;
+}
+
+:host ::ng-deep .p-inputtext{padding: 16px !important;}
+
+:host ::ng-deep  .p-select-panel {
+width: 100%;
+}
+:host ::ng-deep  .p-select .p-select-label.p-placeholder::first-letter {
+  text-transform: capitalize;
+}
+:host ::ng-deep  .p-select .p-select-label.p-placeholder {
+color: gray;
+}
+/* :host ::ng-deep .p-select-panel .p-select-items .p-select-item:not(.p-highlight):not(.p-disabled):hover {
+
+  background: var(--mainBg)  !important;
+} */
+
+:host ::ng-deep .p-select-panel .p-select-items {
+padding:  10px 5px !important;
+border-radius:  15px !important;
+}
+:host ::ng-deep .p-select-panel li.p-element {
+/* border-radius: 0px 0px 15px 15px !important; */
+padding: 5px;
+}
+:host ::ng-deep .select-panel .p-select-items .p-select-item.p-highlight {
+border-radius: 0px 0px 15px 15px !important;
+}
+.title{
+  text-transform: capitalize;
+  margin-bottom: 8px;
+  color: #000;
+font-size: 20px;
+font-style: normal;
+font-weight: 700;
+line-height: 30px; /* 150% */
+}

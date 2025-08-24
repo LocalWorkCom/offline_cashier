@@ -1,0 +1,234 @@
+
+.sidebar-logo {
+  width: 100%;
+  height: 100px;
+  object-fit: contain;
+}
+
+.sidebar-item .sidebar-link {
+  padding: 0.75rem;
+  border-radius: 1rem;
+  width: 100%;
+  display: inline-block;
+  font-weight: 600;
+}
+
+.active_link {
+    background: #fe0000;
+    color: #fff;
+  }
+  .active_link  img{
+    filter: brightness(0) invert(1);
+  }
+  .sidebar .sidebar-item img{
+    height: 25px;
+  }
+  .sidebar-man{
+    height: 275px;
+    width: 100%;
+    object-fit: contain;
+    object-position: bottom;
+  }
+  .btn-transparent {
+    box-shadow: none;
+    color: #FE0000;
+    background-color: transparent;
+    border-radius: 10px;
+    transition: all 0.3s ease-in-out;
+    font-weight: bold;
+
+    opacity: 1;
+    border: 2px solid #FE0000;
+    padding-block: 0.65rem ;
+}
+.transfer-money-btn{
+  background-color: #FE0000;
+  color: #f1eff1;
+  box-shadow: none;
+  border: none;
+  width: 100%;
+padding: 10px 15px;
+  border-radius: 10px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+
+/* Modal styles */
+#transferMoneyModal .modal-header {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+#transferMoneyModal .modal-title {
+  font-weight: bold;
+  color: #333;
+}
+
+#transferMoneyModal .modal-footer {
+  border-top: none;
+  justify-content: space-between;
+}
+
+#transferMoneyModal .btn-primary {
+  background-color: #28a745;
+  border-color: #28a745;
+}
+
+#transferMoneyModal .btn-primary:hover {
+  background-color: #218838;
+  border-color: #1e7e34;
+}
+ /* login-logout cash amount modal   */
+ .user img{
+  height:8vh;
+  margin-left: 1rem;
+  border-radius: 50%;
+
+}
+
+.input-group input{
+  border: 1px solid #f1eff1;
+  border-radius: 15px;
+}
+.input-group:not(.has-validation) > .dropdown-toggle:nth-last-child(n+3), .input-group:not(.has-validation) > .form-floating:not(:last-child) > .form-control, .input-group:not(.has-validation) > .form-floating:not(:last-child) > .form-select, .input-group:not(.has-validation) > :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu):not(.form-floating) {
+  border-top-right-radius: 15px !important;
+  border-bottom-right-radius: 15px !important;
+}
+.input-group input::placeholder{
+ color: #808080;
+ font-size: 0.8rem;
+}
+.mobile-view{
+  display: none;
+}
+.user-img-modal{
+  width: 100px ;
+}
+
+.man-img{  
+    /* height: 28vh; */
+        max-height: 28vh;
+    max-width: 100%;
+    height: auto;
+}
+
+.sidebar {
+  /* position: sticky;     
+    top: 0;
+    right: 0; */
+  height: 100vh;
+  box-shadow: 4px 4px 12px 0 rgba(0, 0, 0, 0.08);
+  padding-inline: 1rem;
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.sidebar-logo {
+  width: 100%;
+  height: 100px;
+
+}
+
+.sidebar-item .sidebar-link {
+  padding: 0.75rem;
+  border-radius: 1rem;
+  width: 100%;
+  display: inline-block;
+  font-weight: 600;
+}
+
+/* .sidebar-item.active {
+      background: #fe0000;
+      color: #fff;
+  
+  } */
+.page {
+  height: 100vh;
+  overflow: auto;
+}
+@media (max-width:768px) {
+  .sidebar-item .sidebar-link span {
+    display: block;
+      }
+      .sidebar-item .sidebar-link{
+        padding: 0.5rem;
+        width:100%;
+        display: flex;
+    }
+  .mobile-view{
+    display: flex;
+  }
+  .desktop-view{
+    display: none;
+  }
+  .sidebar-logo {
+    width: auto;
+    height: 90px;
+}
+.sidebar-item .sidebar-link img {
+  width: 8vw; 
+  margin-right: 1.2rem;
+}
+.sidebar-item .sidebar-link span {
+  font-size: 1.1rem;
+  padding-right: 1rem !important;
+
+}
+.sidebar{
+  padding-inline: 0.7rem;
+  padding-top: 0rem;
+  display: none;
+}
+}
+
+@media (max-width:425px) {
+.sidebar-logo {
+  width: auto;
+  height: 70px;
+}
+}
+
+@media (max-width:1440px) {
+  .sidebar-itemو .sidebar-link {
+    padding: 0.30rem;
+}
+.sidebar-item .sidebar-link img {
+  width: 2.5vw; 
+  margin-right: 0.2rem;
+}
+.sidebar-item .sidebar-link span {
+  font-size: 0.9rem;
+  padding-right: 0.2rem !important;
+}
+
+}
+
+@media (max-width:768px) {
+  .sidebar{
+  display: none;
+}
+  .sidebar-item .sidebar-link span {
+display: none;
+  }
+  .sidebar-item .sidebar-link img {
+    width: 4.5vw; 
+    margin-right: 0.2rem;
+  }
+  .sidebar-item .sidebar-link{
+    padding: 0.5rem;
+    width:auto;
+}
+.sidebar{
+  padding: 1rem;
+ padding-top: 0rem;
+
+}
+}
+
+.custom-cursor[readonly] {
+  cursor: not-allowed; /* شكل ممنوع عند readonly */
+}

@@ -1,0 +1,61 @@
+<section class="forget-pass m-lg-0 m-sm-5">
+  <div class="container">
+    <div class="body-images">
+      <img src="assets/images/meat-bg.png" class="position-absolute meat">
+      <img src="assets/images/spoon-bg.png" class="position-absolute spoon">
+    </div>
+
+    <div class="row">
+      <div class="col-12 d-flex justify-content-center mt-5 mb-2">
+        <img src="assets/images/logo-with-white-bg.png" alt="Placeholder Logo" height="110">
+      </div>
+
+      <div class="col-md-7 right-side bg-white p-md-5">
+        <h1 class="main-color fw-bold py-2"> {{ 'login.welcome' | translate }} </h1>
+        <h5 class="text-dark pb-3">{{ 'login.loginPrompt' | translate }}</h5> 
+        <p class="text-danger" *ngIf="errorMessage">{{ errorMessage }}</p> 
+        <p class="text-danger" *ngIf="passwordError">{{ passwordError }}</p> 
+   <div class="input-group position-relative mb-3">
+  <input type="text" class="form-control" id="phoneInput" placeholder="{{ 'login.phonePlaceholder' | translate }}"
+    [(ngModel)]="loginData.email_or_phone" (input)="onInputChange()">
+
+  <!-- <div class="custom-dropdown dropdown" *ngIf="!EmailOrPhone">
+    <div class="selected-option dropdown-toggle text-muted" data-bs-toggle="dropdown" (click)="toggleDropdown()">
+     {{selectedCountry.code}}
+      <img *ngIf="selectedCountry.flag" [src]="selectedCountry.flag" class="flag-icon" />
+    </div>  
+    
+    <ul *ngIf="dropdownOpen" class="dropdown-list dropdown-menu show">
+      <li class="p-2">
+        <input type="text" [(ngModel)]="searchTerm" (input)="filterCountries()" class="form-control"  placeholder="{{ 'login.searchPlaceholder' | translate }}" />
+      </li>
+    
+      <li *ngFor="let country of filteredCountries" (click)="selectCountry(country)" class="d-flex justify-content-between text-muted">
+        {{ country.code }} 
+        <img *ngIf="country.flag" [src]="country.flag" class="flag-icon" />
+      </li>
+    </ul> 
+  </div> -->
+</div>
+
+        <div class="input-group position-relative mb-3">
+          <input 
+            [type]="isPasswordVisible ? 'text' : 'password'" 
+            class="form-control" 
+            id="passwordInput"   placeholder="{{ 'login.passwordPlaceholder' | translate }}"
+            [(ngModel)]="loginData.password"
+          />
+          <button type="button" class="password-toggle-btn" (click)="togglePasswordVisibility()">
+            <i class="fa" [ngClass]="isPasswordVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
+          </button>
+        </div>
+
+        <button class="btn fs-5 w-100" (click)="onLogin()">{{ 'login.loginButton' | translate }} </button>
+      </div>
+
+      <div class="col-md-5 login-background d-none d-md-block">
+        <img src="assets/images/cashier2.png" alt="">
+      </div>
+    </div>
+  </div>
+</section>

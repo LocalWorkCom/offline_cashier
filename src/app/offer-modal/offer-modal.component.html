@@ -1,0 +1,50 @@
+<div class="modal fade" id="offerModal{{offer.id}}" tabindex="-1" aria-labelledby="offerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-md">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <button type="button" class="btn btn-close" aria-label="Close" (click)="activeModal.dismiss('Cross click')">
+                </button>
+            </div>
+            <div class="modal-body">
+                <h2 class="text-center mb-4"> تفاصيل الوجبة </h2>
+                <div class="offer">
+                    <figure class="offer-img m-0">
+                        <img [src]="offer.image ? offer.image : 'assets/images/no-image.png'" alt />
+                        <figcaption class="pt-3">
+                            <h5>{{offer.name}}</h5>
+                            <small class="text-muted d-block py-2">
+                                {{offer.description}} 
+                            </small>
+                            <h4 class="fw-bold"> {{offer.price}} ج . م</h4>
+                            <div class="qty mt-3 d-flex justify-content-center align-items-center">
+                                <span class="pro-dec me-3" onclick="decreaseQuantity()">
+                                    <i class="fa fa-trash" aria-hidden="true"></i>
+                                </span>
+                                <span class="num fs-4" id="quantity">{{quantity}}</span>
+                                <span class="pro-inc ms-3" onclick="increaseQuantity()">
+                                    <i class="fa fa-plus" aria-hidden="true"></i>
+                                </span>
+                            </div>
+                        </figcaption>
+                    </figure>
+                </div>
+                <div class="notes my-3">
+                    <h4>
+                        <i class="fas fa-file-alt main-color fa-xs"></i>
+                        لديك اى ملاحظات اضافيه؟
+                    </h4>
+                    <div class="form-floating mt-3">
+                        <textarea class="form-control" placeholder="من فضلك اكتب ملاحظتك" id="floatingTextarea2"
+                            style="height: 100px"></textarea>
+                        <label for="floatingTextarea2">من فضلك اكتب ملاحظتك</label>
+                    </div>
+                </div>
+                <button class="btn w-100 d-flex justify-content-between mt-3">
+                    <span> + أضف الي العربة
+                        (1)</span>
+                    <span>{{offer.price}} ج . م</span>
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

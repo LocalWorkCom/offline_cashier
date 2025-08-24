@@ -1,0 +1,23 @@
+.plate {
+    box-shadow: -4px -4px 12px 0 rgba(0, 0, 0, 0.08), 4px 4px 12px 0 rgba(0, 0, 0, 0.08);
+    padding: 1.25rem;
+    border-radius: 1.5rem;
+    min-height: 320px;
+}
+
+.plate-img {
+    justify-content: center;
+    display: flex;
+    align-items: center;
+}
+
+.plate-img img {
+    height: 150px;
+    width: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.plate span {
+    font-weight: bold;
+}

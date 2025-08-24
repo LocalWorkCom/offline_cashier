@@ -1,0 +1,268 @@
+<div class="card p-3 m-3">
+  <ul class="nav nav-pills px-0 align-items-center" id="pills-tab" role="tablist">
+    <li class="nav-item mb-2" role="presentation">
+      <button class="nav-link sub" [class.active]="selectedOrderType === 'Delivery'"
+        (click)="selectOrderType('Delivery')" id="pills-side-delivery-tab" data-bs-toggle="pill"
+        data-bs-target="#pills-side-delivery" type="button" role="tab" aria-controls="pills-side-delivery"
+        aria-selected="false">
+        <figure class="mb-0">
+          <img src="assets/images/delivery.png" alt="" />
+        </figure>
+        <span>توصيل</span>
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content py-2" id="pills-tabContent">
+    <div class="tab-pane fade" [class.active]="selectedOrderType === 'Delivery'"
+      [class.show]="selectedOrderType === 'Delivery'" id="pills-side-delivery" role="tabpanel"
+      aria-labelledby="pills-side-delivery-tab">
+      <a class="d-flex align-items-center mb-2 justify-content-between">
+        <div>
+          <img src="assets/images/location.png" alt="" />
+          <span class="h5"> معلومات التوصيل</span>
+        </div>
+      </a>
+      <!-- <pre>{{FormDataDetails }}</pre> -->
+      @if (FormDataDetails) {
+      <div>
+        <small class="fw-bold text-muted">الاسم : </small>
+        <small class="text-muted">{{ FormDataDetails.client_name }}</small>
+      </div>
+      <div>
+        <small class="fw-bold text-muted">العنوان : </small>
+        <small class="text-muted">{{ FormDataDetails.address || 'لم يتم تحديد العنوان' }}</small>
+      </div>
+      <div>
+        <small class="fw-bold text-muted">رقم الهاتف : </small>
+        <small class="text-muted">{{ FormDataDetails.address_phone }}</small>
+      </div>
+      }
+      @if (deliveryData) {
+      <div>
+        <small class="text-muted" v-if="deliveryData?.client_address">
+          <span class="fw-bold">عنوان :{{deliveryData?.client_address }}</span>
+        </small>
+      </div>
+      <div>
+        <small class="text-muted" v-if="deliveryData.client_phone ">
+          <span class="fw-bold">رقم التلفون :</span>
+          {{ deliveryData?.
+          client_address_phone
+          }}
+        </small>
+      </div>
+      <div>
+        <small class="text-muted" v-if=" deliveryData?.client_name ">
+          <span class="fw-bold">الاسم :</span>
+          {{ deliveryData?.client_name }}
+        </small>
+      </div>
+      @if ((selectedCourier && cartId) &&  !deliveryData.delivery_name ) {
+        <small class="fw-bold text-muted">السائق المختار: </small>
+        <small class="text-muted">{{ selectedCourier.name || "لا يوجد"}}</small>        
+      }
+         @if (deliveryData.delivery_name && !(selectedCourier && cartId)) {
+        <small class="fw-bold text-muted">السائق المختار: </small>
+        <small class="text-muted">{{ deliveryData?.delivery_name || "لا يوجد" }}</small>
+        
+      }
+    }
+
+      @if (orderDetails?.status === "readyForPickup" ){
+      <div class="mt-3">
+        <a class="d-flex align-items-center justify-content-between" data-bs-toggle="modal"
+          data-bs-target="#courierModal" (click)="openCouriersModal(cartId)">
+          <div>
+            <img src="assets/images/delivery-red.png" alt="" />
+            <span class="h5">اضف معلومات سائق التوصيل</span>
+          </div>
+          <i class="fas fa-chevron-left"></i>
+        </a>
+
+      </div>
+      <div class="mt-3">
+        <a class="d-flex align-items-center mb-2 justify-content-between" data-bs-toggle="modal"
+          data-bs-target="#orderStatusModal">
+          <div>
+            <img src="assets/images/order-status.png" alt="" />
+            <span class="h5">حالة الطلب</span>
+            <h4 class="fw-bold"></h4>
+            @if (confirmedStatus) {
+            <small class="btn-static-warning badge text-dark">
+              <i class="fa-solid fa-location-dot ms-1"></i>
+              {{ displayStatus }}
+            </small>
+            }
+          </div>
+          @if (message) {
+          <p> {{message}}</p>
+          }
+          <i class="fas fa-chevron-left"></i>
+        </a>
+      </div>
+      }
+
+    </div>
+  </div>
+</div>
+<div class="card p-3 m-3">
+  @if (cartItems.length) {
+  <div class="d-flex justify-content-between mb-2">
+    <h5 class="fw-bold">تفاصيل الطلب</h5>
+
+  </div>
+  <div class="d-flex justify-content-between mb-2">
+    <div class="d-flex">
+      <p>رقم الطلب </p>
+      <p class="text-muted me-2">{{orderSummary?.order_number}}</p>
+    </div>
+    <p>{{ getTotalItemCount() }} عناصر</p>
+  </div>
+
+  @for (item of cartItems; track i; let i = $index) {
+  <div class="sideCart-plate p-3 mb-4">
+    <div class="d-flex">
+      <figure class="sideCart-plate-img m-0">
+        <img [src]="item.image || 'assets/images/no-image.png'" [alt]="item.dish_name" />
+      </figure>
+      <div class="cart-details pe-3">
+        <h5>{{ item.quantity }} <span>X</span> {{ item.dish_name }}</h5>
+        <!-- <small class="text-muted"> {{ item.size }} {{ item.addons }} </small> -->
+        @if (item.size ) {
+          <small class="text-muted">
+            {{ item.size  }}
+          </small>
+          } @if (item.addons && item.addons.length > 0) {
+          <div class="mt-2">
+            <small class="text-muted">الإضافات:</small>
+            <ul class="list-unstyled p-0">
+              @for (addon of item.addons; track $index) {
+              <li class="text-muted">
+                <small>{{ addon }}</small>
+              </li>
+              }
+            </ul>
+          </div>
+          } @if (item.note) {
+          <small class="text-muted"> ملاحظات: {{ item.note }} </small>
+          }
+      </div>
+    </div>
+    <p class="fw-bold">
+      {{ item.total_dish_price}} {{ this.currencySymbol }}
+    </p>
+  </div>
+  }
+
+  <div class="card-body p-4">
+    <ul class="list-unstyled p-0 m-0">
+      <li class="order-list">
+        <p>مجموع طلبي</p>
+        <p class="fw-bold">{{ orderSummary?.subtotal_price }}{{ currencySymbol }}</p>
+      </li>
+
+      @if (+orderSummary?.coupon_value !== 0){
+      <li class="order-list">
+        <p class="main-color">
+          كوبون خصم
+        </p>
+        <p class="fw-bold main-color">
+          - {{ orderSummary?.coupon_value }} {{ currencySymbol }}
+        </p>
+      </li>
+      }
+
+      <li class="order-list" *ngIf="deliveryFees">
+        <p>رسوم التوصيل</p>
+        <p class="fw-bold">
+          {{ orderSummary?.delivery_fees
+          }} {{ currencySymbol }}
+        </p>
+      </li>
+    </ul>
+    @if (orderSummary?.tax_apply !== false) {
+    @if (orderSummary?.tax_application === false) {
+    <div class="message bg-lightYellow p-2 rounded-3 mb-3">
+      <small>
+        تضاف ضريبة القيمة المضافة
+        {{ orderSummary?.tax_percentage }}% بمعنى أخر
+        <span class="main-color fw-bold"> {{ orderSummary?.tax_value }}{{ currencySymbol }} </span>
+      </small>
+    </div>
+    }
+    }
+    @if (orderSummary?.tax_apply !== false) {
+    @if (orderSummary?.tax_application === true) {
+    <div class="message bg-lightYellow p-2 rounded-3 mb-3">
+      <small>سعر الوجبات
+        يشتمل على ضريبة القيمة المضافة
+      </small>
+    </div>
+    }
+    }
+    <div class="total">
+      <p class="fw-bold">
+        المجموع الكلى
+      </p>
+      <p class="fw-bold">
+        {{ orderSummary?.total_price }} {{ currencySymbol }}
+      </p>
+    </div>
+    <div class="d-flex justify-content-between align-items-center">
+    <div class="form-check mb-3 ">
+      <input class="form-check-input" type="radio" name="options" id="option1" value="option1" checked />
+      <label class="form-check-label" for="option3">
+        <img src="assets/images/money.svg" alt="" />
+        {{ orderDetails?.transactions[0].payment_method === 'cash' ? 'كاش' : orderDetails?.transactions[0].payment_method }}
+      </label>
+ 
+    </div>
+     <div class="fw-bold">
+       {{ orderDetails.transactions[0].payment_status === 'paid' ? 'مدفوعة' :" غير مدفوعة" }}
+      </div>
+      </div>
+
+  </div>
+
+  } @else {
+  <p>🛒 العربة فارغة</p>
+  }
+</div>
+
+
+<!-- order status Modal -->
+<div class="modal fade" id="orderStatusModal" tabindex="-1" aria-labelledby="orderStatusModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <h1 class="modal-title fs-5 text-center">حالة الطلب</h1>
+        <div class="d-flex justify-content-between mt-4">
+          <button class="btn w-100 mx-2" (click)="selectStatus('on_way')" [ngClass]="{
+            'btn-static-main': selectedStatus === 'on_way',
+
+            'btn-transparent border-2': selectedStatus !== 'on_way'
+          }">
+            في الطريق
+          </button>
+          <button class="btn w-100 mx-2" (click)="selectStatus('delivered')" [ngClass]="{
+            'btn-static-main': selectedStatus === 'delivered',
+            'btn-transparent border-2': selectedStatus !== 'delivered'
+          }">
+            تم التوصيل
+          </button>
+
+        </div>
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-static-main" (click)="confirmStatus()" data-bs-dismiss="modal">
+          تأكيد
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

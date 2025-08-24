@@ -1,0 +1,1022 @@
+@if (selectedOrderType === 'Takeaway'|| selectedOrderType === 'dine-in') {
+<div class="card mt-3 p-3" data-bs-toggle="modal" data-bs-target="#clientModal">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <i class="fas fa-user-alt ms-1 main-color"></i>
+      <span class="h5">اضف معلومات العميل</span>
+    </div>
+    <i class="fas fa-chevron-left"></i>
+
+  </div>
+  <!-- @if (this.clientInfoApplied) { -->
+  @if (clientStoredInLocal&&clientPhoneStoredInLocal) {
+  @if (this.clientStoredInLocal) {
+  <div class="text-muted fw-bold">
+    اسم العميل:
+    <small class="fw-medium">{{ this.clientStoredInLocal }}</small>
+  </div>
+  }
+  @if (this.clientPhoneStoredInLocal) {
+  <div class="text-muted fw-bold">
+    رقم العميل:
+    <small class="fw-medium">{{ this.clientPhoneStoredInLocal }}</small>
+  </div>
+  }
+  @if (this.selectedCountry.code) {
+  <div class="text-muted fw-bold">
+    كود البلد: <small class="fw-medium">{{ this.selectedCountry.code }}</small>
+  </div>
+  }
+  }
+</div>}
+<div class="card p-3 mt-3">
+  <ul class="nav nav-pills px-0 align-items-center" id="pills-tab" role="tablist">
+    <!-- Dine-in Tab -->
+    <li class="nav-item mb-2" role="presentation">
+      <button class="nav-link sub" [class.active]="selectedOrderType === 'dine-in'" (click)="selectOrderType('dine-in')"
+        id="pills-side-in-tab" data-bs-toggle="pill" data-bs-target="#pills-side-in" type="button" role="tab"
+        aria-controls="pills-side-in" aria-selected="true">
+        <figure class="mb-0">
+          <img src="assets/images/in.png" alt="" />
+        </figure>
+        <span>في المطعم</span>
+      </button>
+    </li>
+
+    <!-- Takeaway Tab -->
+    <li class="nav-item mb-2" role="presentation">
+      <button class="nav-link sub" [class.active]="selectedOrderType === 'Takeaway'"
+        (click)="selectOrderType('Takeaway')" id="pills-side-out-tab" data-bs-toggle="pill"
+        data-bs-target="#pills-side-out" type="button" role="tab" aria-controls="pills-side-out" aria-selected="false">
+        <figure class="mb-0">
+          <img src="assets/images/out.png" alt="" />
+        </figure>
+        <span> إستلام</span>
+      </button>
+    </li>
+
+    <!-- Delivery Tab -->
+    <li class="nav-item mb-2" role="presentation">
+      <button class="nav-link sub" [class.active]="selectedOrderType === 'Delivery'"
+        (click)="selectOrderType('Delivery')" id="pills-side-delivery-tab" data-bs-toggle="pill"
+        data-bs-target="#pills-side-delivery" type="button" role="tab" aria-controls="pills-side-delivery"
+        aria-selected="false">
+        <figure class="mb-0">
+          <img src="assets/images/delivery.png" alt="" />
+        </figure>
+        <span>توصيل</span>
+      </button>
+    </li>
+  </ul>
+
+  <div class="tab-content py-2" id="pills-tabContent">
+    <!-- Dine-in Tab Pane -->
+    <div class="tab-pane fade" [class.active]="selectedOrderType === 'dine-in'"
+      [class.show]="selectedOrderType === 'dine-in'" id="pills-side-in" role="tabpanel"
+      aria-labelledby="pills-side-in-tab">
+      <a class="d-flex align-items-center mb-2 justify-content-between" routerLink="/tables"
+        routerLinkActive="active_link" [routerLinkActiveOptions]="{ exact: true }" (click)="setCameFromSideDetails()">
+        <div>
+          <div class="d-flex">
+            <img src="assets/images/red-table.png" alt="" />
+            <div class="h5">أختر طاولة</div>
+          </div>
+          @if (tableNumber ||table_number) {
+          <div class="text-muted fw-bold">
+            الطاولة المختارة :
+            <small class="fw-medium">{{ tableNumber || table_number}}</small>
+
+          </div>
+          }
+        </div>
+        <i class="fas fa-chevron-left"></i>
+      </a>
+    </div>
+
+    <!-- Takeaway Tab Pane -->
+    <div class="tab-pane fade" [class.active]="selectedOrderType === 'Takeaway'"
+      [class.show]="selectedOrderType === 'Takeaway'" id="pills-side-out" role="tabpanel"
+      aria-labelledby="pills-side-out-tab">
+      <!-- Takeaway content (if any) -->
+    </div>
+
+    <!-- Delivery Tab Pane -->
+    <div class="tab-pane fade" [class.active]="selectedOrderType === 'Delivery'"
+      [class.show]="selectedOrderType === 'Delivery'" id="pills-side-delivery" role="tabpanel"
+      aria-labelledby="pills-side-delivery-tab">
+      <a class="d-flex align-items-center mb-2 justify-content-between" routerLink="/delivery-details"
+        routerLinkActive="active_link" [routerLinkActiveOptions]="{ exact: true }">
+        <div>
+          <img src="assets/images/location.png" alt="" />
+          <span class="h5">اضف معلومات التوصيل</span>
+        </div>
+        <i class="fas fa-chevron-left"></i>
+      </a>
+      <!-- <pre>{{FormDataDetails }}</pre> -->
+      <!-- @if (FormDataDetails ) {
+      <div>
+        <small class="fw-bold text-muted">الاسم : </small>
+        <small class="text-muted">{{FormDataDetails.client_name}}</small>
+      </div>
+
+      <div>
+        <small class="fw-bold text-muted">العنوان : </small>
+        <small class="text-muted">{{
+          FormDataDetails.address || "لم يتم تحديد العنوان"
+          }}</small>
+      </div>
+      <div>
+        <small class="fw-bold text-muted">رقم الهاتف : </small>
+        <small class="text-muted">{{FormDataDetails.address_phone}}</small>
+      </div>
+
+      } -->
+      @if (clientName) {
+      <div>
+        <small class="fw-bold text-muted">الاسم : </small>
+        <small class="text-muted">{{clientName}}</small>
+      </div>
+      }
+      <div *ngIf="address">
+        <small class="fw-bold text-muted">العنوان : </small>
+        <small class="text-muted">{{
+          address || "لم يتم تحديد العنوان"
+          }}</small>
+      </div>
+      @if (addressPhone ) {
+      <div>
+        <small class="fw-bold text-muted">رقم الهاتف : </small>
+        <small class="text-muted">{{addressPhone}}</small>
+      </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- <button (click)="getAddressId()">tst</button> -->
+<div class="card p-3 mt-3">
+  @if (cartItems.length) {
+  <div class="d-flex justify-content-between mb-1">
+    <h5 class="fw-bold">تفاصيل الطلب</h5>
+    <a class="text-decoration-underline main-color" data-bs-toggle="modal" data-bs-target="#cancelModal"
+      (click)="cancelMessagefn()">
+      إلغاء
+    </a>
+  </div>
+  @if(finalOrderId){
+  <div class="d-flex justify-content-between mb-1">
+    <div class="d-flex">
+      <p> رقم الطلب </p>
+      <p class="text-muted me-2">{{finalOrderId}}</p>
+    </div>
+    <p>{{ getTotalItemCount() }} عناصر</p>
+  </div>
+  }@else {
+  <div class="d-flex justify-content-end mb-1">
+    <!-- <div class="d-flex">
+      <p> رقم الطلب </p>
+      <p class="text-muted me-2">{{finalOrderId}}</p>
+    </div> -->
+    <p>{{ getTotalItemCount() }} عناصر</p>
+  </div>
+  }
+  @for (item of cartItems; track i; let i = $index) {
+  <!-- @if(item.dish.id === this.appliedCoupon.discount_details
+[0].dish_id){} -->
+  <div class="sideCart-plate p-3 mb-3">
+    <div class="d-flex flex-column flex-lg-row">
+      <figure class="sideCart-plate-img m-0">
+        <img [src]="item.dish?.image || 'assets/images/no-image.png'" [alt]="item.dish?.name" />
+      </figure>
+      <div class="cart-details pe-0 pe-lg-3">
+        <h5>{{ item.dish?.name || "اسم غير متوفر" }}</h5>
+        <!-- <p class="text-muted">{{ item.dish?.description || 'لا يوجد وصف' }}</p> -->
+        @if (item.selectedSize) {
+        <small class="text-muted">
+          {{ item.selectedSize.name }}
+        </small>
+        } @if (item.selectedAddons && item.selectedAddons.length > 0) {
+        <div class="mt-2">
+          <small class="text-muted">الإضافات:</small>
+          <ul class="list-unstyled p-0">
+            @for (addon of item.selectedAddons; track $index) {
+            <li class="text-muted">
+              <small>{{ addon.name }}</small>
+            </li>
+            }
+          </ul>
+        </div>
+        } @if (item.note) {
+        <small class="text-muted"> ملاحظات: {{ item.note }} </small>
+        }
+        <div class="qty mt-3">
+          <span class="dec minus" (click)="decreaseQuantity(i)">
+            <i [class.fa-trash]="item.quantity === 1" [class.fa-minus]="item.quantity > 1" class="fa"
+              aria-hidden="true"></i>
+          </span>
+          <span class="num">
+            {{ item.quantity }}
+          </span>
+          <span class="inc plus" (click)="increaseQuantity(i)">
+            <i class="fa fa-plus" aria-hidden="true"></i>
+          </span>
+        </div>
+      </div>
+    </div>
+    <p class="fw-bold text-start">
+      {{ getItemTotal(item).toFixed(2)}} {{ item.dish.currency_symbol }}
+    </p>
+  </div>
+  }
+  <div class="card-body p-md-0 p-4">
+    @if (cartItems.length > 3) {
+    <div class="all d-flex justify-content-end align-items-center">
+      <a class="sidebar-link" (click)="openCartItemsModal()">
+        <span class="fs-5 fw-bold ms-3">عرض الكل</span>
+        <img src="assets/images/arrow-right.svg" alt="" />
+      </a>
+    </div>
+    }
+    <div class="d-flex flex-md-row flex-column justify-content-between mt-3 flex-wrap">
+      <button class="btn reversed main-color d-flex align-items-center mx-2 mb-3" data-bs-toggle="modal"
+        data-bs-target="#couponModal">
+        <i class="fa fa-plus" aria-hidden="true"></i>
+        <span class="mb-0 w-100"> أضف كوبون </span>
+      </button>
+
+      <button class="btn reversed main-color d-flex align-items-center mx-2 mb-3" data-bs-toggle="modal"
+        data-bs-target="#noteModal">
+        <i class="fa fa-plus" aria-hidden="true"></i>
+        <span class="mb-0 w-100"> أضف ملاحظة </span>
+      </button>
+    </div>
+    @if (applyAdditionalNote() || this.onholdOrdernote) {
+    <div class="bg-grey px-3 py-2 fw-bold my-3">
+      <i class="fas fa-file-alt main-color"></i>
+      {{ applyAdditionalNote() || this.onholdOrdernote}}
+    </div>
+    }
+    <ul class="list-unstyled p-0 m-0">
+      <li class="order-list fw-bold">
+        <p>المجموع</p>
+        <p class="fw-bold">{{ getTotal().toFixed(2) }} {{ currencySymbol }}</p>
+      </li>
+      @if (discountAmount) {
+      <li class="order-list">
+        <p class="main-color fw-bold">
+          كوبون خصم
+          <span class="btn-static-secondary p-1 rounded">{{this.appliedCoupon.coupon_title}}</span>
+        </p>
+        @if (discountAmount > 0 ) {
+        <p class="fw-bold main-color">
+          -
+          {{ discountAmount.toFixed(2) || this.appliedCoupon.total_discount }} {{ currencySymbol }}
+        </p>
+        }
+      </li>
+      } @if (selectedOrderType === 'في المطعم' || selectedOrderType ===
+      'dine-in') {
+      <li class="order-list">
+        <p>رسوم الخدمة</p>
+        @if (branchData.service_fees) {
+        <p class="fw-bold">
+          @if (!branchData?.coupon_application && !branchData?.tax_application
+          && this.appliedCoupon) {
+          {{ getServiceOnAmountAfterCoupon() }}
+          } @else {
+          {{ getServiceFeeAmount() }}
+          }{{ currencySymbol }}
+          <!-- {{ branchData.service_fees }}
+           @if (branchData.service_fees_type === 'percentage') {
+            %
+            }@else if (branchData.service_fees_type === 'fixed'){
+            {{currencySymbol}}
+          } -->
+        </p>
+        }
+      </li>
+      } @if (selectedOrderType === 'توصيل' || selectedOrderType === 'Delivery')
+      {
+      <li class="order-list fw-bold">
+        <p>رسوم التوصيل</p>
+        <p class="fw-bold">
+          {{ this.delivery_fees }} {{ currencySymbol }}
+        </p>
+      </li>
+      }
+    </ul>
+
+    @if (branchData?.tax_application === false) {
+    <div class="message bg-lightYellow p-2 rounded-3 mb-3">
+      <small>
+        تضاف ضريبة القيمة المضافة
+        <span class="fw-bold">{{ branchData.tax_percentage }}% </span>بمعنى أخر
+        <span class="main-color fw-bold">
+          {{ getTax().toFixed(2)| number : "1.2-2" }}{{ currencySymbol }}
+        </span>
+      </small>
+    </div>
+    }
+
+    <div class="total">
+      <p class="fw-bold">المجموع الكلى</p>
+      <p class="fw-bold">
+        {{ getCartTotal().toFixed(2) }} {{ currencySymbol }}
+      </p>
+    </div>
+    @if (branchData?.tax_application === true) {
+    <div class="message bg-lightYellow p-2 rounded-3 mb-3">
+      <small>سعر الوجبات يشتمل على ضريبة القيمة المضافة </small>
+    </div>
+    }
+    <!-- Payment Method Selection -->
+    <!-- <div class="mb-3 d-flex justify-content-between">
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="paymentMethod" id="cash" value="cash"
+          [(ngModel)]="selectedPaymentMethod" (change)="updatePaymentOptions()" />
+        <label class="form-check-label" for="cash">
+          <img src="assets/images/money.svg" alt="Cash" />
+          كاش
+        </label>
+      </div> -->
+
+    <!-- @if(selectedOrderType === 'Delivery' || selectedOrderType === 'Takeaway'){
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="paymentMethod" id="visa" value="visa"
+          [(ngModel)]="selectedPaymentMethod" (change)="updatePaymentOptions()">
+        <label class="form-check-label" for="visa">
+          <img src="assets/images/visa.svg" alt="Visa" />
+          فيزا
+        </label>
+      </div>
+      } -->
+    <!-- </div> -->
+
+    <!-- @if (selectedPaymentMethod === 'cash') {
+    <div class="mb-3 d-flex justify-content-between">
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="paymentStatus" id="paid" value="paid"
+          [(ngModel)]="selectedPaymentStatus" (change)="onPaymentStatusChange()" />
+        <label class="form-check-label" for="paid">مدفوع</label>
+      </div>
+      <div class="form-check">
+        <input class="form-check-input" type="radio" name="paymentStatus" id="not-paid" value="unpaid"
+          [(ngModel)]="selectedPaymentStatus" (change)="onPaymentStatusChange()" />
+        <label class="form-check-label" for="not-paid">غير مدفوع</label>
+      </div>
+    </div>
+    <div class="w-75" *ngIf="selectedPaymentStatus == 'paid'">
+      <div class="mb-3 d-flex justify-content-between align-items-center">
+        <label class="form-check-label" for="cash_amount">
+          <img src="assets/images/money.svg" alt="Cash" />
+          كاش
+        </label>
+        <input class="form-control w-75" type="number" id="cash_amount" value="cash"
+           [(ngModel)]="cash_amountt" />
+      </div>
+      <div class="mb-3 d-flex justify-content-between align-items-center">
+        <label class="form-check-label" for="credit_amount">
+          <img src="assets/images/visa.svg" alt="Visa" />
+          الفيزا
+        </label>
+        <input class="form-control w-75" type="number" id="credit_amount" [(ngModel)]="credit_amountt">
+
+      </div>
+      <div class="total">
+        <p> الاجمالي</p>
+        <p>
+          {{ getCartTotal().toFixed(2) }} {{ currencySymbol }}
+        </p>
+      </div>
+    </div>
+    }  -->
+
+
+    <form #paymentForm="ngForm">
+      <!-- Radio Buttons (Required) -->
+      <!-- <div class="mb-3 d-flex justify-content-between">
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="paymentStatus" id="paid" value="paid"
+            [(ngModel)]="selectedPaymentStatus" required (change)="onPaymentStatusChange()" #status="ngModel" />
+          <label class="form-check-label" for="paid">مدفوع</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="paymentStatus" id="not-paid" value="unpaid"
+            [(ngModel)]="selectedPaymentStatus" required (change)="onPaymentStatusChange()" />
+          <label class="form-check-label" for="not-paid">غير مدفوع</label>
+        </div>
+      </div> -->
+      <div class="mb-3 d-flex justify-content-between">
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="paymentStatus" id="paid" value="paid"
+            [(ngModel)]="selectedPaymentStatus" required (change)="onPaymentStatusChange()" #status="ngModel" />
+          <label class="form-check-label" for="paid">مدفوع</label>
+        </div>
+        <div class="form-check">
+          <input class="form-check-input" type="radio" name="paymentStatus" id="not-paid" value="unpaid"
+            [(ngModel)]="selectedPaymentStatus" required (change)="onPaymentStatusChange()" />
+          <label class="form-check-label" for="not-paid">غير مدفوع</label>
+        </div>
+      </div>
+
+
+      <!-- Validation message if not selected -->
+      <p class="text-danger" *ngIf="!selectedPaymentStatus && formSubmitted">
+        الرجاء اختيار حالة الدفع.
+      </p>
+      @if (selectedOrderType === 'Takeaway'|| selectedOrderType === 'dine-in') {
+      <!-- Inputs shown only if "paid" -->
+      @if (selectedPaymentStatus == 'paid') {
+      <div>
+        <div class="mb-3 row mx-0 justify-content-center align-items-center">
+          <div class="col-4 text-center">
+            <label class="form-check-label w-100" for="cash_amount">
+              <img src="assets/images/money.svg" alt="Cash" /> كاش
+            </label>
+          </div>
+          <div class="col-8">
+            <input class="form-control" type="number" id="cash_amount" [(ngModel)]="cash_amountt" name="cash_amountt"
+              (ngModelChange)="setCashAmount($event)" step="0.01" />
+          </div>
+        </div>
+
+        <div class="mb-3 row mx-0 justify-content-between align-items-start">
+          <div class="col-4 text-center">
+            <label class="form-check-label w-100" for="credit_amount">
+              <img src="assets/images/visa.svg" alt="Visa" /> الفيزا
+            </label>
+          </div>
+          <div class="col-8">
+            <input class="form-control mb-3" type="number" id="credit_amount" [(ngModel)]="credit_amountt"
+              name="credit_amountt" (ngModelChange)="setCreditAmount($event)" step="0.01" />
+            <!-- @if(this.credit_amountt){
+            <input type="text" id="reference_number" class="form-control" [(ngModel)]="referenceNumber"
+              name="referenceNumber" required #ref="ngModel" />
+            <div *ngIf="ref.invalid && formSubmitted" class="text-danger">
+              المرجو إدخال رقم المرجع للفيزا.
+            </div>
+            }  -->
+          </div>
+
+        </div>
+        @if(this.credit_amountt){
+        <div class="mb-3 row mx-0 justify-content-center align-items-center">
+          <div class="col-4 text-center">
+            <label class="form-check-label w-100" for="cash_amount">
+              رقم المرجع
+            </label>
+          </div>
+          <div class="col-8">
+            <input type="text" id="reference_number" class="form-control" [(ngModel)]="referenceNumber"
+              name="referenceNumber" required #ref="ngModel" />
+            <div *ngIf="ref.invalid && formSubmitted" class="text-danger">
+              المرجو إدخال رقم المرجع للفيزا.
+            </div>
+          </div>
+        </div>
+        }
+        <!-- Error if cash + credit is less than cart total -->
+
+
+      </div>
+      }
+      @if (amountError) {
+      <div class="alert alert-danger text-center" role="alert">
+        يجب أدخال الإجمالي. {{ getCartTotal().toFixed(2) }} {{ currencySymbol }}
+      </div>
+
+      }
+      }
+
+      @if (trueMessage) {
+      <p class="message">{{ trueMessage }}</p>
+      } @if (falseMessage) {
+      <div class="alert alert-danger text-center" role="alert">
+        @if(falseMessage === "order.amount_wrong"){
+        <p> يجب أدخال الإجمالي. </p>
+
+        }@else{
+        {{falseMessage}}
+        }
+      </div>
+      }
+      @if (tableError) {
+      <div class="alert alert-danger text-center" role="alert">
+        {{tableError}}
+      </div>
+      }
+      <!-- Add this near your other error message displays -->
+      @if (couponError) {
+      <div class="alert alert-danger text-center" role="alert">
+        {{couponError}}
+      </div>
+      }
+      @if (cashiermachine) {
+      <div class="alert alert-danger text-center" role="alert">
+        {{ cashiermachine }}</div>
+      }
+      <!-- <button class="btn w-100 my-3" (click)="submitOrder()">
+      <h5 class="mb-0">تنفيذ الطلب</h5>
+    </button> -->
+      <button class="btn w-100 my-3 bg-success" (click)="submitOrder()" [disabled]="isLoading">
+        <h5 class="mb-0">
+          {{ isLoading ? 'جاري التنفيذ...' : 'تنفيذ الطلب' }}
+        </h5>
+      </button>
+      <!-- <button class="btn w-100 my-3 bg-success" [disabled]="" (click)="submitOrder()">
+
+        <h5 class="mb-0">
+          <span *ngIf="!loading">تنفيذ الطلب</span>
+          <span *ngIf="loading">
+            <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+            جارٍ التنفيذ...
+          </span>
+        </h5>
+      </button> -->
+    </form>
+    <button class="btn reversed w-100  mb-3 bg-secondary border-0" (click)="saveOrderToLocalStorage()">
+      <h5 class="mb-0">
+        تعليق الطلب
+      </h5>
+    </button>
+
+  </div>
+
+  } @else {
+  <img src="assets/images/EmptyProduct.svg" class="empty-product" />
+  <p class="text-muted fs-5 text-center mt-3">لا يوجد طلبات</p>
+  }
+</div>
+
+<div id="printSection" class="d-none printSection p-0">
+  <div class="px-4 py-2 my-2" *ngFor="let item of branchDetails">
+    <div class="text-center border-bottom-dotted mb-4">
+      <div class="card-img mb-3">
+        <img src="assets/images/logo-with-white-bg.png" alt="مطعم الكوت" class="img-fluid" />
+      </div>
+      <h6>
+        <small>
+          الفرع: <span>{{ item.branch_name }}</span></small>
+      </h6>
+      <h6>
+        <small>العنوان: <span>{{ item.branch_address }}</span></small>
+      </h6>
+      <h6>
+        <small>رقم التليفون: <span>{{ item.branch_phone }}</span></small>
+      </h6>
+      <h6>
+        <small>التاريخ و الوقت: <span>{{ date }} / {{ time }}</span></small>
+      </h6>
+      <h6>
+        <small>رقم الفاتورة: <span>{{ item.invoice_number }}</span></small>
+      </h6>
+      <h6>اسم الكاشير
+        :<span>{{this.cashierFirst}} &nbsp; {{this.cashierLast}}</span>
+      </h6>
+      <hr />
+      <p>
+        <small class="fw-bold">رقم الطلب :{{ item.order_number }}</small>
+      </p>
+
+      <div *ngIf="hasDineInOrder()">
+        <!-- <h6>
+          <span class="fw-bold">رقم الطلب:</span> {{ item?.order_number }}
+        </h6> -->
+
+        <h6>
+          <span class="fw-bold">رقم الطاولة:</span> {{ item.table_number }}
+        </h6>
+      </div>
+    </div>
+
+    <!-- Conditionally display client data for delivery orders -->
+    <ng-container *ngIf="test && (!showPrices || showPrices)">
+      <div class="client-data mb-3" *ngIf="isDeliveryOrder">
+        <!-- <h6>
+    رقم الطلب: <span>{{ branchDetails?.[0]?.order_number ?? 'لا يوجد' }}</span>
+  </h6> -->
+        <h6>
+          اسم العميل:
+          <span>{{ addressDetails?.[0]?.client_name ?? 'لا يوجد' }}</span>
+        </h6>
+        <h6>
+          رقم التليفون:
+          <span>{{ addressDetails?.[0]?.address_phone ?? 'لا يوجد' }}</span>
+        </h6>
+        <h6>
+          اسم السائق:
+          <span>{{ invoices?.[0]?.delivery_name && invoices[0].delivery_name.trim() !== '' ? invoices[0].delivery_name :
+            'لا يوجد' }}</span>
+        </h6>
+
+        <h6>
+          عنوان التوصيل:
+          <span>{{ addressDetails?.[0]?.client_address ?? 'لا يوجد' }}</span>
+        </h6>
+        <h6>
+          تعليمات التوصيل:
+          <span>{{ addressDetails?.[0]?.address_notes ?? 'لا يوجد' }}</span>
+        </h6>
+      </div>
+    </ng-container>
+
+    <table class="table table-bordered">
+      <thead class="text-center">
+        <tr>
+          <th scope="col">الصنف</th>
+          <th scope="col">الكمية</th>
+          <th scope="col" *ngIf="test && (!showPrices || showPrices)">السعر</th>
+          <th scope="col" *ngIf="test && (!showPrices || showPrices)">
+            الاجمالي
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of orderDetails[0]">
+          <td>
+            <div>
+              <div>
+                <small class="fw-bold">{{ item.dish_name }}</small>
+              </div>
+              <div class="pe-2">{{ item.size }}</div>
+              <div class="pe-2" *ngFor="let addon of item.addons">
+                <small class="text-muted fst-italic fw-semibold">- {{ addon?.addon_name }}</small>
+              </div>
+            </div>
+          </td>
+          <td>{{ item.quantity }}</td>
+          <td *ngIf="test && (!showPrices || showPrices)">
+            {{ item.total_dish_price / item.quantity | number }}
+            {{ invoiceSummary[0].currency_symbol }}
+          </td>
+          <td *ngIf="test && (!showPrices || showPrices)">
+            {{ item.total_dish_price | number }}
+            {{ invoiceSummary[0].currency_symbol }}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!-- <table class="table table-bordered pill-content mb-4">
+      <thead>
+        <tr>
+          <th scope="col">الإضافات</th>
+          <th scope="col">ملاحظات</th>
+          <th scope="col">الاجمالي</th>
+          <th scope="col">الحجم</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of orderDetails[0]">
+          <td class="addons">
+            <small>{{ item.addons.length > 0 ? item.addons.join(', ') : 'لا توجد اضافات' }}</small>
+          </td>
+          <td class="note">
+            <small>{{ item.note ? item.note : 'لا توجد ملاحظات' }}</small>
+          </td>
+          <td class="price-total">
+            {{ item.quantity * item.total_dish_price | number }} {{ invoiceSummary[0].currency_symbol }}
+          </td>
+          <td class="size">
+            <small>{{ item.size ? item.size : 'لا يوجد حجم' }}</small>
+          </td>
+        </tr>
+      </tbody>
+    </table> -->
+    <ng-container>
+      <div class="total-data border-bottom-dotted mb-3" *ngFor="let item of invoiceSummary">
+        <div *ngIf="showPrices && test">
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <h6 class="fw-bold">الاجمالي:</h6>
+            <span class="fw-bold">{{ item.subtotal_price }} {{ item.currency_symbol }}</span>
+          </div>
+          <div class="d-flex justify-content-between mb-1 fw-bold" *ngIf="
+              item.tax_application !== 0 &&
+              item.coupon_value !== '0.00' &&
+              item.coupon_value !== 0
+            ">
+            <h6>تخفيض:</h6>
+            <span>-{{ item.coupon_value }} {{ item.currency_symbol }}</span>
+          </div>
+          <div class="d-flex justify-content-between fw-bold mb-1" *ngIf="item.service_fees">
+            <h6>رسوم الخدمة:</h6>
+            <span>{{ item.service_fees }} {{ item.currency_symbol }}</span>
+          </div>
+        </div>
+        <ng-container *ngIf="test && (!showPrices || showPrices)">
+          <div *ngIf="hasDeliveryOrDineIn()" class="d-flex justify-content-between fw-bold">
+            <h6>التوصيل:</h6>
+            <span>{{ item.delivery_fees }} {{ item.currency_symbol }}</span>
+          </div>
+        </ng-container>
+
+
+        <!-- Payment Method -->
+        <ng-container *ngIf="test && (!showPrices || showPrices)">
+          <div class="d-flex justify-content-between align-items-center fw-bold py-2">
+            <h6 class="mb-0">طريقة الدفع:</h6>
+            <p class="mb-0">
+              {{ this.paymentMethod === "credit" ? "أونلاين" : "كاش" }}
+            </p>
+          </div>
+        </ng-container>
+        <ng-container *ngIf="test && (!showPrices || showPrices)">
+          <div class="d-flex justify-content-between align-items-center py-2" *ngIf="
+              invoices[0].order_type === 'Delivery' ||
+              invoices[0].order_type === 'Takeaway'
+            ">
+            <h6 class="mb-0 fw-bold">حالة الدفع:</h6>
+            <p class="mb-0 fw-bold">
+              {{ this.paymentStatus === "paid" ? "مدفوعة" : "غير مدفوعة" }}
+
+            </p>
+          </div>
+
+        </ng-container>
+        <div class="d-flex justify-content-between fw-bold mb-1" *ngIf="item.service_fees">
+          <h6> رسوم الخدمة <span class="main-color"> بنسبة {{item.service_percentage}} % </span></h6>
+          <span>{{ item.service_fees }} {{ item.currency_symbol }}</span>
+        </div>
+        <ng-container *ngIf="test && (!showPrices || showPrices)">
+          <div class="px-2 mb-1" *ngIf="!item.tax_application">
+            <h6>
+              تضاف ضريبة القيمة المضافة بنسبة
+              <span class="main-color">{{ item.tax_percentage }}% </span> بمعنى
+              اخر {{ item.tax_value }} {{ item.currency_symbol }}
+            </h6>
+          </div>
+          <!-- <div class="px-2 mb-1 d-flex justify-content-between" *ngIf="!item.tax_application">
+            <h6>
+
+              تضاف ضريبة القيمة المضافة
+              <span class="main-color">{{ item.tax_percentage }}% </span>
+            </h6>
+            <p class="fw-bold">{{ item.tax_value }} {{ item.currency_symbol }}</p>
+
+          </div> -->
+          <hr />
+        </ng-container>
+        <!-- Total price -->
+        <ng-container *ngIf="test && (!showPrices || showPrices)">
+          <div class="total-price my-2" *ngFor="let item of invoiceSummary">
+            <div class="d-flex justify-content-between align-items-center fw-bold">
+              <h6 class="fw-bold">المجموع الكلي:</h6>
+              <span>{{ item.total_price }} {{ item.currency_symbol }}</span>
+            </div>
+          </div>
+        </ng-container>
+
+        <!-- Payment Status -->
+
+        <div *ngIf="item.tax_application" class="include-tax d-flex justify-content-between fw-bold">
+          <small> سعر الوجبات يشتمل على ضريبة القيمة المضافة </small>
+        </div>
+      </div>
+    </ng-container>
+
+    <h6 class="text-center my-3">شكرا لثقتكم بخدمتنا</h6>
+
+    <div class="card-img-qr d-flex justify-content-center align-items-center mb-3">
+      <img src="assets/images/qrcode.png" alt="مطعم الكوت" class="img-fluid" />
+    </div>
+
+    <div class="tax-num text-start">
+      <h6>الرقم الضريبي <span>675170532</span></h6>
+    </div>
+  </div>
+</div>
+<!-- Coupon Modal -->
+<div class="modal fade" id="couponModal" tabindex="-1" aria-labelledby="couponModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+          (click)=" closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        <h1 class="modal-title fs-5 text-center" id="couponModalLabel">
+          اضافة كوبون
+        </h1>
+        <h6 class="fw-bold">
+          <img src="assets/images/coupon-icon.png" alt="" />
+          وفرناها عليك
+        </h6>
+        <input class="form-control" type="text" [(ngModel)]="couponCode" placeholder="أدخل الكوبون" />
+        @if (successMessage) {
+        <p class="message">{{ successMessage }}</p>
+        } @if (errorMessage) {
+        <p class="message">{{ errorMessage }}</p>
+        } @if (falseMessage) {
+        <p class="message">{{ falseMessage }}</p>
+        } @if (tableError) {
+        <p class="message">{{ tableError }}</p>
+        }
+
+      </div>
+      <div class="modal-footer">
+        <button class="btn" (click)="applyCoupon()" [disabled]="isLoading">
+          {{ isLoading ? "جاري التحقق...." : "تطبيق" }}
+        </button>
+        <button class="btn reversed main-color" (click)="removeCoupon()">
+          حذف الكوبون
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- note Modal -->
+<div class="modal fade" id="noteModal" tabindex="-1" aria-labelledby="noteModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+          (click)=" closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        <h1 class="modal-title fs-5 text-center" id="noteModalLabel">
+          اضافة ملاحظة
+        </h1>
+        <div class="notes my-3">
+          <h6>
+            <i class="fas fa-file-alt main-color fa-xs"></i>
+            لديك اى ملاحظات اضافيه؟
+          </h6>
+          <div class="form-floating mt-3">
+            <textarea class="form-control" placeholder="من فضلك اكتب ملاحظتك" id="floatingTextarea2"
+              [(ngModel)]="additionalNote" style="height: 100px"></textarea>
+            <label for="floatingTextarea2">من فضلك اكتب ملاحظتك</label>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn" (click)="applyNote()" [disabled]="isLoading">
+          {{ isLoading ? "جاري التحقق..." : "إضافة" }}
+        </button>
+        <button class="btn reversed main-color" (click)="removeNote()">
+          حذف
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- cancel  Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+          (click)=" closeModal()"></button>
+      </div>
+      <div class="modal-body">
+        <img class="cancel-icon" src="assets/images/ix_error-filled.png" />
+        <h1 class="modal-title fs-5 text-center my-3">{{cancelMessage}}</h1>
+        <div class="d-flex justify-content-center">
+          <button type="button" class="btn reversed main-color w-50 mx-3" data-bs-dismiss="modal" aria-label="Close"
+            (click)=" closeModal()">
+            لا
+          </button>
+          <button type="button" class="btn w-50 mx-3" (click)="cancelOrder()">
+            نعم
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- success order Modal -->
+<!-- client Modal -->
+<div class="modal fade" id="clientModal" tabindex="-1" aria-labelledby="clientModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+          (click)="closeModal()"></button>
+      </div>
+
+      <div class="modal-body">
+        <h1 class="modal-title fs-5 text-center" id="clientModalLabel">
+          بيانات العميل
+        </h1>
+
+        <div class="client-info my-3">
+          <div class="form-group mt-3">
+            <label for="client" class="mb-2">اسم العميل</label>
+            <input type="text" class="form-control" id="client" placeholder="الاسم" [(ngModel)]="client" />
+          </div>
+
+          <div class="form-group mt-3 d-flex align-items-end">
+            <div class="w-75">
+              <label for="clientPhone" class="mb-2">رقم هاتف العميل</label>
+              <input type="tel" class="form-control text-end" id="clientPhone" placeholder=" رقم الهاتف"
+                [(ngModel)]="clientPhone" />
+            </div>
+            <div class="w-25">
+              <div class="custom-dropdown dropdown">
+                <div class="selected-option dropdown-toggle text-muted" data-bs-toggle="dropdown"
+                  (click)="toggleDropdown()">
+                  {{selectedCountry.code}}
+
+                  <img *ngIf="selectedCountry.flag" [src]="selectedCountry.flag" class="flag-icon" />
+                </div>
+
+                <ul *ngIf="dropdownOpen" class="dropdown-list dropdown-menu show">
+                  <!-- Search Input -->
+                  <li class="p-2">
+                    <input type="text" [(ngModel)]="searchTerm" (input)="filterCountries()" class="form-control"
+                      placeholder="{{ 'login.searchPlaceholder' | translate }}" />
+                  </li>
+
+                  <!-- Filtered Country List -->
+                  <li *ngFor="let country of filteredCountries" (click)="selectCountry(country)"
+                    class="d-flex justify-content-between text-muted">
+                    {{ country.code}}
+                    <img *ngIf="country.flag" [src]="country.flag" class="flag-icon" />
+                  </li>
+                </ul>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn" (click)="applyClientInfo()" [disabled]="isLoading">
+          {{ isLoading ? "جاري الحفظ..." : "حفظ" }}
+        </button>
+        <button class="btn reversed main-color" (click)="clearClientInfo()">
+          حذف
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal fade" id="successModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+          (click)=" closeModal()"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img class="success-icon" src="assets/images/donee.png" />
+        <h1 class="modal-title fs-5 text-center my-3">{{successMessage}}</h1>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- <div class="invoice-box" *ngIf="orderData">
+  <div class="restaurant-header">
+    <h2>مطعم المذاق الشهي</h2>
+    <p>العنوان: شارع الطعام، المدينة</p>
+    <p>رقم الهاتف: 0123456789</p>
+    <p>التاريخ: {{ todayDate() }}</p>
+  </div>
+
+  <div class="order-meta">
+    <p><strong>نوع الطلب:</strong> {{ orderData.type }}</p>
+    <p><strong>طريقة الدفع:</strong> {{ orderData.payment_method }}</p>
+    <p><strong>حالة الدفع:</strong> {{ orderData.payment_status }}</p>
+    <p><strong>رقم الفرع:</strong> {{ orderData.branch_id }}</p>
+    <p><strong>آلة الكاشير:</strong> {{ orderData.cashier_machine_id }}</p>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>الطبق</th>
+        <th>الحجم</th>
+        <th>الكمية</th>
+        <th>السعر</th>
+        <th>الإضافات</th>
+        <th>الإجمالي</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let item of orderData.items">
+        <td>{{ item.dish_name }}</td>
+        <td>{{ item.sizeName || '-' }}</td>
+        <td>{{ item.quantity }}</td>
+        <td>{{ (item.dish_price || 0) + getAddonsTotal(item) }} ج.م</td>
+        <td>
+          <span *ngIf="item.selectedAddons?.length > 0; else noAddons">
+            <div *ngFor="let a of item.selectedAddons">{{ a.name }} ({{ a.price }} ج.م)</div>
+          </span>
+          <ng-template #noAddons>بدون إضافات</ng-template>
+        </td>
+        <td>{{ ((item.dish_price || 0) + getAddonsTotal(item)) * item.quantity }} ج.م</td>
+      </tr>
+      <tr class="total-row">
+        <td colspan="5" style="text-align: left;">المجموع الكلي</td>
+        <td>{{ getTotalAmount() }} ج.م</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    <p>شكرًا لتعاملكم معنا</p>
+    <p>نتمنى لكم يومًا سعيدًا!</p>
+  </div>
+</div> -->

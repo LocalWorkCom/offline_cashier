@@ -1,0 +1,502 @@
+<section class="sidebar">
+  <div class="upper desktop-view">
+    <img src="assets/images/logo.png" class="sidebar-logo">
+    <ul class="sidebar-menu list-unstyled px-0 py-3">
+      <li class="sidebar-item active">
+        <a routerLink="/home" class="sidebar-link" routerLinkActive="active_link" [routerLinkActiveOptions]="{exact:
+          true}">
+          <img src="assets/images/chicken.png" />
+          <span class="pe-3">القائمة</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a routerLink="/orders" class="sidebar-link" routerLinkActive="active_link" [routerLinkActiveOptions]="{exact:
+          true}">
+          <img src="assets/images/orders-icon.png" />
+          <span class="pe-3">الطلبات</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a routerLink="/tables" class="sidebar-link" routerLinkActive="active_link" [routerLinkActiveOptions]="{exact:
+          true}">
+          <img src="assets/images/tables-icon.png" />
+          <span class="pe-3">الطاولات</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a routerLink="/pills" class="sidebar-link" routerLinkActive="active_link" [routerLinkActiveOptions]="{exact:
+          true}">
+          <img src="assets/images/pills-icon.png" />
+          <span class="pe-3">الفواتير</span>
+        </a>
+      </li>
+
+    </ul>
+
+  </div>
+  <div class="lower desktop-view">
+    <ul class="sidebar-menu list-unstyled p-0">
+
+      <li class="sidebar-item">
+        <a routerLink="/settings" class="sidebar-link" routerLinkActive="active_link" [routerLinkActiveOptions]="{exact:
+          true}">
+          <img src="assets/images/settings.png" />
+          <span class="pe-3">الإعدادات</span>
+        </a>
+      </li>
+      <li class="sidebar-item">
+        <a href="#" data-bs-toggle="modal" data-bs-target="#logoutModal" class="sidebar-link">
+          <img src="assets/images/logout.png" />
+          <span class="pe-3">تسجيل الخروج</span>
+        </a>
+      </li>
+
+      <!-- transfer money  -->
+      <li class="sidebar-item">
+        <button class="transfer-money-btn" (click)="openTransferMoneyModal()">تحويل النقدية</button>
+      </li>
+
+    </ul>
+    <img class="man-img" src="assets/images/cashier2.png" alt="">
+  </div>
+</section>
+<!-- ==================== Logout Confirmation Modal ==================== -->
+<div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <button type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <i class="fa-solid fa-right-from-bracket main-color fs-2"></i>
+        <h5 class="fw-bold">سيتم تسجيل خروجك ؟</h5>
+      </div>
+      <div class="modal-footer border-0 justify-content-center gap-5">
+        <!-- Bind تأكيد button to confirmLogout method -->
+        <button type="button" class="btn btn text-white w-25" (click)="confirmLogout()">تأكيد</button>
+        <button type="button" class="btn btn-transparent w-25" data-bs-dismiss="modal">إلغاء</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+<!-- ==================== Balance Out Modal ==================== -->
+<!-- <div class="modal fade" id="balanceoutModal" tabindex="-1" aria-labelledby="balanceoutModalLabel" aria-hidden="true"
+  data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content  border-0">
+      <div class="modal-body">
+        <div class="d-flex justify-content-center border-0">
+          <img src="assets/images/logo-with-white-bg.png" alt="Placeholder Logo" height="70">
+        </div>
+        <h5 class="text-dark fw-bold text-center">مرحبا</h5>
+        <h5 class="main-color fw-bold text-center">فرع <span>{{ branch || 'الفرع' }} </span></h5>
+        <div class="card p-3 my-2">
+          <div class="row">
+            <div class="col-12">
+              <p class="text-muted">
+                <span>تاريخ اليوم: {{ shiftData?.day || 'التاريخ' }}</span>,
+                <span>{{ shiftData?.time || 'التوقيت' }}</span>
+              </p>
+            </div>
+            <div class="col-6 user d-flex  justify-content-start">
+              <img [src]="imageUrl" (error)="imageUrl = 'assets/images/user.png'" alt="User Image">
+
+              <div class="user-info">
+                <h6>{{ fullName || 'الاسم' }}</h6>
+                                <h6 class="text-muted"><small>كاشير</small></h6>
+              </div>
+            </div>
+            <div class="col-6">
+              <h6 class="fw-bold"><i class="fa-solid fa-clock main-color"></i> مواعيد العمل</h6>
+              <h6 class="fw-bold">شفت<span> {{ shiftData?.shift_type || 'Shift Type' }}</span></h6>
+              <h6 class="text-muted">
+                <small>
+                  من الساعة 
+                  <span>{{ formatTime(shiftData?.shift_start) }}</span> 
+                  إلى 
+                  <span>{{ formatTime(shiftData?.shift_end) }}</span>
+                </small>
+              </h6>
+              
+            </div>
+          </div>
+        </div>
+        <div class="data p-2">
+          <h5>من فضلك أدخل البيانات التالية</h5>
+            <h6 class=" text-danger">  برجاء ادخال المبلغ الموجود في الدرج حاليا لغلق الوردية     </h6>
+          <h6><small><i class="fa-solid fa-money-bill main-color ms-1"></i>المبلغ النقدي الحالي</small></h6>
+          <div class="input-group position-relative mb-3">
+            <input
+            type="number"
+            class="form-control"
+            id="cashInput"
+            [(ngModel)]="enteredCash"
+            [class.is-invalid]="errorMessage"
+            placeholder="أدخل المبلغ النقدي"
+            required
+            min="0"
+          >
+          </div>
+       
+          
+          <h6 class="error-msg main-color" *ngIf="errorMessage">
+            <small>{{ errorMessage }}</small>
+          </h6>
+          
+          <h6><small><i class="fa-solid fa-money-bills main-color ms-1"></i>إجمالي مدفوعات البطاقة</small></h6>
+          <h5 class="fw-bold">{{ closeVisa }} {{ currency_Symbol }}</h5>
+        </div>
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn text-white w-100" (click)="validateAndSave()">
+          حفظ
+        </button>
+      </div>
+    </div>
+  </div>
+</div>  -->
+
+<div class="modal fade" id="balanceoutModal" tabindex="-1" aria-labelledby="balanceoutModalLabel" aria-hidden="true"
+  data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content border-0">
+      <div class="modal-body">
+        <div class="d-flex justify-content-center border-0">
+          <img src="assets/images/logo-with-white-bg.png" alt="Placeholder Logo" height="70">
+        </div>
+        <h5 class="text-dark fw-bold text-center">مرحبا</h5>
+        <h5 class="main-color fw-bold text-center">فرع <span>{{ branch || 'الفرع' }} </span></h5>
+
+        <div class="card p-3 my-2">
+          <div class="row">
+            <div class="col-12">
+              <p class="text-muted">
+                <span>تاريخ اليوم: {{ shiftData?.day || 'التاريخ' }}</span>,
+                <span>{{ shiftData?.time || 'التوقيت' }}</span>
+              </p>
+            </div>
+            <div class="col-6 user d-flex justify-content-start">
+              <img [src]="imageUrl" (error)="imageUrl = 'assets/images/user.png'" alt="User Image"
+                class="user-img-modal">
+              <div class="user-info">
+                <h6>{{ fullName || 'الاسم' }}</h6>
+                <h6 class="text-muted"><small>كاشير</small></h6>
+              </div>
+            </div>
+            <div class="col-6">
+              <h6 class="fw-bold"><i class="fa-solid fa-clock main-color"></i> مواعيد العمل</h6>
+              <h6 class="fw-bold">شفت<span> {{ shiftData?.shift_type || 'Shift Type' }}</span></h6>
+              <h6 class="text-muted">
+                <small>
+                  من الساعة
+                  <span>{{ formatTime(shiftData?.shift_start) }}</span>
+                  إلى
+                  <span>{{ formatTime(shiftData?.shift_end) }}</span>
+                </small>
+              </h6>
+            </div>
+          </div>
+        </div>
+
+        <!-- Updated deficit message display -->
+     <div *ngIf="currentBalance" class="text-center alert-warning" 
+     [class.alert-success]="currentBalance.deficitCash === 0 && currentBalance.deficitVisa === 0"
+     [class.alert-warning]="currentBalance.deficitCash !== 0 || currentBalance.deficitVisa !== 0">
+     
+     <h6 *ngIf="currentBalance.deficitCash !== 0" class="alert alert-warning w-100">
+         <h6 class="text-center"><i class="fas fa-exclamation-triangle me-2"></i>تنبيه!</h6>
+         فارق نقدي {{ currentBalance.deficitCash }} {{ currency_Symbol }}
+     </h6>
+     
+     <h6 *ngIf="currentBalance.deficitVisa !== 0" class="alert alert-warning w-100">
+         <h6 class="text-center"><i class="fas fa-exclamation-triangle me-2"></i>تنبيه!</h6>
+         فارق إلكتروني {{ currentBalance.deficitVisa }} {{ currency_Symbol }}
+     </h6>
+</div>
+
+      <div *ngIf="currentBalance" class="card p-3 my-2">
+  <h6 class="fw-bold text-center"> رصيد الورديه السابقة</h6>
+  <div class="row">
+    <div class="col-4 text-center">
+      <small class="text-muted">نقدي</small>
+      <h6 class="fw-bold">{{ currentBalance.cash | number:'1.2-2' }} {{ currency_Symbol }}</h6>
+    </div>
+    <div class="col-4 text-center">
+      <small class="text-muted">إلكتروني</small>
+      <h6 class="fw-bold">{{ visaTotal | number:'1.2-2' }} {{ currency_Symbol }}</h6>
+    </div>
+    <div class="col-4 text-center">
+      <small class="text-muted">الإجمالي</small>
+      <h6 class="fw-bold">{{ currentBalance.total | number:'1.2-2' }} {{ currency_Symbol }}</h6>
+    </div>
+  </div>
+</div> 
+        <!-- Input Form -->
+        <div class="data p-2">
+          <h5>من فضلك أدخل البيانات التالية</h5>
+          <h6 class="text-danger">برجاء ادخال المبالغ الموجودة حاليا لغلق الوردية</h6>
+
+          <!-- Cash Input -->
+          <h6><small><i class="fa-solid fa-money-bill main-color ms-1"></i>المبلغ النقدي الحالي</small></h6>
+          <!-- Cash Input -->
+          <div>
+            <!-- <h6><small><i class="fa-solid fa-money-bill main-color ms-1"></i>المبلغ النقدي الحالي</small></h6> -->
+            <div class="input-group position-relative mb-3">
+              <input type="number" class="form-control custom-cursor" id="cashInput" [(ngModel)]="enteredCash"
+                (input)="onCashInput($event)" [class.is-invalid]="errorMessage" placeholder="أدخل المبلغ النقدي" [readOnly]="formSubmitted"
+                required min="0">
+            </div>
+          </div>
+
+          <!-- Visa Input -->
+          <h6><small><i class="fa-solid fa-credit-card main-color ms-1"></i>إجمالي مدفوعات البطاقة</small></h6>
+          <div *ngIf="visaTotal !== null" class="input-group position-relative mb-3">
+            <h3 class="bg-grey p-3">{{ visaTotal }} {{ currency_Symbol }}</h3>
+          </div>
+          <div *ngIf="errorMessage" class="mt-2">
+            <small class="text-danger">{{ errorMessage }}</small>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer border-0">
+        <button *ngIf="showDeficitMessage && !showDeficitMessage2" type="button" class="btn btn-primary w-100 py-2" (click)="validateAndSave(true)">
+          <i class="fas fa-check-circle me-2"></i>تسجيل خروج
+        </button>
+        <button *ngIf="showDeficitMessage2" type="button" class="btn btn-primary w-100 py-2" (click)="setLog()">
+          <i class="fas fa-check-circle me-2"></i> استمرار
+        </button>
+
+        <button *ngIf="!showDeficitMessage && !formSubmitted" type="button" class="btn btn-primary w-100 py-2"
+          (click)="validateAndSave()">
+          <i class="fas fa-save me-2"></i> حفظ
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- <nav class="navbar navbar-expand-lg mobile-view">
+  <div class="container">
+    <a class="navbar-brand">
+      <img src="assets/images/logo.png" class="sidebar-logo" />
+    </a>
+
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarSupportedContent"
+      aria-controls="navbarSupportedContent"
+      aria-expanded="false"
+      aria-label="Toggle navigation"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+     
+
+    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+      <ul class="sidebar-menu list-unstyled px-0 py-3">
+        <li class="sidebar-item active">
+          <a routerLink="/home" class="sidebar-link" routerLinkActive="active_link" [routerLinkActiveOptions]="{exact: true}">
+            <img src="assets/images/chicken.png"/>
+            <span class="pe-3">القائمة</span>
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a routerLink="/orders" class="sidebar-link" routerLinkActive="active_link" [routerLinkActiveOptions]="{exact: true}">
+            <img src="assets/images/orders-icon.png" />
+            <span class="pe-3">الطلبات</span>
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a routerLink="/tables" class="sidebar-link" routerLinkActive="active_link" [routerLinkActiveOptions]="{exact: true}">
+            <img src="assets/images/tables-icon.png" />
+            <span class="pe-3">الطاولات</span>
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a routerLink="/pills" class="sidebar-link" routerLinkActive="active_link" [routerLinkActiveOptions]="{exact: true}">
+            <img src="assets/images/pills-icon.png" />
+            <span class="pe-3">الفواتير</span>
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a routerLink="/settings" class="sidebar-link" routerLinkActive="active_link" [routerLinkActiveOptions]="{exact: true}">
+            <img src="assets/images/settings.png" />
+            <span class="pe-3">الإعدادات</span>
+          </a>
+        </li>
+        <li class="sidebar-item">
+          <a  data-bs-toggle="modal" data-bs-target="#logoutModal" class="sidebar-link">
+            <img src="assets/images/logout.png" />
+            <span class="pe-3">تسجيل الخروج</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+  </div>
+</nav>
+
+-->
+<!-- ==================== Transfer Money Modal ==================== -->
+<div class="modal fade" id="transferMoneyModal" tabindex="-1" aria-labelledby="transferMoneyModalLabel"
+  aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header ">
+        <div class="row">
+          <div class="col-12">
+            <button type="button" class="btn btn-close " data-bs-dismiss="modal" aria-label="Close" (click)="closeModal()"></button>
+          </div>
+        </div>
+        <div class="col-12">
+          <h4 class="modal-title text-center main-color" id="transferMoneyModalLabel">تحويل النقدية إلى الخزنة</h4>
+        </div>
+      </div>
+      <div class="modal-body py-3 alert-warning">
+        <h6  class=" alert alert-warning w-100 text-center" *ngIf="alertError">
+            <h6 class="text-center"> <i class="fas fa-exclamation-triangle me-2"></i>تنبيه! </h6>
+           <p class="text-center pt-2">{{alertError}}</p>
+          </h6>
+
+        <form (ngSubmit)="transferMoney()">
+          <div class="my-3">
+            <div class="pb-2">
+              <h6 for="amountInput" class="form-label">ادخل المبلغ المراد تحويله </h6>
+            </div>
+            <input type="number" class="form-control custom-cursor" id="amountInput" [(ngModel)]="transferAmount" name="amount"
+              placeholder="أدخل المبلغ" required min="0.01" step="0.01" [readOnly]="transferSuccess !== null" >
+          </div>
+          <div class="mb-3">
+            <label for="exampleFormControlTextarea1" class="form-label fw-bold">  ادخل السبب   </label>
+            <textarea class="form-control custom-cursor" id="exampleFormControlTextarea1" rows="3" [readOnly]="transferSuccess !== null" placeholder=" ادخل السبب"  name="reason" [(ngModel)]="reason"></textarea>
+          </div>
+          <div *ngIf="transferError" class="alert alert-danger mt-3 text-center">
+            {{ transferError }} 
+          </div>
+          <div *ngIf="reasonError" class="alert alert-danger mt-3 text-center">
+            {{ reasonError }}
+          </div>
+          <div *ngIf="transferSuccess" class="alert alert-success mt-3 text-center">
+            {{ transferSuccess }}
+          </div>
+          <div class="modal-footer d-flex gap-1 p-0">
+
+            <button type="submit" class="btn btn-secondary w-100" [disabled]="isTransferring || transferSuccess" *ngIf="!alertError">
+              <span *ngIf="!isTransferring">إرسال</span>
+              <span *ngIf="isTransferring">
+                <i class="fas fa-spinner fa-spin"></i> جاري التحويل...
+              </span>
+            </button>
+            <button type="submit" class="btn btn-secondary w-100" *ngIf="alertError" (click)="CloseTheModalAndClear()">
+              <i class="fas fa-check-circle px-2"></i>
+              <span>استمرار</span>
+            </button>
+          </div>
+
+        </form>
+      </div>
+    </div>
+  </div>
+</div> 
+@if (printingData) {
+  
+<div id="print-section" class="m-2 d-none" style="    font-size:15px">
+  <p class="text-center fw-bold">ملخص الوردية </p>
+  <div class="d-flex justify-content-between align-items-center py-1">
+    <div>
+      <span>رقم الوردية : </span>
+      <span>{{printingData?.shiftId}}</span>
+    </div>
+    <div>
+
+    </div>
+  </div>
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <span>من : </span>
+      <span>{{printingData?.start_shift}}</span>
+    </div>
+    <div>
+      <span>الي : </span>
+      <span>{{printingData?.end_shift}}</span>
+    </div>
+  </div>
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <span>الكاشير : </span>
+      <span>{{printingData?.cashier_name}}</span>
+    </div>
+    <div>
+      <span>الفرع : </span>
+      <span>{{printingData?.branch}}</span>
+    </div>
+  </div>
+  <hr>
+  <p class="text-center fw-bold">المبيعات</p>
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <span>العدد : </span>
+      <span>{{printingData?.orders_number}}</span>
+    </div>
+
+    <div>
+      <span>الاجمالي : </span>
+      <span>{{printingData?.totalSales}} ج.م </span> 
+    </div>
+  </div>
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <span>نقدي : </span>
+      
+      <span>{{printingData?.currentCash}} ج.م </span>
+    </div>
+    <div>
+      <span>بطاقة : </span>
+      <span>{{printingData?.currentVisa}} ج.م  </span>
+    </div>
+  </div>
+  <div class="d-flex justify-content-between align-items-center pb-2">
+    <div>
+      <span>الخدمة : </span>
+      <span>{{printingData?.service.toFixed(2)}} ج.م </span>
+    </div>
+    <div>
+      <span>ق.م : </span>
+      <span>{{printingData?.Tax.toFixed(2)}} ج.م </span>
+    </div>
+  </div>
+ 
+  <!-- الفئات -->
+   <hr>
+     <p class="text-center fw-bold">الفئات</p>
+    <table class="table table-bordered">
+      <thead class="text-center">
+        <tr>
+          <th scope="col">الفئة</th>
+          <th scope="col">الكمية</th>
+          <!-- <th scope="col" >
+            الاجمالي
+          </th> -->
+        </tr>
+      </thead>
+      <tbody class="text-center">
+        <tr *ngFor="let item of printingData?.categories">
+          <td>{{ item.name }}</td>
+          <td>{{ item.quantity }}</td>
+<!--           <td>{{ item.price }}</td>
+ -->        </tr>
+        <!-- <tr class="fw-bold">
+          <td >الاجمالي</td>
+          <td colspan="2">{{printingData?.totalAllPrice}} ج.م </td>
+        </tr> -->
+      </tbody>
+    </table>
+  <!-- الفئات -->
+</div>
+}

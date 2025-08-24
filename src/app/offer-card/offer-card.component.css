@@ -1,0 +1,87 @@
+.plate {
+    box-shadow: -4px -4px 12px 0 rgba(0, 0, 0, 0.08), 4px 4px 12px 0 rgba(0, 0, 0, 0.08);
+    padding: 1.25rem;
+    border-radius: 1.5rem;
+    min-height: 320px;
+}
+
+.plate-img {
+    justify-content: center;
+    display: flex;
+    align-items: center;
+}
+
+.plate-img img {
+    height: 150px;
+    width: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+}
+
+.plate span {
+    font-weight: bold;
+}
+.discount {
+    text-decoration: line-through;
+    color: #FE0000;
+    margin-left: 0.5rem;
+}
+.offer .offer-img img {
+    width: 150px;
+    height: 150px;
+    object-fit: cover;
+    border-radius: 50%;
+}
+.qty {
+    display: flex;
+    align-items: center;
+}
+
+.dec,
+.inc {
+    background-color: #FE0000;
+    height: 25px;
+    width: 25px;
+    border-radius: 50%;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: small;
+}
+
+.pro-dec {
+    border: 2px solid #ddd;
+    height: 45px;
+    width: 45px;
+    border-radius: 50%;
+    color: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.pro-inc {
+    background-color: #FE0000;
+    height: 45px;
+    width: 45px;
+    border-radius: 50%;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.num {
+    margin-inline: 0.5rem;
+}
+.offer-details {
+    background-color: #f2f3f4;
+    padding: 1.5rem;
+}
+.offer {
+    background: #f2f3f4;
+    border-radius: 0.5rem;
+    text-align: center;
+    padding: 1rem;
+}
