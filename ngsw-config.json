@@ -26,5 +26,19 @@
         ]
       }
     }
+  ],
+   "dataGroups": [
+    {
+      "name": "api",
+      "urls": [
+        "https://erpsystem.testdomain100.online/api/**"
+      ],
+      "cacheConfig": {
+        "strategy": "freshness",
+        "maxSize": 100,
+        "maxAge": "6h",
+        "timeout": "10s"
+      }
+    }
   ]
 }

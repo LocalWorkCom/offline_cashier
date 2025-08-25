@@ -9,6 +9,8 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { NewDishService } from '../services/pusher/newDish';
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
 import { finalize } from 'rxjs';
+import { IndexeddbService } from '../services/indexeddb.service';
+import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-categories',
@@ -35,31 +37,40 @@ export class CategoriesComponent implements OnInit,OnDestroy {
   @Input() item: any;
   @Input() offer: any;
   @ViewChild('closebutton') closebutton: any;
-  constructor(private productsRequestService: ProductsService, private modalService: NgbModal,
-    private newDish:NewDishService) {}
- 
+constructor(
+    private productsRequestService: ProductsService,
+    private modalService: NgbModal,
+    private newDish: NewDishService,
+    private dbService: IndexeddbService,
+    private cdr: ChangeDetectorRef
+  ) {}
 
-  ngOnInit(): void {
+
+   ngOnInit() {
+    this.dbService.init(); // ✅ افتح قاعدة البيانات
     this.fetchMenuData();
     this.listenTonewDish()
-    
+
   }
-  // ngDoCheck(){
-  //   this.fetchMenuData();
-  // }
+
   ngOnChanges(): void {
     this.fetchMenuData();
   }
 
-  fetchMenuData(): void {
+   fetchMenuData() {
     this.isAllLoading=false;
     this.productsRequestService.getMenuDishes() .pipe(
     finalize(() => {
-      this.isAllLoading=true 
+      this.isAllLoading=true
     })
   ).subscribe((response: any) => {
-      if (response && response.status && response.data) { 
+      if (response && response.status && response.data) {
         this.categories = response.data;
+         this.dbService.saveData('categories', this.categories);
+
+        //  await this.dbService.clearStore('categories');
+          // await this.dbService.saveData('categories', this.categories);
+
         this.filterCategories = [...this.categories]; // Update filtered categories
         this.filteredOrders = []; // Clear previous orders
         if (this.categories.length > 0) {
@@ -69,16 +80,16 @@ export class CategoriesComponent implements OnInit,OnDestroy {
         console.error("Invalid response format", response);
       }
     });
-    
+
   }
-  
-  
+
   onCategorySelect(category: any): void {
+
       if (!category || !Array.isArray(category.dishes)) {
       this.selectedCategoryProducts = [];
       return;
     }
-  
+
     this.selectedCategory = category;
     this.selectedCategoryProducts = category.dishes
       .filter((d: { dish: any }) => d && d.dish) // Ensure dish exists
@@ -88,24 +99,24 @@ export class CategoriesComponent implements OnInit,OnDestroy {
         addon_categories: Array.isArray(d.addon_categories) ? d.addon_categories : [],
       }))
       .filter((dish: any) => this.isDishActive(dish)); // ✅ Remove inactive dishes
-  
+
     this.filteredOrders = [...this.selectedCategoryProducts];
     this.filterCategories = [...this.categories];
     this.closebutton.nativeElement.click();
   }
-  
+
   isDishActive(dish: any): boolean {
     return dish.is_active !== false; // Adjust based on API response field
   }
-  
+
 
   filterOrders() {
     const searchId = Number(this.searchOrderNumber);
-  
+
     let filtered = [...this.selectedCategoryProducts].filter((dish) =>
       this.isDishActive(dish) // ✅ Remove inactive dishes
     );
-  
+
     if (this.searchOrderNumber && !isNaN(searchId)) {
       filtered = filtered.filter((order) => order.id === searchId);
     } else if (this.searchOrderNumber) {
@@ -113,12 +124,12 @@ export class CategoriesComponent implements OnInit,OnDestroy {
         order.name.toLowerCase().includes(this.searchOrderNumber.toLowerCase())
       );
     }
-  
+
     this.filteredOrders = filtered;
   }
-  
 
-  
+
+
   filterOrderCategories() {
     const searchId = Number(this.searchOrderCategoreis);
 
@@ -133,7 +144,7 @@ export class CategoriesComponent implements OnInit,OnDestroy {
     } else {
       this.filterCategories = [...this.categories];
     }
-  
+
   }
 
   recieveFromProduct(id: any): void {
@@ -141,7 +152,7 @@ export class CategoriesComponent implements OnInit,OnDestroy {
       (product: { id: any }) => product.id !== id
     );
   }
-  
+
   clearSelection(): void {
     this.selectedCategory = null;
     this.filteredOrders = [];
@@ -192,3 +203,4 @@ export class CategoriesComponent implements OnInit,OnDestroy {
     this.newDish.stopListening();
   }
 }
+
