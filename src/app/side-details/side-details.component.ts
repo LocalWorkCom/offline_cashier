@@ -35,6 +35,8 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { NgxCountriesDropdownModule } from 'ngx-countries-dropdown';
 import { baseUrl } from '../environment';
 
+import { IndexeddbService } from '../services/indexeddb.service';
+
 declare var bootstrap: any;
 interface Country {
   code: string;
@@ -158,6 +160,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     private router: Router,
     private formDataService: AddAddressService,
     public authService: AuthService,
+    private dbService: IndexeddbService,
   ) {
     this.cashier_machine_id = this.getCashierMachineId();
   }
@@ -191,21 +194,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loadCart();
     this.loadBranchData();
     this.restoreCoupon();
-    // this.loadSelectedCourier();
-    // this.applyAdditionalNote();
-    // this.loadCouponFromLocalStorage();
+
     this.loadFormData();
     this.loadOrderType();
     this.loadTableNumber();
     this.fetchCountries();
     this.loadAdditionalNote();
-    // this.route.paramMap.subscribe((params) => {
-    //   this.pillId = params.get('id');
 
-    //   if (this.pillId) {
-    //     this.fetchPillsDetails(this.pillId);
-    //   }
-    // });
 
     // this.fetchTrackingStatus();
     // this.getNoteFromLocalStorage();
@@ -326,11 +321,26 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  // loadCart() {
+  //   // const storedCart = localStorage.getItem('cart');
+  //   const storedCart =  this.dbService.getCartItems();
+  //   this.cartItems = storedCart ? JSON.parse(storedCart) : [];
+  //   this.updateTotalPrice();
+  // }
+
   loadCart() {
-    const storedCart = localStorage.getItem('cart');
-    this.cartItems = storedCart ? JSON.parse(storedCart) : [];
-    this.updateTotalPrice();
-  }
+  this.dbService.getCartItems()
+    .then((cartItems: any[]) => {
+      this.cartItems = cartItems || [];
+      this.updateTotalPrice();
+      console.log('✅ Cart loaded from IndexedDB:', this.cartItems);
+    })
+    .catch((error: any) => {
+      console.error('❌ Error loading cart from IndexedDB:', error);
+      this.cartItems = [];
+      this.updateTotalPrice();
+    });
+}
 
   loadFormData() {
 
@@ -357,7 +367,21 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     localStorage.setItem('cart', JSON.stringify(this.cartItems)); // Update local storage
   }
   saveCart() {
-    localStorage.setItem('cart', JSON.stringify(this.cartItems));
+    // localStorage.setItem('cart', JSON.stringify(this.cartItems));
+     return this.dbService.clearCart()
+    .then(() => {
+      const savePromises = this.cartItems.map(item =>
+        this.dbService.addToCart(item)
+      );
+      return Promise.all(savePromises);
+    })
+    .then(() => {
+      console.log('✅ Cart saved to IndexedDB');
+    })
+    .catch(error => {
+      console.error('❌ Error saving cart to IndexedDB:', error);
+      throw error;
+    });
   }
   updateTotalPrices() {
     this.cartItems.forEach((item) => {
