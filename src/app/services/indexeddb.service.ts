@@ -493,7 +493,7 @@ export class IndexeddbService {
     if (this.initPromise) return this.initPromise;
 
     this.initPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open('MyDB', 4); // Incremented version to 4
+      const request = indexedDB.open('MyDB', 10); // Incremented version to 4
 
       request.onupgradeneeded = (event: any) => {
         this.db = event.target.result;
@@ -501,6 +501,14 @@ export class IndexeddbService {
         // Create categories store
         if (!this.db.objectStoreNames.contains('categories')) {
           this.db.createObjectStore('categories', { keyPath: 'id' });
+        }
+
+        if (!this.db.objectStoreNames.contains('tables')) {
+          this.db.createObjectStore('tables', { keyPath: 'id' });
+        }
+
+        if (!this.db.objectStoreNames.contains('selectedTable')) {
+          this.db.createObjectStore('selectedTable', { keyPath: 'id' });
         }
 
         // Create lastSync store
