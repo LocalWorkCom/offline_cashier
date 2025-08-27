@@ -493,7 +493,7 @@ export class IndexeddbService {
     if (this.initPromise) return this.initPromise;
 
     this.initPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open('MyDB', 10); // Incremented version to 4
+      const request = indexedDB.open('MyDB', 20); // Incremented version to 4
 
       request.onupgradeneeded = (event: any) => {
         this.db = event.target.result;
@@ -516,12 +516,38 @@ export class IndexeddbService {
           this.db.createObjectStore('lastSync', { keyPath: 'storeName' });
         }
 
+           // Create hotels store
+        if (!this.db.objectStoreNames.contains('hotels')) {
+          this.db.createObjectStore('hotels', { keyPath: 'id' });
+        }
+
+        // Create areas store
+        if (!this.db.objectStoreNames.contains('areas')) {
+          this.db.createObjectStore('areas', { keyPath: 'id' });
+        }
+
+        // Create countries store
+        if (!this.db.objectStoreNames.contains('countries')) {
+          this.db.createObjectStore('countries', { keyPath: 'code' });
+        }
+
+        // Create formData store for delivery form data
+        if (!this.db.objectStoreNames.contains('formData')) {
+          this.db.createObjectStore('formData', { keyPath: 'id', autoIncrement: true });
+        }
+
         // Create cart store
         if (!this.db.objectStoreNames.contains('cart')) {
           this.db.createObjectStore('cart', {
             keyPath: 'cartItemId',
             autoIncrement: true
           });
+        }
+
+
+        // Create form_delivery store
+        if (!this.db.objectStoreNames.contains('form_delivery')) {
+           this.db.createObjectStore('form_delivery', { keyPath: 'id' });
         }
 
         // Create pendingOperations store for offline operations
@@ -547,6 +573,57 @@ export class IndexeddbService {
 
     return this.initPromise;
   }
+
+// Save form data to IndexedDB
+saveFormData(formData: any): Promise<number> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('formData', 'readwrite');
+      const store = tx.objectStore('formData');
+
+      // Add timestamp and online status
+      const formDataWithMetadata = {
+        ...formData,
+        savedAt: new Date().toISOString(),
+        isSynced: navigator.onLine
+      };
+
+      const request = store.add(formDataWithMetadata);
+
+      request.onsuccess = () => resolve(request.result as number);
+      request.onerror = (e) => reject(e);
+    });
+  });
+}
+
+// Get all form data
+getFormData(): Promise<any[]> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('formData', 'readonly');
+      const store = tx.objectStore('formData');
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = (e) => reject(e);
+    });
+  });
+}
+
+// Clear form data
+clearFormData(): Promise<void> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('formData', 'readwrite');
+      const store = tx.objectStore('formData');
+      const request = store.clear();
+
+      request.onsuccess = () => resolve();
+      request.onerror = (e) => reject(e);
+    });
+  });
+}
+
 
   // Add item to cart
   addToCart(cartItem: any): Promise<number> {
