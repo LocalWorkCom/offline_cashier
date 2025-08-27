@@ -9,9 +9,9 @@ import { baseUrl } from '../environment';
 export class AddAddressService {
 
 
-   private apiUrl = `${baseUrl}api/cashier/add/address`; 
-   private apiUrl2 = `${baseUrl}api/listHotels`;  
-  
+   private apiUrl = `${baseUrl}api/cashier/add/address`;
+   private apiUrl2 = `${baseUrl}api/listHotels`;
+
 
   private token = localStorage.getItem('authToken');
   constructor(private http: HttpClient) { }
