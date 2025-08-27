@@ -4,6 +4,7 @@ import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { IndexeddbService } from '../services/indexeddb.service';
+import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-product-modal',
@@ -37,6 +38,7 @@ export class ProductModalComponent implements OnInit {
     private productService: ProductsService,
     private router: Router,
   private dbService: IndexeddbService,
+  private cdr: ChangeDetectorRef,
     private route: ActivatedRoute
   ) {
     this.router.events.subscribe((event) => {
@@ -420,10 +422,13 @@ handleAddToCart() {
       cartItem.isSynced = false;
       this.storeOfflineCartItem(cartItem, isHoldOrder);
     }
+
+    this.cdr.detectChanges();
   } else {
     // Offline: Store in IndexedDB only
     cartItem.isSynced = false;
     this.storeOfflineCartItem(cartItem, isHoldOrder);
+    this.cdr.detectChanges();
   }
 
   setTimeout(() => this.isAdding = false, 300); // reset guard

@@ -334,12 +334,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       this.cartItems = cartItems || [];
       this.updateTotalPrice();
       console.log('✅ Cart loaded from IndexedDB:', this.cartItems);
+      this.cdr.detectChanges();
     })
     .catch((error: any) => {
       console.error('❌ Error loading cart from IndexedDB:', error);
       this.cartItems = [];
       this.updateTotalPrice();
+      this.cdr.detectChanges();
     });
+
 }
 
   loadFormData() {
