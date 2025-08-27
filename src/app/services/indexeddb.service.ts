@@ -540,28 +540,70 @@ export class IndexeddbService {
     return this.initPromise;
   }
 
-  // Add item to cart
-  addToCart(cartItem: any): Promise<number> {
-    return this.ensureInit().then(() => {
-      return new Promise((resolve, reject) => {
-        const tx = this.db.transaction('cart', 'readwrite');
-        const store = tx.objectStore('cart');
-
-        // Add timestamp and online status
-        const itemWithMetadata = {
-          ...cartItem,
-          addedAt: new Date().toISOString(),
-          isSynced: navigator.onLine,
-          lastUpdated: new Date().toISOString()
-        };
-
-        const request = store.add(itemWithMetadata);
-
-        request.onsuccess = () => resolve(request.result as number);
-        request.onerror = (e) => reject(e);
-      });
-    });
+  // Add this method to your service
+private refreshDevToolsIndexedDBView(): void {
+  // This only works if DevTools is open
+  if (typeof window !== 'undefined' && (window as any).chrome && (window as any).chrome.devtools) {
+    try {
+      // Dispatch a custom event that might trigger DevTools refresh
+      window.dispatchEvent(new Event('indexedDBUpdate'));
+    } catch (error) {
+      // Silent fail - this is just for DevTools enhancement
+    }
   }
+}
+
+  // Add item to cart
+  // addToCart(cartItem: any): Promise<number> {
+  //   return this.ensureInit().then(() => {
+  //     return new Promise((resolve, reject) => {
+  //       const tx = this.db.transaction('cart', 'readwrite');
+  //       const store = tx.objectStore('cart');
+
+  //       // Add timestamp and online status
+  //       const itemWithMetadata = {
+  //         ...cartItem,
+  //         addedAt: new Date().toISOString(),
+  //         isSynced: navigator.onLine,
+  //         lastUpdated: new Date().toISOString()
+  //       };
+
+  //       const request = store.add(itemWithMetadata);
+
+  //       request.onsuccess = () => resolve(request.result as number);
+  //       request.onerror = (e) => reject(e);
+  //     });
+  //   });
+  // }
+  // Update your addToCart method
+addToCart(cartItem: any): Promise<number> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('cart', 'readwrite');
+      const store = tx.objectStore('cart');
+
+      const itemWithMetadata = {
+        ...cartItem,
+        addedAt: new Date().toISOString(),
+        isSynced: navigator.onLine,
+        lastUpdated: new Date().toISOString()
+      };
+
+      const request = store.add(itemWithMetadata);
+
+      request.onsuccess = () => {
+        const cartItemId = request.result as number;
+        console.log('✅ Item added with ID:', cartItemId);
+
+        // Try to refresh DevTools view
+        this.refreshDevToolsIndexedDBView();
+
+        resolve(cartItemId);
+      };
+      request.onerror = (e) => reject(e);
+    });
+  });
+}
 
   // Get all cart items
   getCartItems(): Promise<any[]> {
