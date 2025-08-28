@@ -25,6 +25,8 @@ import { Modal } from 'bootstrap';
 import { log } from 'node:console';
 import { baseUrl } from '../environment';
 
+import { IndexeddbService } from '../services/indexeddb.service';
+
 @Component({
   selector: 'app-orders',
   standalone: true,
@@ -34,6 +36,18 @@ import { baseUrl } from '../environment';
     , RouterLinkActive, CommonModule, FormsModule, AccordionModule],
 })
 export class OrdersComponent implements OnDestroy {
+
+   // Add these properties
+  private isOnline: boolean = navigator.onLine;
+  private ordersLastSync: number = 0;
+  private syncInterval: any;
+   // Add these properties for last order display
+  lastOrderFromIndexedDB: any = null;
+  isLastOrderLoading: boolean = false;
+  lastOrderError: string = '';
+  currentOrderNumber: string = '#CS-1000';
+  nextOrderNumber: string = '#CS-1001';
+
   orders: any[] = [];
   ordersStatus: string[] = []; //
   filteredOrdersByStatus: { status: string; orders: any[] }[] = [];
@@ -73,7 +87,9 @@ export class OrdersComponent implements OnDestroy {
     private orderChangeStatus: OrderChangeListenService,
     private orderChange: DishStatusService,
     private cdr: ChangeDetectorRef,
-    private http: HttpClient
+    private http: HttpClient,
+    private dbService: IndexeddbService // Add IndexedDB service
+
 
   ) {
     // const navigation = this.router.getCurrentNavigation();
@@ -82,65 +98,271 @@ export class OrdersComponent implements OnDestroy {
     // console.log(this.orderDetails,'orderDetails')
   }
 
+  // ngOnInit(): void {
+  //   this.selectedOrderTypeStatus = 'All';
+  //   this.loadCartItems();
+  //   this.filterCartItems();
+  //   this.fetchOrdersData();
+  //   this.fetchOrderDetails();
+  //   // this.setupPusherListeners();
+  //   // this.listenToDishChange();
+  //   // this.listenToOrderChange()
+  //   this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe({
+  //     next: (params) => {
+  //       this.orderId = params.get('id');
+  //       if (this.orderId) {
+  //         this.fetchOrderDetails();
+  //       }
+  //     },
+  //     error: (err) => {
+  //       this.error = 'Error retrieving order ID from route.';
+  //     },
+  //   });
+
+  //   // 'pusher'
+  //   // this.listenToNewOrder();
+
+  // }
+
+
   ngOnInit(): void {
+
     this.selectedOrderTypeStatus = 'All';
     this.loadCartItems();
     this.filterCartItems();
-    this.fetchOrdersData();
+
+    // Set up online/offline detection
+    this.setupOnlineOfflineDetection();
+
+    // Load orders from IndexedDB first, then try to fetch from API
+    this.loadOrdersFromIndexedDB();
+       // Load last order from IndexedDB
+    this.loadLastOrderFromIndexedDB();
+
     this.fetchOrderDetails();
-    // this.setupPusherListeners();
-    // this.listenToDishChange();
-    // this.listenToOrderChange()
-    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe({
-      next: (params) => {
-        this.orderId = params.get('id');
-        if (this.orderId) {
-          this.fetchOrderDetails();
+
+    // ... rest of ngOnInit code ...
+
+    // Set up periodic sync (every 5 minutes)
+    this.syncInterval = setInterval(() => {
+      if (this.isOnline) {
+        this.fetchOrdersFromAPI();
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+  }
+    // Load the last order from IndexedDB
+// orders.component.ts - Updated method
+// orders.component.ts - Add this method
+
+// Method to process the order number and store the next one
+processOrderNumber(): void {
+  this.dbService.processAndStoreNextOrderNumber().then(result => {
+    console.log('Order number processed successfully:');
+    console.log('Current:', result.current);
+    console.log('Next:', result.next);
+
+    // You can store these in component properties if needed
+    this.currentOrderNumber = result.current;
+    this.nextOrderNumber = result.next;
+
+  }).catch((error: any) => {
+    console.error('Error processing order number:', error);
+  });
+}
+// orders.component.ts - Add this method
+
+// Get the stored next order number
+getNextOrderNumberFromStorage(): void {
+  this.dbService.getStoredNextOrderNumber().then(nextNumber => {
+    console.log('Next order number from storage:', nextNumber);
+    this.nextOrderNumber = nextNumber;
+  }).catch((error: any) => {
+    console.error('Error getting next order number:', error);
+  });
+}
+
+
+loadLastOrderFromIndexedDB(): void {
+  this.isLastOrderLoading = true;
+  this.lastOrderError = '';
+
+  this.dbService.getLastOrderNumberFromDB().then((orderNumber: string) => {
+    this.isLastOrderLoading = false;
+
+    if (orderNumber) {
+      console.log('Last order number from IndexedDB:', orderNumber);
+
+      // Extract numeric part and increment
+      const result = this.dbService.extractAndIncrementOrderNumber(orderNumber);
+
+      this.currentOrderNumber = result.current;
+      this.nextOrderNumber = result.next;
+
+      console.log('Current order number:', this.currentOrderNumber);
+      console.log('Next order number:', this.nextOrderNumber);
+
+      // Save the next order number
+      this.dbService.saveNextOrderNumber(this.nextOrderNumber).then(() => {
+        console.log('Next order number saved to IndexedDB:', this.nextOrderNumber);
+      }).catch((err: any) => {
+        console.error('Error saving next order number:', err);
+      });
+    } else {
+      console.log('No orders found in IndexedDB');
+    }
+  }).catch((err: any) => {
+    console.error('Error loading last order from IndexedDB:', err);
+    this.lastOrderError = 'فشل في تحميل آخر طلب من التخزين المحلي';
+    this.isLastOrderLoading = false;
+  });
+}
+  // Set up online/offline detection
+  private setupOnlineOfflineDetection(): void {
+    window.addEventListener('online', () => {
+      this.isOnline = true;
+      console.log('Online - syncing data');
+      this.fetchOrdersFromAPI();
+    });
+
+    window.addEventListener('offline', () => {
+      this.isOnline = false;
+      console.log('Offline - using cached data');
+    });
+  }
+
+  // Load orders from IndexedDB
+  private loadOrdersFromIndexedDB(): void {
+    this.dbService.getOrders().then(orders => {
+      if (orders && orders.length > 0) {
+        console.log('Orders loaded from IndexedDB:', orders.length);
+
+        this.processOrders(orders);
+
+        // Check if data is stale (older than 5 minutes)
+        this.dbService.getOrdersLastSync().then(lastSync => {
+          const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+          if (this.isOnline && lastSync < fiveMinutesAgo) {
+            this.fetchOrdersFromAPI();
+          }
+        }).catch(err => {
+          console.error('Error getting last sync time:', err);
+          if (this.isOnline) {
+            this.fetchOrdersFromAPI();
+          }
+        });
+      } else if (this.isOnline) {
+        // No data in IndexedDB, fetch from API
+        this.fetchOrdersFromAPI();
+      } else {
+        // Offline and no data available
+        this.loading = false;
+        console.warn('No orders available offline');
+      }
+    }).catch(err => {
+      console.error('Error loading orders from IndexedDB:', err);
+      if (this.isOnline) {
+        this.fetchOrdersFromAPI();
+      } else {
+        this.loading = false;
+      }
+    });
+  }
+
+  // Fetch orders from API
+  private fetchOrdersFromAPI(): void {
+    this.loading = false;
+    this.ordersListService.getOrdersList().pipe(
+      finalize(() => {
+        this.loading = true;
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (response) => {
+        if (response.status && response.data.orders) {
+          console.log('Orders fetched from API:', response.data.orders.length);
+          this.processOrders(response.data.orders);
+
+          // Save to IndexedDB
+          this.dbService.saveOrders(response.data.orders).then(() => {
+            console.log('Orders saved to IndexedDB');
+            return this.dbService.setOrdersLastSync(Date.now());
+          }).catch(err => {
+            console.error('Error saving orders to IndexedDB:', err);
+          });
+        } else {
+          console.warn('No orders found in API response.');
+          this.loading = true;
         }
       },
       error: (err) => {
-        this.error = 'Error retrieving order ID from route.';
+        console.error('Error fetching orders from API:', err);
+        this.loading = true;
+
+        // If we're online but API failed, try to use IndexedDB data as fallback
+        if (this.isOnline) {
+          this.dbService.getOrders().then(orders => {
+            if (orders && orders.length > 0) {
+              console.log('Using IndexedDB data as fallback:', orders.length);
+              this.processOrders(orders);
+            }
+          });
+        }
       },
     });
-
-    // 'pusher'
-    // this.listenToNewOrder();
-
   }
+
+  // Process orders (common method for both API and IndexedDB data)
+  private processOrders(orders: any[]): void {
+    this.currencySymbol = orders[0]?.currency_symbol;
+    this.orders = orders
+      .filter((order: any) =>
+        this.allowedOrderTypes.includes(order.order_details?.order_type) &&
+        this.allowedStatuses.includes(order.order_details?.status)
+      )
+      .map((order: any) => ({
+        ...order,
+        currency_symbol: this.currencySymbol,
+      }));
+
+    this.ordersStatus = Array.from(
+      new Set(this.orders.map(order => order.order_details?.status || ""))
+    ).filter(status => this.allowedStatuses.includes(status));
+
+    if (this.ordersStatus.length > 0) this.ordersStatus.unshift('all');
+
+    this.filterOrders();
+    this.loading = true;
+  }
+
+  // listenToNewOrder() {
+  //   this.newOrder.listenToNewOrder();
+  //   this.newOrder.orderAdded$.pipe(takeUntil(this.destroy$)).subscribe((newOrder) => {
+  //     this.orders = [newOrder.data.Order, ...this.orders]
+  //     if ((this.selectedOrderTypeStatus == 'dine-in' || (newOrder.data.Order.order_details.order_type.toLowerCase() == this.selectedOrderTypeStatus.toLowerCase())
+  //       && (this.selectedStatus == 'all' || newOrder.data.Order.order_details.status.toLowerCase() == this.selectedStatus.toLocaleLowerCase()))) {
+  //       this.filteredOrders = [...this.orders]
+  //     }
+
+  //   })
+  // }
+
+  // Update your listenToNewOrder method to save to IndexedDB
   listenToNewOrder() {
     this.newOrder.listenToNewOrder();
     this.newOrder.orderAdded$.pipe(takeUntil(this.destroy$)).subscribe((newOrder) => {
-      this.orders = [newOrder.data.Order, ...this.orders]
+      this.orders = [newOrder.data.Order, ...this.orders];
+
+      // Save new orders to IndexedDB
+      this.dbService.saveOrders(this.orders).catch(err => {
+        console.error('Error saving new orders to IndexedDB:', err);
+      });
+
       if ((this.selectedOrderTypeStatus == 'dine-in' || (newOrder.data.Order.order_details.order_type.toLowerCase() == this.selectedOrderTypeStatus.toLowerCase())
         && (this.selectedStatus == 'all' || newOrder.data.Order.order_details.status.toLowerCase() == this.selectedStatus.toLocaleLowerCase()))) {
-        this.filteredOrders = [...this.orders]
+        this.filteredOrders = [...this.orders];
       }
-
-    })
+    });
   }
-  // listenToOrderChangeStatus(orders:any){
-  //   this.orderChangeStatus.orderChange(orders)
-  // }
-
-
-  // private subscribeToOrderStatusChannel(orderId: string | undefined): void {
-  //   if (!orderId || this.activeOrderChannels.has(orderId)) return;
-
-  //   const channelName = `order-status-${orderId}`;
-  //   this.pusherService.pipe(takeUntil(this.destroy$)).subscribe(channelName, 'order-status-update', (data: any) => {
-  //     console.log(`Order status update received for order ${orderId}:`, data);
-  //     this.handleOrderStatusUpdate(data);
-  //   });
-
-  //   this.activeOrderChannels.add(orderId);
-  // }
-
-  // private unsubscribeFromOrderStatusChannel(orderId: string | undefined): void {
-  //   if (!orderId || !this.activeOrderChannels.has(orderId)) return;
-
-  //   const channelName = `order-status-${orderId}`;
-  //   this.activeOrderChannels.delete(orderId);
-  // }
 
   private handleOrderStatusUpdate(data: any): void {
     // data should contain data.order and data.status as per your backend team's spec
@@ -323,18 +545,44 @@ export class OrdersComponent implements OnDestroy {
     );
     this.filterOrders();
   }
-  // Update ngOnDestroy to clean up all subscriptions
+  // // Update ngOnDestroy to clean up all subscriptions
+  // ngOnDestroy(): void {
+  //   this.destroy$.next();
+  //   this.destroy$.complete();
+  //   this.newOrder.stopListening();
+  //   this.orderChangeStatus.stopListeningOfOrderStatus();
+  //   this.orderChange.stopListening()
+  //   // this.activeOrderChannels.forEach(orderId => {
+  //   //   this.unsubscribeFromOrderStatusChannel(orderId);
+  //   // });
+  //   // this.activeOrderChannels.clear();
+
+  // }
+
+    // Update ngOnDestroy to clear interval
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
     this.newOrder.stopListening();
     this.orderChangeStatus.stopListeningOfOrderStatus();
-    this.orderChange.stopListening()
-    // this.activeOrderChannels.forEach(orderId => {
-    //   this.unsubscribeFromOrderStatusChannel(orderId);
-    // });
-    // this.activeOrderChannels.clear();
+    this.orderChange.stopListening();
 
+    // Clear sync interval
+    if (this.syncInterval) {
+      clearInterval(this.syncInterval);
+    }
+  }
+
+    // Add a method to manually refresh orders
+  refreshOrders(): void {
+    this.loading = false;
+    if (this.isOnline) {
+      this.fetchOrdersFromAPI();
+    } else {
+      // Show message that we're offline
+      console.log('Cannot refresh - offline');
+      this.loading = true;
+    }
   }
 
 
@@ -487,53 +735,61 @@ export class OrdersComponent implements OnDestroy {
   }
 
 
+  // fetchOrdersData(): void {
+  //   this.loading = false;
+  //   this.ordersListService.getOrdersList().pipe(
+  //     finalize(() => {
+  //       this.loading = true;
+  //     })
+  //     , takeUntil(this.destroy$)).subscribe({
+  //       next: (response) => {
+  //         console.log(response.data.orders)
+
+  //         if (response.status && response.data.orders) {
+  //           this.currencySymbol = response.data.orders[0]?.currency_symbol;
+  //           this.orders = response.data.orders
+  //             .filter((order: any) =>
+  //               this.allowedOrderTypes.includes(order.order_details?.order_type) &&
+  //               this.allowedStatuses.includes(order.order_details?.status)
+  //             )
+  //             .map((order: any) => ({
+  //               ...order,
+  //               currency_symbol: this.currencySymbol,
+  //             }));
+  //           // this.listenToOrderChangeStatus(this.orders)
+
+  //           this.ordersStatus = Array.from(
+  //             new Set(this.orders.map(order => order.order_details?.status || ""))
+  //           ).filter(status => this.allowedStatuses.includes(status));
+
+  //           if (this.ordersStatus.length > 0) this.ordersStatus.unshift('all');
+
+
+  //           // // Subscribe to order-specific channels here
+  //           // this.orders.forEach(order => {
+  //           //   this.pipe(takeUntil(this.destroy$)).subscribeToOrderStatusChannel(order.order_details?.order_id);
+  //           // });
+
+  //           this.filterOrders();
+  //         } else {
+
+  //           console.warn('No orders found in response.');
+  //         }
+  //       },
+  //       error: (err) => {
+  //         console.error('Error fetching orders:', err);
+  //       },
+  //     });
+  // }
+
+    // Update your existing fetchOrdersData method to use the new approach
   fetchOrdersData(): void {
-    this.loading = false;
-    this.ordersListService.getOrdersList().pipe(
-      finalize(() => {
-        this.loading = true;
-      })
-      , takeUntil(this.destroy$)).subscribe({
-        next: (response) => {
-          console.log(response.data.orders)
-
-          if (response.status && response.data.orders) {
-            this.currencySymbol = response.data.orders[0]?.currency_symbol;
-            this.orders = response.data.orders
-              .filter((order: any) =>
-                this.allowedOrderTypes.includes(order.order_details?.order_type) &&
-                this.allowedStatuses.includes(order.order_details?.status)
-              )
-              .map((order: any) => ({
-                ...order,
-                currency_symbol: this.currencySymbol,
-              }));
-            // this.listenToOrderChangeStatus(this.orders)
-
-            this.ordersStatus = Array.from(
-              new Set(this.orders.map(order => order.order_details?.status || ""))
-            ).filter(status => this.allowedStatuses.includes(status));
-
-            if (this.ordersStatus.length > 0) this.ordersStatus.unshift('all');
-
-
-            // // Subscribe to order-specific channels here
-            // this.orders.forEach(order => {
-            //   this.pipe(takeUntil(this.destroy$)).subscribeToOrderStatusChannel(order.order_details?.order_id);
-            // });
-
-            this.filterOrders();
-          } else {
-
-            console.warn('No orders found in response.');
-          }
-        },
-        error: (err) => {
-          console.error('Error fetching orders:', err);
-        },
-      });
+    if (this.isOnline) {
+      this.fetchOrdersFromAPI();
+    } else {
+      this.loadOrdersFromIndexedDB();
+    }
   }
-
 
 
   selectStatusGroup(index: number): void {
@@ -926,6 +1182,45 @@ export class OrdersComponent implements OnDestroy {
       this.upsertOrder(updatedOrder);
     });
   }
+  // private upsertOrder(order: any): void {
+  //   const orderId = order?.orderId;
+  //   const newStatus = order?.status_name;
+
+  //   const index = this.orders.findIndex(
+  //     o => Number(o.order_details?.order_id) === orderId
+  //   );
+
+  //   if (index !== -1) {
+  //     // Only update the order status (not replace entire order)
+  //     const existingOrder = this.orders[index];
+  //     const updatedOrder = {
+  //       ...existingOrder,
+  //       order_details: {
+  //         ...existingOrder.order_details,
+  //         status: newStatus,
+  //       }
+  //     };
+
+  //     this.orders.splice(index, 1, updatedOrder);
+  //     console.log('status', newStatus, this.selectedStatus, this.selectedOrderTypeStatus.toLowerCase(), existingOrder.order_details.order_type.toLowerCase());
+
+  //     if (((newStatus.toLowerCase() == this.selectedStatus.toLowerCase())) && this.selectedOrderTypeStatus.toLowerCase() == existingOrder.order_details.order_type.toLowerCase()) {
+  //       // this.filteredOrders=[...this.orders]
+  //       this.filteredOrders = [updatedOrder, ...this.filteredOrders]
+  //     }
+  //   } else if (order?.order_details) {
+  //     this.orders.unshift(order)
+  //   }
+
+  //   this.orders = [...this.orders]; // Trigger change detection
+
+  //   this.filterOrders();
+  //   this.cdr.detectChanges();
+
+  //   console.log('Order status updated or inserted:', this.filteredOrder);
+  // }
+
+  // Update your order change handlers to save to IndexedDB
   private upsertOrder(order: any): void {
     const orderId = order?.orderId;
     const newStatus = order?.status_name;
@@ -946,22 +1241,27 @@ export class OrdersComponent implements OnDestroy {
       };
 
       this.orders.splice(index, 1, updatedOrder);
-      console.log('status', newStatus, this.selectedStatus, this.selectedOrderTypeStatus.toLowerCase(), existingOrder.order_details.order_type.toLowerCase());
+
+      // Save updated orders to IndexedDB
+      this.dbService.saveOrders(this.orders).catch(err => {
+        console.error('Error saving updated orders to IndexedDB:', err);
+      });
 
       if (((newStatus.toLowerCase() == this.selectedStatus.toLowerCase())) && this.selectedOrderTypeStatus.toLowerCase() == existingOrder.order_details.order_type.toLowerCase()) {
-        // this.filteredOrders=[...this.orders]
-        this.filteredOrders = [updatedOrder, ...this.filteredOrders]
+        this.filteredOrders = [updatedOrder, ...this.filteredOrders];
       }
     } else if (order?.order_details) {
-      this.orders.unshift(order)
+      this.orders.unshift(order);
+
+      // Save new orders to IndexedDB
+      this.dbService.saveOrders(this.orders).catch(err => {
+        console.error('Error saving new orders to IndexedDB:', err);
+      });
     }
 
     this.orders = [...this.orders]; // Trigger change detection
-
     this.filterOrders();
     this.cdr.detectChanges();
-
-    console.log('Order status updated or inserted:', this.filteredOrder);
   }
 
   listenToDishChange() {

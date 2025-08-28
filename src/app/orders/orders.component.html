@@ -144,7 +144,7 @@
                         <span class="badge bg-lightgray text-dark me-1">{{ item.quantity }}</span>
                         x {{ item.dish_name }}
                       </h6>
-      
+
                       <h6 class="mb-0 fs-6 text-nowrap">
                         {{ item.final_price }} {{ order.invoiceSummary?.currency_symbol }}
                       </h6>
@@ -342,12 +342,12 @@
                     <span class="badge  bg-lightgray text-dark me-1">{{ item.quantity }}</span>
                     x <span [innerHTML]="highlightMatch(item.dish_name, searchOrderNumber)"></span>
                   </h6>
-            
+
                     <!-- Price -->
                      <div class="d-flex flex-xl-row flex-column align-items-center">
                     <h6 class="mb-0 fs-6 fs-sm-6 fs-md-5 text-start text-md-end text-nowrap mb-2 mx-1">
                       {{ item.total_dish_price }} {{ order.currency_symbol }}
-                    </h6>      
+                    </h6>
                     <span [ngClass]="{
                     'btn-static-success':
                       item?.dish_status === 'completed',
@@ -369,7 +369,7 @@
                         item?.dish_status === 'pending',
                       'fa fa-times-circle text-danger':
                         item?.dish_status === 'cancel',
-              
+
                       'fa-spinner text-progress ':
                         item?.dish_status === 'inprogress'
                     }" class="me-1"></i>
