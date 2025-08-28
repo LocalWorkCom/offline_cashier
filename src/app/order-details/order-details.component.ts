@@ -6,7 +6,8 @@ import { Subject } from 'rxjs';
 import { finalize, takeUntil } from 'rxjs/operators';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
-import { baseUrl } from '../environment'; 
+import { baseUrl } from '../environment';
+import { IndexeddbService } from '../services/indexeddb.service';
 
 
 @Component({
@@ -34,23 +35,180 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private orderListById: OrderListDetailsService,
     private http: HttpClient,
-    private location: Location
+    private location: Location,
+    private dbService: IndexeddbService
   ) {}
-  ngOnInit(): void {
+  // ngOnInit(): void {
+  //   this.route.paramMap.subscribe({
+  //     next: (params) => {
+  //       // console.log(params,'params order details')
+  //       this.orderId = params.get('id');
+  //       if (this.orderId) {
+  //         this.fetchOrderDetails();
+  //       }
+  //     },
+  //     error: (err) => {
+  //       this.error = 'Error retrieving order ID from route.';
+  //       // console.error(this.error, err);
+  //     },
+  //   });
+  // }
+
+    ngOnInit(): void {
     this.route.paramMap.subscribe({
       next: (params) => {
-        // console.log(params,'params order details')
         this.orderId = params.get('id');
         if (this.orderId) {
-          this.fetchOrderDetails();
+          // Search for order in IndexedDB by ID
+          this.searchOrderInIndexedDB();
         }
       },
       error: (err) => {
         this.error = 'Error retrieving order ID from route.';
-        // console.error(this.error, err);
       },
     });
   }
+
+  // Search for order in IndexedDB by ID
+  searchOrderInIndexedDB(): void {
+    this.loading = true;
+    this.error = '';
+
+    // Convert orderId to number
+    const numericOrderId = parseInt(this.orderId, 10);
+
+    console.log("dd",numericOrderId);
+
+    if (isNaN(numericOrderId)) {
+      this.error = 'Invalid order ID';
+      this.loading = false;
+      return;
+    }
+
+    console.log('Searching for order ID in IndexedDB:', numericOrderId);
+
+    this.dbService.getOrderById(numericOrderId).then(order => {
+      if (order) {
+        console.log('Order found in IndexedDB:', order);
+        this.displayOrderDetails(order);
+      } else {
+        console.log('Order not found in IndexedDB, fetching from API');
+        // this.fetchOrderDetailsFromAPI();
+        this.fetchOrderDetails();
+      }
+    }).catch(err => {
+      console.error('Error searching order in IndexedDB:', err);
+      this.fetchOrderDetailsFromAPI();
+    });
+  }
+
+  // Display order details from IndexedDB
+  private displayOrderDetails(order: any): void {
+
+
+    try {
+      // Extract order details
+      // this.currencySymbol = order.currency_symbol || 'ج.م';
+
+      // this.paymenMethod =  "1";
+
+      // this.deliveryData = order.order_details?.delivedata || "ss";
+      // this.deliveryFees = order.order_details?.order_summary?.delivery_fees ||
+      //                    order.order_summary?.delivery_fees || 0;
+
+      // // Set the main order details
+      // this.orderDetails = order.order_details || order;
+      // this.orderSummary = order.order_details?.order_summary || order.order_summary || {};
+      this.orderItems = order.order_items ;
+
+      // Fix delivery name if empty
+      // if (this.deliveryData?.delivery_name === ' ' || !this.deliveryData?.delivery_name) {
+      //   this.deliveryData.delivery_name = 'test';
+      // }
+
+      console.log('Order details from IndexedDB:', this.orderDetails);
+      console.log('Order items from IndexedDB:', this.orderItems);
+      console.log('Order summary from IndexedDB:', this.orderSummary);
+
+      this.loading = false;
+
+    } catch (error) {
+      console.error('Error processing order data from IndexedDB:', error);
+      this.error = 'Error displaying order details from storage';
+      this.loading = false;
+    }
+  }
+
+  // Fetch order details from API (fallback)
+  fetchOrderDetailsFromAPI(): void {
+    this.loading = true;
+    this.error = '';
+
+    this.orderListById.getOrderById(this.orderId)
+      .pipe(
+        finalize(() => {
+          this.isAllLoading = true;
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: (response) => {
+          if (response && response.data) {
+            const order = response.data.orderDetails[0];
+            this.processOrderData(order);
+
+            // Save to IndexedDB for future access
+            this.saveOrderToIndexedDB(order);
+          } else {
+            this.error = 'No order details available.';
+            this.loading = false;
+          }
+        },
+        error: (error: any) => {
+          console.error('Error fetching order details from API:', error);
+          this.error = 'Failed to fetch order details.';
+          this.loading = false;
+        },
+      });
+  }
+
+  // Process order data from API
+  private processOrderData(order: any): void {
+    this.currencySymbol = order.currency_symbol;
+    this.paymenMethod = order.transactions?.[0]?.payment_method || 'Unknown';
+    this.deliveryData = order.delivery_data;
+    this.deliveryFees = order.order_summary?.delivery_fees || 0;
+
+    this.orderDetails = order;
+    this.orderSummary = order.order_summary || {};
+    this.orderItems = order.order_details || [];
+
+    if (this.deliveryData?.delivery_name === ' ') {
+      this.deliveryData.delivery_name = 'لا يوجد';
+    }
+
+    this.loading = false;
+  }
+
+  // Save order to IndexedDB
+  private saveOrderToIndexedDB(order: any): void {
+    // Prepare the order data in the same format as stored in IndexedDB
+    const orderToSave = {
+      ...order,
+      order_items: order.order_details || [], // Store items in order_items field
+      total_price: order.order_summary?.total || 0,
+      currency_symbol: order.currency_symbol,
+      savedAt: new Date().toISOString(),
+      isSynced: true
+    };
+
+    this.dbService.saveOrder(orderToSave).then(() => {
+      console.log('Order saved to IndexedDB:', order.order_id);
+    }).catch(err => {
+      console.error('Error saving order to IndexedDB:', err);
+    });
+  }
+
 
   fetchOrderDetails(): void {
     this.loading = true;
@@ -109,7 +267,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   status_order: any;
   cancelOrde(): void {
     if (!this.orderId) return;
- 
+
 
    const cancelUrl = `${baseUrl}api/orders/cashier/order-cancel`;
 
@@ -140,7 +298,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   }
     cancelOrder(): void {
     if (!this.orderId) return;
- 
+
 
    const cancelUrl = `${baseUrl}api/orders/cashier/request-cancel`;
 

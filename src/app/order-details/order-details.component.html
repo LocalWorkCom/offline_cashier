@@ -66,7 +66,7 @@
       </div>
 
     </div>
-    <!-- Cash - visa -->
+
     <div *ngIf="orderDetails.transactions.length>1">
       <div *ngFor="let inv of orderDetails.transactions">
         <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
@@ -79,7 +79,6 @@
 
       </div>
     </div>
-    <!-- Cash - visa -->
   </div>
 
   <div *ngIf="loading" class="card p-3 my-2">
