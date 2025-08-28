@@ -125,10 +125,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   couponCode: any;
   couponTitle: any;
   coupon_value: any;
-  client: any = localStorage.getItem('client');
-  clientPhone: any = localStorage.getItem('clientPhone');
-  clientStoredInLocal: any = localStorage.getItem('client');
-  clientPhoneStoredInLocal: any = localStorage.getItem('clientPhone');
+  // client: any = localStorage.getItem('client');
+  // clientPhone: any = localStorage.getItem('clientPhone');
+  // clientStoredInLocal: any = localStorage.getItem('client');
+  // clientPhoneStoredInLocal: any = localStorage.getItem('clientPhone');
+  client: any = '';
+  clientPhone: any = '';
+  clientStoredInLocal: any = '';
+  clientPhoneStoredInLocal: any = '';
   referenceNumber: any;
   payment_status: any;
   credit_amount: any;
@@ -200,6 +204,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.loadTableNumber();
     this.fetchCountries();
     this.loadAdditionalNote();
+
+      // Load client info from IndexedDB
+  this.loadClientInfoFromIndexedDB();
 
 
     // this.fetchTrackingStatus();
@@ -2802,41 +2809,148 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   clientInfoApplied = false; // ✅ show info now
 
+  // applyClientInfo() {
+  //   this.isLoading = true;
+
+  //   // Save to localStorage
+  //   localStorage.setItem('client', this.client);
+  //   localStorage.setItem('clientPhone', this.clientPhone);
+  //   localStorage.setItem('selectedCountryCode', this.selectedCountry.code);
+
+  //   this.clientStoredInLocal = this.client
+  //   this.clientPhoneStoredInLocal = this.clientPhone
+  //   // Simulate async saving
+  //   setTimeout(() => {
+  //     this.isLoading = false;
+  //     this.clientInfoApplied = true; // ✅ show info now
+
+  //     // Optionally close modal here
+  //     this.closeModal()
+
+  //   }, 500);
+  // }
+
   applyClientInfo() {
-    this.isLoading = true;
+  this.isLoading = true;
 
-    // Save to localStorage
-    localStorage.setItem('client', this.client);
-    localStorage.setItem('clientPhone', this.clientPhone);
-    localStorage.setItem('selectedCountryCode', this.selectedCountry.code);
+  // Prepare client info object
+  const clientInfo = {
+    client: this.client,
+    clientPhone: this.clientPhone,
+    selectedCountryCode: this.selectedCountry.code
+  };
 
-    this.clientStoredInLocal = this.client
-    this.clientPhoneStoredInLocal = this.clientPhone
+  // Save to localStorage
+  localStorage.setItem('client', this.client);
+  localStorage.setItem('clientPhone', this.clientPhone);
+  localStorage.setItem('selectedCountryCode', this.selectedCountry.code);
+
+  // Save to IndexedDB
+  this.dbService.saveClientInfo(clientInfo).then(id => {
+    console.log('✅ Client info saved to IndexedDB with ID:', id);
+
+    this.clientStoredInLocal = this.client;
+    this.clientPhoneStoredInLocal = this.clientPhone;
+
     // Simulate async saving
     setTimeout(() => {
       this.isLoading = false;
       this.clientInfoApplied = true; // ✅ show info now
 
       // Optionally close modal here
-      this.closeModal()
-
+      this.closeModal();
     }, 500);
-  }
+  }).catch(err => {
+    console.error('❌ Error saving client info to IndexedDB:', err);
+
+    // Fallback: Continue even if IndexedDB fails
+    this.clientStoredInLocal = this.client;
+    this.clientPhoneStoredInLocal = this.clientPhone;
+
+    setTimeout(() => {
+      this.isLoading = false;
+      this.clientInfoApplied = true;
+      this.closeModal();
+    }, 500);
+  });
+}
+
+private loadClientInfoFromIndexedDB() {
+  this.dbService.getLatestClientInfo().then(clientInfo => {
+    if (clientInfo) {
+      console.log('Client info loaded from IndexedDB:', clientInfo);
+
+      // Set the component properties with the loaded data
+      this.clientStoredInLocal = clientInfo.client || '';
+      this.clientPhoneStoredInLocal = clientInfo.clientPhone || '';
+      this.client = clientInfo.client || '';
+      this.clientPhone = clientInfo.clientPhone || '';
+ 
+
+
+
+      // Find and set the country code if available
+      if (clientInfo.selectedCountryCode && this.countryList.length > 0) {
+        const country = this.countryList.find(c => c.code === clientInfo.selectedCountryCode);
+        if (country) {
+          this.selectedCountry = country;
+        }
+      }
+
+      // Update the form if it exists
+      // if (this.form) {
+      //   this.form.patchValue({
+      //     client_name: clientInfo.client,
+      //     address_phone: clientInfo.clientPhone,
+      //     country_code: this.selectedCountry
+      //   });
+      // }
+
+      // Update local storage variables
+      this.clientStoredInLocal = this.client;
+      this.clientPhoneStoredInLocal = this.clientPhone;
+    }
+  }).catch(err => {
+    console.error('Error loading client info from IndexedDB:', err);
+  });
+}
+
+  // clearClientInfo() {
+  //   // Clear values from component
+  //   this.client = '';
+  //   this.clientPhone = '';
+  //   this.clientStoredInLocal = null;
+  //   this.clientPhoneStoredInLocal = null
+  //   // Remove from localStorage
+  //   localStorage.removeItem('client');
+  //   localStorage.removeItem('selectedCountryCode');
+  //   localStorage.removeItem('clientName');
+  //   localStorage.removeItem('clientPhone');
+
+  //   console.log('Client info cleared');
+  // }
 
   clearClientInfo() {
-    // Clear values from component
+  // Clear from localStorage
+  localStorage.removeItem('client');
+  localStorage.removeItem('clientPhone');
+  localStorage.removeItem('selectedCountryCode');
+
+  // Clear from IndexedDB
+  this.dbService.clearClientInfo().then(() => {
+    console.log('✅ Client info cleared from IndexedDB');
+
+    // Reset component properties
     this.client = '';
     this.clientPhone = '';
-    this.clientStoredInLocal = null;
-    this.clientPhoneStoredInLocal = null
-    // Remove from localStorage
-    localStorage.removeItem('client');
-    localStorage.removeItem('selectedCountryCode');
-    localStorage.removeItem('clientName');
-    localStorage.removeItem('clientPhone');
+    this.clientStoredInLocal = '';
+    this.clientPhoneStoredInLocal = '';
+    this.clientInfoApplied = false;
 
-    console.log('Client info cleared');
-  }
+  }).catch(err => {
+    console.error('❌ Error clearing client info from IndexedDB:', err);
+  });
+}
 
   closeClientModal() {
     // Optional: you can reset or keep values when closing the modal
