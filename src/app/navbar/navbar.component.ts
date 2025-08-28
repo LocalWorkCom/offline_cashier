@@ -8,6 +8,8 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { BalanceService } from '../services/balance.service';
 import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
 import { NotificationComponent } from '../shared/ui/component/notification/notification.component';
+import { IndexeddbService } from '../services/indexeddb.service';
+import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-navbar',
@@ -35,7 +37,7 @@ export class NavbarComponent implements OnInit {
   imageUrl: string | null = null;
   currency_Symbol: string | null = null;
   showCloseBalanceModal: boolean = false;
-  
+
   // Deficit handling properties
   showDeficitMessage = false;
   deficitCash = 0;
@@ -45,14 +47,29 @@ export class NavbarComponent implements OnInit {
   constructor(
     public authService: AuthService,
     private router: Router,
+    private dbService: IndexeddbService,
+    private cdr: ChangeDetectorRef,
     private closeBalanceService: CloseBalanceService,
     private balanceService: BalanceService,
     @Inject(PLATFORM_ID) private platformId: Object
-  ) {}
+  ) { }
 
   ngOnInit() {
     this.initializeUserData();
     this.subscribeToAuthChanges();
+    this.dbService.init(); // ✅ افتح قاعدة البيانات
+
+    if (navigator.onLine) {
+      // Online: احفظ الفرع في IndexedDB عند التغيير
+      this.dbService.saveData('branch', [{ id: 1, branch: this.branch }]);
+    } else {
+      // Offline: جلب الفرع من IndexedDB
+      this.dbService.getAll('branch').then(result => {
+        if (result && result.length > 0) {
+          this.branch = result[0].branch;
+        }
+      });
+    }
   }
 
   private initializeUserData(): void {
@@ -74,10 +91,13 @@ export class NavbarComponent implements OnInit {
         this.fullName = `${employee.first_name} ${employee.last_name}`;
       }
     });
+    // Save to IndexedDB for offline use (non-blocking)
 
     this.authService.branch$.subscribe((branch) => {
       this.branch = branch;
     });
+    this.dbService.saveData('branch', [{ id: 1, branch: this.branch }])
+      .catch(error => console.error('Error saving to IndexedDB:', error));
 
     this.authService.shiftData$.subscribe((shiftData) => {
       this.shiftData = shiftData;
@@ -86,6 +106,7 @@ export class NavbarComponent implements OnInit {
     this.authService.imageUrl$.subscribe((imageUrl) => {
       this.imageUrl = imageUrl;
     });
+
   }
 
   async showBalanceoutModal() {
@@ -112,7 +133,7 @@ export class NavbarComponent implements OnInit {
         this.closeCash = Number(balanceData.open_cash) || 0;
         this.closeVisa = Number(balanceData.open_visa) || 0;
         this.currency_Symbol = balanceData.currency_symbol || this.currency_Symbol;
-        
+
         // Check for existing deficits
         this.deficitCash = balanceData.deficit_cash || 0;
         this.deficitVisa = balanceData.deficit_visa || 0;
@@ -132,15 +153,15 @@ export class NavbarComponent implements OnInit {
 
   private buildDeficitMessage(): void {
     let messages = [];
-    
+
     if (this.deficitCash !== 0) {
       messages.push(`فارق نقدي بقيمة ${this.deficitCash} ${this.currency_Symbol}`);
     }
-    
+
     if (this.deficitVisa !== 0) {
       messages.push(`فارق في البطاقات بقيمة ${this.deficitVisa} ${this.currency_Symbol}`);
     }
-    
+
     this.deficitMessage = messages.join(' و ');
   }
 
