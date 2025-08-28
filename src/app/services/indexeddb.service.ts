@@ -493,7 +493,7 @@ export class IndexeddbService {
     if (this.initPromise) return this.initPromise;
 
     this.initPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open('MyDB', 20); // Incremented version to 4
+      const request = indexedDB.open('MyDB', 30); // Incremented version to 4
 
       request.onupgradeneeded = (event: any) => {
         this.db = event.target.result;
@@ -516,7 +516,7 @@ export class IndexeddbService {
           this.db.createObjectStore('lastSync', { keyPath: 'storeName' });
         }
 
-           // Create hotels store
+        // Create hotels store
         if (!this.db.objectStoreNames.contains('hotels')) {
           this.db.createObjectStore('hotels', { keyPath: 'id' });
         }
@@ -536,6 +536,11 @@ export class IndexeddbService {
           this.db.createObjectStore('formData', { keyPath: 'id', autoIncrement: true });
         }
 
+        // Create clientInfo store for client information
+        if (!this.db.objectStoreNames.contains('clientInfo')) {
+          this.db.createObjectStore('clientInfo', { keyPath: 'id', autoIncrement: true });
+        }
+
         // Create cart store
         if (!this.db.objectStoreNames.contains('cart')) {
           this.db.createObjectStore('cart', {
@@ -547,7 +552,7 @@ export class IndexeddbService {
 
         // Create form_delivery store
         if (!this.db.objectStoreNames.contains('form_delivery')) {
-           this.db.createObjectStore('form_delivery', { keyPath: 'id' });
+          this.db.createObjectStore('form_delivery', { keyPath: 'id' });
         }
 
         // Create pendingOperations store for offline operations
@@ -574,55 +579,55 @@ export class IndexeddbService {
     return this.initPromise;
   }
 
-// Save form data to IndexedDB
-saveFormData(formData: any): Promise<number> {
-  return this.ensureInit().then(() => {
-    return new Promise((resolve, reject) => {
-      const tx = this.db.transaction('formData', 'readwrite');
-      const store = tx.objectStore('formData');
+  // Save form data to IndexedDB
+  saveFormData(formData: any): Promise<number> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('formData', 'readwrite');
+        const store = tx.objectStore('formData');
 
-      // Add timestamp and online status
-      const formDataWithMetadata = {
-        ...formData,
-        savedAt: new Date().toISOString(),
-        isSynced: navigator.onLine
-      };
+        // Add timestamp and online status
+        const formDataWithMetadata = {
+          ...formData,
+          savedAt: new Date().toISOString(),
+          isSynced: navigator.onLine
+        };
 
-      const request = store.add(formDataWithMetadata);
+        const request = store.add(formDataWithMetadata);
 
-      request.onsuccess = () => resolve(request.result as number);
-      request.onerror = (e) => reject(e);
+        request.onsuccess = () => resolve(request.result as number);
+        request.onerror = (e) => reject(e);
+      });
     });
-  });
-}
+  }
 
-// Get all form data
-getFormData(): Promise<any[]> {
-  return this.ensureInit().then(() => {
-    return new Promise((resolve, reject) => {
-      const tx = this.db.transaction('formData', 'readonly');
-      const store = tx.objectStore('formData');
-      const request = store.getAll();
+  // Get all form data
+  getFormData(): Promise<any[]> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('formData', 'readonly');
+        const store = tx.objectStore('formData');
+        const request = store.getAll();
 
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = (e) => reject(e);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = (e) => reject(e);
+      });
     });
-  });
-}
+  }
 
-// Clear form data
-clearFormData(): Promise<void> {
-  return this.ensureInit().then(() => {
-    return new Promise((resolve, reject) => {
-      const tx = this.db.transaction('formData', 'readwrite');
-      const store = tx.objectStore('formData');
-      const request = store.clear();
+  // Clear form data
+  clearFormData(): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('formData', 'readwrite');
+        const store = tx.objectStore('formData');
+        const request = store.clear();
 
-      request.onsuccess = () => resolve();
-      request.onerror = (e) => reject(e);
+        request.onsuccess = () => resolve();
+        request.onerror = (e) => reject(e);
+      });
     });
-  });
-}
+  }
 
 
   // Add item to cart
@@ -643,8 +648,8 @@ clearFormData(): Promise<void> {
         const request = store.add(itemWithMetadata);
 
         request.onsuccess = () => resolve(request.result as number);
-         // Reload the page
-    window.location.reload();
+        // Reload the page
+        window.location.reload();
         request.onerror = (e) => reject(e);
       });
     });
@@ -773,4 +778,70 @@ clearFormData(): Promise<void> {
       });
     });
   }
+
+  // indexeddb.service.ts - Add these methods
+
+// Save client info to IndexedDB
+saveClientInfo(clientInfo: any): Promise<number> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('clientInfo', 'readwrite');
+      const store = tx.objectStore('clientInfo');
+
+      // Add timestamp
+      const clientInfoWithMetadata = {
+        ...clientInfo,
+        savedAt: new Date().toISOString()
+      };
+
+      const request = store.add(clientInfoWithMetadata);
+
+      request.onsuccess = () => resolve(request.result as number);
+      request.onerror = (e) => reject(e);
+    });
+  });
+}
+
+// Get client info from IndexedDB
+getClientInfo(): Promise<any[]> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('clientInfo', 'readonly');
+      const store = tx.objectStore('clientInfo');
+      const request = store.getAll();
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = (e) => reject(e);
+    });
+  });
+}
+
+// Get latest client info
+getLatestClientInfo(): Promise<any> {
+  return this.getClientInfo().then(clientInfoArray => {
+    if (clientInfoArray && clientInfoArray.length > 0) {
+      // Sort by savedAt descending and return the latest
+      return clientInfoArray.sort((a, b) =>
+        new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime()
+      )[0];
+    }
+    return null;
+  });
+}
+
+// Clear client info
+clearClientInfo(): Promise<void> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('clientInfo', 'readwrite');
+      const store = tx.objectStore('clientInfo');
+      const request = store.clear();
+
+      request.onsuccess = () => resolve();
+      request.onerror = (e) => reject(e);
+    });
+  });
+}
+
+
 }
