@@ -493,7 +493,7 @@ export class IndexeddbService {
     if (this.initPromise) return this.initPromise;
 
     this.initPromise = new Promise((resolve, reject) => {
-      const request = indexedDB.open('MyDB', 30); // Incremented version to 4
+      const request = indexedDB.open('MyDB', 110); // Incremented version to 4
 
       request.onupgradeneeded = (event: any) => {
         this.db = event.target.result;
@@ -501,6 +501,11 @@ export class IndexeddbService {
         // Create categories store
         if (!this.db.objectStoreNames.contains('categories')) {
           this.db.createObjectStore('categories', { keyPath: 'id' });
+        }
+
+        // Create nextOrderNumber store
+        if (!this.db.objectStoreNames.contains('nextOrderNumber')) {
+          this.db.createObjectStore('nextOrderNumber', { keyPath: 'id' });
         }
 
         if (!this.db.objectStoreNames.contains('tables')) {
@@ -539,6 +544,10 @@ export class IndexeddbService {
         // Create clientInfo store for client information
         if (!this.db.objectStoreNames.contains('clientInfo')) {
           this.db.createObjectStore('clientInfo', { keyPath: 'id', autoIncrement: true });
+        }
+
+        if (!this.db.objectStoreNames.contains('orders')) {
+          this.db.createObjectStore('orders', { keyPath: 'order_details.order_id' });
         }
 
         // Create cart store
@@ -741,6 +750,88 @@ export class IndexeddbService {
     );
   }
 
+  // Save orders to IndexedDB
+  saveOrders(orders: any[]): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('orders', 'readwrite');
+        const store = tx.objectStore('orders');
+
+        // Clear existing orders
+        store.clear().onsuccess = () => {
+          // Add all new orders
+          orders.forEach(order => {
+            const orderWithMetadata = {
+              ...order,
+              savedAt: new Date().toISOString(),
+              isSynced: navigator.onLine
+            };
+            store.put(orderWithMetadata);
+          });
+
+          tx.oncomplete = () => resolve();
+          tx.onerror = (e) => reject(e);
+        };
+      });
+    });
+  }
+
+  // Get orders from IndexedDB
+  getOrders(): Promise<any[]> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('orders', 'readonly');
+        const store = tx.objectStore('orders');
+        const request = store.getAll();
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  // Get last sync time for orders
+  getOrdersLastSync(): Promise<number> {
+    return this.getLastSync('orders');
+  }
+
+  // Set last sync time for orders
+  setOrdersLastSync(timestamp: number): Promise<void> {
+    return this.setLastSync('orders', timestamp);
+  }
+
+
+
+  // Get last sync time for a specific store
+  getLastSync(storeName: string): Promise<number> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('lastSync', 'readonly');
+        const store = tx.objectStore('lastSync');
+        const request = store.get(storeName);
+
+        request.onsuccess = () => {
+          resolve(request.result ? request.result.timestamp : 0);
+        };
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  // Set last sync time for a specific store
+  setLastSync(storeName: string, timestamp: number): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('lastSync', 'readwrite');
+        const store = tx.objectStore('lastSync');
+        const request = store.put({ storeName, timestamp });
+
+        request.onsuccess = () => resolve();
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
   // Check if database is initialized
   private ensureInit(): Promise<void> {
     if (this.isInitialized) {
@@ -781,67 +872,204 @@ export class IndexeddbService {
 
   // indexeddb.service.ts - Add these methods
 
-// Save client info to IndexedDB
-saveClientInfo(clientInfo: any): Promise<number> {
+  // Save client info to IndexedDB
+  saveClientInfo(clientInfo: any): Promise<number> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('clientInfo', 'readwrite');
+        const store = tx.objectStore('clientInfo');
+
+        // Add timestamp
+        const clientInfoWithMetadata = {
+          ...clientInfo,
+          savedAt: new Date().toISOString()
+        };
+
+        const request = store.add(clientInfoWithMetadata);
+
+        request.onsuccess = () => resolve(request.result as number);
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  // Get client info from IndexedDB
+  getClientInfo(): Promise<any[]> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('clientInfo', 'readonly');
+        const store = tx.objectStore('clientInfo');
+        const request = store.getAll();
+
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  // Get latest client info
+  getLatestClientInfo(): Promise<any> {
+    return this.getClientInfo().then(clientInfoArray => {
+      if (clientInfoArray && clientInfoArray.length > 0) {
+        // Sort by savedAt descending and return the latest
+        return clientInfoArray.sort((a, b) =>
+          new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime()
+        )[0];
+      }
+      return null;
+    });
+  }
+
+  // Clear client info
+  clearClientInfo(): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('clientInfo', 'readwrite');
+        const store = tx.objectStore('clientInfo');
+        const request = store.clear();
+
+        request.onsuccess = () => resolve();
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+// Get the last order number from IndexedDB
+getLastOrderNumberFromDB(): Promise<string> {
   return this.ensureInit().then(() => {
     return new Promise((resolve, reject) => {
-      const tx = this.db.transaction('clientInfo', 'readwrite');
-      const store = tx.objectStore('clientInfo');
+      const tx = this.db.transaction('orders', 'readonly');
+      const store = tx.objectStore('orders');
+      const request = store.openCursor(null, 'prev'); // Get last item
 
-      // Add timestamp
-      const clientInfoWithMetadata = {
-        ...clientInfo,
-        savedAt: new Date().toISOString()
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (cursor) {
+          const orderNumber = cursor.value.order_details?.order_number || '#CS-1000';
+          resolve(orderNumber);
+        } else {
+          resolve('#CS-1000'); // Default starting point
+        }
       };
-
-      const request = store.add(clientInfoWithMetadata);
-
-      request.onsuccess = () => resolve(request.result as number);
       request.onerror = (e) => reject(e);
     });
   });
 }
 
-// Get client info from IndexedDB
-getClientInfo(): Promise<any[]> {
-  return this.ensureInit().then(() => {
-    return new Promise((resolve, reject) => {
-      const tx = this.db.transaction('clientInfo', 'readonly');
-      const store = tx.objectStore('clientInfo');
-      const request = store.getAll();
+// Extract numeric part from order number and increment
+extractAndIncrementOrderNumber(orderNumber: string): { current: string, next: string } {
+  if (!orderNumber) {
+    return { current: '#CS-1000', next: '#CS-1001' };
+  }
 
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = (e) => reject(e);
-    });
-  });
+  // Extract numeric part (e.g., #CS-31163 → 31163)
+  const numericMatch = orderNumber.match(/\d+/);
+  const prefixMatch = orderNumber.match(/^[^\d]+/);
+
+  const numericPart = numericMatch ? parseInt(numericMatch[0], 10) : 1000;
+  const prefix = prefixMatch ? prefixMatch[0] : '#CS-';
+
+  const nextNumeric = numericPart + 1;
+
+  return {
+    current: orderNumber,
+    next: `${prefix}${nextNumeric}`
+  };
 }
 
-// Get latest client info
-getLatestClientInfo(): Promise<any> {
-  return this.getClientInfo().then(clientInfoArray => {
-    if (clientInfoArray && clientInfoArray.length > 0) {
-      // Sort by savedAt descending and return the latest
-      return clientInfoArray.sort((a, b) =>
-        new Date(b.savedAt).getTime() - new Date(a.savedAt).getTime()
-      )[0];
-    }
-    return null;
-  });
-}
-
-// Clear client info
-clearClientInfo(): Promise<void> {
+// Save the next order number
+saveNextOrderNumber(nextOrderNumber: string): Promise<void> {
   return this.ensureInit().then(() => {
     return new Promise((resolve, reject) => {
-      const tx = this.db.transaction('clientInfo', 'readwrite');
-      const store = tx.objectStore('clientInfo');
-      const request = store.clear();
+      const tx = this.db.transaction('nextOrderNumber', 'readwrite');
+      const store = tx.objectStore('nextOrderNumber');
+      const data = {
+        id: 'nextOrderNumber',
+        value: nextOrderNumber,
+        updatedAt: new Date().toISOString()
+      };
+      const request = store.put(data);
 
       request.onsuccess = () => resolve();
       request.onerror = (e) => reject(e);
     });
   });
 }
+
+// Get stored next order number
+getStoredNextOrderNumber(): Promise<string> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('nextOrderNumber', 'readonly');
+      const store = tx.objectStore('nextOrderNumber');
+      const request = store.get('nextOrderNumber');
+
+      request.onsuccess = () => {
+        resolve(request.result ? request.result.value : '#CS-1001');
+      };
+      request.onerror = (e) => reject(e);
+    });
+  });
+}
+
+// Complete process: get last order, extract number, increment, and save
+processAndStoreNextOrderNumber(): Promise<{ current: string, next: string }> {
+  return this.getLastOrderNumberFromDB().then(lastOrderNumber => {
+    // Extract and increment the order number
+    const result = this.extractAndIncrementOrderNumber(lastOrderNumber);
+
+    console.log('Extracted from:', lastOrderNumber);
+    console.log('Current:', result.current);
+    console.log('Next:', result.next);
+
+    // Save the next order number
+    return this.saveNextOrderNumber(result.next).then(() => result);
+  });
+}
+
+
+// Get order by ID from IndexedDB
+getOrderById(orderId: number): Promise<any> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('orders', 'readonly');
+      const store = tx.objectStore('orders');
+
+      // Convert orderId to number if it's a string
+      const numericOrderId = typeof orderId === 'string' ? parseInt(orderId, 10) : orderId;
+
+      const request = store.get(numericOrderId);
+
+      request.onsuccess = () => {
+        resolve(request.result ? request.result : null);
+      };
+      request.onerror = (e) => reject(e);
+    });
+  });
+}
+
+// Save single order to IndexedDB
+saveOrder(order: any): Promise<void> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('orders', 'readwrite');
+      const store = tx.objectStore('orders');
+
+      const orderWithMetadata = {
+        ...order,
+        savedAt: new Date().toISOString(),
+        isSynced: navigator.onLine
+      };
+
+      const request = store.put(orderWithMetadata);
+
+      request.onsuccess = () => resolve();
+      request.onerror = (e) => reject(e);
+    });
+  });
+}
+
+
 
 
 }
