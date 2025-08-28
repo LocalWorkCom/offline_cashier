@@ -493,6 +493,7 @@ export class IndexeddbService {
     if (this.initPromise) return this.initPromise;
 
     this.initPromise = new Promise((resolve, reject) => {
+
       const request = indexedDB.open('MyDB', 110); // Incremented version to 4
 
       request.onupgradeneeded = (event: any) => {
@@ -503,6 +504,18 @@ export class IndexeddbService {
           this.db.createObjectStore('categories', { keyPath: 'id' });
         }
 
+        // Modify pills store to use autoIncrement instead of keyPath
+         if (this.db.objectStoreNames.contains('pillDetails')) {
+        this.db.deleteObjectStore('pillDetails');
+      }
+      this.db.createObjectStore('pillDetails', { keyPath: 'id' });
+
+      // Create or modify pills store
+      if (this.db.objectStoreNames.contains('pills')) {
+        this.db.deleteObjectStore('pills');
+      }
+      this.db.createObjectStore('pills', { keyPath: 'invoice_number' });
+      
         // Create nextOrderNumber store
         if (!this.db.objectStoreNames.contains('nextOrderNumber')) {
           this.db.createObjectStore('nextOrderNumber', { keyPath: 'id' });
@@ -514,6 +527,14 @@ export class IndexeddbService {
 
         if (!this.db.objectStoreNames.contains('selectedTable')) {
           this.db.createObjectStore('selectedTable', { keyPath: 'id' });
+        }
+
+        if (!this.db.objectStoreNames.contains('branch')) {
+          this.db.createObjectStore('branch', { keyPath: 'id' });
+        }
+
+        if (!this.db.objectStoreNames.contains('branch_id')) {
+          this.db.createObjectStore('branch_id', { keyPath: 'id' });
         }
 
         // Create lastSync store
@@ -750,6 +771,23 @@ export class IndexeddbService {
     );
   }
 
+  /**
+   * جلب branch_id من بيانات الفرع وتخزينه في store branch_id
+   */
+  async assignBranchIdFromBranch(): Promise<void> {
+    await this.ensureInit();
+    // جلب بيانات الفرع من store branch
+    const branches = await this.getAll('branch');
+    if (branches && branches.length > 0) {
+      const branchData = branches[0];
+      // ابحث عن branch_id أو id حسب هيكل البيانات
+      const branchId = branchData.branch_id || branchData.id || null;
+      if (branchId) {
+        // حفظ branch_id في store branch_id
+        await this.saveData('branch_id', [{ id: 1, branch_id: branchId }]);
+      }
+    }
+
   // Save orders to IndexedDB
   saveOrders(orders: any[]): Promise<void> {
     return this.ensureInit().then(() => {
@@ -853,20 +891,136 @@ export class IndexeddbService {
       });
     });
   }
+  getData(storeName: string, key: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([storeName], 'readonly');
+      const store = transaction.objectStore(storeName);
+      const request = store.get(key);
 
-  saveData(storeName: string, data: any[]): Promise<void> {
-    return this.ensureInit().then(() => {
-      return new Promise((resolve, reject) => {
-        const tx = this.db.transaction(storeName, 'readwrite');
-        const store = tx.objectStore(storeName);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+  // saveData(storeName: string, data: any[]): Promise<void> {
+  //   return this.ensureInit().then(() => {
+  //     return new Promise((resolve, reject) => {
+  //       const tx = this.db.transaction(storeName, 'readwrite');
+  //       const store = tx.objectStore(storeName);
 
-        store.clear().onsuccess = () => {
-          data.forEach(item => store.put(item));
+  //       store.clear().onsuccess = () => {
+  //         data.forEach(item => store.put(item));
 
-          tx.oncomplete = () => resolve();
-          tx.onerror = (e) => reject(e);
-        };
-      });
+  //         tx.oncomplete = () => resolve();
+  //         tx.onerror = (e) => reject(e);
+  //       };
+  //     });
+  //   });
+  // }
+
+  // In IndexeddbService, modify the saveData method to handle missing key paths
+  // In indexeddb.service.ts
+
+  private hasKeyPath(item: any, keyPath: string | string[]): boolean {
+    if (typeof keyPath === 'string') {
+      return item.hasOwnProperty(keyPath);
+    } else if (Array.isArray(keyPath)) {
+      return keyPath.every(path => item.hasOwnProperty(path));
+    }
+    return false;
+  }
+
+  private setKeyPath(item: any, keyPath: string | string[], value: any): void {
+    if (typeof keyPath === 'string') {
+      item[keyPath] = value;
+    } else if (Array.isArray(keyPath)) {
+      // For compound keys, we need to handle this differently
+      // For simplicity, we'll just set the first key path
+      if (keyPath.length > 0) {
+        item[keyPath[0]] = value;
+      }
+    }
+  }
+  saveData(storeName: string, data: any, key?: any): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([storeName], 'readwrite');
+      const store = transaction.objectStore(storeName);
+      const keyPath = store.keyPath;
+
+      // Handle the case where a custom key is provided
+      if (key !== undefined) {
+        // Create a new object with the key as a property
+        const itemToSave = { ...data, id: key };
+        const request = store.put(itemToSave);
+
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      } else {
+        // Handle array of data
+        if (Array.isArray(data)) {
+          const promises = data.map(item => {
+            return new Promise<void>((res, rej) => {
+              // Check if the item has the required key path
+              if (keyPath && !this.hasKeyPath(item, keyPath)) {
+                // Generate a temporary key if missing
+                this.setKeyPath(item, keyPath, `temp_${Date.now()}_${Math.random()}`);
+              }
+              const request = store.put(item);
+              request.onsuccess = () => res();
+              request.onerror = () => rej(request.error);
+            });
+          });
+
+          Promise.all(promises)
+            .then(() => resolve())
+            .catch(error => reject(error));
+        } else {
+          // Handle single object
+          // Check if the data has the required key path
+          if (keyPath && !this.hasKeyPath(data, keyPath)) {
+            // Generate a temporary key if missing
+            this.setKeyPath(data, keyPath, `temp_${Date.now()}_${Math.random()}`);
+          }
+          const request = store.put(data);
+          request.onsuccess = () => resolve();
+          request.onerror = () => reject(request.error);
+        }
+      }
+    });
+  }
+
+  savePillDetails(pillId: string, data: any): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['pillDetails'], 'readwrite');
+      const store = transaction.objectStore('pillDetails');
+
+      // Create an object with the pillId as a property
+      const itemToSave = { ...data, id: pillId };
+      const request = store.put(itemToSave);
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  getPillDetails(pillId: string): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['pillDetails'], 'readonly');
+      const store = transaction.objectStore('pillDetails');
+      const request = store.get(pillId);
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  getDataByKey(storeName: string, key: any): Promise<any> {
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([storeName], 'readonly');
+      const store = transaction.objectStore(storeName);
+      const request = store.get(key);
+
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
     });
   }
 
