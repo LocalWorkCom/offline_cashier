@@ -8,8 +8,6 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { BalanceService } from '../services/balance.service';
 import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
 import { NotificationComponent } from '../shared/ui/component/notification/notification.component';
-import { IndexeddbService } from '../services/indexeddb.service';
-import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
   selector: 'app-navbar',
@@ -47,29 +45,14 @@ export class NavbarComponent implements OnInit {
   constructor(
     public authService: AuthService,
     private router: Router,
-    private dbService: IndexeddbService,
-    private cdr: ChangeDetectorRef,
     private closeBalanceService: CloseBalanceService,
     private balanceService: BalanceService,
     @Inject(PLATFORM_ID) private platformId: Object
-  ) { }
+  ) {}
 
   ngOnInit() {
     this.initializeUserData();
     this.subscribeToAuthChanges();
-    this.dbService.init(); // ✅ افتح قاعدة البيانات
-
-    if (navigator.onLine) {
-      // Online: احفظ الفرع في IndexedDB عند التغيير
-      this.dbService.saveData('branch', [{ id: 1, branch: this.branch }]);
-    } else {
-      // Offline: جلب الفرع من IndexedDB
-      this.dbService.getAll('branch').then(result => {
-        if (result && result.length > 0) {
-          this.branch = result[0].branch;
-        }
-      });
-    }
   }
 
   private initializeUserData(): void {
@@ -91,13 +74,10 @@ export class NavbarComponent implements OnInit {
         this.fullName = `${employee.first_name} ${employee.last_name}`;
       }
     });
-    // Save to IndexedDB for offline use (non-blocking)
 
     this.authService.branch$.subscribe((branch) => {
       this.branch = branch;
     });
-    this.dbService.saveData('branch', [{ id: 1, branch: this.branch }])
-      .catch(error => console.error('Error saving to IndexedDB:', error));
 
     this.authService.shiftData$.subscribe((shiftData) => {
       this.shiftData = shiftData;
@@ -106,7 +86,6 @@ export class NavbarComponent implements OnInit {
     this.authService.imageUrl$.subscribe((imageUrl) => {
       this.imageUrl = imageUrl;
     });
-
   }
 
   async showBalanceoutModal() {
