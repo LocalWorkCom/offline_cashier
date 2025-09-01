@@ -21,8 +21,10 @@ export class IndexeddbService {
     if (this.initPromise) return this.initPromise;
 
     this.initPromise = new Promise((resolve, reject) => {
-      // It's important to increment the version number for a new migration to run.
-      const request = indexedDB.open('MyDB', 110);
+
+
+      const request = indexedDB.open('MyDB', 120); // Incremented version to 4
+
 
       request.onupgradeneeded = (event: any) => {
         this.db = event.target.result;
@@ -32,16 +34,18 @@ export class IndexeddbService {
           this.db.createObjectStore('categories', { keyPath: 'id' });
         }
 
-        // Handle pills store upgrade or creation
+
         if (this.db.objectStoreNames.contains('pillDetails')) {
           this.db.deleteObjectStore('pillDetails');
         }
         this.db.createObjectStore('pillDetails', { keyPath: 'id' });
 
-        // Create or modify pills store, with invoice_id as the primary key
-        if (!this.db.objectStoreNames.contains('pills')) {
-          this.db.createObjectStore('pills', { keyPath: 'invoice_id' });
+
+        // Create or modify pills store
+        if (this.db.objectStoreNames.contains('pills')) {
+          this.db.deleteObjectStore('pills');
         }
+        this.db.createObjectStore('pills', { keyPath: 'invoice_number' });
 
         // Create other stores if they don't exist
         if (!this.db.objectStoreNames.contains('nextOrderNumber')) {
@@ -53,12 +57,24 @@ export class IndexeddbService {
         if (!this.db.objectStoreNames.contains('selectedTable')) {
           this.db.createObjectStore('selectedTable', { keyPath: 'id' });
         }
+        if (!this.db.objectStoreNames.contains('selectedOrderType')) {
+          this.db.createObjectStore('selectedOrderType', { keyPath: 'id' });
+        }
+
+
         if (!this.db.objectStoreNames.contains('branch')) {
           this.db.createObjectStore('branch', { keyPath: 'id' });
         }
         if (!this.db.objectStoreNames.contains('branch_id')) {
           this.db.createObjectStore('branch_id', { keyPath: 'id' });
         }
+
+         if (!this.db.objectStoreNames.contains('branchData')) {
+          this.db.createObjectStore('branchData', { keyPath: 'id' });
+        }
+
+        // Create lastSync store
+
         if (!this.db.objectStoreNames.contains('lastSync')) {
           this.db.createObjectStore('lastSync', { keyPath: 'storeName' });
         }
@@ -248,20 +264,7 @@ export class IndexeddbService {
     );
   }
 
-  /**
-   * جلب branch_id من بيانات الفرع وتخزينه في store branch_id
-   */
-  async assignBranchIdFromBranch(): Promise<void> {
-    await this.ensureInit();
-    const branches = await this.getAll('branch');
-    if (branches && branches.length > 0) {
-      const branchData = branches[0];
-      const branchId = branchData.branch_id || branchData.id || null;
-      if (branchId) {
-        await this.saveData('branch_id', [{ id: 1, branch_id: branchId }]);
-      }
-    }
-  }
+
 
   // Save orders to IndexedDB
   async saveOrders(orders: any[]): Promise<void> {
@@ -469,6 +472,28 @@ export class IndexeddbService {
     });
   }
 
+
+
+
+  // Save client info to IndexedDB
+  saveClientInfo(clientInfo: any): Promise<number> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('clientInfo', 'readwrite');
+        const store = tx.objectStore('clientInfo');
+
+        // Add timestamp
+        const clientInfoWithMetadata = {
+          ...clientInfo,
+          savedAt: new Date().toISOString()
+        };
+
+        const request = store.add(clientInfoWithMetadata);
+
+        request.onsuccess = () => resolve(request.result as number);
+        request.onerror = (e) => reject(e);
+      });
+
   async saveClientInfo(clientInfo: any): Promise<number> {
     await this.ensureInit();
     return new Promise((resolve, reject) => {
@@ -481,6 +506,7 @@ export class IndexeddbService {
       const request = store.add(clientInfoWithMetadata);
       request.onsuccess = () => resolve(request.result as number);
       request.onerror = (e) => reject(e);
+
     });
   }
 
@@ -516,6 +542,31 @@ export class IndexeddbService {
     });
   }
 
+
+  // Get the last order number from IndexedDB
+  getLastOrderNumberFromDB(): Promise<string> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('orders', 'readonly');
+        const store = tx.objectStore('orders');
+        const request = store.openCursor(null, 'prev'); // Get last item
+
+        request.onsuccess = () => {
+          const cursor = request.result;
+          if (cursor) {
+            const orderNumber = cursor.value.order_details?.order_number || '#CS-1000';
+            resolve(orderNumber);
+          } else {
+            resolve('#CS-1000'); // Default starting point
+          }
+        };
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  // Extract numeric part from order number and increment
+
   async getLastOrderNumberFromDB(): Promise<string> {
     await this.ensureInit();
     return new Promise((resolve, reject) => {
@@ -535,20 +586,203 @@ export class IndexeddbService {
     });
   }
 
+
   extractAndIncrementOrderNumber(orderNumber: string): { current: string, next: string } {
     if (!orderNumber) {
       return { current: '#CS-1000', next: '#CS-1001' };
     }
+
+
+    // Extract numeric part (e.g., #CS-31163 → 31163)
+    const numericMatch = orderNumber.match(/\d+/);
+    const prefixMatch = orderNumber.match(/^[^\d]+/);
+
+    const numericPart = numericMatch ? parseInt(numericMatch[0], 10) : 1000;
+    const prefix = prefixMatch ? prefixMatch[0] : '#CS-';
+
+    const nextNumeric = numericPart + 1;
+
     const numericMatch = orderNumber.match(/\d+/);
     const prefixMatch = orderNumber.match(/^[^\d]+/);
     const numericPart = numericMatch ? parseInt(numericMatch[0], 10) : 1000;
     const prefix = prefixMatch ? prefixMatch[0] : '#CS-';
     const nextNumeric = numericPart + 1;
+
     return {
       current: orderNumber,
       next: `${prefix}${nextNumeric}`
     };
   }
+
+
+  // Save the next order number
+  saveNextOrderNumber(nextOrderNumber: string): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('nextOrderNumber', 'readwrite');
+        const store = tx.objectStore('nextOrderNumber');
+        const data = {
+          id: 'nextOrderNumber',
+          value: nextOrderNumber,
+          updatedAt: new Date().toISOString()
+        };
+        const request = store.put(data);
+
+        request.onsuccess = () => resolve();
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  // Get stored next order number
+  getStoredNextOrderNumber(): Promise<string> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('nextOrderNumber', 'readonly');
+        const store = tx.objectStore('nextOrderNumber');
+        const request = store.get('nextOrderNumber');
+
+        request.onsuccess = () => {
+          resolve(request.result ? request.result.value : '#CS-1001');
+        };
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  // Complete process: get last order, extract number, increment, and save
+  processAndStoreNextOrderNumber(): Promise<{ current: string, next: string }> {
+    return this.getLastOrderNumberFromDB().then(lastOrderNumber => {
+      // Extract and increment the order number
+      const result = this.extractAndIncrementOrderNumber(lastOrderNumber);
+
+      console.log('Extracted from:', lastOrderNumber);
+      console.log('Current:', result.current);
+      console.log('Next:', result.next);
+
+      // Save the next order number
+      return this.saveNextOrderNumber(result.next).then(() => result);
+    });
+  }
+
+
+  // Get order by ID from IndexedDB
+  getOrderById(orderId: number): Promise<any> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('orders', 'readonly');
+        const store = tx.objectStore('orders');
+
+        // Convert orderId to number if it's a string
+        const numericOrderId = typeof orderId === 'string' ? parseInt(orderId, 10) : orderId;
+
+        const request = store.get(numericOrderId);
+
+        request.onsuccess = () => {
+          resolve(request.result ? request.result : null);
+        };
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  // Save single order to IndexedDB
+  saveOrder(order: any): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('orders', 'readwrite');
+        const store = tx.objectStore('orders');
+
+        const orderWithMetadata = {
+          ...order,
+          savedAt: new Date().toISOString(),
+          isSynced: navigator.onLine
+        };
+
+        const request = store.put(orderWithMetadata);
+
+        request.onsuccess = () => resolve();
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+  deleteOrder(orderId: string): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('orders', 'readwrite');
+        const store = tx.objectStore('orders');
+        const request = store.delete(orderId);
+
+        request.onsuccess = () => resolve();
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+  // Save app setting to IndexedDB
+   saveAppSetting(key: string, value: any): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('appSettings', 'readwrite');
+        const store = tx.objectStore('appSettings');
+        const data = {
+          id: key,
+          value: value,
+          updatedAt: new Date().toISOString()
+        };
+        const request = store.put(data);
+
+        request.onsuccess = () => resolve();
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  // Get app setting from IndexedDB
+   getAppSetting(key: string): Promise<any> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('appSettings', 'readonly');
+        const store = tx.objectStore('appSettings');
+        const request = store.get(key);
+
+        request.onsuccess = () => {
+          resolve(request.result ? request.result.value : null);
+        };
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  // Remove app setting from IndexedDB
+   removeAppSetting(key: string): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('appSettings', 'readwrite');
+        const store = tx.objectStore('appSettings');
+        const request = store.delete(key);
+
+        request.onsuccess = () => resolve();
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+
+   removeItem(storeName: string, key: any): Promise<void> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+      const request = store.delete(key);
+
+      request.onsuccess = () => {
+        console.log(`✅ Item with key ${key} removed from ${storeName}`);
+        resolve();
+      };
+      request.onerror = (e) => {
+        console.error(`❌ Error removing item from ${storeName}:`, e);
+        reject(e);
+      };
 
   async saveNextOrderNumber(nextOrderNumber: string): Promise<void> {
     await this.ensureInit();
@@ -627,6 +861,7 @@ export class IndexeddbService {
       const request = store.delete(orderId);
       request.onsuccess = () => resolve();
       request.onerror = (e) => reject(e);
+
     });
   }
 
@@ -660,6 +895,7 @@ export class IndexeddbService {
       };
     });
   }
+
 
   async searchPillsByField(fieldName: string, fieldValue: any): Promise<any[]> {
     await this.ensureInit();
@@ -706,4 +942,5 @@ export class IndexeddbService {
       };
     });
   }
+
 }
