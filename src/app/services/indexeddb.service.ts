@@ -500,43 +500,6 @@ export class IndexeddbService {
     });
   }
 
-  savePillDetails(pillId: string, data: any): Promise<void> {
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction(['pillDetails'], 'readwrite');
-      const store = transaction.objectStore('pillDetails');
-
-      // Create an object with the pillId as a property
-      const itemToSave = { ...data, id: pillId };
-      const request = store.put(itemToSave);
-
-      request.onsuccess = () => resolve();
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  getPillDetails(pillId: string): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction(['pillDetails'], 'readonly');
-      const store = transaction.objectStore('pillDetails');
-      const request = store.get(pillId);
-
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-  getDataByKey(storeName: string, key: any): Promise<any> {
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([storeName], 'readonly');
-      const store = transaction.objectStore(storeName);
-      const request = store.get(key);
-
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  }
-
-
 
   // Save client info to IndexedDB
   saveClientInfo(clientInfo: any): Promise<number> {
@@ -884,6 +847,48 @@ async getAllPillDetails(): Promise<any[]> {
         console.error('Error getting pill by invoice ID:', e);
         reject(e);
       };
+    });
+  }
+
+  async savePillDetails(key: string, data: any): Promise<void> {
+    await this.ensureInit();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['pillDetails'], 'readwrite');
+      const store = transaction.objectStore('pillDetails');
+      const dataWithKey = { ...data, id: key };
+      const request = store.put(dataWithKey);
+      request.onsuccess = () => resolve();
+      request.onerror = (event: any) => {
+        console.error('Error saving pill details:', event);
+        reject(request.error);
+      };
+      transaction.onerror = (event: any) => {
+        console.error('Transaction error:', event);
+        reject(event);
+      };
+    });
+  }
+  async getPillDetails(key: string): Promise<any> {
+    await this.ensureInit();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction(['pillDetails'], 'readonly');
+      const store = transaction.objectStore('pillDetails');
+      const request = store.get(key);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = (event: any) => {
+        console.error('Error getting pill details:', event);
+        reject(request.error);
+      };
+    });
+  }
+  async getDataByKey(storeName: string, key: any): Promise<any> {
+    await this.ensureInit();
+    return new Promise((resolve, reject) => {
+      const transaction = this.db.transaction([storeName], 'readonly');
+      const store = transaction.objectStore(storeName);
+      const request = store.get(key);
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
     });
   }
 
