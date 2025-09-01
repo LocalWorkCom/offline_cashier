@@ -205,8 +205,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.fetchCountries();
     this.loadAdditionalNote();
 
-      // Load client info from IndexedDB
-  this.loadClientInfoFromIndexedDB();
+    // Load client info from IndexedDB
+    this.loadClientInfoFromIndexedDB();
 
 
     // this.fetchTrackingStatus();
@@ -322,9 +322,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   //   this.loadCart();
   // }
   loadBranchData() {
-    const branchDataString = localStorage.getItem('branchData');
+    const branchDataString = this.dbService.getAll('branchData');
     if (branchDataString) {
-      this.branchData = JSON.parse(branchDataString);
+      this.branchData = branchDataString;
     }
   }
 
@@ -336,27 +336,28 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   // }
 
   loadCart() {
-  this.dbService.getCartItems()
-    .then((cartItems: any[]) => {
-      this.cartItems = cartItems || [];
-      this.updateTotalPrice();
-      console.log('✅ Cart loaded from IndexedDB:', this.cartItems);
-      this.cdr.detectChanges();
-    })
-    .catch((error: any) => {
-      console.error('❌ Error loading cart from IndexedDB:', error);
-      this.cartItems = [];
-      this.updateTotalPrice();
-      this.cdr.detectChanges();
-    });
+    this.dbService.getCartItems()
+      .then((cartItems: any[]) => {
+        this.cartItems = cartItems || [];
+        this.updateTotalPrice();
+        console.log('✅ Cart loaded from IndexedDB:', this.cartItems);
+        this.cdr.detectChanges();
+      })
+      .catch((error: any) => {
+        console.error('❌ Error loading cart from IndexedDB:', error);
+        this.cartItems = [];
+        this.updateTotalPrice();
+        this.cdr.detectChanges();
+      });
 
-}
+  }
 
   loadFormData() {
 
-    const FormData = localStorage.getItem('form_data');
+    // const FormData = localStorage.getItem('form_data');
+    const FormData = this.dbService.getFormData();
     if (FormData) {
-      this.FormDataDetails = JSON.parse(FormData);
+      this.FormDataDetails = FormData;
       this.clientName =
         this.FormDataDetails.client_name || 'لم يتم تحديد الإسم';
       if (this.FormDataDetails.address) {
@@ -378,20 +379,20 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   saveCart() {
     // localStorage.setItem('cart', JSON.stringify(this.cartItems));
-     return this.dbService.clearCart()
-    .then(() => {
-      const savePromises = this.cartItems.map(item =>
-        this.dbService.addToCart(item)
-      );
-      return Promise.all(savePromises);
-    })
-    .then(() => {
-      console.log('✅ Cart saved to IndexedDB');
-    })
-    .catch(error => {
-      console.error('❌ Error saving cart to IndexedDB:', error);
-      throw error;
-    });
+    return this.dbService.clearCart()
+      .then(() => {
+        const savePromises = this.cartItems.map(item =>
+          this.dbService.addToCart(item)
+        );
+        return Promise.all(savePromises);
+      })
+      .then(() => {
+        console.log('✅ Cart saved to IndexedDB');
+      })
+      .catch(error => {
+        console.error('❌ Error saving cart to IndexedDB:', error);
+        throw error;
+      });
   }
   updateTotalPrices() {
     this.cartItems.forEach((item) => {
@@ -2214,6 +2215,54 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   getFinalPrice(): number {
     return this.invoices[0].invoice_summary.subtotal_price - this.getDiscount();
   }
+  // selectOrderType(type: string) {
+  //   this.clearOrderTypeData();
+  //   const typeMapping: { [key: string]: string } = {
+  //     'في المطعم': 'dine-in',
+  //     'خارج المطعم': 'Takeaway',
+  //     توصيل: 'Delivery',
+  //   };
+  //   this.selectedOrderType = typeMapping[type] || type;
+
+  //   localStorage.setItem('selectedOrderType', this.selectedOrderType);
+  // }
+
+  // clearOrderTypeData() {
+  //   // Clear data based on the previously selected order type
+  //   switch (this.selectedOrderType) {
+  //     case 'dine-in':
+  //       // Clear table number and table ID
+  //       this.tableNumber = null;
+  //       localStorage.removeItem('table_number');
+  //       localStorage.removeItem('table_id');
+  //       break;
+
+  //     case 'Delivery':
+  //       // Clear delivery address, courier, and form data
+  //       // this.address = '';
+  //       // this.clientName = ' ';
+  //       // this.addressPhone = '';
+  //       // localStorage.removeItem('form_data');
+
+  //       // localStorage.removeItem('address_id');
+  //       break;
+
+  //     case 'Takeaway':
+  //       // No specific data to clear for Takeaway
+  //       break;
+
+  //     default:
+  //       break;
+  //   }
+  // }
+
+  // loadOrderType() {
+  //   const savedOrderType = localStorage.getItem('selectedOrderType');
+  //   if (savedOrderType) {
+  //     this.selectedOrderType = savedOrderType;
+  //   }
+  // }
+
   selectOrderType(type: string) {
     this.clearOrderTypeData();
     const typeMapping: { [key: string]: string } = {
@@ -2221,33 +2270,60 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       'خارج المطعم': 'Takeaway',
       توصيل: 'Delivery',
     };
-    this.selectedOrderType = typeMapping[type] || type;
+    this.selectedOrderType = typeMapping[type] || type
 
-    localStorage.setItem('selectedOrderType', this.selectedOrderType);
+    // Store in IndexedDB instead of localStorage
+    try {
+      this.dbService.saveAppSetting('selectedOrderType', this.selectedOrderType);
+
+      console.log('✅ selectedOrderType saved to IndexedDB:', this.dbService.getAll('selectedOrderType'));
+    } catch (error) {
+      console.error('❌ Failed to save order type to IndexedDB:', error);
+      // Fallback to localStorage if IndexedDB fails
+      localStorage.setItem('selectedOrderType', this.selectedOrderType);
+    }
   }
 
-  clearOrderTypeData() {
+   clearOrderTypeData() {
     // Clear data based on the previously selected order type
     switch (this.selectedOrderType) {
       case 'dine-in':
-        // Clear table number and table ID
+        // Clear table number and table ID from IndexedDB
         this.tableNumber = null;
-        localStorage.removeItem('table_number');
-        localStorage.removeItem('table_id');
+        try {
+           this.dbService.removeItem('selectedTable', 'current_table');
+          console.log('✅ Table data cleared from IndexedDB');
+        } catch (error) {
+          console.error('❌ Failed to clear table data from IndexedDB:', error);
+          // Fallback to localStorage
+          localStorage.removeItem('table_number');
+          localStorage.removeItem('table_id');
+        }
         break;
 
       case 'Delivery':
-        // Clear delivery address, courier, and form data
-        // this.address = '';
-        // this.clientName = ' ';
-        // this.addressPhone = '';
-        // localStorage.removeItem('form_data');
-
-        // localStorage.removeItem('address_id');
+        // Clear delivery address, courier, and form data from IndexedDB
+        try {
+           this.dbService.removeItem('addresses', 'selected_address');
+           this.dbService.removeItem('form_delivery', 'delivery_form');
+           this.dbService.removeItem('clientInfo', 'current_client');
+          console.log('✅ Delivery data cleared from IndexedDB');
+        } catch (error) {
+          console.error('❌ Failed to clear delivery data from IndexedDB:', error);
+          // Fallback to localStorage
+          localStorage.removeItem('address_id');
+          localStorage.removeItem('form_data');
+        }
         break;
 
       case 'Takeaway':
-        // No specific data to clear for Takeaway
+        // Clear client info from IndexedDB for Takeaway
+        try {
+           this.dbService.removeItem('clientInfo', 'current_client');
+          console.log('✅ Takeaway client data cleared from IndexedDB');
+        } catch (error) {
+          console.error('❌ Failed to clear takeaway data from IndexedDB:', error);
+        }
         break;
 
       default:
@@ -2256,9 +2332,31 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   loadOrderType() {
-    const savedOrderType = localStorage.getItem('selectedOrderType');
-    if (savedOrderType) {
-      this.selectedOrderType = savedOrderType;
+    try {
+      // Try to get from IndexedDB first
+      const savedOrderType = this.dbService.getAppSetting('selectedOrderType');
+
+      if (savedOrderType) {
+        this.selectedOrderType = savedOrderType;
+        console.log('✅ Order type loaded from IndexedDB:', this.selectedOrderType);
+      } else {
+        // Fallback to localStorage if not found in IndexedDB
+        const fallbackOrderType = localStorage.getItem('selectedOrderType');
+        if (fallbackOrderType) {
+          this.selectedOrderType = fallbackOrderType;
+          // Migrate to IndexedDB
+          this.dbService.saveAppSetting('selectedOrderType', this.selectedOrderType);
+          localStorage.removeItem('selectedOrderType'); // Clean up localStorage
+          console.log('✅ Order type migrated from localStorage to IndexedDB');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error loading order type from IndexedDB:', error);
+      // Fallback to localStorage
+      const fallbackOrderType = localStorage.getItem('selectedOrderType');
+      if (fallbackOrderType) {
+        this.selectedOrderType = fallbackOrderType;
+      }
     }
   }
 
@@ -2831,89 +2929,89 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   // }
 
   applyClientInfo() {
-  this.isLoading = true;
+    this.isLoading = true;
 
-  // Prepare client info object
-  const clientInfo = {
-    client: this.client,
-    clientPhone: this.clientPhone,
-    selectedCountryCode: this.selectedCountry.code
-  };
+    // Prepare client info object
+    const clientInfo = {
+      client: this.client,
+      clientPhone: this.clientPhone,
+      selectedCountryCode: this.selectedCountry.code
+    };
 
-  // Save to localStorage
-  localStorage.setItem('client', this.client);
-  localStorage.setItem('clientPhone', this.clientPhone);
-  localStorage.setItem('selectedCountryCode', this.selectedCountry.code);
+    // Save to localStorage
+    localStorage.setItem('client', this.client);
+    localStorage.setItem('clientPhone', this.clientPhone);
+    localStorage.setItem('selectedCountryCode', this.selectedCountry.code);
 
-  // Save to IndexedDB
-  this.dbService.saveClientInfo(clientInfo).then(id => {
-    console.log('✅ Client info saved to IndexedDB with ID:', id);
+    // Save to IndexedDB
+    this.dbService.saveClientInfo(clientInfo).then(id => {
+      console.log('✅ Client info saved to IndexedDB with ID:', id);
 
-    this.clientStoredInLocal = this.client;
-    this.clientPhoneStoredInLocal = this.clientPhone;
-
-    // Simulate async saving
-    setTimeout(() => {
-      this.isLoading = false;
-      this.clientInfoApplied = true; // ✅ show info now
-
-      // Optionally close modal here
-      this.closeModal();
-    }, 500);
-  }).catch(err => {
-    console.error('❌ Error saving client info to IndexedDB:', err);
-
-    // Fallback: Continue even if IndexedDB fails
-    this.clientStoredInLocal = this.client;
-    this.clientPhoneStoredInLocal = this.clientPhone;
-
-    setTimeout(() => {
-      this.isLoading = false;
-      this.clientInfoApplied = true;
-      this.closeModal();
-    }, 500);
-  });
-}
-
-private loadClientInfoFromIndexedDB() {
-  this.dbService.getLatestClientInfo().then(clientInfo => {
-    if (clientInfo) {
-      console.log('Client info loaded from IndexedDB:', clientInfo);
-
-      // Set the component properties with the loaded data
-      this.clientStoredInLocal = clientInfo.client || '';
-      this.clientPhoneStoredInLocal = clientInfo.clientPhone || '';
-      this.client = clientInfo.client || '';
-      this.clientPhone = clientInfo.clientPhone || '';
-
-
-
-
-      // Find and set the country code if available
-      if (clientInfo.selectedCountryCode && this.countryList.length > 0) {
-        const country = this.countryList.find(c => c.code === clientInfo.selectedCountryCode);
-        if (country) {
-          this.selectedCountry = country;
-        }
-      }
-
-      // Update the form if it exists
-      // if (this.form) {
-      //   this.form.patchValue({
-      //     client_name: clientInfo.client,
-      //     address_phone: clientInfo.clientPhone,
-      //     country_code: this.selectedCountry
-      //   });
-      // }
-
-      // Update local storage variables
       this.clientStoredInLocal = this.client;
       this.clientPhoneStoredInLocal = this.clientPhone;
-    }
-  }).catch(err => {
-    console.error('Error loading client info from IndexedDB:', err);
-  });
-}
+
+      // Simulate async saving
+      setTimeout(() => {
+        this.isLoading = false;
+        this.clientInfoApplied = true; // ✅ show info now
+
+        // Optionally close modal here
+        this.closeModal();
+      }, 500);
+    }).catch(err => {
+      console.error('❌ Error saving client info to IndexedDB:', err);
+
+      // Fallback: Continue even if IndexedDB fails
+      this.clientStoredInLocal = this.client;
+      this.clientPhoneStoredInLocal = this.clientPhone;
+
+      setTimeout(() => {
+        this.isLoading = false;
+        this.clientInfoApplied = true;
+        this.closeModal();
+      }, 500);
+    });
+  }
+
+  private loadClientInfoFromIndexedDB() {
+    this.dbService.getLatestClientInfo().then(clientInfo => {
+      if (clientInfo) {
+        console.log('Client info loaded from IndexedDB:', clientInfo);
+
+        // Set the component properties with the loaded data
+        this.clientStoredInLocal = clientInfo.client || '';
+        this.clientPhoneStoredInLocal = clientInfo.clientPhone || '';
+        this.client = clientInfo.client || '';
+        this.clientPhone = clientInfo.clientPhone || '';
+
+
+
+
+        // Find and set the country code if available
+        if (clientInfo.selectedCountryCode && this.countryList.length > 0) {
+          const country = this.countryList.find(c => c.code === clientInfo.selectedCountryCode);
+          if (country) {
+            this.selectedCountry = country;
+          }
+        }
+
+        // Update the form if it exists
+        // if (this.form) {
+        //   this.form.patchValue({
+        //     client_name: clientInfo.client,
+        //     address_phone: clientInfo.clientPhone,
+        //     country_code: this.selectedCountry
+        //   });
+        // }
+
+        // Update local storage variables
+        this.clientStoredInLocal = this.client;
+        this.clientPhoneStoredInLocal = this.clientPhone;
+      }
+    }).catch(err => {
+      console.error('Error loading client info from IndexedDB:', err);
+    });
+  }
 
   // clearClientInfo() {
   //   // Clear values from component
@@ -2931,26 +3029,26 @@ private loadClientInfoFromIndexedDB() {
   // }
 
   clearClientInfo() {
-  // Clear from localStorage
-  localStorage.removeItem('client');
-  localStorage.removeItem('clientPhone');
-  localStorage.removeItem('selectedCountryCode');
+    // Clear from localStorage
+    localStorage.removeItem('client');
+    localStorage.removeItem('clientPhone');
+    localStorage.removeItem('selectedCountryCode');
 
-  // Clear from IndexedDB
-  this.dbService.clearClientInfo().then(() => {
-    console.log('✅ Client info cleared from IndexedDB');
+    // Clear from IndexedDB
+    this.dbService.clearClientInfo().then(() => {
+      console.log('✅ Client info cleared from IndexedDB');
 
-    // Reset component properties
-    this.client = '';
-    this.clientPhone = '';
-    this.clientStoredInLocal = '';
-    this.clientPhoneStoredInLocal = '';
-    this.clientInfoApplied = false;
+      // Reset component properties
+      this.client = '';
+      this.clientPhone = '';
+      this.clientStoredInLocal = '';
+      this.clientPhoneStoredInLocal = '';
+      this.clientInfoApplied = false;
 
-  }).catch(err => {
-    console.error('❌ Error clearing client info from IndexedDB:', err);
-  });
-}
+    }).catch(err => {
+      console.error('❌ Error clearing client info from IndexedDB:', err);
+    });
+  }
 
   closeClientModal() {
     // Optional: you can reset or keep values when closing the modal

@@ -110,18 +110,20 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
 
       this.paymenMethod =  order.details_order.transactions[0].payment_method;;
 
-      this.deliveryData = order.details_order.order_details?.delivedata || "ss";
-      this.deliveryFees = order.details_order.order_details?.order_summary?.delivery_fees ||
+      this.deliveryData = order.details_order?.delivery_data || "";
+      this.deliveryFees = order.details_order.order_summary?.delivery_fees ||
                          order.details_order.order_summary?.delivery_fees || 0;
 
       // Set the main order details
-      this.orderDetails = order.details_order.order_details || order;
-      this.orderSummary = order.details_order.order_details?.order_summary || order.order_summary || {};
-      this.orderItems = order.order_items ;
+      this.orderDetails = order.details_order ;
+      this.orderSummary = order.details_order?.order_summary || order.details_order.order_summary || {};
+      this.orderItems = order.details_order?.order_details;
+
+      console.log("orderitems",this.orderItems);
 
       // Fix delivery name if empty
       if (this.deliveryData?.delivery_name === ' ' || !this.deliveryData?.delivery_name) {
-        this.deliveryData.delivery_name = 'test';
+        this.deliveryData.delivery_name = "test";
       }
 
       console.log('Order details from IndexedDB:', this.orderDetails);

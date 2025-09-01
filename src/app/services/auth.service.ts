@@ -3,6 +3,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { baseUrl } from '../environment';
+import { IndexeddbService } from '../services/indexeddb.service';
 
 @Injectable({
   providedIn: 'root',
@@ -158,7 +159,7 @@ export class AuthService {
   getCurrentEmployee() {
     return (this.employeeData$ as BehaviorSubject<any>).value;
   }
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient,private dbService: IndexeddbService) {
     window.addEventListener('storage', (event: StorageEvent) => {
       if (event.key === 'authToken') {
         if (event.newValue) {
@@ -232,6 +233,21 @@ export class AuthService {
           const imageUrl = employee.image;
           this.setCashierMachineId(employee.cashier_machine_id);
 
+            // ✅ Store branch_id in IndexedDB
+        try {
+          // Store branch_id with a specific key in the branch_id store
+           this.dbService.saveData('branch_id', {
+            id: 'current_branch_id',
+            value: branchId,
+            timestamp: new Date().toISOString()
+          });
+
+          console.log('✅ branch_id stored in IndexedDB:', branchId);
+        } catch (error) {
+          console.error('❌ Failed to store branch_id in IndexedDB:', error);
+        }
+
+
           if (response.data.visa_total !== undefined) {
             this.setVisaTotal(response.data.visa_total);
           }
@@ -255,10 +271,22 @@ export class AuthService {
           console.log('Stored User Data:', userData);
 
           const branchDetails = response.data.branch ?? null;
+
+
           if (branchDetails) {
             this.setStorageItem('branchData', branchDetails, true);
             const currency_symbol = branchDetails.currency_symbol;
             this.setStorageItem('currency_symbol', currency_symbol);
+
+                try {
+              // Store branch_id with a specific key in the branch_id store
+              this.dbService.saveData('branchData', branchDetails);
+
+              console.log('✅ branchData stored in IndexedDB:', branchId);
+            } catch (error) {
+              console.error('❌ Failed to store branchData in IndexedDB:', error);
+            }
+
           } else {
             console.warn('⚠️ No Branch Data Found in Response');
           }
