@@ -2885,7 +2885,7 @@ private loadClientInfoFromIndexedDB() {
       this.clientPhoneStoredInLocal = clientInfo.clientPhone || '';
       this.client = clientInfo.client || '';
       this.clientPhone = clientInfo.clientPhone || '';
- 
+
 
 
 
