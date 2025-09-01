@@ -499,22 +499,32 @@ export class PillDetailsComponent implements OnInit {
     }
 
     ngOnInit(): void {
+        // إعداد مستمعات حالة الاتصال
         window.addEventListener('online', this.handleOnlineStatus.bind(this));
         window.addEventListener('offline', this.handleOnlineStatus.bind(this));
 
-        // ✅ ننتظر فتح الـ DB ثم نستمع للـ route
-        this.dbService.init().then(() => {
+        // تهيئة قاعدة البيانات ثم الاستماع لمعاملات المسار
+        this.dbService.init().then(async () => {
             this.route.paramMap.subscribe(async (params) => {
                 this.pillId = params.get('id') || '';
                 if (!this.pillId) return;
 
-                navigator.onLine
-                    ? this.fetchPillsDetails(this.pillId)
-                    : await this.loadFromIndexedDB(); // ✅ offline reader
+                // التحقق أولاً من وجود البيانات محلياً
+                const hasOfflineData = await this.checkOfflineAvailability();
+
+                if (navigator.onLine) {
+                    // إذا كان اتصال متاح، جلب البيانات من الخادم
+                    this.fetchPillsDetails(this.pillId);
+                } else if (hasOfflineData) {
+                    // إذا لا يوجد اتصال但有 بيانات محفوظة
+                    await this.loadFromIndexedDB();
+                } else {
+                    // إذا لا يوجد اتصال ولا بيانات محفوظة
+                    this.handleNoDataFound();
+                }
             });
         });
 
-        this.fetchTrackingStatus();
         this.cashier_machine_id = Number(localStorage.getItem('cashier_machine_id'));
     }
 
@@ -544,9 +554,13 @@ export class PillDetailsComponent implements OnInit {
                 }
             });
     }
+
     private normalizeKey(id: string | number): string {
-        return String(id);
+        return String(id).trim();
     }
+
+
+    // Update the fetchPillsDetails method to use the improved save function
     fetchPillsDetails(pillId: string): void {
         this.loading = false;
         this.pillDetailsService.getPillsDetailsById(pillId).pipe(
@@ -557,20 +571,17 @@ export class PillDetailsComponent implements OnInit {
             next: (response: any) => {
                 if (response.status && response.data) {
                     this.pillDetails = response.data;
-                    const key = String(this.pillId);
-                    // ✅ Use the dedicated method for saving pill details
-                    this.dbService.savePillDetails(
-                        this.normalizeKey(this.pillId),
-                        this.pillDetails
-                    );
 
-                    // Process the data
+                    // Save to IndexedDB for offline access
+                    this.savePillDetailsToIndexedDB(pillId, this.pillDetails);
+
                     this.processPillDetails(this.pillDetails);
+                    this.usingOfflineData = false;
                 }
             },
             error: (error: any) => {
                 console.error('Error fetching pill details:', error);
-                // Try to load from offline storage if online fetch fails
+                // Try to load from offline storage
                 this.loadFromIndexedDB();
             },
         });
@@ -582,13 +593,30 @@ export class PillDetailsComponent implements OnInit {
         );
     }
 
-    private handleOnlineStatus() {
+    private handleOnlineStatus(): void {
+        const wasOnline = this.isOnline;
         this.isOnline = navigator.onLine;
-        // Optional: automatically refresh data when coming back online
-        if (this.isOnline && this.usingOfflineData) {
-            this.fetchPillsDetails(this.pillId); // ✅ مرري pillId هنا
+
+        console.log('Network status changed:', this.isOnline ? 'Online' : 'Offline');
+
+        if (wasOnline && !this.isOnline) {
+            // الانتقال من اتصال إلى عدم اتصال
+            console.log('Went offline, using cached data if available');
+            if (this.pillId) {
+                this.loadFromIndexedDB().catch(err => {
+                    console.error('Failed to load from IndexedDB:', err);
+                });
+            }
+        } else if (!wasOnline && this.isOnline) {
+            // الانتقال من عدم اتصال إلى اتصال
+            console.log('Went online, refreshing data');
+            this.cdr.detectChanges();
+
+            // التحديث التلقائي عند العودة للاتصال
+            if (this.pillId && this.usingOfflineData) {
+                this.fetchPillsDetails(this.pillId);
+            }
         }
-        this.cdr.detectChanges();
     }
 
     getTrackingStatusTranslation(status: string): string {
@@ -735,65 +763,63 @@ export class PillDetailsComponent implements OnInit {
 
     }
     private async loadFromIndexedDB(): Promise<void> {
+        this.loading = true;
         try {
-            await this.dbService.init();
             const key = this.getSafeKey();
+            console.log('Attempting to load from IndexedDB for key:', key);
 
-            // 1) أولاً: full-details store
+            // المحاولة الأولى: البحث في pillDetails بالمفتاح المباشر (invoice_id)
             let pillDetails = await this.dbService.getPillDetails(key);
 
-            // 2) ثانياً: fallback إلى light pills store
+            // المحاولة الثانية: إذا لم تُوجد، البحث في pills باستخدام الفهرس الجديد (invoice_id)
             if (!pillDetails) {
-                const allPills: any[] = await this.dbService.getAll('pills');
+                console.log('Details not found in pillDetails store. Searching in pills store by invoice_id...');
+                // استخدام الدالة الجديدة للبحث بواسطة invoice_id
+                const foundPill = await this.dbService.getPillByInvoiceId(Number(key));
 
-                const lightPill = allPills.find(
-                    p =>
-                        String(p.invoice_id || '').trim() === key ||
-                        String(p.order_id || '').trim() === key ||
-                        String(p.invoice_number || '').trim() === key
-                );
-
-                if (!lightPill) {
-                    console.warn('⚠️ Invoice not found for key:', key);
-                    this.handleNoDataFound();
-                    return;
+                if (foundPill) {
+                    console.log('Found in "pills" store. Converting and caching.');
+                    pillDetails = this.convertLightPillToDetails(foundPill);
+                    await this.dbService.savePillDetails(key, pillDetails);
                 }
-
-                pillDetails = this.convertLightPillToDetails(lightPill);
-
-                // ✅ اختيارى: تخزين نسخة كاملة للزيارات القادمة
-                await this.dbService.savePillDetails(key, pillDetails);
             }
 
-            this.pillDetails = pillDetails;
-            this.usingOfflineData = true;
-            this.processPillDetails(pillDetails);
-
-            console.log('✅ Offline invoice rendered', pillDetails);
+            if (pillDetails) {
+                console.log('Data successfully loaded from offline storage.');
+                this.pillDetails = pillDetails.data;
+                this.usingOfflineData = true;
+                this.processPillDetails(this.pillDetails);
+            } else {
+                console.warn('No data found in IndexedDB for the given key.');
+                this.handleNoDataFound();
+            }
         } catch (err) {
-            console.error('❌ IndexedDB read failed', err);
+            console.error('IndexedDB read failed:', err);
             this.handleNoDataFound();
         } finally {
-            this.cdr.detectChanges();
+            this.loading = false;
         }
     }
 
-
-    private convertLightPillToDetails(p: any): any {
-        return {
-            order_id: p.order_id || p.invoice_number,
+    // في PillDetailsComponent
+    private convertLightPillToDetails(pill: any): any {
+    return {
+        status: true,
+        data: {
+            order_id: pill.order_id,
             invoices: [
                 {
-                    ...p,
-                    branch_details: p.branch_details || {},
-                    address_details: p.address_details || {},
-                    invoice_summary: p.invoice_summary || {},
-                    orderDetails: p.orderDetails || p.items || [],
-                    transactions: p.transactions || [{ payment_method: null, payment_status: null }],
-                },
-            ],
-        };
-    }
+                    ...pill,
+                    orderDetails: pill.items || [],
+                    invoice_summary: pill.invoice_summary || {},
+                    branch_details: pill.branch_details || {},
+                    address_details: pill.address_details || {},
+                    transactions: pill.transactions || [{ payment_method: null, payment_status: null }],
+                }
+            ]
+        }
+    };
+}
 
     private processPillDetails(pillDetails: any): void {
         this.order_id = pillDetails.order_id;
@@ -856,11 +882,29 @@ export class PillDetailsComponent implements OnInit {
         };
     }
 
+    // دالة محسنة للتعامل مع عدم وجود بيانات
     private handleNoDataFound(): void {
         this.pillDetails = null;
         this.invoices = [];
         this.usingOfflineData = false;
-        console.warn('No offline data found for pill ID:', this.pillId);
+
+        // عرض رسالة للمستخدم
+        this.showOfflineMessage();
+    }
+
+    private showOfflineMessage(): void {
+        // يمكنك استبدال هذا بتنفيذ رسالة واجهة المستخدم المناسبة
+        console.warn('No offline data available for this invoice');
+        alert('لا تتوفر بيانات لهذه الفاتورة في وضع عدم الاتصال. يرجى الاتصال بالإنترنت لتحميل البيانات.');
+    }
+    // دالة للتحقق من حالة التخزين المحلي
+    async checkOfflineAvailability(): Promise<boolean> {
+        try {
+            const key = this.getSafeKey();
+            return await this.dbService.hasPillDetails(key);
+        } catch (error) {
+            return false;
+        }
     }
     getDiscountAmount(): number {
         if (
@@ -901,6 +945,58 @@ export class PillDetailsComponent implements OnInit {
     }
 
     private getSafeKey(): string {
-        return String(this.pillId).trim();
+        return this.normalizeKey(this.pillId);
     }
+
+    private async savePillDetailsToIndexedDB(pillId: string, pillDetails: any): Promise<void> {
+        try {
+            const normalizedKey = this.normalizeKey(pillId);
+
+            // Ensure the data structure is consistent
+            const dataToSave = {
+                ...pillDetails,
+                id: normalizedKey, // Ensure ID is set for keyPath
+                savedAt: new Date().toISOString(),
+                isSynced: navigator.onLine
+            };
+
+            await this.dbService.savePillDetails(normalizedKey, dataToSave);
+            console.log('Pill details saved to IndexedDB successfully');
+        } catch (err) {
+            console.warn('Failed to save to IndexedDB:', err);
+            // You might want to implement a retry mechanism here
+        }
+    }
+
+    async checkStoredPills() {
+        try {
+            const allPills = await this.dbService.getAllPillDetails();
+            console.log('Stored pills in IndexedDB:', allPills);
+
+            // Also check if our current pill is stored
+            const currentPill = await this.dbService.getPillDetails(this.normalizeKey(this.pillId));
+            console.log('Current pill details:', currentPill);
+        } catch (error) {
+            console.error('Error checking stored pills:', error);
+        }
+    }
+
+    async debugPillDetailsStore() {
+        try {
+            const transaction = this.dbService['db'].transaction(['pillDetails'], 'readonly');
+            const store = transaction.objectStore('pillDetails');
+            const request = store.getAll();
+
+            request.onsuccess = () => {
+                console.log('DEBUG - All items in pillDetails store:', request.result);
+            };
+
+            request.onerror = (error) => {
+                console.error('DEBUG - Error accessing pillDetails store:', error);
+            };
+        } catch (error) {
+            console.error('DEBUG - Failed to access IndexedDB:', error);
+        }
+    }
+
 }
