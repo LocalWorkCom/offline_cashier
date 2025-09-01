@@ -77,7 +77,6 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     // Convert orderId to number
     const numericOrderId = parseInt(this.orderId, 10);
 
-    console.log("dd",numericOrderId);
 
     if (isNaN(numericOrderId)) {
       this.error = 'Invalid order ID';
@@ -85,7 +84,6 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       return;
     }
 
-    console.log('Searching for order ID in IndexedDB:', numericOrderId);
 
     this.dbService.getOrderById(numericOrderId).then(order => {
       if (order) {
@@ -108,23 +106,23 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
 
     try {
       // Extract order details
-      // this.currencySymbol = order.currency_symbol || 'ج.م';
+      this.currencySymbol = order.details_order.currency_symbol || 'ج.م';
 
-      // this.paymenMethod =  "1";
+      this.paymenMethod =  order.details_order.transactions[0].payment_method;;
 
-      // this.deliveryData = order.order_details?.delivedata || "ss";
-      // this.deliveryFees = order.order_details?.order_summary?.delivery_fees ||
-      //                    order.order_summary?.delivery_fees || 0;
+      this.deliveryData = order.details_order.order_details?.delivedata || "ss";
+      this.deliveryFees = order.details_order.order_details?.order_summary?.delivery_fees ||
+                         order.details_order.order_summary?.delivery_fees || 0;
 
-      // // Set the main order details
-      // this.orderDetails = order.order_details || order;
-      // this.orderSummary = order.order_details?.order_summary || order.order_summary || {};
+      // Set the main order details
+      this.orderDetails = order.details_order.order_details || order;
+      this.orderSummary = order.details_order.order_details?.order_summary || order.order_summary || {};
       this.orderItems = order.order_items ;
 
       // Fix delivery name if empty
-      // if (this.deliveryData?.delivery_name === ' ' || !this.deliveryData?.delivery_name) {
-      //   this.deliveryData.delivery_name = 'test';
-      // }
+      if (this.deliveryData?.delivery_name === ' ' || !this.deliveryData?.delivery_name) {
+        this.deliveryData.delivery_name = 'test';
+      }
 
       console.log('Order details from IndexedDB:', this.orderDetails);
       console.log('Order items from IndexedDB:', this.orderItems);
