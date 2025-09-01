@@ -407,6 +407,7 @@ export class PillsComponent implements OnInit, OnDestroy {
     })
   ).subscribe((response) => {
     if (response.status) {
+
       // Ensure all pills have an invoice_number before saving
       this.pills = response.data.invoices
         .map((pill: any) => {

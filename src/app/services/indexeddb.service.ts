@@ -9,6 +9,7 @@ export class IndexeddbService {
   private isInitialized = false;
   private initPromise!: Promise<void>;
 
+
   constructor() {
     this.init();
   }
@@ -35,10 +36,14 @@ export class IndexeddbService {
         this.db.createObjectStore('pillDetails', { keyPath: 'id' });
 
         // Create or modify pills store
-        if (this.db.objectStoreNames.contains('pills')) {
-          this.db.deleteObjectStore('pills');
-        }
-        this.db.createObjectStore('pills', { keyPath: 'invoice_id' });
+        // if (this.db.objectStoreNames.contains('pills')) {
+        //   this.db.deleteObjectStore('pills');
+        // }
+        // this.db.createObjectStore('pills', { keyPath: 'invoice_id' });
+         if (!(this.db.objectStoreNames.contains('pills'))) {
+           const store = this.db.createObjectStore('pills', { keyPath: 'id', autoIncrement: true });
+           store.createIndex('invoice_id', 'invoice_id', { unique: false });
+          }
 
         // Create nextOrderNumber store
         if (!this.db.objectStoreNames.contains('nextOrderNumber')) {
@@ -778,119 +783,19 @@ export class IndexeddbService {
   });
 }
 
-async getAllPillDetails(): Promise<any[]> {
+  // 🔹 Get pill by invoice_id (using index)
+  async getPillByInvoiceId(invoiceId: string | number): Promise<any> {
     await this.ensureInit();
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction(['pillDetails'], 'readonly');
-      const store = transaction.objectStore('pillDetails');
-      const request = store.getAll();
-      request.onsuccess = () => {
-        console.log('All pill details in IndexedDB:', request.result);
-        resolve(request.result);
-      };
-      request.onerror = (event: any) => {
-        console.error('Error getting all pill details:', event);
-        reject(request.error);
-      };
-    });
-  }
-  async getAllPills(): Promise<any[]> {
-    await this.ensureInit();
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction(['pills'], 'readonly');
-      const store = transaction.objectStore('pills');
-      const request = store.getAll();
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = (event: any) => {
-        console.error('Error getting all pills:', event);
-        reject(event);
-      };
-    });
-  }
-  async searchPillsByField(fieldName: string, fieldValue: any): Promise<any[]> {
-    await this.ensureInit();
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction(['pills'], 'readonly');
-      const store = transaction.objectStore('pills');
-      const request = store.getAll();
-      request.onsuccess = () => {
-        const allPills = request.result;
-        const filteredPills = allPills.filter(pill =>
-          pill[fieldName] && String(pill[fieldName]).trim() === String(fieldValue).trim()
-        );
-        resolve(filteredPills);
-      };
-      request.onerror = (event: any) => {
-        console.error('Error searching pills:', event);
-        reject(event);
-      };
-    });
-  }
-  async hasPillDetails(key: string): Promise<boolean> {
-    try {
-      const result = await this.getPillDetails(key);
-      return !!result;
-    } catch (error) {
-      return false;
-    }
-  }
-  async getPillByInvoiceId(invoiceId: number): Promise<any> {
-    await this.ensureInit();
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction('pills', 'readonly');
-      const store = transaction.objectStore('pills');
-      const request = store.get(invoiceId);
-      request.onsuccess = () => {
-        resolve(request.result);
-      };
-      request.onerror = (e) => {
-        console.error('Error getting pill by invoice ID:', e);
-        reject(e);
-      };
-    });
-  }
 
-  async savePillDetails(key: string, data: any): Promise<void> {
-    await this.ensureInit();
     return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction(['pillDetails'], 'readwrite');
-      const store = transaction.objectStore('pillDetails');
-      const dataWithKey = { ...data, id: key };
-      const request = store.put(dataWithKey);
-      request.onsuccess = () => resolve();
-      request.onerror = (event: any) => {
-        console.error('Error saving pill details:', event);
-        reject(request.error);
-      };
-      transaction.onerror = (event: any) => {
-        console.error('Transaction error:', event);
-        reject(event);
-      };
-    });
-  }
-  async getPillDetails(key: string): Promise<any> {
-    await this.ensureInit();
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction(['pillDetails'], 'readonly');
-      const store = transaction.objectStore('pillDetails');
-      const request = store.get(key);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = (event: any) => {
-        console.error('Error getting pill details:', event);
-        reject(request.error);
-      };
-    });
-  }
-  async getDataByKey(storeName: string, key: any): Promise<any> {
-    await this.ensureInit();
-    return new Promise((resolve, reject) => {
-      const transaction = this.db.transaction([storeName], 'readonly');
-      const store = transaction.objectStore(storeName);
-      const request = store.get(key);
-      request.onsuccess = () => resolve(request.result);
-      request.onerror = () => reject(request.error);
-    });
-  }
+      const tx = this.db!.transaction('pills', 'readonly');
+      const store = tx.objectStore('pills');
+      const index = store.index('invoice_id'); // ✅ use index
+      const request = index.get(Number(invoiceId));
 
+      request.onsuccess = () => resolve(request.result ?? null);
+      request.onerror = (e) => reject(e);
+    });
+  }
 
 }
