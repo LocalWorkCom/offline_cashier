@@ -56,7 +56,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('couponModalRef') couponModalRef!: ElementRef;
   translate = inject(TranslateService);
   private destroy$ = new Subject<void>();
-
+  isOnline: boolean = navigator.onLine;
+  pendingOrdersCount: number = 0;
   cartItems: any[] = [];
   totalPrice: number = 100;
   isUserLoggedIn: boolean = false;
@@ -194,7 +195,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   }
 
+
+
   ngOnInit(): void {
+    this.setupNetworkListeners();
+    this.checkPendingOrders();
+      // Load client info from IndexedDB
+    this.loadClientInfoFromIndexedDB();
+
     this.loadCart();
     this.loadBranchData();
     this.restoreCoupon();
@@ -205,8 +213,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.fetchCountries();
     this.loadAdditionalNote();
 
-    // Load client info from IndexedDB
-    this.loadClientInfoFromIndexedDB();
+
 
 
     // this.fetchTrackingStatus();
@@ -296,6 +303,106 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
   }
+
+
+  private setupNetworkListeners(): void {
+    window.addEventListener('online', () => {
+      this.isOnline = true;
+      console.log('Online - attempting to sync pending orders');
+      this.retryPendingOrders();
+    });
+
+    window.addEventListener('offline', () => {
+      this.isOnline = false;
+      console.log('Offline - orders will be saved locally');
+    });
+  }
+
+  // // Check for pending orders in IndexedDB
+  private async checkPendingOrders(): Promise<void> {
+    try {
+      const allOrders = await this.dbService.getOrders();
+      this.pendingOrdersCount = allOrders.filter(order =>
+        order.isOffline && order.status === 'pending'
+      ).length;
+    } catch (error) {
+      console.error('Error checking pending orders:', error);
+    }
+  }
+
+  // // Retry pending orders when online
+  private async retryPendingOrders(): Promise<void> {
+    try {
+      const allOrders = await this.dbService.getOrders();
+      const pendingOrders = allOrders.filter(order =>
+        order.isOffline && order.status === 'pending'
+      );
+
+      this.pendingOrdersCount = pendingOrders.length;
+
+      for (const order of pendingOrders) {
+        try {
+          // Increment attempt count
+          const attempts = (order.attempts || 0) + 1;
+
+          if (attempts > 3) {
+            // Too many attempts, mark as failed
+            await this.dbService.saveOrder({
+              ...order,
+              status: 'failed',
+              attempts: attempts,
+              updatedAt: new Date().toISOString()
+            });
+            continue;
+          }
+
+          // Update order status to processing
+          await this.dbService.saveOrder({
+            ...order,
+            status: 'processing',
+            attempts: attempts,
+            updatedAt: new Date().toISOString()
+          });
+
+          // Submit the order using your existing API call
+          this.plaseOrderService.placeOrder(order).subscribe({
+            next: async (response): Promise<void> => {
+              if (response.status) {
+                // Remove from IndexedDB if successful
+                await this.dbService.deleteOrder(order.orderId);
+                console.log(`Offline order ${order.orderId} submitted successfully`);
+
+                // Update pending orders count
+                this.pendingOrdersCount--;
+              } else {
+                // Update order status back to pending
+                await this.dbService.saveOrder({
+                  ...order,
+                  status: 'pending',
+                  attempts: attempts,
+                  updatedAt: new Date().toISOString()
+                });
+              }
+            },
+            error: async (error) => {
+              console.error(`Error submitting offline order ${order.orderId}:`, error);
+              // Update order status back to pending
+              await this.dbService.saveOrder({
+                ...order,
+                status: 'pending',
+                attempts: attempts,
+                updatedAt: new Date().toISOString()
+              });
+            }
+          });
+        } catch (error) {
+          console.error(`Error processing offline order ${order.orderId}:`, error);
+        }
+      }
+    } catch (error) {
+      console.error('Error retrieving pending orders:', error);
+    }
+  }
   finalOrderId: any;
   // toqa
   selectedCountryCode: any;
@@ -304,13 +411,29 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.destroy$.complete();
   }
   loadTableNumber(): void {
-    const tableNumber = localStorage.getItem('table_number');
-    if (tableNumber) {
-      this.tableNumber = JSON.parse(tableNumber);
-      localStorage.setItem('selectedOrderType', 'dine-in')
-      this.selectedOrderType = 'dine-in';
-    }
+    this.dbService.getAll('selectedTable').then((tables) => {
+      console.log('All saved tables:', tables);
+
+      if (tables.length > 0) {
+        const lastTable = tables[tables.length - 1]; // get last inserted
+        const tableNumber = lastTable.table_number;
+        const table_id = lastTable.id;
+        console.log('👉 Selected table number:', tableNumber);
+
+        if (tableNumber) {
+          this.tableNumber = tableNumber; // assign directly (no JSON.parse needed)
+          this.table_id = table_id;
+
+          // force order type to dine-in if table is selected
+          localStorage.setItem('selectedOrderType', 'dine-in');
+          this.selectedOrderType = 'dine-in';
+        }
+      }
+    }).catch(error => {
+      console.error('❌ Error loading table from IndexedDB:', error);
+    });
   }
+
   loadAdditionalNote(): void {
     const note = localStorage.getItem('additionalNote');
     if (note) {
@@ -352,23 +475,70 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   }
 
-  loadFormData() {
+  // loadFormData() {
 
-    // const FormData = localStorage.getItem('form_data');
-    const FormData = this.dbService.getFormData();
-    if (FormData) {
-      this.FormDataDetails = FormData;
-      this.clientName =
-        this.FormDataDetails.client_name || 'لم يتم تحديد الإسم';
+  //   // const FormData = localStorage.getItem('form_data');
+  //   const FormData = this.dbService.getFormData();
+  //   console.log("FormData",FormData);
+
+  //   if (FormData) {
+  //     this.FormDataDetails = FormData;
+  //     this.clientName =
+  //       this.FormDataDetails.client_name || 'لم يتم تحديد الإسم';
+  //     if (this.FormDataDetails.address) {
+  //       /*         this.address = "  المبني :  " + this.FormDataDetails.building + " ,  " + this.FormDataDetails.address + " الدور " + this.FormDataDetails.floor_number + " رقم " + this.FormDataDetails.apartment_number || 'لم يتم تحديد العنوان';
+  //        */ this.address =
+  //         this.FormDataDetails.address || 'لم يتم تحديد العنوان';
+  //     }
+  //     this.addressPhone =
+  //       this.FormDataDetails.address_phone || 'لم يتم تحديد رقم الهاتف';
+  //   }
+  // }
+
+  async loadFormData() {
+  try {
+    // getFormData() returns a Promise, so we need to await it
+    const formData = await this.dbService.getFormData();
+    console.log("FormData", formData);
+
+    if (formData && formData.length > 0) {
+      // Since getFormData() returns an array, get the first (or most recent) item
+      const latestFormData = formData[formData.length - 1]; // Get the most recent
+      // OR: const latestFormData = formData.find(item => item.isLatest); // If you have a flag
+
+      this.FormDataDetails = latestFormData;
+      this.clientName = this.FormDataDetails.client_name || 'لم يتم تحديد الإسم';
+
       if (this.FormDataDetails.address) {
-        /*         this.address = "  المبني :  " + this.FormDataDetails.building + " ,  " + this.FormDataDetails.address + " الدور " + this.FormDataDetails.floor_number + " رقم " + this.FormDataDetails.apartment_number || 'لم يتم تحديد العنوان';
-         */ this.address =
-          this.FormDataDetails.address || 'لم يتم تحديد العنوان';
+        this.address = this.FormDataDetails.address || 'لم يتم تحديد العنوان';
       }
-      this.addressPhone =
-        this.FormDataDetails.address_phone || 'لم يتم تحديد رقم الهاتف';
+
+      this.addressPhone = this.FormDataDetails.address_phone || 'لم يتم تحديد رقم الهاتف';
+    } else {
+      console.log('No form data found in IndexedDB');
+
+      // Fallback to localStorage if no data in IndexedDB
+      const localStorageFormData = localStorage.getItem('form_data');
+      if (localStorageFormData) {
+        this.FormDataDetails = JSON.parse(localStorageFormData);
+        this.clientName = this.FormDataDetails.client_name || 'لم يتم تحديد الإسم';
+        this.address = this.FormDataDetails.address || 'لم يتم تحديد العنوان';
+        this.addressPhone = this.FormDataDetails.address_phone || 'لم يتم تحديد رقم الهاتف';
+      }
+    }
+  } catch (error) {
+    console.error('Error loading form data:', error);
+
+    // Fallback to localStorage on error
+    const localStorageFormData = localStorage.getItem('form_data');
+    if (localStorageFormData) {
+      this.FormDataDetails = JSON.parse(localStorageFormData);
+      this.clientName = this.FormDataDetails.client_name || 'لم يتم تحديد الإسم';
+      this.address = this.FormDataDetails.address || 'لم يتم تحديد العنوان';
+      this.addressPhone = this.FormDataDetails.address_phone || 'لم يتم تحديد رقم الهاتف';
     }
   }
+}
 
   updateTotalPrice() {
     this.totalPrice = this.cartItems.reduce(
@@ -1651,6 +1821,23 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       orderData.client_name = formData.client_name;
     }
 
+
+    const isOnline = navigator.onLine;
+
+    if (!isOnline) {
+
+      const orderData = this.prepareOrderData();
+      // Save to IndexedDB and get the order ID
+      const orderId = await this.dbService.savePendingOrder(orderData);
+      console.log("Order saved to IndexedDB with ID:", orderId);
+      // Show success message
+      // this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
+      // this.successModal.show();
+      // Clear cart
+      this.clearCart();
+      this.resetLocalStorage();
+    }
+
     // const headers = new HttpHeaders({
     //   Authorization: `Bearer ${authToken}`,
     //   'Accept-Language': 'ar',
@@ -1819,6 +2006,95 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       },
 
     });
+  }
+
+  private prepareOrderData(): any {
+    // This should contain all the order data preparation logic
+    // that was previously in your submitOrder method
+
+    const branchId = Number(localStorage.getItem('branch_id')) || null;
+    const tableId = Number(localStorage.getItem('table_id')) || this.table_id || null;
+    const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+
+    // ... rest of your order data preparation
+
+    return {
+      orderId: this.finalOrderId || 'OFFLINE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+      type: this.selectedOrderType,
+      branch_id: branchId,
+      payment_method: this.selectedPaymentMethod,
+      payment_status: this.selectedPaymentStatus,
+      cash_amount: this.cash_amountt || null,
+      credit_amount: this.credit_amountt || null,
+      cashier_machine_id: localStorage.getItem('cashier_machine_id'),
+      ...(this.clientPhoneStoredInLocal ? { client_country_code: this.selectedCountry.code || "+20" } : {}),
+      ...(this.clientPhoneStoredInLocal ? { client_phone: this.clientPhoneStoredInLocal } : {}),
+      ...(this.clientStoredInLocal ? { client_name: this.clientStoredInLocal } : {}),
+      note: this.additionalNote || this.savedNote || this.applyAdditionalNote() || this.onholdOrdernote || '',
+      items: this.cartItems
+        .map((item) => ({
+          dish_id: item.dish?.id || null,
+          dish_name: item.dish?.name || '',
+          dish_description: item.dish?.description || '',
+          dish_price: item.dish?.price || 0,
+          currency_symbol: item.dish?.currency_symbol || '',
+          dish_image: item.dish?.image || null,
+          quantity: item.quantity || 1,
+          sizeId: item.selectedSize?.id || null,
+          size: item.size || '',
+          sizeName: item.selectedSize?.name || '',
+          sizeDescription: item.selectedSize?.description || '',
+          note: item.note || '',
+          finalPrice: item.finalPrice || 0,
+          selectedAddons: item.selectedAddons || [],
+          addon_categories: item.addon_categories
+            ?.map((category: { id: any; addons: { id: any }[] }) => {
+              const selectedAddons = category.addons?.filter((addon) =>
+                item.selectedAddons.some(
+                  (selected: { id: any }) => selected.id === addon.id
+                )
+              );
+              return selectedAddons.length > 0
+                ? {
+                  id: category.id,
+                  addon: selectedAddons.map((addon) => addon.id),
+                }
+                : null;
+            })
+            .filter((category: null) => category !== null),
+        }))
+        .filter((item) => item.dish_id),
+    };
+  }
+
+  // Add this method to reset local storage
+  private resetLocalStorage(): void {
+    localStorage.removeItem('table_number');
+    localStorage.removeItem('table_id');
+    localStorage.removeItem('address_id');
+    localStorage.removeItem('form_data');
+    localStorage.removeItem('notes');
+    localStorage.removeItem('deliveryForm');
+    localStorage.removeItem('additionalNote');
+    localStorage.removeItem('selectedHotel');
+    localStorage.removeItem('hotel_id');
+    localStorage.removeItem('selectedPaymentStatus');
+    localStorage.removeItem('cash_amountt');
+    localStorage.removeItem('delivery_fees');
+    localStorage.removeItem('credit_amountt');
+    localStorage.removeItem('selected_address');
+    localStorage.removeItem('finalOrderId');
+    localStorage.removeItem('client');
+    localStorage.removeItem('clientPhone');
+
+    this.client = " ";
+    this.clientPhone = " ";
+    this.finalOrderId = " ";
+    this.cash_amountt = 0;
+    this.credit_amountt = 0;
+    this.selectedPaymentStatus = '';
+    this.tableNumber = null;
+    this.FormDataDetails = null;
   }
 
   // private extractDateAndTime(branch: any): void {
@@ -2226,6 +2502,27 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   //   localStorage.setItem('selectedOrderType', this.selectedOrderType);
   // }
+  selectOrderType(type: string) {
+    this.clearOrderTypeData();
+    const typeMapping: { [key: string]: string } = {
+      'في المطعم': 'dine-in',
+      'خارج المطعم': 'Takeaway',
+      توصيل: 'Delivery',
+    };
+    this.selectedOrderType = typeMapping[type] || type
+
+    // Store in IndexedDB instead of localStorage
+    try {
+
+      this.dbService.saveData('selectedOrderType', { value: this.selectedOrderType });
+    } catch (error) {
+      console.error('❌ Failed to save order type to IndexedDB:', error);
+      // Fallback to localStorage if IndexedDB fails
+      localStorage.setItem('selectedOrderType', this.selectedOrderType);
+
+
+    }
+  }
 
   // clearOrderTypeData() {
   //   // Clear data based on the previously selected order type
@@ -2263,35 +2560,16 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   //   }
   // }
 
-  selectOrderType(type: string) {
-    this.clearOrderTypeData();
-    const typeMapping: { [key: string]: string } = {
-      'في المطعم': 'dine-in',
-      'خارج المطعم': 'Takeaway',
-      توصيل: 'Delivery',
-    };
-    this.selectedOrderType = typeMapping[type] || type
 
-    // Store in IndexedDB instead of localStorage
-    try {
-      this.dbService.saveAppSetting('selectedOrderType', this.selectedOrderType);
 
-      console.log('✅ selectedOrderType saved to IndexedDB:', this.dbService.getAll('selectedOrderType'));
-    } catch (error) {
-      console.error('❌ Failed to save order type to IndexedDB:', error);
-      // Fallback to localStorage if IndexedDB fails
-      localStorage.setItem('selectedOrderType', this.selectedOrderType);
-    }
-  }
-
-   clearOrderTypeData() {
+  clearOrderTypeData() {
     // Clear data based on the previously selected order type
     switch (this.selectedOrderType) {
       case 'dine-in':
         // Clear table number and table ID from IndexedDB
         this.tableNumber = null;
         try {
-           this.dbService.removeItem('selectedTable', 'current_table');
+          this.dbService.removeItem('selectedTable', 'current_table');
           console.log('✅ Table data cleared from IndexedDB');
         } catch (error) {
           console.error('❌ Failed to clear table data from IndexedDB:', error);
@@ -2304,9 +2582,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       case 'Delivery':
         // Clear delivery address, courier, and form data from IndexedDB
         try {
-           this.dbService.removeItem('addresses', 'selected_address');
-           this.dbService.removeItem('form_delivery', 'delivery_form');
-           this.dbService.removeItem('clientInfo', 'current_client');
+          this.dbService.removeItem('addresses', 'selected_address');
+          this.dbService.removeItem('form_delivery', 'delivery_form');
+          this.dbService.removeItem('clientInfo', 'current_client');
           console.log('✅ Delivery data cleared from IndexedDB');
         } catch (error) {
           console.error('❌ Failed to clear delivery data from IndexedDB:', error);
@@ -2319,7 +2597,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       case 'Takeaway':
         // Clear client info from IndexedDB for Takeaway
         try {
-           this.dbService.removeItem('clientInfo', 'current_client');
+          this.dbService.removeItem('clientInfo', 'current_client');
           console.log('✅ Takeaway client data cleared from IndexedDB');
         } catch (error) {
           console.error('❌ Failed to clear takeaway data from IndexedDB:', error);
@@ -2331,25 +2609,69 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  //   loadOrderType() {
+  //     try {
+  //       // Try to get from IndexedDB first
+  //       this.dbService.getAll('selectedOrderType').then((savedOrderType) => {
+  //       console.log('✅ Order selectedOrderType:', savedOrderType);
+
+  //   // if (savedOrderTypes.length > 0) {
+  //   //   // Get the latest one (last inserted)
+  //   //   this.selectedOrderType = savedOrderTypes[savedOrderTypes.length - 1];
+  //   //   console.log('👉 Loaded current order type:', this.selectedOrderType);
+  //   // }
+
+  //   if (savedOrderType) {
+  //         this.selectedOrderType = savedOrderType;
+
+  //       } else {
+  //         // Fallback to localStorage if not found in IndexedDB
+  //         const fallbackOrderType = localStorage.getItem('selectedOrderType');
+  //         if (fallbackOrderType) {
+  //           this.selectedOrderType = fallbackOrderType;
+  //           // Migrate to IndexedDB
+  //           this.dbService.saveData('selectedOrderType', this.selectedOrderType);
+  //           localStorage.removeItem('selectedOrderType'); // Clean up localStorage
+  //           console.log('✅ Order type migrated from localStorage to IndexedDB');
+  //         }
+  //       }
+  // });
+
+
+  //     } catch (error) {
+  //       console.error('❌ Error loading order type from IndexedDB:', error);
+  //       // Fallback to localStorage
+  //       const fallbackOrderType = localStorage.getItem('selectedOrderType');
+  //       if (fallbackOrderType) {
+  //         this.selectedOrderType = fallbackOrderType;
+  //       }
+  //     }
+  //   }
+
   loadOrderType() {
     try {
-      // Try to get from IndexedDB first
-      const savedOrderType = this.dbService.getAppSetting('selectedOrderType');
+      this.dbService.getAll('selectedOrderType').then((savedOrderTypes) => {
+        console.log('✅ Order selectedOrderType:', savedOrderTypes);
 
-      if (savedOrderType) {
-        this.selectedOrderType = savedOrderType;
-        console.log('✅ Order type loaded from IndexedDB:', this.selectedOrderType);
-      } else {
-        // Fallback to localStorage if not found in IndexedDB
-        const fallbackOrderType = localStorage.getItem('selectedOrderType');
-        if (fallbackOrderType) {
-          this.selectedOrderType = fallbackOrderType;
-          // Migrate to IndexedDB
-          this.dbService.saveAppSetting('selectedOrderType', this.selectedOrderType);
-          localStorage.removeItem('selectedOrderType'); // Clean up localStorage
-          console.log('✅ Order type migrated from localStorage to IndexedDB');
+        if (savedOrderTypes.length > 0) {
+          // Get the latest one (last inserted)
+          // this.selectedOrderType = savedOrderTypes[savedOrderTypes.length - 1];
+          console.log('0');
+
+          const last = savedOrderTypes[savedOrderTypes.length - 1];
+          this.selectedOrderType = last.value; // last.value because we saved { value: ... }
+        } else {
+
+          // Fallback to localStorage if not found in IndexedDB
+          const fallbackOrderType = localStorage.getItem('selectedOrderType');
+          if (fallbackOrderType) {
+            this.selectedOrderType = fallbackOrderType;
+            // Migrate to IndexedDB
+            this.dbService.saveData('selectedOrderType', { value: this.selectedOrderType });
+            localStorage.removeItem('selectedOrderType'); // Clean up localStorage
+          }
         }
-      }
+      });
     } catch (error) {
       console.error('❌ Error loading order type from IndexedDB:', error);
       // Fallback to localStorage
@@ -2359,6 +2681,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       }
     }
   }
+
 
   openCartItemsModal() {
     const modalRef = this.modalService.open(CartItemsModalComponent, {
@@ -3054,31 +3377,88 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     // Optional: you can reset or keep values when closing the modal
     this.clearClientInfo(); // or remove this line if you want to keep input filled
   }
-  fetchCountries() {
-    this.authService.getCountries().subscribe({
-      next: (response) => {
-        if (response.data && Array.isArray(response.data)) {
-          this.countryList = response.data.map(
-            (country: { phone_code: string; image: string }) => ({
-              code: country.phone_code,
-              flag: country.image,
-            })
-          );
-          const allowedCountryCodes: string[] = ['+20', '+962', '+964', '+212', '+963', '+965', '+966'];
-          this.filteredCountries = [...this.countryList]; // Initialize filteredCountries
-          this.filteredCountries = this.filteredCountries.filter((country: any) =>
-            allowedCountryCodes.includes(country.code.replace(/\s+/g, '').replace(' ', '').replace('ـ', '').replace('–', ''))
-          );
+  // fetchCountries() {
+  //   this.authService.getCountries().subscribe({
+  //     next: (response) => {
+  //       if (response.data && Array.isArray(response.data)) {
+  //         this.countryList = response.data.map(
+  //           (country: { phone_code: string; image: string }) => ({
+  //             code: country.phone_code,
+  //             flag: country.image,
+  //           })
+  //         );
+  //         const allowedCountryCodes: string[] = ['+20', '+962', '+964', '+212', '+963', '+965', '+966'];
+  //         this.filteredCountries = [...this.countryList]; // Initialize filteredCountries
+  //         this.filteredCountries = this.filteredCountries.filter((country: any) =>
+  //           allowedCountryCodes.includes(country.code.replace(/\s+/g, '').replace(' ', '').replace('ـ', '').replace('–', ''))
+  //         );
 
-        } else {
-          this.errorMessage = 'No country data found in the response.';
-        }
-      },
-      error: () => {
-        this.errorMessage = 'Failed to load country data.';
-      },
-    });
+  //       } else {
+  //         this.errorMessage = 'No country data found in the response.';
+  //       }
+  //     },
+  //     error: () => {
+  //       this.errorMessage = 'Failed to load country data.';
+  //     },
+  //   });
+  // }
+
+
+  async fetchCountries() {
+    try {
+      // First, check if we already have countries stored in DB
+      const storedCountries = await this.dbService.getAll('countries');
+
+      if (storedCountries && storedCountries.length > 0) {
+        console.log('✅ Loaded countries from DB:', storedCountries);
+
+        this.countryList = storedCountries;
+        this.filterAllowedCountries();
+        return; // Exit early since we don’t need API
+      }
+
+      // Otherwise, fetch from API
+      this.authService.getCountries().subscribe({
+        next: async (response) => {
+          if (response.data && Array.isArray(response.data)) {
+            this.countryList = response.data.map(
+              (country: { phone_code: string; image: string }) => ({
+                code: country.phone_code,
+                flag: country.image,
+              })
+            );
+
+            // Save countries in DB (clear old then insert new)
+            // await this.dbService.removeItem('countries');
+            for (const country of this.countryList) {
+              await this.dbService.saveData('countries', country);
+            }
+
+            this.filterAllowedCountries();
+          } else {
+            this.errorMessage = 'No country data found in the response.';
+          }
+        },
+        error: () => {
+          this.errorMessage = 'Failed to load country data.';
+        },
+      });
+    } catch (error) {
+      console.error('❌ Error handling countries:', error);
+      this.errorMessage = 'Something went wrong while fetching countries.';
+    }
   }
+
+  filterAllowedCountries() {
+    const allowedCountryCodes: string[] = ['+20', '+962', '+964', '+212', '+963', '+965', '+966'];
+
+    this.filteredCountries = this.countryList.filter((country: any) =>
+      allowedCountryCodes.includes(
+        country.code.replace(/\s+/g, '').replace('ـ', '').replace('–', '')
+      )
+    );
+  }
+
 
   toggleDropdown() {
     this.dropdownOpen = !this.dropdownOpen;
