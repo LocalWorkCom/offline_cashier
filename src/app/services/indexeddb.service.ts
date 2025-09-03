@@ -906,4 +906,55 @@ async savePendingOrder(orderData: any): Promise<void> {
 }
 
 
+// 🔹 Save or update selected table
+async saveOrUpdateSelectedTable(table: any): Promise<void> {
+  await this.ensureInit();
+
+  return new Promise((resolve, reject) => {
+    const tx = this.db.transaction('selectedTable', 'readwrite');
+    const store = tx.objectStore('selectedTable');
+
+    // clear old selected table (only one should exist)
+    const clearRequest = store.clear();
+
+    clearRequest.onsuccess = () => {
+      const request = store.put({
+        ...table,
+        savedAt: new Date().toISOString()
+      });
+
+      request.onsuccess = () => {
+        console.log('✅ Selected table updated:', table);
+        resolve();
+      };
+
+      request.onerror = (e) => {
+        console.error('❌ Error saving selected table:', e);
+        reject(e);
+      };
+    };
+
+    clearRequest.onerror = (e) => reject(e);
+  });
+}
+
+// 🔹 Get the currently selected table
+async getSelectedTable(): Promise<any | null> {
+  await this.ensureInit();
+
+  return new Promise((resolve, reject) => {
+    const tx = this.db.transaction('selectedTable', 'readonly');
+    const store = tx.objectStore('selectedTable');
+    const request = store.getAll();
+
+    request.onsuccess = () => {
+      resolve(request.result && request.result.length > 0 ? request.result[0] : null);
+    };
+
+    request.onerror = (e) => reject(e);
+  });
+}
+
+
+
 }

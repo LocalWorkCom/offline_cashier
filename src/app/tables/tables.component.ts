@@ -314,7 +314,7 @@ export class TablesComponent implements OnInit, OnDestroy {
     localStorage.setItem('table_number', JSON.stringify(selectedTable.table_number));
     
     // Save selected table to IndexedDB for offline access
-    this.dbService.saveData('selectedTable', [selectedTable])
+    this.dbService.saveOrUpdateSelectedTable( selectedTable)
       .catch(error => console.error('Error saving selected table:', error));
     
     this.router.navigate(['/home']);
@@ -326,7 +326,7 @@ export class TablesComponent implements OnInit, OnDestroy {
 
   selectedTable: any = null; 
   loadSelectedTable(): void {
-  this.dbService.getAll('selectedTable')
+  this.dbService.getSelectedTable()
     .then(tables => {
       if (tables && tables.length) {
         this.selectedTable = tables[0];
