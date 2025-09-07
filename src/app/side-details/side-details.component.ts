@@ -2514,7 +2514,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     // Store in IndexedDB instead of localStorage
     try {
 
-      this.dbService.saveData('selectedOrderType', { value: this.selectedOrderType });
+      // this.dbService.saveData('selectedOrderType', { value: this.selectedOrderType });
+      this.dbService.saveData('selectedOrderType', {
+        id: new Date().getTime(), // or use UUID
+        value: this.selectedOrderType,
+        timestamp: new Date().toISOString()
+      })
     } catch (error) {
       console.error('❌ Failed to save order type to IndexedDB:', error);
       // Fallback to localStorage if IndexedDB fails
@@ -2648,39 +2653,74 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   //     }
   //   }
 
+  // loadOrderType() {
+  //   try {
+  //     this.dbService.getAll('selectedOrderType').then((savedOrderTypes) => {
+  //       console.log('✅ Order selectedOrderType:', savedOrderTypes);
+
+  //       if (savedOrderTypes.length > 0) {
+  //         // Get the latest one (last inserted)
+  //         // this.selectedOrderType = savedOrderTypes[savedOrderTypes.length - 1];
+  //         console.log('0');
+
+  //         const last = savedOrderTypes[savedOrderTypes.length - 1];
+  //         this.selectedOrderType = last.value; // last.value because we saved { value: ... }
+  //       } else {
+
+  //         // Fallback to localStorage if not found in IndexedDB
+  //         const fallbackOrderType = localStorage.getItem('selectedOrderType');
+  //         if (fallbackOrderType) {
+  //           this.selectedOrderType = fallbackOrderType;
+  //           // Migrate to IndexedDB
+  //           this.dbService.saveData('selectedOrderType', { value: this.selectedOrderType });
+  //           localStorage.removeItem('selectedOrderType'); // Clean up localStorage
+  //         }
+  //       }
+  //     });
+  //   } catch (error) {
+  //     console.error('❌ Error loading order type from IndexedDB:', error);
+  //     // Fallback to localStorage
+  //     const fallbackOrderType = localStorage.getItem('selectedOrderType');
+  //     if (fallbackOrderType) {
+  //       this.selectedOrderType = fallbackOrderType;
+  //     }
+  //   }
+  // }
+
   loadOrderType() {
-    try {
-      this.dbService.getAll('selectedOrderType').then((savedOrderTypes) => {
-        console.log('✅ Order selectedOrderType:', savedOrderTypes);
+  try {
+    this.dbService.getAll('selectedOrderType').then((savedOrderTypes) => {
+      console.log('✅ Order selectedOrderType:', savedOrderTypes);
 
-        if (savedOrderTypes.length > 0) {
-          // Get the latest one (last inserted)
-          // this.selectedOrderType = savedOrderTypes[savedOrderTypes.length - 1];
-          console.log('0');
+      if (savedOrderTypes.length > 0) {
+        // Sort by ID to get the latest one
+        const sorted = savedOrderTypes.sort((a, b) => b.id - a.id);
+        const last = sorted[0];
+        this.selectedOrderType = last.value;
 
-          const last = savedOrderTypes[savedOrderTypes.length - 1];
-          this.selectedOrderType = last.value; // last.value because we saved { value: ... }
-        } else {
-
-          // Fallback to localStorage if not found in IndexedDB
-          const fallbackOrderType = localStorage.getItem('selectedOrderType');
-          if (fallbackOrderType) {
-            this.selectedOrderType = fallbackOrderType;
-            // Migrate to IndexedDB
-            this.dbService.saveData('selectedOrderType', { value: this.selectedOrderType });
-            localStorage.removeItem('selectedOrderType'); // Clean up localStorage
-          }
+        console.log('Last ID:', last.id); // This is the last ID
+      } else {
+        // Fallback to localStorage
+        const fallbackOrderType = localStorage.getItem('selectedOrderType');
+        if (fallbackOrderType) {
+          this.selectedOrderType = fallbackOrderType;
+          // Migrate to IndexedDB with ID
+          this.dbService.saveData('selectedOrderType', {
+            id: new Date().getTime(),
+            value: this.selectedOrderType
+          });
+          localStorage.removeItem('selectedOrderType');
         }
-      });
-    } catch (error) {
-      console.error('❌ Error loading order type from IndexedDB:', error);
-      // Fallback to localStorage
-      const fallbackOrderType = localStorage.getItem('selectedOrderType');
-      if (fallbackOrderType) {
-        this.selectedOrderType = fallbackOrderType;
       }
+    });
+  } catch (error) {
+    console.error('❌ Error loading order type from IndexedDB:', error);
+    const fallbackOrderType = localStorage.getItem('selectedOrderType');
+    if (fallbackOrderType) {
+      this.selectedOrderType = fallbackOrderType;
     }
   }
+}
 
 
   openCartItemsModal() {
