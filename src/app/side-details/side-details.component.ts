@@ -1564,508 +1564,979 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   amountError = false;
   addressRequestInProgress: boolean = false;
 
+  // async submitOrder() {
+  //   if (this.isLoading) {
+  //     console.warn("🚫 Request already in progress, ignoring duplicate submit.");
+  //     return;
+  //   }
+
+  //   this.isLoading = true;
+  //   this.loading = true;
+  //   if (!this.cartItems.length) {
+  //     this.isLoading = false;
+  //     this.falseMessage = 'العربة فارغة، أضف بعض العناصر قبل تنفيذ الطلب.';
+  //     setTimeout(() => {
+  //       this.falseMessage = '';
+  //     }, 1500);
+  //     return;
+  //   }
+  //   if (!this.selectedOrderType) {
+  //     this.isLoading = false;
+  //     this.falseMessage = 'يرجى تحديد نوع الطلب قبل المتابعة.';
+  //     setTimeout(() => {
+  //       this.falseMessage = '';
+  //     }, 1500);
+  //     return;
+  //   }
+
+  //   const branchId = Number(localStorage.getItem('branch_id')) || null;
+  //   const tableId = Number(localStorage.getItem('table_id')) || this.table_id || null;
+  //   // const tableId = Number(4) ;
+
+  //   const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+
+  //   if (this.selectedPaymentStatus === 'paid' && this.credit_amountt > 0 && !this.referenceNumber) {
+  //     this.isLoading = false;
+  //     this.falseMessage = '❌ رقم المرجع مطلوب عند الدفع بالفيزا.';
+  //     return;
+  //   }
+  //   let addressId = null;
+  //   console.log(this.selectedOrderType, 'gggggggggggg');
+  //   // if (this.selectedOrderType === 'Delivery') {
+  //   //   addressId = localStorage.getItem('address_id');
+  //   //   if (!localStorage.getItem('address_id')) {
+  //   //     addressId = await this.getAddressId();
+  //   //   }
+  //   // }
+  //   if (this.selectedOrderType === 'Delivery') {
+  //     addressId = localStorage.getItem('address_id');
+
+  //     if (!addressId && !this.addressRequestInProgress) {
+  //       this.addressRequestInProgress = true;
+  //       try {
+  //         addressId = await this.getAddressId();
+  //         if (addressId) {
+  //           localStorage.setItem('address_id', addressId.toString());
+  //         }
+  //       } finally {
+  //         this.addressRequestInProgress = false;
+  //       }
+  //     }
+
+  //   }
+
+  //   // Also add addressId for Takeaway only if exists (optional, depends on backend)
+
+  //   const authToken = localStorage.getItem('authToken');
+  //   const cashier_machine_id = localStorage.getItem('cashier_machine_id');
+
+  //   if (!branchId) {
+  //     this.falseMessage = 'فشل تحديد الفرع. الرجاء إعادة تسجيل الدخول.';
+  //     setTimeout(() => {
+  //       this.falseMessage = '';
+  //     }, 1500);
+  //     this.isLoading = false;
+  //     this.loading = false;
+  //     return;
+  //   }
+  //   if (!authToken) {
+  //     this.falseMessage = 'فشل التحقق من الهوية. الرجاء تسجيل الدخول مجددًا.';
+  //     setTimeout(() => {
+  //       this.falseMessage = '';
+  //     }, 1500);
+  //     this.isLoading = false;
+  //     this.loading = false;
+  //     return;
+  //   }
+  //   this.formSubmitted = true;
+  //   this.amountError = false;
+
+  //   if (!this.selectedPaymentStatus) {
+  //     // No payment status selected
+  //     setTimeout(() => {
+  //       this.formSubmitted = false;
+  //     }, 2500);
+  //     return;
+  //   }
+
+  //   if (this.selectedPaymentStatus === 'paid') {
+  //     const isDelivery =
+  //       this.selectedOrderType === 'Delivery' ||
+  //       this.selectedOrderType === 'توصيل';
+  //     if (!isDelivery) {
+
+  //       const totalEntered =
+  //         Number(this.cash_amountt || 0) + Number(this.credit_amountt || 0);
+  //       const cartTotal = Number(this.getCartTotal().toFixed(2));
+
+  //       if (totalEntered < cartTotal) {
+  //         this.amountError = true;
+  //         console.log('❌ Entered amount less than total:', totalEntered, cartTotal);
+
+  //         setTimeout(() => {
+  //           this.amountError = false;
+  //           console.log('🔁 Cleared error state');
+  //         }, 2500);
+
+  //         return;
+  //       }
+
+  //       console.log('✅ Valid payment amount:', totalEntered, cartTotal);
+  //     }
+  //   }
+
+  //   this.isLoading = true;
+  //   this.loading = true;
+  //   this.falseMessage = '';
+  //   this.tableError = '';
+  //   this.couponError = ''; // Clear previous coupon error
+
+  //   const paymentStatus =
+  //     this.selectedPaymentMethod === 'cash'
+  //       ? this.selectedPaymentStatus
+  //       : 'paid';
+  //   console.log(this.selectedPaymentMethod, 'selectedPaymentMethod');
+  //   const iddd = localStorage.getItem('hotel_id');
+  //   const orderData: any = {
+  //     orderId: this.finalOrderId,
+  //     type: this.selectedOrderType,
+  //     branch_id: branchId,
+  //     payment_method: this.selectedPaymentMethod,
+  //     payment_status: paymentStatus,
+  //     cash_amount: this.cash_amountt || null, ///////////////// alaa
+  //     credit_amount: this.credit_amountt || null,
+  //     cashier_machine_id: cashier_machine_id,
+  //     // client_country_code: this.selectedCountry.code || "+20",
+  //     ...(this.clientPhoneStoredInLocal ? { client_country_code: this.selectedCountry.code || "+20" } : {}),
+  //     ...(this.clientPhoneStoredInLocal ? { client_phone: this.clientPhoneStoredInLocal } : {}),
+  //     ...(this.clientStoredInLocal ? { client_name: this.clientStoredInLocal } : {}),
+  //     // "whatsapp_number_code" :"+20",
+  //     // "whatsapp_number" : "01102146215" ,
+  //     note:
+  //       this.additionalNote ||
+  //       this.savedNote ||
+  //       this.applyAdditionalNote() || this.onholdOrdernote ||
+  //       '',
+  //     items: this.cartItems
+  //       .map((item) => ({
+  //         dish_id: item.dish?.id || null,
+  //         dish_name: item.dish?.name || '',
+  //         dish_description: item.dish?.description || '',
+  //         dish_price: item.dish?.price || 0,
+  //         currency_symbol: item.dish?.currency_symbol || '',
+  //         dish_image: item.dish?.image || null,
+  //         quantity: item.quantity || 1,
+  //         sizeId: item.selectedSize?.id || null,
+  //         size: item.size || '',
+  //         sizeName: item.selectedSize?.name || '',
+  //         sizeDescription: item.selectedSize?.description || '',
+  //         note: item.note || '',
+  //         finalPrice: item.finalPrice || 0,
+  //         selectedAddons: item.selectedAddons || [],
+  //         addon_categories: item.addon_categories
+  //           ?.map((category: { id: any; addons: { id: any }[] }) => {
+  //             const selectedAddons = category.addons?.filter((addon) =>
+  //               item.selectedAddons.some(
+  //                 (selected: { id: any }) => selected.id === addon.id
+  //               )
+  //             );
+  //             return selectedAddons.length > 0
+  //               ? {
+  //                 id: category.id,
+  //                 addon: selectedAddons.map((addon) => addon.id),
+  //               }
+  //               : null;
+  //           })
+  //           .filter((category: null) => category !== null),
+  //       }))
+  //       .filter((item) => item.dish_id),
+  //   };
+
+  //   if (this.appliedCoupon && this.couponCode?.trim()) {
+  //     orderData.coupon_code = this.couponCode.trim();
+  //     orderData.discount_amount = this.discountAmount;
+  //     orderData.coupon_type = this.appliedCoupon.value_type;
+  //   } else if (this.couponCode?.trim()) {
+  //     orderData.coupon_code = this.couponCode.trim();
+  //   }
+  //   if (this.credit_amountt > 0) {
+  //     orderData.reference_number = this.referenceNumber;
+  //   }
+
+  //   // if (this.appliedCoupon) {
+  //   //   orderData.coupon_value = this.appliedCoupon.coupon_value;
+  //   //   orderData.value_type = this.appliedCoupon.value_type;
+  //   //   orderData.discount_amount = this.discountAmount;
+  //   // }
+  //   if (this.selectedOrderType === 'Delivery' && addressId) {
+  //     orderData.address_id = addressId;
+  //   }
+  //   if (this.selectedPaymentMethod == "unpaid") {
+  //     orderData.credit_amount = null;
+  //     orderData.cash_amount = null;
+  //   }
+  //   if (!orderData.items.length) {
+  //     this.falseMessage = 'لا يمكن تقديم الطلب بدون عناصر صالحة.';
+  //     setTimeout(() => {
+  //       this.falseMessage = '';
+  //     }, 1500);
+  //     this.isLoading = false;
+  //     this.loading = false;
+  //     return;
+  //   }
+
+  //   if (
+  //     this.selectedOrderType === 'dine-in' ||
+  //     this.selectedOrderType === 'في المطعم'
+  //   ) {
+  //     if (!tableId
+  //     ) {
+  //       this.falseMessage = 'يرجى اختيار طاولة.';
+  //       setTimeout(() => {
+  //         this.falseMessage = '';
+  //       }, 1500);
+  //       this.isLoading = false;
+  //       this.loading = false;
+  //       return;
+  //     }
+  //     orderData.table_id = tableId;
+  //   }
+
+  //   if (
+  //     this.selectedOrderType === 'Delivery' ||
+  //     this.selectedOrderType === 'توصيل'
+  //   ) {
+  //     if (!addressId) {
+  //       this.falseMessage = 'يرجى اختيار عنوان التوصيل ';
+  //       setTimeout(() => {
+  //         this.falseMessage = '';
+  //       }, 1500);
+  //       this.isLoading = false;
+  //       this.loading = false;
+  //       return;
+  //     }
+  //     orderData.address_id = addressId;
+  //     orderData.client_country_code = formData.country_code.code;
+  //     orderData.client_phone = formData.address_phone;
+  //     orderData.client_name = formData.client_name;
+  //   }
+
+
+  //   const isOnline = navigator.onLine;
+
+  //   if (!isOnline) {
+
+  //     const orderData = this.prepareOrderData();
+  //     // Save to IndexedDB and get the order ID
+  //     const orderId = await this.dbService.savePendingOrder(orderData);
+  //     console.log("Order saved to IndexedDB with ID:", orderId);
+  //     // Show success message
+  //     // this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
+  //     // this.successModal.show();
+  //     // Clear cart
+  //     this.clearCart();
+  //     this.resetLocalStorage();
+  //   }
+
+  //   // const headers = new HttpHeaders({
+  //   //   Authorization: `Bearer ${authToken}`,
+  //   //   'Accept-Language': 'ar',
+  //   // });
+  //   // console.log(orderData.address_id, 'orderData.address_id');
+  //   // console.log(orderData, 'orderData');
+  //   // console.log(this.credit_amountt, 'orderData');
+  //   // console.log(orderData.credit_amount, 'orderData');
+  //   console.log('pppppppp', orderData);
+
+  //   this.plaseOrderService.placeOrder(orderData).subscribe({
+  //     next: async (response): Promise<void> => {
+  //       console.log('API Response:', response);
+  //       // Clear previous errors
+  //       this.falseMessage = '';
+  //       this.tableError = '';
+  //       this.couponError = '';
+  //       this.cashiermachine = '';
+  //       this.pillId = response.data?.invoice_id
+  //       this.orderedId = response.data?.order_id;
+  //       if (!response.status) {
+  //         if (response.errorData?.error?.cashier_machine_id) {
+  //           this.cashiermachine =
+  //             response.errorData?.error?.cashier_machine_id[0];
+  //         }
+  //         // Handle coupon validation error
+  //         else if (response.errorData?.coupon_code) {
+  //           this.couponError = response.errorData.coupon_code;
+  //         }
+  //         // Handle table error
+  //         else if (response.errorData?.table_id) {
+  //           this.tableError = response.errorData.table_id;
+  //         }
+
+  //         // Handle generic error
+  //         else {
+  //           this.falseMessage = response.errorData?.error
+  //             ? `${response.errorData.error}`
+  //             : `${response.message || 'حدث خطأ أثناء تقديم الطلب'}`;
+  //           console.log(this.clientError, "gggggggg");
+
+  //         }
+
+  //         setTimeout(() => {
+  //           this.falseMessage = '';
+  //           this.tableError = '';
+  //           this.couponError = '';
+  //           this.cashiermachine = '';
+  //         }, 3500);
+  //         this.isLoading = false;
+  //         this.loading = false;
+  //         return;
+  //       }
+
+  //       if (this.selectedOrderType === 'Takeaway') {
+  //         const dataOrderId = response.data.order_id;
+  //         this.createdOrderId = dataOrderId;
+  //         await this.fetchPillsDetails(this.pillId);
+  //         setTimeout(() => {
+  //           this.printInvoice();
+  //         }, 200)
+
+  //         this.removeCouponFromLocalStorage();
+  //       }
+
+  //       const orderId = response.data?.order_id;
+  //       if (!orderId) {
+  //         this.falseMessage = 'لم يتم استلام رقم الطلب من الخادم.';
+  //         setTimeout(() => {
+  //           this.falseMessage = '';
+  //         }, 1500);
+  //         this.isLoading = false;
+  //         this.loading = false;
+  //         return;
+  //       }
+  //       const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
+  //       const orderIdToRemove = orderData.orderId;
+  //       const updatedOrders = savedOrders.filter(
+  //         (savedOrder: any) => savedOrder.orderId !== orderIdToRemove
+  //       );
+  //       localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
+  //       console.log(orderData, 'jjjjj');
+
+  //       this.clearCart();
+  //       localStorage.removeItem('table_number');
+  //       localStorage.removeItem('table_id');
+  //       localStorage.removeItem('address_id');
+  //       localStorage.removeItem('form_data');
+  //       localStorage.removeItem('notes');
+  //       localStorage.removeItem('deliveryForm');
+  //       localStorage.removeItem('additionalNote');
+  //       localStorage.removeItem('selectedHotel');
+  //       localStorage.removeItem('hotel_id');
+  //       localStorage.removeItem('selectedPaymentStatus');
+  //       localStorage.removeItem('cash_amountt');
+  //       localStorage.removeItem('delivery_fees');
+  //       localStorage.removeItem('credit_amountt');
+  //       localStorage.removeItem('selected_address');
+  //       localStorage.removeItem('finalOrderId');
+  //       localStorage.removeItem('client');
+  //       localStorage.removeItem('clientPhone');
+  //       this.client = " ";
+  //       this.clientPhone = " "
+  //       this.finalOrderId = " ";
+  //       this.cash_amountt = 0; ///////////////// alaa
+  //       this.credit_amountt = 0;
+  //       this.selectedPaymentStatus = '';
+  //       this.resetAddress()
+  //       this.tableNumber = null;
+  //       this.FormDataDetails = null;
+  //       this.successMessage = 'تم تنفيذ طلبك بنجاح';
+  //       this.successModal.show();
+
+  //       setTimeout(() => {
+  //         this.falseMessage = '';
+  //       }, 1500);
+  //       this.isLoading = false;
+  //       this.loading = false;
+  //     },
+  //     error: (error) => {
+  //       console.error('API Error:', error.error);
+  //       // Handle error response
+  //       if (error.error?.errorData?.error?.coupon_code) {
+  //         this.couponError = error.error.errorData.error.coupon_code[0];
+  //         console.log("1");
+
+  //       } else if (error.error?.errorData?.error?.client_phone) {
+  //         this.falseMessage = error.error?.errorData?.error?.client_phone[0];
+  //         console.log("2");
+
+  //       }
+  //       else if (error.error?.errorData?.table_id) {
+  //         this.tableError = error.error?.errorData?.table_id[0];
+  //         console.log("3");
+
+  //       }
+  //       else if (error.error?.errorData?.error) {
+  //         this.falseMessage = `${error.error.errorData.error}`;
+  //         console.log("43");
+
+  //       }
+  //       else if (error.error?.message) {
+  //         this.falseMessage = `${error.error.message}`;
+  //         console.log("5");
+
+  //       } else if (error.error?.errorData.error) {
+  //         const errorMessages = Object.values(error.error?.errorData.error)
+  //           .flat()
+  //           .join('\n');
+  //         this.falseMessage = `${errorMessages}`;
+  //         console.log("6");
+
+  //       } else {
+  //         this.falseMessage = 'حدث خطأ غير متوقع، يرجى المحاولة لاحقًا.';
+  //       }
+  //       setTimeout(() => {
+  //         this.falseMessage = '';
+  //       }, 2000);
+  //       this.isLoading = false;
+  //       this.loading = false;
+  //     },
+
+  //     complete: () => {
+  //       this.isLoading = false;
+  //       this.loading = false;
+  //     },
+
+  //   });
+  // }
+
+
+
+  // private prepareOrderData(): any {
+  //   // This should contain all the order data preparation logic
+  //   // that was previously in your submitOrder method
+
+  //   const branchId = Number(localStorage.getItem('branch_id')) || null;
+  //   const tableId = Number(localStorage.getItem('table_id')) || this.table_id || null;
+  //   const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+
+  //   // ... rest of your order data preparation
+
+  //   return {
+  //     orderId: this.finalOrderId || 'OFFLINE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+  //     type: this.selectedOrderType,
+  //     branch_id: branchId,
+  //     payment_method: this.selectedPaymentMethod,
+  //     payment_status: this.selectedPaymentStatus,
+  //     cash_amount: this.cash_amountt || null,
+  //     credit_amount: this.credit_amountt || null,
+  //     cashier_machine_id: localStorage.getItem('cashier_machine_id'),
+  //     ...(this.clientPhoneStoredInLocal ? { client_country_code: this.selectedCountry.code || "+20" } : {}),
+  //     ...(this.clientPhoneStoredInLocal ? { client_phone: this.clientPhoneStoredInLocal } : {}),
+  //     ...(this.clientStoredInLocal ? { client_name: this.clientStoredInLocal } : {}),
+  //     note: this.additionalNote || this.savedNote || this.applyAdditionalNote() || this.onholdOrdernote || '',
+  //     items: this.cartItems
+  //       .map((item) => ({
+  //         dish_id: item.dish?.id || null,
+  //         dish_name: item.dish?.name || '',
+  //         dish_description: item.dish?.description || '',
+  //         dish_price: item.dish?.price || 0,
+  //         currency_symbol: item.dish?.currency_symbol || '',
+  //         dish_image: item.dish?.image || null,
+  //         quantity: item.quantity || 1,
+  //         sizeId: item.selectedSize?.id || null,
+  //         size: item.size || '',
+  //         sizeName: item.selectedSize?.name || '',
+  //         sizeDescription: item.selectedSize?.description || '',
+  //         note: item.note || '',
+  //         finalPrice: item.finalPrice || 0,
+  //         selectedAddons: item.selectedAddons || [],
+  //         addon_categories: item.addon_categories
+  //           ?.map((category: { id: any; addons: { id: any }[] }) => {
+  //             const selectedAddons = category.addons?.filter((addon) =>
+  //               item.selectedAddons.some(
+  //                 (selected: { id: any }) => selected.id === addon.id
+  //               )
+  //             );
+  //             return selectedAddons.length > 0
+  //               ? {
+  //                 id: category.id,
+  //                 addon: selectedAddons.map((addon) => addon.id),
+  //               }
+  //               : null;
+  //           })
+  //           .filter((category: null) => category !== null),
+  //       }))
+  //       .filter((item) => item.dish_id),
+  //   };
+  // }
+
+
   async submitOrder() {
-    if (this.isLoading) {
-      console.warn("🚫 Request already in progress, ignoring duplicate submit.");
-      return;
-    }
+  if (this.isLoading) {
+    console.warn("🚫 Request already in progress, ignoring duplicate submit.");
+    return;
+  }
 
-    this.isLoading = true;
-    this.loading = true;
-    if (!this.cartItems.length) {
-      this.isLoading = false;
-      this.falseMessage = 'العربة فارغة، أضف بعض العناصر قبل تنفيذ الطلب.';
-      setTimeout(() => {
-        this.falseMessage = '';
-      }, 1500);
-      return;
-    }
-    if (!this.selectedOrderType) {
-      this.isLoading = false;
-      this.falseMessage = 'يرجى تحديد نوع الطلب قبل المتابعة.';
-      setTimeout(() => {
-        this.falseMessage = '';
-      }, 1500);
-      return;
-    }
+  this.isLoading = true;
+  this.loading = true;
 
-    const branchId = Number(localStorage.getItem('branch_id')) || null;
-    const tableId = Number(localStorage.getItem('table_id')) || this.table_id || null;
-    // const tableId = Number(4) ;
+  if (!this.cartItems.length) {
+    this.isLoading = false;
+    this.falseMessage = 'العربة فارغة، أضف بعض العناصر قبل تنفيذ الطلب.';
+    setTimeout(() => {
+      this.falseMessage = '';
+    }, 1500);
+    return;
+  }
 
-    const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+  if (!this.selectedOrderType) {
+    this.isLoading = false;
+    this.falseMessage = 'يرجى تحديد نوع الطلب قبل المتابعة.';
+    setTimeout(() => {
+      this.falseMessage = '';
+    }, 1500);
+    return;
+  }
 
-    if (this.selectedPaymentStatus === 'paid' && this.credit_amountt > 0 && !this.referenceNumber) {
-      this.isLoading = false;
-      this.falseMessage = '❌ رقم المرجع مطلوب عند الدفع بالفيزا.';
-      return;
-    }
-    let addressId = null;
-    console.log(this.selectedOrderType, 'gggggggggggg');
-    // if (this.selectedOrderType === 'Delivery') {
-    //   addressId = localStorage.getItem('address_id');
-    //   if (!localStorage.getItem('address_id')) {
-    //     addressId = await this.getAddressId();
-    //   }
-    // }
-    if (this.selectedOrderType === 'Delivery') {
-      addressId = localStorage.getItem('address_id');
+  const branchId = Number(localStorage.getItem('branch_id')) || null;
+  const tableId = Number(localStorage.getItem('table_id')) || this.table_id || null;
+  const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
 
-      if (!addressId && !this.addressRequestInProgress) {
-        this.addressRequestInProgress = true;
-        try {
-          addressId = await this.getAddressId();
-          if (addressId) {
-            localStorage.setItem('address_id', addressId.toString());
-          }
-        } finally {
-          this.addressRequestInProgress = false;
+  if (this.selectedPaymentStatus === 'paid' && this.credit_amountt > 0 && !this.referenceNumber) {
+    this.isLoading = false;
+    this.falseMessage = '❌ رقم المرجع مطلوب عند الدفع بالفيزا.';
+    return;
+  }
+
+  let addressId = null;
+
+  if (this.selectedOrderType === 'Delivery') {
+    addressId = localStorage.getItem('address_id');
+
+    if (!addressId && !this.addressRequestInProgress) {
+      this.addressRequestInProgress = true;
+      try {
+        addressId = await this.getAddressId();
+        if (addressId) {
+          localStorage.setItem('address_id', addressId.toString());
         }
-      }
-
-    }
-
-    // Also add addressId for Takeaway only if exists (optional, depends on backend)
-
-    const authToken = localStorage.getItem('authToken');
-    const cashier_machine_id = localStorage.getItem('cashier_machine_id');
-
-    if (!branchId) {
-      this.falseMessage = 'فشل تحديد الفرع. الرجاء إعادة تسجيل الدخول.';
-      setTimeout(() => {
-        this.falseMessage = '';
-      }, 1500);
-      this.isLoading = false;
-      this.loading = false;
-      return;
-    }
-    if (!authToken) {
-      this.falseMessage = 'فشل التحقق من الهوية. الرجاء تسجيل الدخول مجددًا.';
-      setTimeout(() => {
-        this.falseMessage = '';
-      }, 1500);
-      this.isLoading = false;
-      this.loading = false;
-      return;
-    }
-    this.formSubmitted = true;
-    this.amountError = false;
-
-    if (!this.selectedPaymentStatus) {
-      // No payment status selected
-      setTimeout(() => {
-        this.formSubmitted = false;
-      }, 2500);
-      return;
-    }
-
-    if (this.selectedPaymentStatus === 'paid') {
-      const isDelivery =
-        this.selectedOrderType === 'Delivery' ||
-        this.selectedOrderType === 'توصيل';
-      if (!isDelivery) {
-
-        const totalEntered =
-          Number(this.cash_amountt || 0) + Number(this.credit_amountt || 0);
-        const cartTotal = Number(this.getCartTotal().toFixed(2));
-
-        if (totalEntered < cartTotal) {
-          this.amountError = true;
-          console.log('❌ Entered amount less than total:', totalEntered, cartTotal);
-
-          setTimeout(() => {
-            this.amountError = false;
-            console.log('🔁 Cleared error state');
-          }, 2500);
-
-          return;
-        }
-
-        console.log('✅ Valid payment amount:', totalEntered, cartTotal);
+      } finally {
+        this.addressRequestInProgress = false;
       }
     }
+  }
 
-    this.isLoading = true;
-    this.loading = true;
-    this.falseMessage = '';
-    this.tableError = '';
-    this.couponError = ''; // Clear previous coupon error
+  const authToken = localStorage.getItem('authToken');
+  const cashier_machine_id = localStorage.getItem('cashier_machine_id');
 
-    const paymentStatus =
-      this.selectedPaymentMethod === 'cash'
-        ? this.selectedPaymentStatus
-        : 'paid';
-    console.log(this.selectedPaymentMethod, 'selectedPaymentMethod');
-    const iddd = localStorage.getItem('hotel_id');
-    const orderData: any = {
-      orderId: this.finalOrderId,
-      type: this.selectedOrderType,
-      branch_id: branchId,
-      payment_method: this.selectedPaymentMethod,
-      payment_status: paymentStatus,
-      cash_amount: this.cash_amountt || null, ///////////////// alaa
-      credit_amount: this.credit_amountt || null,
-      cashier_machine_id: cashier_machine_id,
-      // client_country_code: this.selectedCountry.code || "+20",
-      ...(this.clientPhoneStoredInLocal ? { client_country_code: this.selectedCountry.code || "+20" } : {}),
-      ...(this.clientPhoneStoredInLocal ? { client_phone: this.clientPhoneStoredInLocal } : {}),
-      ...(this.clientStoredInLocal ? { client_name: this.clientStoredInLocal } : {}),
-      // "whatsapp_number_code" :"+20",
-      // "whatsapp_number" : "01102146215" ,
-      note:
-        this.additionalNote ||
-        this.savedNote ||
-        this.applyAdditionalNote() || this.onholdOrdernote ||
-        '',
-      items: this.cartItems
-        .map((item) => ({
-          dish_id: item.dish?.id || null,
-          dish_name: item.dish?.name || '',
-          dish_description: item.dish?.description || '',
-          dish_price: item.dish?.price || 0,
-          currency_symbol: item.dish?.currency_symbol || '',
-          dish_image: item.dish?.image || null,
-          quantity: item.quantity || 1,
-          sizeId: item.selectedSize?.id || null,
-          size: item.size || '',
-          sizeName: item.selectedSize?.name || '',
-          sizeDescription: item.selectedSize?.description || '',
-          note: item.note || '',
-          finalPrice: item.finalPrice || 0,
-          selectedAddons: item.selectedAddons || [],
-          addon_categories: item.addon_categories
-            ?.map((category: { id: any; addons: { id: any }[] }) => {
-              const selectedAddons = category.addons?.filter((addon) =>
-                item.selectedAddons.some(
-                  (selected: { id: any }) => selected.id === addon.id
-                )
-              );
-              return selectedAddons.length > 0
-                ? {
-                  id: category.id,
-                  addon: selectedAddons.map((addon) => addon.id),
-                }
-                : null;
-            })
-            .filter((category: null) => category !== null),
-        }))
-        .filter((item) => item.dish_id),
-    };
+  if (!branchId) {
+    this.falseMessage = 'فشل تحديد الفرع. الرجاء إعادة تسجيل الدخول.';
+    setTimeout(() => {
+      this.falseMessage = '';
+    }, 1500);
+    this.isLoading = false;
+    this.loading = false;
+    return;
+  }
 
-    if (this.appliedCoupon && this.couponCode?.trim()) {
-      orderData.coupon_code = this.couponCode.trim();
-      orderData.discount_amount = this.discountAmount;
-      orderData.coupon_type = this.appliedCoupon.value_type;
-    } else if (this.couponCode?.trim()) {
-      orderData.coupon_code = this.couponCode.trim();
-    }
-    if (this.credit_amountt > 0) {
-      orderData.reference_number = this.referenceNumber;
-    }
+  if (!authToken) {
+    this.falseMessage = 'فشل التحقق من الهوية. الرجاء تسجيل الدخول مجددًا.';
+    setTimeout(() => {
+      this.falseMessage = '';
+    }, 1500);
+    this.isLoading = false;
+    this.loading = false;
+    return;
+  }
 
-    // if (this.appliedCoupon) {
-    //   orderData.coupon_value = this.appliedCoupon.coupon_value;
-    //   orderData.value_type = this.appliedCoupon.value_type;
-    //   orderData.discount_amount = this.discountAmount;
-    // }
-    if (this.selectedOrderType === 'Delivery' && addressId) {
-      orderData.address_id = addressId;
-    }
-    if (this.selectedPaymentMethod == "unpaid") {
-      orderData.credit_amount = null;
-      orderData.cash_amount = null;
-    }
-    if (!orderData.items.length) {
-      this.falseMessage = 'لا يمكن تقديم الطلب بدون عناصر صالحة.';
-      setTimeout(() => {
-        this.falseMessage = '';
-      }, 1500);
-      this.isLoading = false;
-      this.loading = false;
-      return;
-    }
+  this.formSubmitted = true;
+  this.amountError = false;
 
-    if (
-      this.selectedOrderType === 'dine-in' ||
-      this.selectedOrderType === 'في المطعم'
-    ) {
-      if (!tableId
-      ) {
-        this.falseMessage = 'يرجى اختيار طاولة.';
-        setTimeout(() => {
-          this.falseMessage = '';
-        }, 1500);
-        this.isLoading = false;
-        this.loading = false;
-        return;
-      }
-      orderData.table_id = tableId;
-    }
+  if (!this.selectedPaymentStatus) {
+    setTimeout(() => {
+      this.formSubmitted = false;
+    }, 2500);
+    return;
+  }
 
-    if (
+  if (this.selectedPaymentStatus === 'paid') {
+    const isDelivery =
       this.selectedOrderType === 'Delivery' ||
-      this.selectedOrderType === 'توصيل'
-    ) {
-      if (!addressId) {
-        this.falseMessage = 'يرجى اختيار عنوان التوصيل ';
+      this.selectedOrderType === 'توصيل';
+    if (!isDelivery) {
+      const totalEntered =
+        Number(this.cash_amountt || 0) + Number(this.credit_amountt || 0);
+      const cartTotal = Number(this.getCartTotal().toFixed(2));
+
+      if (totalEntered < cartTotal) {
+        this.amountError = true;
+        console.log('❌ Entered amount less than total:', totalEntered, cartTotal);
+
         setTimeout(() => {
-          this.falseMessage = '';
-        }, 1500);
-        this.isLoading = false;
-        this.loading = false;
+          this.amountError = false;
+          console.log('🔁 Cleared error state');
+        }, 2500);
+
         return;
       }
-      orderData.address_id = addressId;
-      orderData.client_country_code = formData.country_code.code;
-      orderData.client_phone = formData.address_phone;
-      orderData.client_name = formData.client_name;
+
+      console.log('✅ Valid payment amount:', totalEntered, cartTotal);
     }
+  }
 
+  this.isLoading = true;
+  this.loading = true;
+  this.falseMessage = '';
+  this.tableError = '';
+  this.couponError = '';
 
-    const isOnline = navigator.onLine;
+  const paymentStatus =
+    this.selectedPaymentMethod === 'cash'
+      ? this.selectedPaymentStatus
+      : 'paid';
 
-    if (!isOnline) {
+  // Use prepareOrderData function to get the base order data
+  const orderData: any = this.prepareOrderData();
 
-      const orderData = this.prepareOrderData();
-      // Save to IndexedDB and get the order ID
+  // Add additional properties that aren't in prepareOrderData
+  if (this.appliedCoupon && this.couponCode?.trim()) {
+    orderData.coupon_code = this.couponCode.trim();
+    orderData.discount_amount = this.discountAmount;
+    orderData.coupon_type = this.appliedCoupon.value_type;
+  } else if (this.couponCode?.trim()) {
+    orderData.coupon_code = this.couponCode.trim();
+  }
+
+  if (this.credit_amountt > 0) {
+    orderData.reference_number = this.referenceNumber;
+  }
+
+  if (this.selectedOrderType === 'Delivery' && addressId) {
+    orderData.address_id = addressId;
+  }
+
+  if (this.selectedPaymentMethod == "unpaid") {
+    orderData.credit_amount = null;
+    orderData.cash_amount = null;
+  }
+
+  if (!orderData.items.length) {
+    this.falseMessage = 'لا يمكن تقديم الطلب بدون عناصر صالحة.';
+    setTimeout(() => {
+      this.falseMessage = '';
+    }, 1500);
+    this.isLoading = false;
+    this.loading = false;
+    return;
+  }
+
+  if (
+    this.selectedOrderType === 'dine-in' ||
+    this.selectedOrderType === 'في المطعم'
+  ) {
+    if (!tableId) {
+      this.falseMessage = 'يرجى اختيار طاولة.';
+      setTimeout(() => {
+        this.falseMessage = '';
+      }, 1500);
+      this.isLoading = false;
+      this.loading = false;
+      return;
+    }
+    orderData.table_id = tableId;
+  }
+
+  if (
+    this.selectedOrderType === 'Delivery' ||
+    this.selectedOrderType === 'توصيل'
+  ) {
+    if (!addressId) {
+      this.falseMessage = 'يرجى اختيار عنوان التوصيل ';
+      setTimeout(() => {
+        this.falseMessage = '';
+      }, 1500);
+      this.isLoading = false;
+      this.loading = false;
+      return;
+    }
+    orderData.address_id = addressId;
+    orderData.client_country_code = formData.country_code?.code || "+20";
+    orderData.client_phone = formData.address_phone;
+    orderData.client_name = formData.client_name;
+  }
+
+  const isOnline = navigator.onLine;
+
+  if (!isOnline) {
+    try {
+      // Add timestamp for offline orders
+      orderData.offlineTimestamp = new Date().toISOString();
+      orderData.status = 'pending_sync';
+
+      // Save to IndexedDB
       const orderId = await this.dbService.savePendingOrder(orderData);
       console.log("Order saved to IndexedDB with ID:", orderId);
+
       // Show success message
-      // this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
-      // this.successModal.show();
-      // Clear cart
+      this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
+
+      // Clear cart and reset
       this.clearCart();
       this.resetLocalStorage();
+
+      // Show success modal
+      if (this.successModal) {
+        this.successModal.show();
+      }
+
+      // Remove from saved orders if it was a saved order
+      const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
+      const orderIdToRemove = orderData.orderId;
+      const updatedOrders = savedOrders.filter(
+        (savedOrder: any) => savedOrder.orderId !== orderIdToRemove
+      );
+      localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
+
+    } catch (error) {
+      console.error('Error saving order to IndexedDB:', error);
+      this.falseMessage = 'فشل حفظ الطلب في وضع عدم الاتصال. يرجى المحاولة مرة أخرى.';
+      setTimeout(() => {
+        this.falseMessage = '';
+      }, 1500);
+    } finally {
+      this.isLoading = false;
+      this.loading = false;
     }
+    return; // Stop execution here for offline case
+  }
 
-    // const headers = new HttpHeaders({
-    //   Authorization: `Bearer ${authToken}`,
-    //   'Accept-Language': 'ar',
-    // });
-    // console.log(orderData.address_id, 'orderData.address_id');
-    // console.log(orderData, 'orderData');
-    // console.log(this.credit_amountt, 'orderData');
-    // console.log(orderData.credit_amount, 'orderData');
-    console.log('pppppppp', orderData);
+  console.log('Submitting order online:', orderData);
 
-    this.plaseOrderService.placeOrder(orderData).subscribe({
-      next: async (response): Promise<void> => {
-        console.log('API Response:', response);
-        // Clear previous errors
+  // Add timeout handling for the HTTP request
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Request timeout')), 30000); // 30 seconds timeout
+  });
+
+  try {
+    // Race between the API call and the timeout
+    const response = await Promise.race([
+      this.plaseOrderService.placeOrder(orderData).toPromise(),
+      timeoutPromise
+    ]);
+
+    console.log('API Response:', response);
+    this.falseMessage = '';
+    this.tableError = '';
+    this.couponError = '';
+    this.cashiermachine = '';
+
+    this.pillId = (response as any).data?.invoice_id;
+    this.orderedId = (response as any).data?.order_id;
+
+    if (!(response as any).status) {
+      if ((response as any).errorData?.error?.cashier_machine_id) {
+        this.cashiermachine = (response as any).errorData?.error?.cashier_machine_id[0];
+      } else if ((response as any).errorData?.coupon_code) {
+        this.couponError = (response as any).errorData.coupon_code;
+      } else if ((response as any).errorData?.table_id) {
+        this.tableError = (response as any).errorData.table_id;
+      } else {
+        this.falseMessage = (response as any).errorData?.error
+          ? `${(response as any).errorData.error}`
+          : `${(response as any).message || 'حدث خطأ أثناء تقديم الطلب'}`;
+      }
+
+      setTimeout(() => {
         this.falseMessage = '';
         this.tableError = '';
         this.couponError = '';
         this.cashiermachine = '';
-        this.pillId = response.data?.invoice_id
-        this.orderedId = response.data?.order_id;
-        if (!response.status) {
-          if (response.errorData?.error?.cashier_machine_id) {
-            this.cashiermachine =
-              response.errorData?.error?.cashier_machine_id[0];
-          }
-          // Handle coupon validation error
-          else if (response.errorData?.coupon_code) {
-            this.couponError = response.errorData.coupon_code;
-          }
-          // Handle table error
-          else if (response.errorData?.table_id) {
-            this.tableError = response.errorData.table_id;
-          }
+      }, 3500);
+      this.isLoading = false;
+      this.loading = false;
+      return;
+    }
 
-          // Handle generic error
-          else {
-            this.falseMessage = response.errorData?.error
-              ? `${response.errorData.error}`
-              : `${response.message || 'حدث خطأ أثناء تقديم الطلب'}`;
-            console.log(this.clientError, "gggggggg");
+    if (this.selectedOrderType === 'Takeaway') {
+      const dataOrderId = (response as any).data.order_id;
+      this.createdOrderId = dataOrderId;
+      await this.fetchPillsDetails(this.pillId);
+      setTimeout(() => {
+        this.printInvoice();
+      }, 200);
+      this.removeCouponFromLocalStorage();
+    }
 
-          }
+    const orderId = (response as any).data?.order_id;
+    if (!orderId) {
+      this.falseMessage = 'لم يتم استلام رقم الطلب من الخادم.';
+      setTimeout(() => {
+        this.falseMessage = '';
+      }, 1500);
+      this.isLoading = false;
+      this.loading = false;
+      return;
+    }
 
-          setTimeout(() => {
-            this.falseMessage = '';
-            this.tableError = '';
-            this.couponError = '';
-            this.cashiermachine = '';
-          }, 3500);
-          this.isLoading = false;
-          this.loading = false;
-          return;
-        }
+    const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
+    const orderIdToRemove = orderData.orderId;
+    const updatedOrders = savedOrders.filter(
+      (savedOrder: any) => savedOrder.orderId !== orderIdToRemove
+    );
+    localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
 
-        if (this.selectedOrderType === 'Takeaway') {
-          const dataOrderId = response.data.order_id;
-          this.createdOrderId = dataOrderId;
-          await this.fetchPillsDetails(this.pillId);
-          setTimeout(() => {
-            this.printInvoice();
-          }, 200)
+    this.clearCart();
+    localStorage.removeItem('table_number');
+    localStorage.removeItem('table_id');
+    localStorage.removeItem('address_id');
+    localStorage.removeItem('form_data');
+    localStorage.removeItem('notes');
+    localStorage.removeItem('deliveryForm');
+    localStorage.removeItem('additionalNote');
+    localStorage.removeItem('selectedHotel');
+    localStorage.removeItem('hotel_id');
+    localStorage.removeItem('selectedPaymentStatus');
+    localStorage.removeItem('cash_amountt');
+    localStorage.removeItem('delivery_fees');
+    localStorage.removeItem('credit_amountt');
+    localStorage.removeItem('selected_address');
+    localStorage.removeItem('finalOrderId');
+    localStorage.removeItem('client');
+    localStorage.removeItem('clientPhone');
 
-          this.removeCouponFromLocalStorage();
-        }
+    this.client = " ";
+    this.clientPhone = " ";
+    this.finalOrderId = " ";
+    this.cash_amountt = 0;
+    this.credit_amountt = 0;
+    this.selectedPaymentStatus = '';
+    this.resetAddress();
+    this.tableNumber = null;
+    this.FormDataDetails = null;
+    this.successMessage = 'تم تنفيذ طلبك بنجاح';
 
-        const orderId = response.data?.order_id;
-        if (!orderId) {
-          this.falseMessage = 'لم يتم استلام رقم الطلب من الخادم.';
-          setTimeout(() => {
-            this.falseMessage = '';
-          }, 1500);
-          this.isLoading = false;
-          this.loading = false;
-          return;
-        }
-        const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
-        const orderIdToRemove = orderData.orderId;
-        const updatedOrders = savedOrders.filter(
-          (savedOrder: any) => savedOrder.orderId !== orderIdToRemove
-        );
-        localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
-        console.log(orderData, 'jjjjj');
+    if (this.successModal) {
+      this.successModal.show();
+    }
 
+    setTimeout(() => {
+      this.falseMessage = '';
+    }, 1500);
+
+  } catch (error: unknown) {
+    console.error('API Error:', error);
+
+    // Handle timeout or server errors by saving to IndexedDB
+    if (
+      (error instanceof Error && error.message === 'Request timeout') ||
+      (typeof error === 'object' && error !== null && 'status' in error && (error as any).status === 504) ||
+      (typeof error === 'object' && error !== null && 'status' in error && (error as any).status === 0)
+    ) {
+      try {
+        // Save to IndexedDB as fallback
+        orderData.offlineTimestamp = new Date().toISOString();
+        orderData.status = 'pending_sync';
+        orderData.errorReason = (error instanceof Error ? error.message : 'Gateway Timeout');
+
+        const orderId = await this.dbService.savePendingOrder(orderData);
+        console.log("Order saved to IndexedDB due to timeout/error:", orderId);
+
+        this.successMessage = 'تم حفظ الطلب بسبب مشكلة في الاتصال وسيتم إرساله لاحقًا';
         this.clearCart();
-        localStorage.removeItem('table_number');
-        localStorage.removeItem('table_id');
-        localStorage.removeItem('address_id');
-        localStorage.removeItem('form_data');
-        localStorage.removeItem('notes');
-        localStorage.removeItem('deliveryForm');
-        localStorage.removeItem('additionalNote');
-        localStorage.removeItem('selectedHotel');
-        localStorage.removeItem('hotel_id');
-        localStorage.removeItem('selectedPaymentStatus');
-        localStorage.removeItem('cash_amountt');
-        localStorage.removeItem('delivery_fees');
-        localStorage.removeItem('credit_amountt');
-        localStorage.removeItem('selected_address');
-        localStorage.removeItem('finalOrderId');
-        localStorage.removeItem('client');
-        localStorage.removeItem('clientPhone');
-        this.client = " ";
-        this.clientPhone = " "
-        this.finalOrderId = " ";
-        this.cash_amountt = 0; ///////////////// alaa
-        this.credit_amountt = 0;
-        this.selectedPaymentStatus = '';
-        this.resetAddress()
-        this.tableNumber = null;
-        this.FormDataDetails = null;
-        this.successMessage = 'تم تنفيذ طلبك بنجاح';
-        this.successModal.show();
+        this.resetLocalStorage();
 
-        setTimeout(() => {
-          this.falseMessage = '';
-        }, 1500);
-        this.isLoading = false;
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('API Error:', error.error);
-        // Handle error response
-        if (error.error?.errorData?.error?.coupon_code) {
-          this.couponError = error.error.errorData.error.coupon_code[0];
-          console.log("1");
-
-        } else if (error.error?.errorData?.error?.client_phone) {
-          this.falseMessage = error.error?.errorData?.error?.client_phone[0];
-          console.log("2");
-
+        if (this.successModal) {
+          this.successModal.show();
         }
-        else if (error.error?.errorData?.table_id) {
-          this.tableError = error.error?.errorData?.table_id[0];
-          console.log("3");
 
-        }
-        else if (error.error?.errorData?.error) {
-          this.falseMessage = `${error.error.errorData.error}`;
-          console.log("43");
+      } catch (dbError) {
+        console.error('Error saving to IndexedDB:', dbError);
+        this.falseMessage = 'فشل في إرسال الطلب وحفظه محليًا. يرجى المحاولة مرة أخرى.';
+      }
+    } else {
+      // Handle other API errors with proper type checking
+      const err = error as any;
 
-        }
-        else if (error.error?.message) {
-          this.falseMessage = `${error.error.message}`;
-          console.log("5");
+      if (err?.error?.errorData?.error?.coupon_code) {
+        this.couponError = err.error.errorData.error.coupon_code[0];
+      } else if (err?.error?.errorData?.error?.client_phone) {
+        this.falseMessage = err.error?.errorData?.error?.client_phone[0];
+      } else if (err?.error?.errorData?.table_id) {
+        this.tableError = err.error?.errorData?.table_id[0];
+      } else if (err?.error?.errorData?.error) {
+        this.falseMessage = `${err.error.errorData.error}`;
+      } else if (err?.error?.message) {
+        this.falseMessage = `${err.error.message}`;
+      } else if (err?.error?.errorData?.error) {
+        const errorMessages = Object.values(err.error?.errorData.error)
+          .flat()
+          .join('\n');
+        this.falseMessage = `${errorMessages}`;
+      } else {
+        this.falseMessage = 'حدث خطأ غير متوقع، يرجى المحاولة لاحقًا.';
+      }
+    }
 
-        } else if (error.error?.errorData.error) {
-          const errorMessages = Object.values(error.error?.errorData.error)
-            .flat()
-            .join('\n');
-          this.falseMessage = `${errorMessages}`;
-          console.log("6");
-
-        } else {
-          this.falseMessage = 'حدث خطأ غير متوقع، يرجى المحاولة لاحقًا.';
-        }
-        setTimeout(() => {
-          this.falseMessage = '';
-        }, 2000);
-        this.isLoading = false;
-        this.loading = false;
-      },
-
-      complete: () => {
-        this.isLoading = false;
-        this.loading = false;
-      },
-
-    });
+    setTimeout(() => {
+      this.falseMessage = '';
+    }, 2000);
+  } finally {
+    this.isLoading = false;
+    this.loading = false;
   }
+}
 
-  private prepareOrderData(): any {
-    // This should contain all the order data preparation logic
-    // that was previously in your submitOrder method
+private prepareOrderData(): any {
+  const branchId = Number(localStorage.getItem('branch_id')) || null;
+  const cashier_machine_id = localStorage.getItem('cashier_machine_id');
 
-    const branchId = Number(localStorage.getItem('branch_id')) || null;
-    const tableId = Number(localStorage.getItem('table_id')) || this.table_id || null;
-    const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
-
-    // ... rest of your order data preparation
-
-    return {
-      orderId: this.finalOrderId || 'OFFLINE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
-      type: this.selectedOrderType,
-      branch_id: branchId,
-      payment_method: this.selectedPaymentMethod,
-      payment_status: this.selectedPaymentStatus,
-      cash_amount: this.cash_amountt || null,
-      credit_amount: this.credit_amountt || null,
-      cashier_machine_id: localStorage.getItem('cashier_machine_id'),
-      ...(this.clientPhoneStoredInLocal ? { client_country_code: this.selectedCountry.code || "+20" } : {}),
-      ...(this.clientPhoneStoredInLocal ? { client_phone: this.clientPhoneStoredInLocal } : {}),
-      ...(this.clientStoredInLocal ? { client_name: this.clientStoredInLocal } : {}),
-      note: this.additionalNote || this.savedNote || this.applyAdditionalNote() || this.onholdOrdernote || '',
-      items: this.cartItems
-        .map((item) => ({
-          dish_id: item.dish?.id || null,
-          dish_name: item.dish?.name || '',
-          dish_description: item.dish?.description || '',
-          dish_price: item.dish?.price || 0,
-          currency_symbol: item.dish?.currency_symbol || '',
-          dish_image: item.dish?.image || null,
-          quantity: item.quantity || 1,
-          sizeId: item.selectedSize?.id || null,
-          size: item.size || '',
-          sizeName: item.selectedSize?.name || '',
-          sizeDescription: item.selectedSize?.description || '',
-          note: item.note || '',
-          finalPrice: item.finalPrice || 0,
-          selectedAddons: item.selectedAddons || [],
-          addon_categories: item.addon_categories
-            ?.map((category: { id: any; addons: { id: any }[] }) => {
-              const selectedAddons = category.addons?.filter((addon) =>
-                item.selectedAddons.some(
-                  (selected: { id: any }) => selected.id === addon.id
-                )
-              );
-              return selectedAddons.length > 0
-                ? {
-                  id: category.id,
-                  addon: selectedAddons.map((addon) => addon.id),
-                }
-                : null;
-            })
-            .filter((category: null) => category !== null),
-        }))
-        .filter((item) => item.dish_id),
-    };
-  }
+  return {
+    orderId: this.finalOrderId,
+    type: this.selectedOrderType,
+    branch_id: branchId,
+    payment_method: this.selectedPaymentMethod,
+    payment_status: this.selectedPaymentMethod === 'cash' ? this.selectedPaymentStatus : 'paid',
+    cash_amount: this.cash_amountt || null,
+    credit_amount: this.credit_amountt || null,
+    cashier_machine_id: cashier_machine_id,
+    ...(this.clientPhoneStoredInLocal ? { client_country_code: this.selectedCountry.code || "+20" } : {}),
+    ...(this.clientPhoneStoredInLocal ? { client_phone: this.clientPhoneStoredInLocal } : {}),
+    ...(this.clientStoredInLocal ? { client_name: this.clientStoredInLocal } : {}),
+    note: this.additionalNote || this.savedNote || this.applyAdditionalNote() || this.onholdOrdernote || '',
+    items: this.cartItems
+      .map((item) => ({
+        dish_id: item.dish?.id || null,
+        dish_name: item.dish?.name || '',
+        dish_description: item.dish?.description || '',
+        dish_price: item.dish?.price || 0,
+        currency_symbol: item.dish?.currency_symbol || '',
+        dish_image: item.dish?.image || null,
+        quantity: item.quantity || 1,
+        sizeId: item.selectedSize?.id || null,
+        size: item.size || '',
+        sizeName: item.selectedSize?.name || '',
+        sizeDescription: item.selectedSize?.description || '',
+        note: item.note || '',
+        finalPrice: item.finalPrice || 0,
+        selectedAddons: item.selectedAddons || [],
+        addon_categories: item.addon_categories
+          ?.map((category: { id: any; addons: { id: any }[] }) => {
+            const selectedAddons = category.addons?.filter((addon) =>
+              item.selectedAddons.some(
+                (selected: { id: any }) => selected.id === addon.id
+              )
+            );
+            return selectedAddons.length > 0
+              ? {
+                id: category.id,
+                addon: selectedAddons.map((addon) => addon.id),
+              }
+              : null;
+          })
+          .filter((category: null) => category !== null),
+      }))
+      .filter((item) => item.dish_id),
+  };
+}
 
   // Add this method to reset local storage
   private resetLocalStorage(): void {
