@@ -40,10 +40,10 @@ export class IndexeddbService {
         //   this.db.deleteObjectStore('pills');
         // }
         // this.db.createObjectStore('pills', { keyPath: 'invoice_id' });
-         if (!(this.db.objectStoreNames.contains('pills'))) {
-           const store = this.db.createObjectStore('pills', { keyPath: 'id', autoIncrement: true });
-           store.createIndex('invoice_id', 'invoice_id', { unique: false });
-          }
+        if (!(this.db.objectStoreNames.contains('pills'))) {
+          const store = this.db.createObjectStore('pills', { keyPath: 'id', autoIncrement: true });
+          store.createIndex('invoice_id', 'invoice_id', { unique: false });
+        }
 
         // Create nextOrderNumber store
         if (!this.db.objectStoreNames.contains('nextOrderNumber')) {
@@ -58,7 +58,7 @@ export class IndexeddbService {
           this.db.createObjectStore('selectedTable', { keyPath: 'id' });
         }
         if (!this.db.objectStoreNames.contains('selectedOrderType')) {
-          this.db.createObjectStore('selectedOrderType', { keyPath: 'id' , autoIncrement: true });
+          this.db.createObjectStore('selectedOrderType', { keyPath: 'id', autoIncrement: true });
         }
 
         if (!this.db.objectStoreNames.contains('branch')) {
@@ -722,24 +722,24 @@ export class IndexeddbService {
 
 
 
-   removeItem(storeName: string, key: any): Promise<void> {
-  return this.ensureInit().then(() => {
-    return new Promise((resolve, reject) => {
-      const tx = this.db.transaction(storeName, 'readwrite');
-      const store = tx.objectStore(storeName);
-      const request = store.delete(key);
+  removeItem(storeName: string, key: any): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction(storeName, 'readwrite');
+        const store = tx.objectStore(storeName);
+        const request = store.delete(key);
 
-      request.onsuccess = () => {
-        console.log(`✅ Item with key ${key} removed from ${storeName}`);
-        resolve();
-      };
-      request.onerror = (e) => {
-        console.error(`❌ Error removing item from ${storeName}:`, e);
-        reject(e);
-      };
+        request.onsuccess = () => {
+          console.log(`✅ Item with key ${key} removed from ${storeName}`);
+          resolve();
+        };
+        request.onerror = (e) => {
+          console.error(`❌ Error removing item from ${storeName}:`, e);
+          reject(e);
+        };
+      });
     });
-  });
-}
+  }
 
   // 🔹 Get pill by invoice_id (using index)
   async getPillByInvoiceId(invoiceId: string | number): Promise<any> {
@@ -756,204 +756,204 @@ export class IndexeddbService {
     });
   }
 
-// In your IndexeddbService
-// async savePendingOrder(orderData: any): Promise<void> {
-//   try {
-//     await this.ensureInit();
+  // In your IndexeddbService
+  // async savePendingOrder(orderData: any): Promise<void> {
+  //   try {
+  //     await this.ensureInit();
 
-//     return new Promise((resolve, reject) => {
-//       const tx = this.db.transaction('orders', 'readwrite');
-//       const store = tx.objectStore('orders');
+  //     return new Promise((resolve, reject) => {
+  //       const tx = this.db.transaction('orders', 'readwrite');
+  //       const store = tx.objectStore('orders');
 
-//       // Generate a unique ID if orderId is null
-//       const orderId = orderData.orderId || 'OFFLINE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+  //       // Generate a unique ID if orderId is null
+  //       const orderId = orderData.orderId || 'OFFLINE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
 
-//       // Structure data according to the keyPath requirements
-//       // Your store expects: order_details.order_id
-//       const orderWithMetadata = {
-//         // This is the required structure for the keyPath
-//         order_details: {
-//           order_id: orderId, // This must exist and match the keyPath
-//           order_number: orderId,
-//           created_at: new Date().toISOString(),
-//           status: 'pending'
-//         },
-//         // Include all the original order data
-//         ...orderData,
-//         orderId: orderId, // Update the orderId to ensure it's not null
-//         isOffline: true,
-//         status: 'pending',
-//         createdAt: new Date().toISOString()
-//       };
+  //       // Structure data according to the keyPath requirements
+  //       // Your store expects: order_details.order_id
+  //       const orderWithMetadata = {
+  //         // This is the required structure for the keyPath
+  //         order_details: {
+  //           order_id: orderId, // This must exist and match the keyPath
+  //           order_number: orderId,
+  //           created_at: new Date().toISOString(),
+  //           status: 'pending'
+  //         },
+  //         // Include all the original order data
+  //         ...orderData,
+  //         orderId: orderId, // Update the orderId to ensure it's not null
+  //         isOffline: true,
+  //         status: 'pending',
+  //         createdAt: new Date().toISOString()
+  //       };
 
-//       console.log('Saving to IndexedDB with proper structure:', orderWithMetadata);
+  //       console.log('Saving to IndexedDB with proper structure:', orderWithMetadata);
 
-//       const request = store.put(orderWithMetadata);
+  //       const request = store.put(orderWithMetadata);
 
-//       request.onsuccess = () => {
-//         console.log('Successfully saved to IndexedDB with ID:', orderId);
-//         resolve();
-//       };
+  //       request.onsuccess = () => {
+  //         console.log('Successfully saved to IndexedDB with ID:', orderId);
+  //         resolve();
+  //       };
 
-//       request.onerror = (e) => {
-//         console.error('Error saving to IndexedDB:', e);
-//         reject(e);
-//       };
-//     });
-//   } catch (error) {
-//     console.error('Error in savePendingOrder:', error);
-//     throw error;
-//   }
-// }
+  //       request.onerror = (e) => {
+  //         console.error('Error saving to IndexedDB:', e);
+  //         reject(e);
+  //       };
+  //     });
+  //   } catch (error) {
+  //     console.error('Error in savePendingOrder:', error);
+  //     throw error;
+  //   }
+  // }
 
-// In your IndexeddbService
-async savePendingOrder(orderData: any): Promise<void> {
-  try {
+  // In your IndexeddbService
+  async savePendingOrder(orderData: any): Promise<void> {
+    try {
+      await this.ensureInit();
+
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('orders', 'readwrite');
+        const store = tx.objectStore('orders');
+
+        // Generate a unique ID if orderId is null
+        const orderId = orderData.orderId || 'OFFLINE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+
+        // Create the data structure matching your existing format
+        const orderWithMetadata = {
+          // Main order details (matches your structure)
+          order_details: {
+            order_id: orderId,
+            order_type: orderData.type || 'dine-in',
+            hasCoupon: orderData.coupon_code ? true : false,
+            client_name: orderData.client_name || '',
+            client_phone: orderData.client_phone || '',
+            status: 'pending',
+            order_number: orderId,
+            branch_id: orderData.branch_id || null,
+            table_id: orderData.table_id || null,
+            address_id: orderData.address_id || null,
+            payment_method: orderData.payment_method || 'cash',
+            payment_status: orderData.payment_status || 'unpaid',
+            cash_amount: orderData.cash_amount || 0,
+            credit_amount: orderData.credit_amount || 0,
+            note: orderData.note || '',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+
+          // Additional order details
+          details_order: {
+            order_type: orderData.type || 'dine-in',
+            status: 'pending',
+            transactions: [],
+            order_details: [],
+            order_summary: {
+              total: orderData.items.reduce((sum: number, item: any) => sum + (item.finalPrice * item.quantity), 0),
+              currency_symbol: orderData.items[0]?.currency_symbol || 'ج.م'
+            }
+          },
+
+          // Order items
+          order_items: orderData.items.map((item: any) => ({
+            dish_id: item.dish_id,
+            dish_name: item.dish_name,
+            dish_price: item.dish_price,
+            quantity: item.quantity,
+            final_price: item.finalPrice,
+            note: item.note || '',
+            addons: item.selectedAddons || [],
+            size: item.size || '',
+            size_name: item.sizeName || ''
+          })),
+
+          // Summary information
+          total_price: orderData.items.reduce((sum: number, item: any) => sum + (item.finalPrice * item.quantity), 0),
+          currency_symbol: orderData.items[0]?.currency_symbol || 'ج.م',
+
+          // Metadata
+          isOffline: true,
+          isSynced: false,
+          status: 'pending',
+          savedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString()
+        };
+
+        // // Add coupon data if exists
+        // if (orderData.coupon_code) {
+        //   orderWithMetadata.order_details.coupon_code = 0;
+        //   orderWithMetadata.order_details.coupon_type = 0
+        //   orderWithMetadata.order_details.discount_amount = 0;
+        // }
+
+        console.log('Saving to IndexedDB:', orderWithMetadata);
+
+        const request = store.put(orderWithMetadata);
+
+        request.onsuccess = () => {
+          console.log('Successfully saved to IndexedDB with ID:', orderId);
+          resolve();
+        };
+
+        request.onerror = (e) => {
+          console.error('Error saving to IndexedDB:', e);
+          reject(e);
+        };
+      });
+    } catch (error) {
+      console.error('Error in savePendingOrder:', error);
+      throw error;
+    }
+  }
+
+
+  // 🔹 Save or update selected table
+  async saveOrUpdateSelectedTable(table: any): Promise<void> {
     await this.ensureInit();
 
     return new Promise((resolve, reject) => {
-      const tx = this.db.transaction('orders', 'readwrite');
-      const store = tx.objectStore('orders');
+      const tx = this.db.transaction('selectedTable', 'readwrite');
+      const store = tx.objectStore('selectedTable');
 
-      // Generate a unique ID if orderId is null
-      const orderId = orderData.orderId || 'OFFLINE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+      // clear old selected table (only one should exist)
+      const clearRequest = store.clear();
 
-      // Create the data structure matching your existing format
-      const orderWithMetadata = {
-        // Main order details (matches your structure)
-        order_details: {
-          order_id: orderId,
-          order_type: orderData.type || 'dine-in',
-          hasCoupon: orderData.coupon_code ? true : false,
-          client_name: orderData.client_name || '',
-          client_phone: orderData.client_phone || '',
-          status: 'pending',
-          order_number: orderId,
-          branch_id: orderData.branch_id || null,
-          table_id: orderData.table_id || null,
-          address_id: orderData.address_id || null,
-          payment_method: orderData.payment_method || 'cash',
-          payment_status: orderData.payment_status || 'unpaid',
-          cash_amount: orderData.cash_amount || 0,
-          credit_amount: orderData.credit_amount || 0,
-          note: orderData.note || '',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
+      clearRequest.onsuccess = () => {
+        const request = store.put({
+          ...table,
+          savedAt: new Date().toISOString()
+        });
 
-        // Additional order details
-        details_order: {
-          order_type: orderData.type || 'dine-in',
-          status: 'pending',
-          transactions: [],
-          order_details: [],
-          order_summary: {
-            total: orderData.items.reduce((sum: number, item: any) => sum + (item.finalPrice * item.quantity), 0),
-            currency_symbol: orderData.items[0]?.currency_symbol || 'ج.م'
-          }
-        },
+        request.onsuccess = () => {
+          console.log('✅ Selected table updated:', table);
+          resolve();
+        };
 
-        // Order items
-        order_items: orderData.items.map((item: any) => ({
-          dish_id: item.dish_id,
-          dish_name: item.dish_name,
-          dish_price: item.dish_price,
-          quantity: item.quantity,
-          final_price: item.finalPrice,
-          note: item.note || '',
-          addons: item.selectedAddons || [],
-          size: item.size || '',
-          size_name: item.sizeName || ''
-        })),
-
-        // Summary information
-        total_price: orderData.items.reduce((sum: number, item: any) => sum + (item.finalPrice * item.quantity), 0),
-        currency_symbol: orderData.items[0]?.currency_symbol || 'ج.م',
-
-        // Metadata
-        isOffline: true,
-        isSynced: false,
-        status: 'pending',
-        savedAt: new Date().toISOString(),
-        createdAt: new Date().toISOString()
+        request.onerror = (e) => {
+          console.error('❌ Error saving selected table:', e);
+          reject(e);
+        };
       };
 
-      // // Add coupon data if exists
-      // if (orderData.coupon_code) {
-      //   orderWithMetadata.order_details.coupon_code = 0;
-      //   orderWithMetadata.order_details.coupon_type = 0
-      //   orderWithMetadata.order_details.discount_amount = 0;
-      // }
-
-      console.log('Saving to IndexedDB:', orderWithMetadata);
-
-      const request = store.put(orderWithMetadata);
-
-      request.onsuccess = () => {
-        console.log('Successfully saved to IndexedDB with ID:', orderId);
-        resolve();
-      };
-
-      request.onerror = (e) => {
-        console.error('Error saving to IndexedDB:', e);
-        reject(e);
-      };
+      clearRequest.onerror = (e) => reject(e);
     });
-  } catch (error) {
-    console.error('Error in savePendingOrder:', error);
-    throw error;
   }
-}
 
+  // 🔹 Get the currently selected table
+  async getSelectedTable(): Promise<any | null> {
+    await this.ensureInit();
 
-// 🔹 Save or update selected table
-async saveOrUpdateSelectedTable(table: any): Promise<void> {
-  await this.ensureInit();
-
-  return new Promise((resolve, reject) => {
-    const tx = this.db.transaction('selectedTable', 'readwrite');
-    const store = tx.objectStore('selectedTable');
-
-    // clear old selected table (only one should exist)
-    const clearRequest = store.clear();
-
-    clearRequest.onsuccess = () => {
-      const request = store.put({
-        ...table,
-        savedAt: new Date().toISOString()
-      });
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('selectedTable', 'readonly');
+      const store = tx.objectStore('selectedTable');
+      const request = store.getAll();
 
       request.onsuccess = () => {
-        console.log('✅ Selected table updated:', table);
-        resolve();
+        resolve(request.result && request.result.length > 0 ? request.result[0] : null);
       };
 
-      request.onerror = (e) => {
-        console.error('❌ Error saving selected table:', e);
-        reject(e);
-      };
-    };
-
-    clearRequest.onerror = (e) => reject(e);
-  });
-}
-
-// 🔹 Get the currently selected table
-async getSelectedTable(): Promise<any | null> {
-  await this.ensureInit();
-
-  return new Promise((resolve, reject) => {
-    const tx = this.db.transaction('selectedTable', 'readonly');
-    const store = tx.objectStore('selectedTable');
-    const request = store.getAll();
-
-    request.onsuccess = () => {
-      resolve(request.result && request.result.length > 0 ? request.result[0] : null);
-    };
-
-    request.onerror = (e) => reject(e);
-  });
-}
+      request.onerror = (e) => reject(e);
+    });
+  }
 
 
 
