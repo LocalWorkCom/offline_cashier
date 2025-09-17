@@ -486,7 +486,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
             client_name: order.order_details.client_name || null,
             client_phone: order.order_details.client_phone || null,
             address_id: addressId || order.order_details.address_id,
-            cashier_machine_id: order.order_details.cashier_machine_id || 1,
+            cashier_machine_id: order.order_details.cashier_machine_id || localStorage.getItem('cashier_machine_id'),
             branch_id: order.order_details.branch_id,
             table_id : order.order_details.table_id || null,
             payment_method: order.order_details.payment_method,
