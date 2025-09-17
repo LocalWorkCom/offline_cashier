@@ -196,6 +196,48 @@ export class IndexeddbService {
   }
 
 
+  // indexeddb.service.ts
+async getLastFormData(): Promise<any | null> {
+  return new Promise((resolve, reject) => {
+    const tx = this.db.transaction('formData', 'readonly'); // make sure you have 'form_data' store
+    const store = tx.objectStore('formData');
+    const request = store.getAll();
+
+    request.onsuccess = () => {
+      const all = request.result || [];
+      if (all.length > 0) {
+        resolve(all[all.length - 1]); // ✅ last item
+      } else {
+        resolve(null);
+      }
+    };
+
+    request.onerror = () => reject(request.error);
+  });
+}
+
+
+async getLastSelectedOrdertype(): Promise<any | null> {
+  return new Promise((resolve, reject) => {
+    const tx = this.db.transaction('selectedOrderType', 'readonly'); // make sure you have 'form_data' store
+    const store = tx.objectStore('selectedOrderType');
+    const request = store.getAll();
+
+    request.onsuccess = () => {
+      const all = request.result || [];
+      if (all.length > 0) {
+        resolve(all[all.length - 1]); // ✅ last item
+      } else {
+        resolve(null);
+      }
+    };
+
+    request.onerror = () => reject(request.error);
+  });
+}
+
+
+
   // Add item to cart
   addToCart(cartItem: any): Promise<number> {
     return this.ensureInit().then(() => {
@@ -809,6 +851,8 @@ export class IndexeddbService {
   // In your IndexeddbService
   async savePendingOrder(orderData: any): Promise<void> {
     try {
+
+      console.log("dorder_offline",orderData);
       await this.ensureInit();
 
       return new Promise((resolve, reject) => {
@@ -817,6 +861,8 @@ export class IndexeddbService {
 
         // Generate a unique ID if orderId is null
         const orderId = orderData.orderId || 'OFFLINE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        // const table_id
+
 
         // Create the data structure matching your existing format
         const orderWithMetadata = {
@@ -828,6 +874,7 @@ export class IndexeddbService {
             client_name: orderData.client_name || '',
             client_phone: orderData.client_phone || '',
             status: 'pending',
+            cashier_machine_id : orderData.cashier_machine_id,
             order_number: orderId,
             branch_id: orderData.branch_id || null,
             table_id: orderData.table_id || null,
@@ -855,13 +902,17 @@ export class IndexeddbService {
 
           // Order items
           order_items: orderData.items.map((item: any) => ({
+            addon_categories : item.addon_categories,
+            currency_symbol : item.currency_symbol,
             dish_id: item.dish_id,
             dish_name: item.dish_name,
             dish_price: item.dish_price,
             quantity: item.quantity,
             final_price: item.finalPrice,
+            // size_id : ,
             note: item.note || '',
             addons: item.selectedAddons || [],
+            sizeId :item.sizeId,
             size: item.size || '',
             size_name: item.sizeName || ''
           })),
