@@ -199,8 +199,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   ngOnInit(): void {
     this.setupNetworkListeners();
+
     this.checkPendingOrders();
-      // Load client info from IndexedDB
+
+    if (navigator.onLine) {
+      console.log('Online on init - attempting to sync pending orders');
+      this.retryPendingOrders();
+    }
+    // Load client info from IndexedDB
     this.loadClientInfoFromIndexedDB();
 
     this.loadCart();
@@ -321,6 +327,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   // // Check for pending orders in IndexedDB
   private async checkPendingOrders(): Promise<void> {
     try {
+
+      console
       const allOrders = await this.dbService.getOrders();
       this.pendingOrdersCount = allOrders.filter(order =>
         order.isOffline && order.status === 'pending'
@@ -331,78 +339,237 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // // Retry pending orders when online
-  private async retryPendingOrders(): Promise<void> {
+  // private async retryPendingOrders(): Promise<void> {
+  //   try {
+  //     const allOrders = await this.dbService.getOrders();
+  //     const pendingOrders = allOrders.filter(order =>
+  //       order.isOffline && order.status === 'pending'
+  //     );
+
+  //     this.pendingOrdersCount = pendingOrders.length;
+
+  //     for (const order of pendingOrders) {
+  //       try {
+  //         // Increment attempt count
+  //         const attempts = (order.attempts || 0) + 1;
+
+  //         if (attempts > 3) {
+  //           // Too many attempts, mark as failed
+  //           await this.dbService.saveOrder({
+  //             ...order,
+  //             status: 'failed',
+  //             attempts: attempts,
+  //             updatedAt: new Date().toISOString()
+  //           });
+  //           continue;
+  //         }
+
+  //         // Update order status to processing
+  //         await this.dbService.saveOrder({
+  //           ...order,
+  //           status: 'processing',
+  //           attempts: attempts,
+  //           updatedAt: new Date().toISOString()
+  //         });
+
+  //         // Submit the order using your existing API call
+  //         this.plaseOrderService.placeOrder(order).subscribe({
+  //           next: async (response): Promise<void> => {
+  //             if (response.status) {
+  //               // Remove from IndexedDB if successful
+  //               await this.dbService.deleteOrder(order.orderId);
+  //               console.log(`Offline order ${order.orderId} submitted successfully`);
+
+  //               // Update pending orders count
+  //               this.pendingOrdersCount--;
+  //             } else {
+  //               // Update order status back to pending
+  //               await this.dbService.saveOrder({
+  //                 ...order,
+  //                 status: 'pending',
+  //                 attempts: attempts,
+  //                 updatedAt: new Date().toISOString()
+  //               });
+  //             }
+  //           },
+  //           error: async (error) => {
+  //             console.error(`Error submitting offline order ${order.orderId}:`, error);
+  //             // Update order status back to pending
+  //             await this.dbService.saveOrder({
+  //               ...order,
+  //               status: 'pending',
+  //               attempts: attempts,
+  //               updatedAt: new Date().toISOString()
+  //             });
+  //           }
+  //         });
+  //       } catch (error) {
+  //         console.error(`Error processing offline order ${order.orderId}:`, error);
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error('Error retrieving pending orders:', error);
+  //   }
+  // }
+
+  async retryPendingOrders(): Promise<void> {
     try {
+      // Get all offline orders from IndexedDB
       const allOrders = await this.dbService.getOrders();
-      const pendingOrders = allOrders.filter(order =>
-        order.isOffline && order.status === 'pending'
+
+      // const allOrders = await this.dbService.getOrders();
+
+      const pendingOrders1 = (allOrders || []).filter(order => order.isOffline);
+      console.log("Pending:", pendingOrders1);
+      const pendingOrders = allOrders.filter(
+        order => order.isOffline == true && order.status === 'pending'
       );
 
-      this.pendingOrdersCount = pendingOrders.length;
+      console.log(`Retrying ${pendingOrders.length} offline orders`);
 
       for (const order of pendingOrders) {
         try {
+          console.log("order:", order);
           // Increment attempt count
           const attempts = (order.attempts || 0) + 1;
 
-          if (attempts > 3) {
-            // Too many attempts, mark as failed
-            await this.dbService.saveOrder({
-              ...order,
-              status: 'failed',
-              attempts: attempts,
-              updatedAt: new Date().toISOString()
-            });
-            continue;
-          }
+          // ✅ Ensure address_id exists
 
-          // Update order status to processing
-          await this.dbService.saveOrder({
-            ...order,
-            status: 'processing',
-            attempts: attempts,
-            updatedAt: new Date().toISOString()
-          });
+          let addressId = null;
+          if (order.order_details.order_type=== 'توصيل' || order.order_details.order_type === 'Delivery') {
+            addressId = await this.dbService.getLastFormData();
+            if (addressId) {
+              console.log("ℹ️ No address_id in order, trying to fetch...");
+              addressId = await this.getAddressId();
+            }
 
-          // Submit the order using your existing API call
-          this.plaseOrderService.placeOrder(order).subscribe({
-            next: async (response): Promise<void> => {
-              if (response.status) {
-                // Remove from IndexedDB if successful
-                await this.dbService.deleteOrder(order.orderId);
-                console.log(`Offline order ${order.orderId} submitted successfully`);
-
-                // Update pending orders count
-                this.pendingOrdersCount--;
-              } else {
-                // Update order status back to pending
-                await this.dbService.saveOrder({
-                  ...order,
-                  status: 'pending',
-                  attempts: attempts,
-                  updatedAt: new Date().toISOString()
-                });
-              }
-            },
-            error: async (error) => {
-              console.error(`Error submitting offline order ${order.orderId}:`, error);
-              // Update order status back to pending
-              await this.dbService.saveOrder({
+            if (!addressId) {
+              console.warn(`⚠️ Skipping order ${order.orderId}, missing address_id`);
+              await this.dbService.savePendingOrder({
                 ...order,
                 status: 'pending',
-                attempts: attempts,
+                lastError: 'Missing address_id',
+                attempts,
                 updatedAt: new Date().toISOString()
               });
+              continue; // skip sending this order until address is available
             }
+          }
+          // if (attempts > 3) {
+          //   // Mark as failed if too many attempts
+          //   await this.dbService.savePendingOrder({
+          //     ...order,
+          //     status: 'failed',
+          //     attempts,
+          //     updatedAt: new Date().toISOString()
+          //   });
+          //   console.warn(`Offline order ${order.orderId} marked as failed after 3 attempts`);
+          //   continue;
+          // }
+
+          // Update order status to 'processing'
+          // await this.dbService.savePendingOrder({
+          //   ...order,
+          //   status: 'processing',
+          //   attempts,
+          //   updatedAt: new Date().toISOString()
+          // });
+
+          // Submit the order to API
+          const timeoutPromise = new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Request timeout')), 30000)
+          );
+
+
+          const payload = {
+            type: order.order_details.order_type,
+            client_name: order.order_details.client_name || null,
+            client_phone: order.order_details.client_phone || null,
+            address_id: addressId || order.order_details.address_id,
+            cashier_machine_id: order.order_details.cashier_machine_id || 1,
+            branch_id: order.order_details.branch_id,
+            table_id : order.order_details.table_id || null,
+            payment_method: order.order_details.payment_method,
+            payment_status: order.order_details.payment_status,
+            cash_amount: order.order_details.cash_amount,
+            credit_amount: order.order_details.credit_amount,
+            coupon_code: order.order_details.coupon_code || null,
+            reference_number: order.order_details.reference_number || null,
+            items: order.order_items.map((i: { dish_id: any; dish_name: any; dish_price: any; quantity: any; final_price: any; note: any; addon_categories: any; sizeId: any; size_name: any; }) => ({
+              dish_id: i.dish_id,
+              dish_name: i.dish_name,
+              dish_price: i.dish_price,
+              quantity: i.quantity,
+              final_price: i.final_price,
+              note: i.note,
+              addons_categories: i.addon_categories || null,
+              sizeId: i.sizeId || null,
+              size_name: i.size_name
+            }))
+          };
+          console.log('Submitting offline order payload:', payload);
+          try {
+            const response: any = await Promise.race([
+              firstValueFrom(this.plaseOrderService.placeOrder(payload)),
+              timeoutPromise
+            ]);
+
+            if (response.status) {
+              console.log("order.order_details.orderId:", order.order_details.order_id);
+              await this.dbService.deleteOrder(order.order_details.order_id);
+              console.log(`Offline order ${order.orderId} submitted successfully`);
+            } else {
+
+              // await this.dbService.deleteOrder(order.order_details.order_id);
+              await this.dbService.savePendingOrder({ ...order, status: 'pending', lastError: response.errorData || response.message, attempts, updatedAt: new Date().toISOString() });
+              console.warn(`Order ${order.orderId} submission failed:`, response.errorData);
+            }
+
+          } catch (error: any) {
+            console.error(`Error submitting offline order ${order.orderId}:`, error);
+            await this.dbService.savePendingOrder({ ...order, status: 'pending', lastError: error.message, attempts, updatedAt: new Date().toISOString() });
+          }
+
+
+          // const response: any = await Promise.race([
+          //   this.plaseOrderService.placeOrder(payload).toPromise(),
+          //   timeoutPromise
+          // ]);
+
+          // if (response.status) {
+          //   // Successfully submitted: remove from IndexedDB
+          //   await this.dbService.deleteOrder(order.orderId);
+          //   console.log(`Offline order ${order.orderId} submitted successfully`);
+          // } else {
+          //   // Validation errors: mark back as pending and save errors
+          //   await this.dbService.savePendingOrder({
+          //     ...order,
+          //     status: 'pending',
+          //     lastError: response.errorData || response.message || 'Unknown error',
+          //     attempts,
+          //     updatedAt: new Date().toISOString()
+          //   });
+          //   console.warn(`Offline order ${order.orderId} submission failed:`, response.errorData);
+          // }
+
+        } catch (error: any) {
+          console.error(`Error submitting offline order ${order.orderId}:`, error);
+
+          // Update order back to pending for retry later
+          await this.dbService.savePendingOrder({
+            ...order,
+            status: 'pending',
+            lastError: error.message || 'Unknown error',
+            attempts: (order.attempts || 0) + 1,
+            updatedAt: new Date().toISOString()
           });
-        } catch (error) {
-          console.error(`Error processing offline order ${order.orderId}:`, error);
         }
       }
     } catch (error) {
-      console.error('Error retrieving pending orders:', error);
+      console.error('Error retrieving offline orders:', error);
     }
   }
+
   finalOrderId: any;
   // toqa
   selectedCountryCode: any;
@@ -496,28 +663,40 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   // }
 
   async loadFormData() {
-  try {
-    // getFormData() returns a Promise, so we need to await it
-    const formData = await this.dbService.getFormData();
-    console.log("FormData", formData);
+    try {
+      // getFormData() returns a Promise, so we need to await it
+      const formData = await this.dbService.getFormData();
+      console.log("FormData", formData);
 
-    if (formData && formData.length > 0) {
-      // Since getFormData() returns an array, get the first (or most recent) item
-      const latestFormData = formData[formData.length - 1]; // Get the most recent
-      // OR: const latestFormData = formData.find(item => item.isLatest); // If you have a flag
+      if (formData && formData.length > 0) {
+        // Since getFormData() returns an array, get the first (or most recent) item
+        const latestFormData = formData[formData.length - 1]; // Get the most recent
+        // OR: const latestFormData = formData.find(item => item.isLatest); // If you have a flag
 
-      this.FormDataDetails = latestFormData;
-      this.clientName = this.FormDataDetails.client_name || 'لم يتم تحديد الإسم';
+        this.FormDataDetails = latestFormData;
+        this.clientName = this.FormDataDetails.client_name || 'لم يتم تحديد الإسم';
 
-      if (this.FormDataDetails.address) {
-        this.address = this.FormDataDetails.address || 'لم يتم تحديد العنوان';
+        if (this.FormDataDetails.address) {
+          this.address = this.FormDataDetails.address || 'لم يتم تحديد العنوان';
+        }
+
+        this.addressPhone = this.FormDataDetails.address_phone || 'لم يتم تحديد رقم الهاتف';
+      } else {
+        console.log('No form data found in IndexedDB');
+
+        // Fallback to localStorage if no data in IndexedDB
+        const localStorageFormData = localStorage.getItem('form_data');
+        if (localStorageFormData) {
+          this.FormDataDetails = JSON.parse(localStorageFormData);
+          this.clientName = this.FormDataDetails.client_name || 'لم يتم تحديد الإسم';
+          this.address = this.FormDataDetails.address || 'لم يتم تحديد العنوان';
+          this.addressPhone = this.FormDataDetails.address_phone || 'لم يتم تحديد رقم الهاتف';
+        }
       }
+    } catch (error) {
+      console.error('Error loading form data:', error);
 
-      this.addressPhone = this.FormDataDetails.address_phone || 'لم يتم تحديد رقم الهاتف';
-    } else {
-      console.log('No form data found in IndexedDB');
-
-      // Fallback to localStorage if no data in IndexedDB
+      // Fallback to localStorage on error
       const localStorageFormData = localStorage.getItem('form_data');
       if (localStorageFormData) {
         this.FormDataDetails = JSON.parse(localStorageFormData);
@@ -526,19 +705,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
         this.addressPhone = this.FormDataDetails.address_phone || 'لم يتم تحديد رقم الهاتف';
       }
     }
-  } catch (error) {
-    console.error('Error loading form data:', error);
-
-    // Fallback to localStorage on error
-    const localStorageFormData = localStorage.getItem('form_data');
-    if (localStorageFormData) {
-      this.FormDataDetails = JSON.parse(localStorageFormData);
-      this.clientName = this.FormDataDetails.client_name || 'لم يتم تحديد الإسم';
-      this.address = this.FormDataDetails.address || 'لم يتم تحديد العنوان';
-      this.addressPhone = this.FormDataDetails.address_phone || 'لم يتم تحديد رقم الهاتف';
-    }
   }
-}
 
   updateTotalPrice() {
     this.totalPrice = this.cartItems.reduce(
@@ -1279,54 +1446,59 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     client_name: string;
   } | null = null;
 
-  getAddressId(): Promise<number | null> {
-    return new Promise((resolve, reject) => {
-      const formValue = JSON.parse(localStorage.getItem('form_data') || '{}');
-      const note = localStorage.getItem('notes') || '';
-      formValue.address = this.address;
-      const formDataWithNote = { ...formValue, country_code: formValue.country_code.code, whatsapp_number_code: formValue.whatsapp_number_code.code, notes: note };
-      console.log(formDataWithNote, 'aaaaaaaaaaaaaaaa');
+  // getAddressId(): Promise<number | null> {
+  //   return new Promise((resolve, reject) => {
+  //     const formValue = JSON.parse(localStorage.getItem('form_data') || '{}');
+  //     const note = localStorage.getItem('notes') || '';
+  //     formValue.address = this.address;
+  //     const formDataWithNote = { ...formValue, country_code: formValue.country_code.code, whatsapp_number_code: formValue.whatsapp_number_code.code, notes: note };
+  //     console.log(formDataWithNote, 'aaaaaaaaaaaaaaaa');
 
-      this.formDataService.submitForm(formDataWithNote).subscribe({
-        next: (response) => {
-          if (response.status) {
-            console.log(
-              'Full form submission response:',
-              response.data.address_id
-            );
-            if (!response.data || !response.data.address_id) {
-              console.warn(
-                'Missing address_id in response data:',
-                response.data
-              );
-              resolve(null);
-              return;
-            }
 
-            this.addressIdFromResponse = response.data.address_id;
-            localStorage.setItem('address_id', this.addressIdFromResponse)
-            console.log('Received address_id:', this.addressIdFromResponse);
-            resolve(this.addressIdFromResponse);
 
-            return this.addressIdFromResponse;
-          }
-          if (!response.status) {
-            this.falseMessage = 'يرجى اختيار عنوان التوصيل ';
-            setTimeout(() => {
-              this.falseMessage = '';
-            }, 1500);
-            this.isLoading = false;
-            return;
-          }
-          console.log("rrrr")
-        },
-        error: (err) => {
-          console.error('❌ Error submitting form:', err);
-          resolve(null);
-        },
-      });
-    });
-  }
+  //     this.formDataService.submitForm(formDataWithNote).subscribe({
+  //       next: (response) => {
+  //         if (response.status) {
+  //           console.log(
+  //             'Full form submission response:',
+  //             response.data.address_id
+  //           );
+  //           if (!response.data || !response.data.address_id) {
+  //             console.warn(
+  //               'Missing address_id in response data:',
+  //               response.data
+  //             );
+  //             resolve(null);
+  //             return;
+  //           }
+
+  //           this.addressIdFromResponse = response.data.address_id;
+  //           localStorage.setItem('address_id', this.addressIdFromResponse)
+  //           console.log('Received address_id:', this.addressIdFromResponse);
+  //           resolve(this.addressIdFromResponse);
+
+  //           return this.addressIdFromResponse;
+  //         }
+  //         if (!response.status) {
+  //           this.falseMessage = 'يرجى اختيار عنوان التوصيل ';
+  //           setTimeout(() => {
+  //             this.falseMessage = '';
+  //           }, 1500);
+  //           this.isLoading = false;
+  //           return;
+  //         }
+  //         console.log("rrrr")
+  //       },
+  //       error: (err) => {
+  //         console.error('❌ Error submitting form:', err);
+  //         resolve(null);
+  //       },
+  //     });
+
+
+
+  //   });
+  // }
 
   // async submitOrder() {
   //   if (!this.cartItems.length) {
@@ -1560,6 +1732,61 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   //   });
   //   console.log(orderData);
   // }
+  async getAddressId(): Promise<number | null> {
+    try {
+      console.log('📥 Starting getAddressId process...');
+      // ✅ wait for last form data from IndexedDB
+      const lastFormData: any = await this.dbService.getLastFormData();
+      const formValue = lastFormData || {};
+
+      console.log('📋 Retrieved form data for address ID',formValue );
+      const note = localStorage.getItem('notes') || '';
+
+      formValue.address = this.address;
+      const formDataWithNote = {
+        ...formValue,
+        country_code: formValue.country_code?.code,
+        whatsapp_number_code: formValue.whatsapp_number_code?.code,
+        notes: note,
+      };
+
+      console.log(formDataWithNote, '📌 Submitting address form data');
+
+      return new Promise((resolve) => {
+        this.formDataService.submitForm(formDataWithNote).subscribe({
+          next: (response) => {
+            if (response.status && response.data?.address_id) {
+              this.addressIdFromResponse = response.data.address_id;
+
+              // ✅ Save in localStorage
+              localStorage.setItem('address_id', this.addressIdFromResponse);
+
+              // ✅ Also store in IndexedDB for offline use
+              this.dbService.saveFormData({
+                ...formDataWithNote,
+                address_id: this.addressIdFromResponse,
+                createdAt: new Date().toISOString(),
+              });
+
+              console.log('✅ Received address_id:', this.addressIdFromResponse);
+              resolve(this.addressIdFromResponse);
+            } else {
+              console.warn('⚠️ Missing address_id in response', response.data);
+              resolve(null);
+            }
+          },
+          error: (err) => {
+            console.error('❌ Error submitting form:', err);
+            resolve(null);
+          },
+        });
+      });
+    } catch (error) {
+      console.error('❌ Error in getAddressId:', error);
+      return null;
+    }
+  }
+
   formSubmitted = false;
   amountError = false;
   addressRequestInProgress: boolean = false;
@@ -2010,25 +2237,500 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
 
+  private prepareOrderData(): any {
+    // This should contain all the order data preparation logic
+    // that was previously in your submitOrder method
+
+    const branchId = Number(localStorage.getItem('branch_id')) || null;
+    const tableId = Number(localStorage.getItem('table_id')) || this.table_id || null;
+    const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+
+    // ... rest of your order data preparation
+
+    return {
+      orderId: this.finalOrderId || 'OFFLINE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+      type: this.selectedOrderType,
+      branch_id: branchId,
+      payment_method: this.selectedPaymentMethod,
+      payment_status: this.selectedPaymentStatus,
+      cash_amount: this.cash_amountt || null,
+      credit_amount: this.credit_amountt || null,
+      cashier_machine_id: localStorage.getItem('cashier_machine_id'),
+      ...(this.clientPhoneStoredInLocal ? { client_country_code: this.selectedCountry.code || "+20" } : {}),
+      ...(this.clientPhoneStoredInLocal ? { client_phone: this.clientPhoneStoredInLocal } : {}),
+      ...(this.clientStoredInLocal ? { client_name: this.clientStoredInLocal } : {}),
+      note: this.additionalNote || this.savedNote || this.applyAdditionalNote() || this.onholdOrdernote || '',
+      items: this.cartItems
+        .map((item) => ({
+          dish_id: item.dish?.id || null,
+          dish_name: item.dish?.name || '',
+          dish_description: item.dish?.description || '',
+          dish_price: item.dish?.price || 0,
+          currency_symbol: item.dish?.currency_symbol || '',
+          dish_image: item.dish?.image || null,
+          quantity: item.quantity || 1,
+          sizeId: item.selectedSize?.id || null,
+          size: item.size || '',
+          sizeName: item.selectedSize?.name || '',
+          sizeDescription: item.selectedSize?.description || '',
+          note: item.note || '',
+          finalPrice: item.finalPrice || 0,
+          selectedAddons: item.selectedAddons || [],
+          addon_categories: item.addon_categories
+            ?.map((category: { id: any; addons: { id: any }[] }) => {
+              const selectedAddons = category.addons?.filter((addon) =>
+                item.selectedAddons.some(
+                  (selected: { id: any }) => selected.id === addon.id
+                )
+              );
+              return selectedAddons.length > 0
+                ? {
+                  id: category.id,
+                  addon: selectedAddons.map((addon) => addon.id),
+                }
+                : null;
+            })
+            .filter((category: null) => category !== null),
+        }))
+        .filter((item) => item.dish_id),
+    };
+  }
+
+
+  async submitOrder() {
+    if (this.isLoading) {
+      console.warn("🚫 Request already in progress, ignoring duplicate submit.");
+      return;
+    }
+
+    this.isLoading = true;
+    this.loading = true;
+
+    if (!this.cartItems.length) {
+      this.isLoading = false;
+      this.falseMessage = 'العربة فارغة، أضف بعض العناصر قبل تنفيذ الطلب.';
+      setTimeout(() => {
+        this.falseMessage = '';
+      }, 1500);
+      return;
+    }
+
+    if (!this.selectedOrderType) {
+      this.isLoading = false;
+      this.falseMessage = 'يرجى تحديد نوع الطلب قبل المتابعة.';
+      setTimeout(() => {
+        this.falseMessage = '';
+      }, 1500);
+      return;
+    }
+
+    const branchId = Number(localStorage.getItem('branch_id')) || null;
+    const tableId = Number(localStorage.getItem('table_id')) || this.table_id || null;
+    const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+
+    if (this.selectedPaymentStatus === 'paid' && this.credit_amountt > 0 && !this.referenceNumber) {
+      this.isLoading = false;
+      this.falseMessage = '❌ رقم المرجع مطلوب عند الدفع بالفيزا.';
+      return;
+    }
+
+    let addressId = null;
+    if (navigator.onLine) {
+      if (this.selectedOrderType === 'Delivery') {
+        addressId = localStorage.getItem('address_id');
+
+        if (!addressId && !this.addressRequestInProgress) {
+          this.addressRequestInProgress = true;
+          try {
+
+            addressId = await this.getAddressId();
+
+            if (addressId) {
+              localStorage.setItem('address_id', addressId.toString());
+            }
+          } finally {
+            this.addressRequestInProgress = false;
+          }
+        }
+      }
+    }
+
+    const authToken = localStorage.getItem('authToken');
+    const cashier_machine_id = localStorage.getItem('cashier_machine_id');
+
+    if (!branchId) {
+      this.falseMessage = 'فشل تحديد الفرع. الرجاء إعادة تسجيل الدخول.';
+      setTimeout(() => {
+        this.falseMessage = '';
+      }, 1500);
+      this.isLoading = false;
+      this.loading = false;
+      return;
+    }
+
+    if (!authToken) {
+      this.falseMessage = 'فشل التحقق من الهوية. الرجاء تسجيل الدخول مجددًا.';
+      setTimeout(() => {
+        this.falseMessage = '';
+      }, 1500);
+      this.isLoading = false;
+      this.loading = false;
+      return;
+    }
+
+    this.formSubmitted = true;
+    this.amountError = false;
+
+    if (!this.selectedPaymentStatus) {
+      setTimeout(() => {
+        this.formSubmitted = false;
+      }, 2500);
+      return;
+    }
+
+    if (this.selectedPaymentStatus === 'paid') {
+      const isDelivery =
+        this.selectedOrderType === 'Delivery' ||
+        this.selectedOrderType === 'توصيل';
+      if (!isDelivery) {
+        const totalEntered =
+          Number(this.cash_amountt || 0) + Number(this.credit_amountt || 0);
+        const cartTotal = Number(this.getCartTotal().toFixed(2));
+
+        if (totalEntered < cartTotal) {
+          this.amountError = true;
+          console.log('❌ Entered amount less than total:', totalEntered, cartTotal);
+
+          setTimeout(() => {
+            this.amountError = false;
+            console.log('🔁 Cleared error state');
+          }, 2500);
+
+          return;
+        }
+
+        console.log('✅ Valid payment amount:', totalEntered, cartTotal);
+      }
+    }
+
+    this.isLoading = true;
+    this.loading = true;
+    this.falseMessage = '';
+    this.tableError = '';
+    this.couponError = '';
+
+    const paymentStatus =
+      this.selectedPaymentMethod === 'cash'
+        ? this.selectedPaymentStatus
+        : 'paid';
+
+    // Use prepareOrderData function to get the base order data
+    const orderData: any = this.prepareOrderData();
+
+    // Add additional properties that aren't in prepareOrderData
+    if (this.appliedCoupon && this.couponCode?.trim()) {
+      orderData.coupon_code = this.couponCode.trim();
+      orderData.discount_amount = this.discountAmount;
+      orderData.coupon_type = this.appliedCoupon.value_type;
+    } else if (this.couponCode?.trim()) {
+      orderData.coupon_code = this.couponCode.trim();
+    }
+
+    if (this.credit_amountt > 0) {
+      orderData.reference_number = this.referenceNumber;
+    }
+
+    if (this.selectedOrderType === 'Delivery' && addressId) {
+      orderData.address_id = addressId;
+    }
+
+    if (this.selectedPaymentMethod == "unpaid") {
+      orderData.credit_amount = null;
+      orderData.cash_amount = null;
+    }
+
+    if (!orderData.items.length) {
+      this.falseMessage = 'لا يمكن تقديم الطلب بدون عناصر صالحة.';
+      setTimeout(() => {
+        this.falseMessage = '';
+      }, 1500);
+      this.isLoading = false;
+      this.loading = false;
+      return;
+    }
+
+    if (
+      this.selectedOrderType === 'dine-in' ||
+      this.selectedOrderType === 'في المطعم'
+    ) {
+      if (!tableId) {
+        this.falseMessage = 'يرجى اختيار طاولة.';
+        setTimeout(() => {
+          this.falseMessage = '';
+        }, 1500);
+        this.isLoading = false;
+        this.loading = false;
+        return;
+      }
+      orderData.table_id = tableId;
+    }
+    if (navigator.onLine) {
+      if (
+        this.selectedOrderType === 'Delivery' ||
+        this.selectedOrderType === 'توصيل'
+      ) {
+        if (!addressId) {
+          this.falseMessage = 'يرجى اختيار عنوان التوصيل ';
+          setTimeout(() => {
+            this.falseMessage = '';
+          }, 1500);
+          this.isLoading = false;
+          this.loading = false;
+          return;
+        }
+        orderData.address_id = addressId;
+        orderData.client_country_code = formData.country_code?.code || "+20";
+        orderData.client_phone = formData.address_phone;
+        orderData.client_name = formData.client_name;
+      }
+    }
+
+    const isOnline = navigator.onLine;
+
+    console.log("dd", orderData);
+
+    if (!isOnline) {
+      try {
+        // Add timestamp for offline orders
+        orderData.offlineTimestamp = new Date().toISOString();
+        orderData.status = 'pending_sync';
+
+        // Save to IndexedDB
+        const orderId = await this.dbService.savePendingOrder(orderData);
+        console.log("Order saved to IndexedDB with ID:", orderId);
+
+        // Show success message
+        this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
+
+        // Clear cart and reset
+        this.clearCart();
+        this.resetLocalStorage();
+
+        // Show success modal
+        if (this.successModal) {
+          this.successModal.show();
+        }
+
+        // Remove from saved orders if it was a saved order
+        const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
+        const orderIdToRemove = orderData.orderId;
+        const updatedOrders = savedOrders.filter(
+          (savedOrder: any) => savedOrder.orderId !== orderIdToRemove
+        );
+        localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
+
+      } catch (error) {
+        console.error('Error saving order to IndexedDB:', error);
+        this.falseMessage = 'فشل حفظ الطلب في وضع عدم الاتصال. يرجى المحاولة مرة أخرى.';
+        setTimeout(() => {
+          this.falseMessage = '';
+        }, 1500);
+      } finally {
+        this.isLoading = false;
+        this.loading = false;
+      }
+      return; // Stop execution here for offline case
+    }
+
+    console.log('Submitting order online:', orderData);
+
+    // Add timeout handling for the HTTP request
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout')), 30000); // 30 seconds timeout
+    });
+
+    try {
+      // Race between the API call and the timeout
+      const response = await Promise.race([
+        this.plaseOrderService.placeOrder(orderData).toPromise(),
+        timeoutPromise
+      ]);
+
+      console.log('API Response:', response);
+      this.falseMessage = '';
+      this.tableError = '';
+      this.couponError = '';
+      this.cashiermachine = '';
+
+      this.pillId = (response as any).data?.invoice_id;
+      this.orderedId = (response as any).data?.order_id;
+
+      if (!(response as any).status) {
+        if ((response as any).errorData?.error?.cashier_machine_id) {
+          this.cashiermachine = (response as any).errorData?.error?.cashier_machine_id[0];
+        } else if ((response as any).errorData?.coupon_code) {
+          this.couponError = (response as any).errorData.coupon_code;
+        } else if ((response as any).errorData?.table_id) {
+          this.tableError = (response as any).errorData.table_id;
+        } else {
+          this.falseMessage = (response as any).errorData?.error
+            ? `${(response as any).errorData.error}`
+            : `${(response as any).message || 'حدث خطأ أثناء تقديم الطلب'}`;
+        }
+
+        setTimeout(() => {
+          this.falseMessage = '';
+          this.tableError = '';
+          this.couponError = '';
+          this.cashiermachine = '';
+        }, 3500);
+        this.isLoading = false;
+        this.loading = false;
+        return;
+      }
+
+      if (this.selectedOrderType === 'Takeaway') {
+        const dataOrderId = (response as any).data.order_id;
+        this.createdOrderId = dataOrderId;
+        await this.fetchPillsDetails(this.pillId);
+        setTimeout(() => {
+          this.printInvoice();
+        }, 200);
+        this.removeCouponFromLocalStorage();
+      }
+
+      const orderId = (response as any).data?.order_id;
+      if (!orderId) {
+        this.falseMessage = 'لم يتم استلام رقم الطلب من الخادم.';
+        setTimeout(() => {
+          this.falseMessage = '';
+        }, 1500);
+        this.isLoading = false;
+        this.loading = false;
+        return;
+      }
+
+      const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
+      const orderIdToRemove = orderData.orderId;
+      const updatedOrders = savedOrders.filter(
+        (savedOrder: any) => savedOrder.orderId !== orderIdToRemove
+      );
+      localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
+
+      this.clearCart();
+      localStorage.removeItem('table_number');
+      localStorage.removeItem('table_id');
+      localStorage.removeItem('address_id');
+      localStorage.removeItem('form_data');
+      localStorage.removeItem('notes');
+      localStorage.removeItem('deliveryForm');
+      localStorage.removeItem('additionalNote');
+      localStorage.removeItem('selectedHotel');
+      localStorage.removeItem('hotel_id');
+      localStorage.removeItem('selectedPaymentStatus');
+      localStorage.removeItem('cash_amountt');
+      localStorage.removeItem('delivery_fees');
+      localStorage.removeItem('credit_amountt');
+      localStorage.removeItem('selected_address');
+      localStorage.removeItem('finalOrderId');
+      localStorage.removeItem('client');
+      localStorage.removeItem('clientPhone');
+
+      this.client = " ";
+      this.clientPhone = " ";
+      this.finalOrderId = " ";
+      this.cash_amountt = 0;
+      this.credit_amountt = 0;
+      this.selectedPaymentStatus = '';
+      this.resetAddress();
+      this.tableNumber = null;
+      this.FormDataDetails = null;
+      this.successMessage = 'تم تنفيذ طلبك بنجاح';
+
+      if (this.successModal) {
+        this.successModal.show();
+      }
+
+      setTimeout(() => {
+        this.falseMessage = '';
+      }, 1500);
+
+    } catch (error: unknown) {
+      console.error('API Error:', error);
+
+      // Handle timeout or server errors by saving to IndexedDB
+      if (
+        (error instanceof Error && error.message === 'Request timeout') ||
+        (typeof error === 'object' && error !== null && 'status' in error && (error as any).status === 504) ||
+        (typeof error === 'object' && error !== null && 'status' in error && (error as any).status === 0)
+      ) {
+        try {
+          // Save to IndexedDB as fallback
+          orderData.offlineTimestamp = new Date().toISOString();
+          orderData.status = 'pending_sync';
+          orderData.errorReason = (error instanceof Error ? error.message : 'Gateway Timeout');
+
+          const orderId = await this.dbService.savePendingOrder(orderData);
+          console.log("Order saved to IndexedDB due to timeout/error:", orderId);
+
+          this.successMessage = 'تم حفظ الطلب بسبب مشكلة في الاتصال وسيتم إرساله لاحقًا';
+          this.clearCart();
+          this.resetLocalStorage();
+
+          if (this.successModal) {
+            this.successModal.show();
+          }
+
+        } catch (dbError) {
+          console.error('Error saving to IndexedDB:', dbError);
+          this.falseMessage = 'فشل في إرسال الطلب وحفظه محليًا. يرجى المحاولة مرة أخرى.';
+        }
+      } else {
+        // Handle other API errors with proper type checking
+        const err = error as any;
+
+        if (err?.error?.errorData?.error?.coupon_code) {
+          this.couponError = err.error.errorData.error.coupon_code[0];
+        } else if (err?.error?.errorData?.error?.client_phone) {
+          this.falseMessage = err.error?.errorData?.error?.client_phone[0];
+        } else if (err?.error?.errorData?.table_id) {
+          this.tableError = err.error?.errorData?.table_id[0];
+        } else if (err?.error?.errorData?.error) {
+          this.falseMessage = `${err.error.errorData.error}`;
+        } else if (err?.error?.message) {
+          this.falseMessage = `${err.error.message}`;
+        } else if (err?.error?.errorData?.error) {
+          const errorMessages = Object.values(err.error?.errorData.error)
+            .flat()
+            .join('\n');
+          this.falseMessage = `${errorMessages}`;
+        } else {
+          this.falseMessage = 'حدث خطأ غير متوقع، يرجى المحاولة لاحقًا.';
+        }
+      }
+
+      setTimeout(() => {
+        this.falseMessage = '';
+      }, 2000);
+    } finally {
+      this.isLoading = false;
+      this.loading = false;
+    }
+  }
+
   // private prepareOrderData(): any {
-  //   // This should contain all the order data preparation logic
-  //   // that was previously in your submitOrder method
-
   //   const branchId = Number(localStorage.getItem('branch_id')) || null;
-  //   const tableId = Number(localStorage.getItem('table_id')) || this.table_id || null;
-  //   const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
-
-  //   // ... rest of your order data preparation
+  //   const cashier_machine_id = localStorage.getItem('cashier_machine_id');
 
   //   return {
-  //     orderId: this.finalOrderId || 'OFFLINE-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9),
+  //     orderId: this.finalOrderId,
   //     type: this.selectedOrderType,
   //     branch_id: branchId,
   //     payment_method: this.selectedPaymentMethod,
-  //     payment_status: this.selectedPaymentStatus,
+  //     payment_status: this.selectedPaymentMethod === 'cash' ? this.selectedPaymentStatus : 'paid',
   //     cash_amount: this.cash_amountt || null,
   //     credit_amount: this.credit_amountt || null,
-  //     cashier_machine_id: localStorage.getItem('cashier_machine_id'),
+  //     cashier_machine_id: cashier_machine_id,
   //     ...(this.clientPhoneStoredInLocal ? { client_country_code: this.selectedCountry.code || "+20" } : {}),
   //     ...(this.clientPhoneStoredInLocal ? { client_phone: this.clientPhoneStoredInLocal } : {}),
   //     ...(this.clientStoredInLocal ? { client_name: this.clientStoredInLocal } : {}),
@@ -2068,475 +2770,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   //       .filter((item) => item.dish_id),
   //   };
   // }
-
-
-  async submitOrder() {
-  if (this.isLoading) {
-    console.warn("🚫 Request already in progress, ignoring duplicate submit.");
-    return;
-  }
-
-  this.isLoading = true;
-  this.loading = true;
-
-  if (!this.cartItems.length) {
-    this.isLoading = false;
-    this.falseMessage = 'العربة فارغة، أضف بعض العناصر قبل تنفيذ الطلب.';
-    setTimeout(() => {
-      this.falseMessage = '';
-    }, 1500);
-    return;
-  }
-
-  if (!this.selectedOrderType) {
-    this.isLoading = false;
-    this.falseMessage = 'يرجى تحديد نوع الطلب قبل المتابعة.';
-    setTimeout(() => {
-      this.falseMessage = '';
-    }, 1500);
-    return;
-  }
-
-  const branchId = Number(localStorage.getItem('branch_id')) || null;
-  const tableId = Number(localStorage.getItem('table_id')) || this.table_id || null;
-  const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
-
-  if (this.selectedPaymentStatus === 'paid' && this.credit_amountt > 0 && !this.referenceNumber) {
-    this.isLoading = false;
-    this.falseMessage = '❌ رقم المرجع مطلوب عند الدفع بالفيزا.';
-    return;
-  }
-
-  let addressId = null;
-
-  if (this.selectedOrderType === 'Delivery') {
-    addressId = localStorage.getItem('address_id');
-
-    if (!addressId && !this.addressRequestInProgress) {
-      this.addressRequestInProgress = true;
-      try {
-        addressId = await this.getAddressId();
-        if (addressId) {
-          localStorage.setItem('address_id', addressId.toString());
-        }
-      } finally {
-        this.addressRequestInProgress = false;
-      }
-    }
-  }
-
-  const authToken = localStorage.getItem('authToken');
-  const cashier_machine_id = localStorage.getItem('cashier_machine_id');
-
-  if (!branchId) {
-    this.falseMessage = 'فشل تحديد الفرع. الرجاء إعادة تسجيل الدخول.';
-    setTimeout(() => {
-      this.falseMessage = '';
-    }, 1500);
-    this.isLoading = false;
-    this.loading = false;
-    return;
-  }
-
-  if (!authToken) {
-    this.falseMessage = 'فشل التحقق من الهوية. الرجاء تسجيل الدخول مجددًا.';
-    setTimeout(() => {
-      this.falseMessage = '';
-    }, 1500);
-    this.isLoading = false;
-    this.loading = false;
-    return;
-  }
-
-  this.formSubmitted = true;
-  this.amountError = false;
-
-  if (!this.selectedPaymentStatus) {
-    setTimeout(() => {
-      this.formSubmitted = false;
-    }, 2500);
-    return;
-  }
-
-  if (this.selectedPaymentStatus === 'paid') {
-    const isDelivery =
-      this.selectedOrderType === 'Delivery' ||
-      this.selectedOrderType === 'توصيل';
-    if (!isDelivery) {
-      const totalEntered =
-        Number(this.cash_amountt || 0) + Number(this.credit_amountt || 0);
-      const cartTotal = Number(this.getCartTotal().toFixed(2));
-
-      if (totalEntered < cartTotal) {
-        this.amountError = true;
-        console.log('❌ Entered amount less than total:', totalEntered, cartTotal);
-
-        setTimeout(() => {
-          this.amountError = false;
-          console.log('🔁 Cleared error state');
-        }, 2500);
-
-        return;
-      }
-
-      console.log('✅ Valid payment amount:', totalEntered, cartTotal);
-    }
-  }
-
-  this.isLoading = true;
-  this.loading = true;
-  this.falseMessage = '';
-  this.tableError = '';
-  this.couponError = '';
-
-  const paymentStatus =
-    this.selectedPaymentMethod === 'cash'
-      ? this.selectedPaymentStatus
-      : 'paid';
-
-  // Use prepareOrderData function to get the base order data
-  const orderData: any = this.prepareOrderData();
-
-  // Add additional properties that aren't in prepareOrderData
-  if (this.appliedCoupon && this.couponCode?.trim()) {
-    orderData.coupon_code = this.couponCode.trim();
-    orderData.discount_amount = this.discountAmount;
-    orderData.coupon_type = this.appliedCoupon.value_type;
-  } else if (this.couponCode?.trim()) {
-    orderData.coupon_code = this.couponCode.trim();
-  }
-
-  if (this.credit_amountt > 0) {
-    orderData.reference_number = this.referenceNumber;
-  }
-
-  if (this.selectedOrderType === 'Delivery' && addressId) {
-    orderData.address_id = addressId;
-  }
-
-  if (this.selectedPaymentMethod == "unpaid") {
-    orderData.credit_amount = null;
-    orderData.cash_amount = null;
-  }
-
-  if (!orderData.items.length) {
-    this.falseMessage = 'لا يمكن تقديم الطلب بدون عناصر صالحة.';
-    setTimeout(() => {
-      this.falseMessage = '';
-    }, 1500);
-    this.isLoading = false;
-    this.loading = false;
-    return;
-  }
-
-  if (
-    this.selectedOrderType === 'dine-in' ||
-    this.selectedOrderType === 'في المطعم'
-  ) {
-    if (!tableId) {
-      this.falseMessage = 'يرجى اختيار طاولة.';
-      setTimeout(() => {
-        this.falseMessage = '';
-      }, 1500);
-      this.isLoading = false;
-      this.loading = false;
-      return;
-    }
-    orderData.table_id = tableId;
-  }
-
-  if (
-    this.selectedOrderType === 'Delivery' ||
-    this.selectedOrderType === 'توصيل'
-  ) {
-    if (!addressId) {
-      this.falseMessage = 'يرجى اختيار عنوان التوصيل ';
-      setTimeout(() => {
-        this.falseMessage = '';
-      }, 1500);
-      this.isLoading = false;
-      this.loading = false;
-      return;
-    }
-    orderData.address_id = addressId;
-    orderData.client_country_code = formData.country_code?.code || "+20";
-    orderData.client_phone = formData.address_phone;
-    orderData.client_name = formData.client_name;
-  }
-
-  const isOnline = navigator.onLine;
-
-  if (!isOnline) {
-    try {
-      // Add timestamp for offline orders
-      orderData.offlineTimestamp = new Date().toISOString();
-      orderData.status = 'pending_sync';
-
-      // Save to IndexedDB
-      const orderId = await this.dbService.savePendingOrder(orderData);
-      console.log("Order saved to IndexedDB with ID:", orderId);
-
-      // Show success message
-      this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
-
-      // Clear cart and reset
-      this.clearCart();
-      this.resetLocalStorage();
-
-      // Show success modal
-      if (this.successModal) {
-        this.successModal.show();
-      }
-
-      // Remove from saved orders if it was a saved order
-      const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
-      const orderIdToRemove = orderData.orderId;
-      const updatedOrders = savedOrders.filter(
-        (savedOrder: any) => savedOrder.orderId !== orderIdToRemove
-      );
-      localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
-
-    } catch (error) {
-      console.error('Error saving order to IndexedDB:', error);
-      this.falseMessage = 'فشل حفظ الطلب في وضع عدم الاتصال. يرجى المحاولة مرة أخرى.';
-      setTimeout(() => {
-        this.falseMessage = '';
-      }, 1500);
-    } finally {
-      this.isLoading = false;
-      this.loading = false;
-    }
-    return; // Stop execution here for offline case
-  }
-
-  console.log('Submitting order online:', orderData);
-
-  // Add timeout handling for the HTTP request
-  const timeoutPromise = new Promise((_, reject) => {
-    setTimeout(() => reject(new Error('Request timeout')), 30000); // 30 seconds timeout
-  });
-
-  try {
-    // Race between the API call and the timeout
-    const response = await Promise.race([
-      this.plaseOrderService.placeOrder(orderData).toPromise(),
-      timeoutPromise
-    ]);
-
-    console.log('API Response:', response);
-    this.falseMessage = '';
-    this.tableError = '';
-    this.couponError = '';
-    this.cashiermachine = '';
-
-    this.pillId = (response as any).data?.invoice_id;
-    this.orderedId = (response as any).data?.order_id;
-
-    if (!(response as any).status) {
-      if ((response as any).errorData?.error?.cashier_machine_id) {
-        this.cashiermachine = (response as any).errorData?.error?.cashier_machine_id[0];
-      } else if ((response as any).errorData?.coupon_code) {
-        this.couponError = (response as any).errorData.coupon_code;
-      } else if ((response as any).errorData?.table_id) {
-        this.tableError = (response as any).errorData.table_id;
-      } else {
-        this.falseMessage = (response as any).errorData?.error
-          ? `${(response as any).errorData.error}`
-          : `${(response as any).message || 'حدث خطأ أثناء تقديم الطلب'}`;
-      }
-
-      setTimeout(() => {
-        this.falseMessage = '';
-        this.tableError = '';
-        this.couponError = '';
-        this.cashiermachine = '';
-      }, 3500);
-      this.isLoading = false;
-      this.loading = false;
-      return;
-    }
-
-    if (this.selectedOrderType === 'Takeaway') {
-      const dataOrderId = (response as any).data.order_id;
-      this.createdOrderId = dataOrderId;
-      await this.fetchPillsDetails(this.pillId);
-      setTimeout(() => {
-        this.printInvoice();
-      }, 200);
-      this.removeCouponFromLocalStorage();
-    }
-
-    const orderId = (response as any).data?.order_id;
-    if (!orderId) {
-      this.falseMessage = 'لم يتم استلام رقم الطلب من الخادم.';
-      setTimeout(() => {
-        this.falseMessage = '';
-      }, 1500);
-      this.isLoading = false;
-      this.loading = false;
-      return;
-    }
-
-    const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
-    const orderIdToRemove = orderData.orderId;
-    const updatedOrders = savedOrders.filter(
-      (savedOrder: any) => savedOrder.orderId !== orderIdToRemove
-    );
-    localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
-
-    this.clearCart();
-    localStorage.removeItem('table_number');
-    localStorage.removeItem('table_id');
-    localStorage.removeItem('address_id');
-    localStorage.removeItem('form_data');
-    localStorage.removeItem('notes');
-    localStorage.removeItem('deliveryForm');
-    localStorage.removeItem('additionalNote');
-    localStorage.removeItem('selectedHotel');
-    localStorage.removeItem('hotel_id');
-    localStorage.removeItem('selectedPaymentStatus');
-    localStorage.removeItem('cash_amountt');
-    localStorage.removeItem('delivery_fees');
-    localStorage.removeItem('credit_amountt');
-    localStorage.removeItem('selected_address');
-    localStorage.removeItem('finalOrderId');
-    localStorage.removeItem('client');
-    localStorage.removeItem('clientPhone');
-
-    this.client = " ";
-    this.clientPhone = " ";
-    this.finalOrderId = " ";
-    this.cash_amountt = 0;
-    this.credit_amountt = 0;
-    this.selectedPaymentStatus = '';
-    this.resetAddress();
-    this.tableNumber = null;
-    this.FormDataDetails = null;
-    this.successMessage = 'تم تنفيذ طلبك بنجاح';
-
-    if (this.successModal) {
-      this.successModal.show();
-    }
-
-    setTimeout(() => {
-      this.falseMessage = '';
-    }, 1500);
-
-  } catch (error: unknown) {
-    console.error('API Error:', error);
-
-    // Handle timeout or server errors by saving to IndexedDB
-    if (
-      (error instanceof Error && error.message === 'Request timeout') ||
-      (typeof error === 'object' && error !== null && 'status' in error && (error as any).status === 504) ||
-      (typeof error === 'object' && error !== null && 'status' in error && (error as any).status === 0)
-    ) {
-      try {
-        // Save to IndexedDB as fallback
-        orderData.offlineTimestamp = new Date().toISOString();
-        orderData.status = 'pending_sync';
-        orderData.errorReason = (error instanceof Error ? error.message : 'Gateway Timeout');
-
-        const orderId = await this.dbService.savePendingOrder(orderData);
-        console.log("Order saved to IndexedDB due to timeout/error:", orderId);
-
-        this.successMessage = 'تم حفظ الطلب بسبب مشكلة في الاتصال وسيتم إرساله لاحقًا';
-        this.clearCart();
-        this.resetLocalStorage();
-
-        if (this.successModal) {
-          this.successModal.show();
-        }
-
-      } catch (dbError) {
-        console.error('Error saving to IndexedDB:', dbError);
-        this.falseMessage = 'فشل في إرسال الطلب وحفظه محليًا. يرجى المحاولة مرة أخرى.';
-      }
-    } else {
-      // Handle other API errors with proper type checking
-      const err = error as any;
-
-      if (err?.error?.errorData?.error?.coupon_code) {
-        this.couponError = err.error.errorData.error.coupon_code[0];
-      } else if (err?.error?.errorData?.error?.client_phone) {
-        this.falseMessage = err.error?.errorData?.error?.client_phone[0];
-      } else if (err?.error?.errorData?.table_id) {
-        this.tableError = err.error?.errorData?.table_id[0];
-      } else if (err?.error?.errorData?.error) {
-        this.falseMessage = `${err.error.errorData.error}`;
-      } else if (err?.error?.message) {
-        this.falseMessage = `${err.error.message}`;
-      } else if (err?.error?.errorData?.error) {
-        const errorMessages = Object.values(err.error?.errorData.error)
-          .flat()
-          .join('\n');
-        this.falseMessage = `${errorMessages}`;
-      } else {
-        this.falseMessage = 'حدث خطأ غير متوقع، يرجى المحاولة لاحقًا.';
-      }
-    }
-
-    setTimeout(() => {
-      this.falseMessage = '';
-    }, 2000);
-  } finally {
-    this.isLoading = false;
-    this.loading = false;
-  }
-}
-
-private prepareOrderData(): any {
-  const branchId = Number(localStorage.getItem('branch_id')) || null;
-  const cashier_machine_id = localStorage.getItem('cashier_machine_id');
-
-  return {
-    orderId: this.finalOrderId,
-    type: this.selectedOrderType,
-    branch_id: branchId,
-    payment_method: this.selectedPaymentMethod,
-    payment_status: this.selectedPaymentMethod === 'cash' ? this.selectedPaymentStatus : 'paid',
-    cash_amount: this.cash_amountt || null,
-    credit_amount: this.credit_amountt || null,
-    cashier_machine_id: cashier_machine_id,
-    ...(this.clientPhoneStoredInLocal ? { client_country_code: this.selectedCountry.code || "+20" } : {}),
-    ...(this.clientPhoneStoredInLocal ? { client_phone: this.clientPhoneStoredInLocal } : {}),
-    ...(this.clientStoredInLocal ? { client_name: this.clientStoredInLocal } : {}),
-    note: this.additionalNote || this.savedNote || this.applyAdditionalNote() || this.onholdOrdernote || '',
-    items: this.cartItems
-      .map((item) => ({
-        dish_id: item.dish?.id || null,
-        dish_name: item.dish?.name || '',
-        dish_description: item.dish?.description || '',
-        dish_price: item.dish?.price || 0,
-        currency_symbol: item.dish?.currency_symbol || '',
-        dish_image: item.dish?.image || null,
-        quantity: item.quantity || 1,
-        sizeId: item.selectedSize?.id || null,
-        size: item.size || '',
-        sizeName: item.selectedSize?.name || '',
-        sizeDescription: item.selectedSize?.description || '',
-        note: item.note || '',
-        finalPrice: item.finalPrice || 0,
-        selectedAddons: item.selectedAddons || [],
-        addon_categories: item.addon_categories
-          ?.map((category: { id: any; addons: { id: any }[] }) => {
-            const selectedAddons = category.addons?.filter((addon) =>
-              item.selectedAddons.some(
-                (selected: { id: any }) => selected.id === addon.id
-              )
-            );
-            return selectedAddons.length > 0
-              ? {
-                id: category.id,
-                addon: selectedAddons.map((addon) => addon.id),
-              }
-              : null;
-          })
-          .filter((category: null) => category !== null),
-      }))
-      .filter((item) => item.dish_id),
-  };
-}
 
   // Add this method to reset local storage
   private resetLocalStorage(): void {
@@ -3159,39 +3392,39 @@ private prepareOrderData(): any {
   // }
 
   loadOrderType() {
-  try {
-    this.dbService.getAll('selectedOrderType').then((savedOrderTypes) => {
-      console.log('✅ Order selectedOrderType:', savedOrderTypes);
+    try {
+      this.dbService.getAll('selectedOrderType').then((savedOrderTypes) => {
+        console.log('✅ Order selectedOrderType:', savedOrderTypes);
 
-      if (savedOrderTypes.length > 0) {
-        // Sort by ID to get the latest one
-        const sorted = savedOrderTypes.sort((a, b) => b.id - a.id);
-        const last = sorted[0];
-        this.selectedOrderType = last.value;
+        if (savedOrderTypes.length > 0) {
+          // Sort by ID to get the latest one
+          const sorted = savedOrderTypes.sort((a, b) => b.id - a.id);
+          const last = sorted[0];
+          this.selectedOrderType = last.value;
 
-        console.log('Last ID:', last.id); // This is the last ID
-      } else {
-        // Fallback to localStorage
-        const fallbackOrderType = localStorage.getItem('selectedOrderType');
-        if (fallbackOrderType) {
-          this.selectedOrderType = fallbackOrderType;
-          // Migrate to IndexedDB with ID
-          this.dbService.saveData('selectedOrderType', {
-            id: new Date().getTime(),
-            value: this.selectedOrderType
-          });
-          localStorage.removeItem('selectedOrderType');
+          console.log('Last ID:', last.id); // This is the last ID
+        } else {
+          // Fallback to localStorage
+          const fallbackOrderType = localStorage.getItem('selectedOrderType');
+          if (fallbackOrderType) {
+            this.selectedOrderType = fallbackOrderType;
+            // Migrate to IndexedDB with ID
+            this.dbService.saveData('selectedOrderType', {
+              id: new Date().getTime(),
+              value: this.selectedOrderType
+            });
+            localStorage.removeItem('selectedOrderType');
+          }
         }
+      });
+    } catch (error) {
+      console.error('❌ Error loading order type from IndexedDB:', error);
+      const fallbackOrderType = localStorage.getItem('selectedOrderType');
+      if (fallbackOrderType) {
+        this.selectedOrderType = fallbackOrderType;
       }
-    });
-  } catch (error) {
-    console.error('❌ Error loading order type from IndexedDB:', error);
-    const fallbackOrderType = localStorage.getItem('selectedOrderType');
-    if (fallbackOrderType) {
-      this.selectedOrderType = fallbackOrderType;
     }
   }
-}
 
 
   openCartItemsModal() {
