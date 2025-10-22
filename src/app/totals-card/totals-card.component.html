@@ -1,15 +1,39 @@
-
-<div class="totals mt-3">
-  <div *ngFor="let pay of paymentSummary"
-       class="payment-card ">
-    <!-- <div class="icon-wrapper ">
+@if (paymentSummary) {
+<div class="card p-4 my-3">
+  <div class="totals">
+    <div *ngFor="let pay of paymentSummary" class="payment-card ">
+      <!-- <div class="icon-wrapper ">
       {{ pay.icon }}
     </div> -->
-    <div class="payment-body">
-      <div class="method">{{ pay.name }}</div>
-      <div class=" ">{{ pay.value|number }} ج.م</div>
-    </div>
-  <!-- </div> -->
-  
-</div>
+      <div class="payment-body">
+        <div class="method">{{ pay.name }}</div>
+        <div class=" ">{{ pay.value|number }} ج.م</div>
+      </div>
+      <!-- </div> -->
 
+    </div>
+    <!-- <div class="payment-card d-flex justify-content-center align-items-center">
+  <div  class="payment-body">
+  <span class="method">في المطعم</span>
+  <p>52 </p>
+
+  </div>
+</div>
+<div class="payment-card d-flex justify-content-center align-items-center">
+  <div  class="payment-body">
+  <span class="method">سفري </span>
+  <p>58 </p>
+
+  </div>
+</div>
+<div class="payment-card d-flex justify-content-center align-items-center">
+  <div  class="payment-body">
+  <span class="method"> ديليفري</span>
+  <p>50 </p>
+
+  </div>
+</div>
+ -->
+  </div>
+</div>
+}

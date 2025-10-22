@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthService } from '../services/auth.service';
 import { Router } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
+import { SysteminfoService } from '../services/systeminfo.service';
 
 interface Country {
   code: string;
@@ -26,6 +27,8 @@ interface Country {
 export class LoginComponent implements OnInit {
   translate = inject(TranslateService);
   selectedCountry: Country = { code: '+20', flag: "assets/images/egypt.png" };
+  storedSystemInfo = localStorage.getItem('systemInfo');
+
   dropdownOpen = false;
   loginData = {
     email_or_phone: '',
@@ -38,7 +41,7 @@ export class LoginComponent implements OnInit {
   isPasswordVisible: boolean = false;
   EmailOrPhone: boolean = true
   passwordError!: string
-  constructor(public authService: AuthService, private router: Router) {
+  constructor(public authService: AuthService, private router: Router, private systemService: SysteminfoService) {
     /*     this.translate.get('login.selectCountry').subscribe((res: string) => {
           console.log('rsssssss',res)
           this.selectedCountry = {
@@ -48,10 +51,17 @@ export class LoginComponent implements OnInit {
         }); */
   }
 
-  ngOnInit() {
-    this.fetchCountries();
-  }
+  // ngOnInit() {
+  //   this.fetchCountries();
+  // }
+  systemInfo: any;
 
+
+  async ngOnInit() {
+    this.fetchCountries();
+    this.systemInfo = await this.systemService.getSystemInfo();
+    console.log("System info loaded in login:", this.systemInfo);
+  }
   fetchCountries() {
     this.authService.getCountries().subscribe({
       next: (response) => {
@@ -172,6 +182,14 @@ export class LoginComponent implements OnInit {
       return;
     }
 
+    // ✅ جيب الماك من localStorage
+    let macAddress = null;
+    const storedSystemInfo = localStorage.getItem('systemInfo');
+    if (storedSystemInfo) {
+      const systemInfo = JSON.parse(storedSystemInfo);
+      const validMac = systemInfo.macAddresses.find((m: any) => m.mac !== "00:00:00:00:00:00");
+      macAddress = validMac ? validMac.mac : null;
+    }
     // const loginPayload = {
     //   ...(!isEmailInput && { country_code: this.selectedCountry.code }),
     //   email_or_phone: this.loginData.email_or_phone,
@@ -186,6 +204,10 @@ export class LoginComponent implements OnInit {
       ...(isEmailInput ? {} : { country_code: '+20' }),
       email_or_phone: this.loginData.email_or_phone,
       password: this.loginData.password,
+      ...(macAddress ? { mac: macAddress } : {}) 
+
+
+
     };
 
 

@@ -102,7 +102,7 @@
             type="button" [ngClass]="{
       'is-invalid':
         (submitted || sumbitSearch) && form.controls['country_code'].invalid
-    }"> 
+    }">
             <span class="px-1">{{  form.controls['country_code'].value?.code || 'اختر الدولة' }}</span>
             <!-- <span class="px-1">{{ selectedCountry.code || 'اختر الدولة' }}</span> -->
             <img *ngIf="form.controls['country_code'].value" [src]="form.controls['country_code'].value?.flag||selectedCountry.flag" class="flag-icon" />
@@ -160,7 +160,7 @@
             class="invalid-feedback d-block text-danger small">
             <div *ngIf="submitted && form.controls['whatsapp_number'].invalid"
               class="invalid-feedback d-block text-danger small">
-              <small *ngIf="form.controls['whatsapp_number']?.errors?.['required']">
+              <small *ngIf=" form.controls['whatsapp_number']?.errors?.['required']">
                 رقم الواتساب مطلوب
               </small>
               <small *ngIf="form.controls['whatsapp_number']?.errors?.['leadingSpace']">
@@ -176,7 +176,7 @@
           <div ngbDropdown class="custom-dropdown dropdown w-100">
             <div ngbDropdownToggle
               class="selected-option dropdown-toggle text-muted d-flex align-items-center justify-content-between"
-              type="button"> 
+              type="button">
               <span class="px-1">{{  form.controls['whatsapp_number_code'].value?.code|| selectedWhatsappCountry.code||'اختر الدولة' }}</span>
               <!-- <span class="px-1">{{ form.controls['whatsapp_number_code'].value.code|| selectedWhatsappCountry.code||'اختر الدولة' }}</span> -->
               <img *ngIf=" form.controls['whatsapp_number_code']" [src]="form.controls['whatsapp_number_code'].value?.flag||selectedWhatsappCountry.flag" class="flag-icon" />
@@ -210,7 +210,7 @@
     @if((selectedAddress||userStoredAddress) &&
     userAddNewAddress==false){
     <div class="mb-3">
-      <app-select width="100%" [options]="userStoredAddress" [control]="selectedAddressControl"
+      <app-select width="100%" [options]="userStoredAddress"   [control]="selectedAddressControl"
         placeholder="يرجى اختيار عنوان التوصيل"></app-select>
     </div>
     }@else if(userAddNewAddress) {

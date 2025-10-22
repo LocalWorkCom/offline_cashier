@@ -355,7 +355,6 @@
                         <small>{{ order.order_number }}</small>
                       </p>
                     </div>
-
                     <div class="d-flex flex-wrap justify-content-between mb-2">
                       <h6 class="text-muted mb-0">
                         {{ order.order_items_count }} عناصر
@@ -432,11 +431,35 @@
             @for (pill of statusGroup.pills.slice(0, 4); track pill.order_number) {
             <div class="col-sm-6 col-md-6 col-lg-6 col-xl-3 mb-4">
               <div class="card h-100">
-                <div class="d-flex flex-wrap justify-content-between mb-2">
+                <div class="d-flex flex-wrap justify-content-between">
                   <p class="text-dark"><small>رقم الطلب</small></p>
                   <p class="text-muted"><small>{{ pill.order_number }}</small></p>
                 </div>
 
+                @if(pill.table_number){
+                <div class="d-flex flex-wrap justify-content-between mt-2">
+                  <p class="text-dark"><small>رقم الطاولة</small></p>
+                  <p class="text-muted fw-bold mb-0">
+                    <small>{{ pill.table_number }}</small>
+                  </p>
+                </div>
+                }
+                <div class="d-flex align-items-center justify-content-end my-2">
+                  @if (pill.payment_status == "unpaid") {
+                  <small class="rounded-circle bg-main d-flex justify-content-center align-items-center text-white ms-1"
+                    style="width: 16px;height: 16px;">
+                    <i class="fa-solid fa-xmark fs-6"></i>
+                  </small>
+                  <small class="main-color fw-bold">غير مدفوع</small>
+                  } @else {
+                  <small
+                    class="rounded-circle bg-success d-flex justify-content-center align-items-center text-white ms-1"
+                    style="width: 16px;height: 16px;">
+                    <i class="fa-solid fa-check fs-6"></i>
+                  </small>
+                  <small class="text-success fw-bold">مدفوع</small>
+                  }
+                </div>
                 <div class="d-flex justify-content-between mb-2">
                   <h6 class="text-muted">
                     <small>{{ pill.order_items_count }} عناصر</small>
@@ -453,9 +476,8 @@
                     تفاصيل الفاتورة
                   </a>
                   @if ((pill.invoice_type != 'credit_note') && (pill.invoice_print_status !== 'done') &&
-                  (pill.invoice_print_status !== 'cancelled')) { 
-                    <a
-                    class="btn-static text-main btn-transparent border-1 w-100 py-2"
+                  (pill.invoice_print_status !== 'cancelled')) {
+                  <a class="btn-static text-main btn-transparent border-1 w-100 py-2"
                     [routerLink]="'/pill-edit/' + pill.invoice_id" routerLinkActive="active"
                     [routerLinkActiveOptions]="{ exact: true }">
                     تعديل الفاتورة
