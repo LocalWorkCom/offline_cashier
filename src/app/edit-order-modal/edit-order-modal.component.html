@@ -1,0 +1,172 @@
+@if(loading){
+<div class="m-5 p-5 text-center fs-2 text-success fw-bold">
+    <span><i class="fa-solid fa-spinner fa-spin px-3"></i></span>
+    <span>جاري التحميل ...</span>
+</div>
+}
+@else{
+<section>
+    <div class="modal-header border-0 justify-content-end">
+        <button type="button" class="btn btn-close" aria-label="Close"
+            (click)="actvModal.dismiss('Cross click')"></button>
+    </div>
+    <div class="modal-body centered">
+        @if (!selectedItem?.sizes?.length && !selectedItem?.addon_categories?.length) {
+        <h2 class="text-center mb-4"> تفاصيل الوجبة </h2>
+        <div class="smallProduct">
+            <figure class="smallProduct-img m-0">
+                <img [src]="selectedItem?.dish.image ? selectedItem?.dish.image : 'assets/images/no-image.png'" alt />
+                <figcaption class="pt-3">
+                    <h5>{{selectedItem?.dish.name}}</h5>
+                    <small class="text-muted d-block py-2">
+                        {{selectedItem?.dish.description }} </small>
+                    <h4 class="fw-bold"> {{ finalPrice }} {{selectedItem?.dish.currency_symbol}}</h4>
+                    <div class="qty mt-3 d-flex justify-content-center align-items-center">
+                        <span class="pro-dec me-3" (click)="decreaseQty()">
+                            <i class="fa fa-minus" aria-hidden="true"></i>
+                        </span>
+                        <span class="num fs-4" id="quantity">{{ selectedItem?.dish.quantity }}</span>
+                        <span class="pro-inc ms-3" (click)="increaseQty()">
+                            <i class="fa fa-plus" aria-hidden="true"></i>
+                        </span>
+                    </div>
+                </figcaption>
+            </figure>
+        </div>
+        <button class="btn reversed w-100 main-color mt-3" (click)="showAddNote()" [hidden]="addNote">
+            أضف ملاحظة
+        </button>
+
+        <div class="notes my-3" *ngIf="addNote">
+            <h4>
+                <i class="fas fa-file-alt main-color fa-xs"></i>
+                لديك اى ملاحظات اضافيه؟
+            </h4>
+            <div class="form-floating mt-3">
+                <textarea class="form-control" placeholder="من فضلك اكتب ملاحظتك" id="note1" style="height: 100px"
+                    [(ngModel)]="note"> <!-- bind directly to variable -->
+    </textarea>
+                <label for="note1">من فضلك اكتب ملاحظتك</label>
+
+                
+            </div>
+        </div>
+          <button type="button" class="btn w-100 mt-3" [disabled]="editLoading" (click)="editItem()">
+                        <span *ngIf="editLoading">جاري التعديل...</span>
+                        <span *ngIf="!editLoading"> تعديل</span>
+                    </button>
+        } @else {
+        <h2 class="text-center mb-4">تفاصيل الوجبة</h2>
+        <div class="row mx-0">
+            <div class="col-md-6">
+                <div class="product-details">
+                    @if (selectedItem?.sizes && selectedItem?.sizes?.length > 0) {
+                    <h4>اختيارات من الحجم</h4>
+                    <div class="choices my-3">
+                        <form>
+                            @for (size of selectedItem?.sizes; track $index) {
+                            <div class="form-check">
+                                <div>
+                                    <input class="form-check-input" type="radio" name="options" [checked]="size.checked"
+                                        (change)="selectSize(size)" id="option{{ selectedItem?.id }}-{{ $index }}" />
+                                    <label class="form-check-label" for="option{{ selectedItem?.id }}-{{ $index }}">
+                                        {{ size.name }}
+                                    </label>
+                                </div>
+                                <span>{{ size.price }} {{ size.currency_symbol }}</span>
+                            </div>
+                            }
+                        </form>
+                    </div>
+                    }
+                    @for (category of selectedItem?.addon_categories; track $index) {
+                    <h4>إضافات</h4>
+                    @if (addonValidationErrors[category.id]) {
+                    <p class="mb-1 text-muted">
+                        (حدد على الأقل {{ category.min_addons }} وبحد أقصى {{ category.max_addons }})
+                    </p>
+                    }
+                    <div class="choices my-3">
+                        <form>
+                            @for (addon of category.addons; track $index) {
+                            <div class="form-check">
+                                <div>
+                                    <input class="form-check-input" type="checkbox" name="addons"
+                                        id="addon{{ selectedItem?.id }}-{{ $index }}" [checked]="addon.checked"
+                                        (change)="toggleAddon(addon, $event, category)" />
+
+
+                                    <label class="form-check-label" for="addon{{ selectedItem?.id }}-{{ $index }}">
+                                        {{ addon.name }}
+                                    </label>
+                                </div>
+                                <span>{{ addon.price }} {{ addon.currency_symbol }}</span>
+                            </div>
+                            }
+                        </form>
+
+                        <!-- Warning message if minimum addons are not met -->
+                        <!-- @if (addonValidationErrors[category.id]) {
+        <p class="text-danger mt-2">
+          يجب اختيار على الأقل {{ category.min_addons }} إضافات لهذه الفئة.
+        </p>
+      } -->
+                    </div>
+                    }
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="product">
+                    <figure class="product-img m-0">
+                        <img [src]="selectedItem?.dish.image ? selectedItem?.dish.image : 'assets/images/no-image.png'"
+                            alt />
+                        <figcaption class="pt-3">
+                            <h5>{{ selectedItem?.dish.name }}</h5>
+                            <small class="text-muted d-block py-2">
+                                {{ selectedItem?.dish.description }}
+                            </small>
+                            <h4 class="fw-bold"> {{ finalPrice }} {{selectedItem?.dish.currency_symbol}}</h4>
+                            <div class="qty mt-3 d-flex justify-content-center align-items-center">
+                                <span class="pro-dec me-3" (click)="decreaseQty()">
+                                    <i class="fa fa-minus" aria-hidden="true"></i>
+                                </span>
+                                <span class="num fs-4" id="quantity">{{ selectedItem?.dish.quantity }}</span>
+                                <span class="pro-inc ms-3" (click)="increaseQty()">
+                                    <i class="fa fa-plus" aria-hidden="true"></i>
+                                </span>
+                            </div>
+                        </figcaption>
+                    </figure>
+                    <button class="btn reversed w-100 main-color mt-3" (click)="showAddNote()" *ngIf="!addNote">
+                        أضف ملاحظة
+                    </button>
+                    <div class="notes my-3" *ngIf="addNote">
+                        <h4>
+                            <i class="fas fa-file-alt main-color fa-xs"></i>
+                            لديك اى ملاحظات اضافيه؟
+                        </h4>
+                        <div class="form-floating mt-3">
+                            <textarea class="form-control" placeholder="من فضلك اكتب ملاحظتك" id="note2"
+                                style="height: 100px" [(ngModel)]="note"></textarea>
+                            <label for="note2">من فضلك اكتب ملاحظتك</label>
+                        </div>
+                    </div>
+
+                    <button type="button" class="btn w-100 mt-3" [disabled]="editLoading" (click)="editItem()">
+                        <span *ngIf="editLoading">جاري التعديل...</span>
+                        <span *ngIf="!editLoading"> تعديل</span>
+                    </button>
+
+                </div>
+
+            </div>
+        </div>
+        }
+        @if (this.error) {
+        <p class="alert alert-danger mt-3 text-center fw-bold">
+            {{this.error}}
+        </p>
+        }
+    </div>
+</section>
+}

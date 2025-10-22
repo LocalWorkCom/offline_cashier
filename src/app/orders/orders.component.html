@@ -74,7 +74,7 @@
         <div *ngIf="filteredOrders.length > 0; else noItems">
           <div class="row m-0">
             <div *ngFor="let order of filteredOrders" class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4">
-              <div class="card p-2 d-flex flex-column justify-content-end h-100"
+              <div class="card p-2 d-flex flex-column justify-content-between h-100"
                 [class.card-updated]="order.recentlyUpdated">
                 <!-- Update Indicator -->
                 <div *ngIf="order.recentlyUpdated" class="position-absolute top-0 start-0 translate-middle">
@@ -107,7 +107,7 @@
                   </div>
                   <small class="fw-bold">{{ order.tableNumber }}</small>
                 </div>
-                <div class="date d-flex justify-content-between px-1 mb-1">
+                <div class="date d-flex justify-content-between mb-1">
                   <h6 class="text-muted">
                     <small>{{
                       order.created_at | date : "d MMM"
@@ -120,7 +120,7 @@
                   </h6>
                 </div>
 
-                <div class="num-items d-flex justify-content-between px-1 mb-1 border-bottom">
+                <div class="num-items d-flex justify-content-between mb-1 border-bottom">
                   <h6 class="text-muted"><small>عدد العناصر</small></h6>
                   <h6 class="text-muted">
                     <small>{{ order.order_items_count }}</small>
@@ -128,7 +128,7 @@
                 </div>
 
                 <!-- Order ID -->
-                <div class="order-number d-flex justify-content-between px-1 mb-1">
+                <div class="order-number d-flex justify-content-between mb-1">
                   <h6>رقم الطلب</h6>
                   <h6 class="text-muted">{{ order.orderId }}</h6>
                 </div>
@@ -212,6 +212,7 @@
                   تفاصيل الطلب
                 </a>
                 <a (click)="loadOrderToCart(order.orderId)" class="btn fs-6 w-100 mt-auto bg-success">
+
                   إستكمال الطلب
                 </a>
               </div>
@@ -225,8 +226,8 @@
 
       <ng-template #dynamicOrders>
         <div class="row m-0">
-          <div *ngFor="let order of filteredOrders" class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4">
-            <div class="card p-2 d-flex flex-column h-100 justify-content-end"
+          <div *ngFor="let order of filteredOrders" class="col-xl-4 col-md-6 col-sm-12 mb-4">
+            <div class="card p-2 d-flex flex-column h-100 justify-content-between"
               [class.card-updated]="order.recentlyUpdated" [id]="'order-' + order.order_details?.order_number">
               <!-- Update Indicator -->
               <div *ngIf="order.recentlyUpdated" class="position-absolute top-0 start-0 translate-middle">
@@ -252,7 +253,15 @@
                     }}
                   </span>
                 </h5>
-                <h6>
+                <div>
+                  @if(order.order_details.status != 'cancelled' && order.order_details.payment_status == "unpaid"){
+                  <span class="badge text-dark">
+                    <button type="button" class="bg-main rounded-circle p-0 border-0 ms-1"
+                      style="width: 20px; height: 20px" (click)="continueOrder(order)">
+                      <i class="fa-solid fa-plus"></i>
+                    </button>
+                    إضافة طبق</span>
+                  }
                   <span [ngClass]="{
                     'btn-static-secondary':
                       order.order_details.status === 'completed',
@@ -284,8 +293,10 @@
                     }" class="me-1"></i>
                     {{ getStatusText(order.order_details.status) }}
                   </span>
-                </h6>
+                </div>
+
               </div>
+              
               <div *ngIf="order.order_details.order_type === 'dine-in'"
                 class="d-flex justify-content-between align-items-center btn-static-warning px-2 py-1  rounded text-dark">
                 <div class="d-flex align-items-center gap-1">
@@ -293,7 +304,23 @@
                 </div>
                 <small class="fw-bold">{{ order.order_details.table_number }}</small>
               </div>
-              <div class="order-number d-flex justify-content-between px-1 mb-1">
+              <div class="d-flex align-items-center justify-content-end my-2">
+                @if (order.order_details.payment_status == "unpaid") {
+                <span class="rounded-circle bg-main d-flex justify-content-center align-items-center text-white ms-1"
+                  style="width: 20px;height: 20px;">
+                  <i class="fa-solid fa-xmark fs-6"></i>
+                </span>
+                <span class="main-color fw-bold">غير مدفوع</span>
+                } @else {
+                <span class="rounded-circle bg-success d-flex justify-content-center align-items-center text-white ms-1"
+                  style="width: 20px;height: 20px;">
+                  <i class="fa-solid fa-check"></i>
+                </span>
+                <span class="text-success fw-bold">مدفوع</span>
+                }
+
+              </div>
+              <div class="order-number d-flex justify-content-between mb-1">
                 <h6>رقم الطلب</h6>
                 <h6 class="text-muted"
                   [innerHTML]="highlightMatch(order.order_details?.order_number, searchOrderNumber)">
@@ -313,11 +340,11 @@
 
               </div>
 
-              <div class="date d-flex justify-content-between px-1 mb-1">
+              <div class="date d-flex justify-content-between mb-1">
                 <h6 class="text-muted">
-                  <small>{{
-                    order.order_details.created_at | date : "d MMM"
-                    }}</small>
+                  <small>
+                    {{order.order_details.created_at | date : "d MMM"}}
+                  </small>
                 </h6>
                 <h6 class="text-muted">
                   <small>{{
@@ -326,55 +353,104 @@
                 </h6>
               </div>
 
-              <div class="num-items d-flex justify-content-between px-1 mb-1 border-bottom">
+              <div class="num-items d-flex justify-content-between mb-1 border-bottom">
                 <h6 class="text-muted"><small>عدد العناصر</small></h6>
                 <h6 class="text-muted">
                   <small>{{ order.order_details.order_items_count }}</small>
                 </h6>
               </div>
 
-              <div class="order-items border-bottom py-1 mb-1 flex-grow-1">
-                <div
-                  class="d-flex justify-content-between align-items-center align-items-md-center gap-1 px-1 mb-2"
+              <div class="order-items border-bottom py-1 mb-1 flex-grow-1"
+                [ngClass]="order.order_items.length > 2 ? 'overflow-scroll' :'overflow-visible'">
+                <div class="d-flex justify-content-between align-items-center align-items-md-center gap-1 px-1 mb-2"
                   *ngFor="let item of order.order_items">
                   <!-- Item Name & Quantity -->
+
                   <h6 class="mb-0 fs-6 text-break">
                     <span class="badge  bg-lightgray text-dark me-1">{{ item.quantity }}</span>
                     x <span [innerHTML]="highlightMatch(item.dish_name, searchOrderNumber)"></span>
                   </h6>
-
-                    <!-- Price -->
-                     <div class="d-flex flex-xl-row flex-column align-items-center">
-                    <h6 class="mb-0 fs-6 fs-sm-6 fs-md-5 text-start text-md-end text-nowrap mb-2 mx-1">
-                      {{ item.total_dish_price }} {{ order.currency_symbol }}
-                    </h6>
+                  <h6 class="mb-0 fs-6 fs-sm-6 fs-md-5 text-start text-md-end text-nowrap mb-2 mx-1">
+                    {{ item.total_dish_price }} {{ order.currency_symbol }}
+                  </h6>
+                  <!-- Price -->
+                  <div class="d-flex flex-xl-row flex-column align-items-end">
                     <span [ngClass]="{
-                    'btn-static-success':
-                      item?.dish_status === 'completed',
-                    'btn-static-warning':
-                      item?.dish_status === 'pending',
-                      'btn-static-primary': item?.dish_status === 'on_way',
-                      'btn-static-purple': item?.dish_status === 'delivered',
-
-                    'btn-static-danger':
-                      item?.dish_status === 'cancel',
-                    'btn-static-progress':
-                      item?.dish_status === 'inprogress'
-                  }" class="badge rounded text-dark">
-                    <i [ngClass]="{
-                      'fa-solid': true,
-                      'fa fa-check-circle text-success':
+                      'btn-static-success':
                         item?.dish_status === 'completed',
-                      'fa fa-clock text-warning':
+                      'btn-static-warning':
                         item?.dish_status === 'pending',
-                      'fa fa-times-circle text-danger':
-                        item?.dish_status === 'cancel',
+                        'btn-static-primary': item?.dish_status === 'on_way',
+                        'btn-static-purple': item?.dish_status === 'delivered',
 
-                      'fa-spinner text-progress ':
+                      'btn-static-danger':
+                        item?.dish_status === 'cancel',
+                      'btn-static-progress':
                         item?.dish_status === 'inprogress'
-                    }" class="me-1"></i>
-                    {{ getStatusText(item.dish_status) }}
+                    }" class="badge rounded text-dark">
+                      <i [ngClass]="{
+                        'fa-solid': true,
+                        'fa fa-check-circle text-success':
+                          item?.dish_status === 'completed',
+                        'fa fa-clock text-warning':
+                          item?.dish_status === 'pending',
+                        'fa fa-times-circle text-danger':
+                          item?.dish_status === 'cancel',
+
+                        'fa-spinner text-progress ':
+                          item?.dish_status === 'inprogress'
+                      }" class="me-1"></i>
+                      {{ getStatusText(item.dish_status) }}
+
                     </span>
+                    @if (order.order_details.payment_status == 'unpaid')
+                    {
+                    @if(item?.dish_status == 'pending' || item?.dish_status == 'inprogress' ){
+                    <div class="dropdown">
+                      <a class="dropdown-toggle mx-2" type="button" id="dropdownMenu2" data-bs-toggle="dropdown"
+                        aria-expanded="false" data-bs-display="static">
+                        <i class="fa-solid fa-ellipsis-vertical"></i> </a>
+                      <ul class="dropdown-menu" aria-labelledby="dropdownMenu2">
+                        <li> <button class="dropdown-item" type="button" (click)="openEditModal(item)">
+                            تعديل الطلب
+                          </button></li>
+                        <li><button class="dropdown-item" type="button" data-bs-toggle="modal"
+                            [attr.data-bs-target]="'#deleteConfirmModal' + item.order_detail_id">
+                            حذف الطلب</button></li>
+                      </ul>
+                    </div>
+                    }
+                    }
+                    <div class="modal modal-sm fade" [id]="'deleteConfirmModal' + item.order_detail_id" tabindex="-1"
+                      aria-hidden="true">
+                      <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content ">
+                          <div class="modal-header border-0">
+                            <button type="button" class="btn-close btn" data-bs-dismiss="modal"
+                              aria-label="إغلاق"></button>
+                          </div>
+                          <div class="modal-body">
+                            <img class="cancel-icon" src="assets/images/ix_error-filled.png" />
+                            <h1 class="modal-title fs-5 text-center my-3"> هل أنت متأكد أنك تريد حذف هذا الطلب؟
+                            </h1>
+                            <div class="alert alert-danger my-2 text-center" *ngIf="errMsg">{{errMsg}}</div>
+                            <div class="d-flex justify-content-center">
+                              <button type="button" class="btn reversed main-color w-50 mx-3" data-bs-dismiss="modal"
+                                aria-label="Close">
+                                لا
+                              </button>
+                              <button type="button" class="btn w-50 mx-3" [disabled]="removeLoading"
+                                (click)="removeDish(item.order_detail_id , item.quantity , order)">
+                                <span *ngIf="removeLoading">جاري الحذف...</span>
+                                <span *ngIf="!removeLoading"> نعم</span>
+                              </button>
+                            </div>
+
+                          </div>
+
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -464,13 +540,13 @@
                                   <p class="text-muted">{{order.order_details.order_number}}</p>
                                 </div>
                                 @for (item of order.order_items; track $index; let i = $index;) {
-                                <div class="my-2">
+                                <div class="my-2" *ngIf="item.dish_status !== 'cancel'">
                                   <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                       <span><input class="form-check-input" type="checkbox" value="" id="checkDefault"
                                           [(ngModel)]="item.isChecked" [id]="'check-' + i"></span>
                                       <span> x {{ item.selectedQuantity ?? item.quantity }}
-                                        <span>{{item.dish_name}}</span></span>
+                                        <span>{{item.dish_name}} </span></span>
                                     </div>
                                     <div class="d-flex align-items-center justify-content-between">
                                       <span class="px-3 fw-bold">{{ item.total_dish_price }} {{ order.currency_symbol
@@ -531,8 +607,12 @@
                           {{ cancelSuccessMessage }}
                         </div>
 
-                        <button type="button" class="btn w-100 my-2 py-2" (click)="submitCancelRequest(order)">تأكيد
-                        </button>
+                        <button type="button" class="btn w-100 my-2 py-2" (click)="submitCancelRequest(order)"
+                          [disabled]="isSubmitting">
+                          <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+                          {{ isSubmitting ? 'جاري الإرسال...' : 'إرسال طلب المرتجع' }} </button>
+
+
                         @if (errorMessage) {
                         <p class="text-center alert" [ngClass]="status_order? 'alert-success' : 'alert-danger' ">
                           {{errorMessage}}</p>
@@ -575,6 +655,31 @@
           <button type="button" class="btn reversed main-color w-50 mx-3" data-bs-dismiss="modal">إلغاء</button>
           <button type="button" class="btn w-50 mx-3" (click)="confirmDelete()">تأكيد الحذف</button>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- <ng-template #messageModal let-modal>
+    <p class="alert text-center fw-bold mb-0" [ngClass]="messageType === 'success' ? 'alert-success' : 'alert-danger'">{{ message }}</p>
+</ng-template> -->
+<ng-template #messageModal let-modal>
+  <div class="d-flex justify-content-center align-items-center h-100">
+    <p class="alert text-center fw-bold mb-0 w-100"
+      [ngClass]="messageType === 'success' ? 'alert-success' : 'alert-danger'">
+      {{ message }}
+    </p>
+  </div>
+</ng-template>
+
+<div class="modal fade" id="successMessageModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content ">
+      <div class="modal-header border-0">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img class="success-icon" src="assets/images/donee.png" />
+        <h1 class="modal-title fs-5 text-center my-3">{{successMessage}}</h1>
       </div>
     </div>
   </div>

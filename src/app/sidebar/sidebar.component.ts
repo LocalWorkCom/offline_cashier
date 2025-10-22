@@ -11,7 +11,7 @@ import { BalanceService } from '../services/balance.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import * as bootstrap from 'bootstrap';
 import { HttpClientModule } from '@angular/common/http';
-import { lastValueFrom, Observable } from 'rxjs';
+import { from, lastValueFrom, Observable } from 'rxjs';
 import { baseUrl } from '../environment'; 
 
 @Component({
@@ -38,6 +38,7 @@ export class SidebarComponent implements OnInit {
   enteredCash: number | string | null = null;
   errorMessage: string | null = null;
   branch: string | null = null;
+  branchData:any;
   currency_Symbol: string | null = null;
   imageUrl: string | null = null;
   showDeficitMessage = false;
@@ -72,9 +73,10 @@ export class SidebarComponent implements OnInit {
   ) {}
 
   ngOnInit() { 
-/*      this.printt(19)
- */    if (isPlatformBrowser(this.platformId)) {
+/*      this.printt(2)
+ */      if (isPlatformBrowser(this.platformId)) {
       this.branch = localStorage.getItem('branch') || null;
+      this.branchData = JSON.parse(localStorage.getItem('branchData')!) || null;
       this.currency_Symbol = localStorage.getItem('currency_symbol');
       this.imageUrl = localStorage.getItem('imageUrl');
     }
@@ -603,23 +605,70 @@ proceedToLogout(): void {
 
 //   }
 TotalPriceOFPrint:number=0;
+waitForImagesInSection(selector: string): Promise<void> {
+  return new Promise((resolve) => {
+    const section = document.querySelector(selector);
+    if (!section) return resolve();
+
+    const images = Array.from(section.querySelectorAll('img'));
+    if (images.length === 0) return resolve();
+
+    let loadedCount = 0;
+    const checkAllLoaded = () => {
+      loadedCount++;
+      if (loadedCount === images.length) {
+        resolve();
+      }
+    };
+
+    images.forEach(img => {
+      if (img.complete) {
+        checkAllLoaded();
+      } else {
+        img.addEventListener('load', checkAllLoaded);
+        img.addEventListener('error', checkAllLoaded); // Handle broken images
+      }
+    });
+  });
+}
+printTime:any
 print(id: number): void {
   this.balanceService.PrintBalance(id).pipe(
     tap((res) => {
       if (!res?.data) {
         throw new Error('No data received for printing');
       }
-      this.printingData = res.data;      
-    }), 
-    switchMap(() => { 
-      return this.waitForRender('#print-section');
+      this.printingData = res.data;
+       this.printTime = new Date().toLocaleString();
     }),
-    take(1)  
+    switchMap(() => from(this.waitForRender('#print-section'))),
+    switchMap(() => from(this.waitForImagesInSection('#print-section'))),
+    take(1)
   ).subscribe({
     next: () => this.executePrint(),
     error: (err) => console.error('Print error:', err)
   });
 }
+
+// print(id: number): void {
+//   this.balanceService.PrintBalance(id).pipe(
+//     tap((res) => {
+//       console.log('fatema',res);
+      
+//       if (!res?.data) {
+//         throw new Error('No data received for printing');
+//       }
+//       this.printingData = res.data;      
+//     }), 
+//     switchMap(() => { 
+//       return this.waitForRender('#print-section') && this.waitForRender('#print-section img');;
+//     }),
+//     take(1)  
+//   ).subscribe({
+//     next: () => this.executePrint(),
+//     error: (err) => console.error('Print error:', err)
+//   });
+// }
 private waitForRender(selector: string): Observable<Element> {
   return new Observable<Element>(observer => {
     const element = document.querySelector(selector);
@@ -664,8 +713,7 @@ private waitForRender(selector: string): Observable<Element> {
 
  location.reload(); 
   }
-
- /*  printt(id: number): void {
+  printt(id: number): void {
   this.balanceService.PrintBalance(id).subscribe({
     next: (res) => {console.log(res,"aaaaaaaaaaaaaaaaaaaa") 
       this.printingData=res.data
@@ -674,12 +722,12 @@ private waitForRender(selector: string): Observable<Element> {
         this.TotalPriceOFPrint += element.price
         
       });
-      console.log(this.TotalPriceOFPrint);
+      console.log(this.TotalPriceOFPrint); this.printTime = new Date().toLocaleString();
       
     },
     error: (err) => console.error('Print error:', err)
   });
-}    */
+} 
   closeModal(): void {
     const modal = document.getElementById('transferMoneyModal');
     if (modal) {

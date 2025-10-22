@@ -81,3 +81,477 @@ input[type=number] {
       font-size: 16px; 
       text-align:center;
 }
+
+/* hanan front */
+/* تنسيقات خاصة بنافذة الإكرامية (Tip Modal) */
+
+/* ملخص المبالغ الأولية */
+.tip-summary-initial {
+    padding: 10px 15px;
+    border-radius: 8px;
+    background-color: #f7f7f7; /* خلفية فاتحة للملخص */
+    border: 1px solid #eee;
+}
+
+.tip-summary-initial .summary-line {
+    padding: 3px 0;
+}
+
+/* تنسيق خيارات الإكرامية (Tip Options - الأزرار/البطاقات) */
+.tip-options-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tip-option-card {
+    padding: 15px;
+    border: 2px solid #ccc; /* حدود عادية */
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+    background-color: #fff;
+}
+
+/* حالة الاختيار (Selected State) */
+.tip-option-card.active-tip {
+    border-color: #FE0000; /* الحدود باللون الأحمر (الأساسي) */
+    background-color: #FFF2F2; /* خلفية فاتحة جدًا لنفس اللون */
+    box-shadow: 0 0 5px rgba(254, 0, 0, 0.2);
+}
+
+/* حالة عدم التفعيل (Disabled State) */
+.tip-option-card.disabled-tip {
+    cursor: not-allowed;
+    opacity: 0.6;
+    background-color: #f0f0f0;
+}
+
+.tip-option-card .title {
+    font-size: 1.1rem;
+    color: #333;
+}
+
+.tip-option-card .description {
+    font-size: 0.95rem;
+}
+
+/* زر تكملة الدفع (Confirm Button) */
+.confirm-tip-btn {
+    background-color: #FE0000 !important; /* لون أحمر */
+    border-color: #FE0000 !important;
+    font-weight: bold;
+    padding: 10px 20px;
+}
+
+/* تنسيقات حقل الإدخال للإكرامية اليدوية */
+.tip-input-group .form-control {
+    border-color: #ccc; /* الحدود العادية رمادية */
+    border-right: 0; /* الحدود العادية رمادية */
+}
+
+
+/* تنسيق الـ input-group-text ليكون باللون الأحمر */
+.tip-input-group .input-group-text {
+    background-color: white !important; 
+    /* النص: أحمر */
+    color: #FE0000 !important; 
+    /* الحدود: حمراء كما في التصميم */
+    border-color: #FE0000 !important; 
+    font-weight: bold;
+    border-left: 0;/* حدود حمراء */
+}
+
+/* تنسيق حقل الإدخال عند التركيز (Focus) */
+.tip-input-group .form-control:focus {
+    border-color: #FE0000 !important; 
+    box-shadow: 0 0 0 0.25rem rgba(254, 0, 0, 0.25) !important; 
+    z-index: 3; /* للتأكد من أنه يغطي الحدود الأخرى */
+}
+
+/* لضمان أن الحدود الداخلية بين الـ input والـ span تكون حمراء عند التركيز */
+.tip-input-group .form-control:focus + .input-group-text {
+    border-color: #FE0000 !important;
+}
+.tip-input-group .form-control:focus {
+    border-right: 1px solid #FE0000 !important;
+}
+.tip-input-group .form-control:focus ~ .input-group-text {
+    border-left: 1px solid #FE0000 !important;
+}
+/* تنسيق عام لأزرار الدفع الجديدة (Labels) */
+.payment-options {
+    width: 100%;
+}
+
+.payment-option-label {
+    flex-grow: 1; /* للسماح لها بالتوسع بالتساوي */
+    text-align: center;
+    padding: 10px 15px;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    border: 1px solid #ccc; /* الحدود العادية رمادية فاتحة */
+    color: #333; /* لون النص العادي */
+    background-color: #f8f9fa; /* خلفية فاتحة عادية */
+    transition: all 0.2s ease-in-out;
+    font-weight: 600;
+}
+
+/* حالة الاختيار (Active/Selected State) */
+.payment-option-label.active-payment {
+    /* تطبيق الألوان التي تستخدمها: النص والحدود باللون الأحمر */
+    background-color: #FFF2F2; /* خلفية فاتحة جدًا للون الأحمر */
+    color: #FE0000; /* لون النص باللون الأحمر */
+    border-color: #FE0000; /* الحدود باللون الأحمر */
+    box-shadow: 0 0 5px rgba(254, 0, 0, 0.2);
+}
+
+.payment-suggestion-label {
+    flex-grow: 1;
+    text-align: center;
+    padding: 10px 5px;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    border: 1px solid #FE0000; /* حدود باللون الأخضر (للدلالة على الدفع/الإنجاز) */
+    color: #FE0000; /* نص باللون الأخضر */
+    background-color: #FFF2F2; /* خلفية خضراء فاتحة */
+    transition: all 0.2s ease-in-out;
+    font-size: 0.9rem; /* تصغير الخط قليلاً ليناسب المساحة */
+    font-weight: 600;
+    line-height: 1.3;
+    min-height: 60px; /* لضمان حجم موحد */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* **تنسيق حالة الاقتراح المختار (Active State) الجديد** */
+.payment-suggestion-label.active-payment-suggestion {
+    /* يمكن استخدام نفس تنسيقات .payment-option-label.active-payment */
+    background-color: #FFF2F2; /* خلفية فاتحة جدًا للون الأحمر */
+    color: #FE0000; /* لون النص باللون الأحمر */
+    border-color: #FE0000; /* الحدود باللون الأحمر */
+    box-shadow: 0 0 5px rgba(254, 0, 0, 0.4); /* ظل أوضح قليلاً */
+    /* ضمان عدم تفعيلها إذا كانت disabled بالرغم من كل شيء */
+    opacity: 1;
+}
+
+/* للتأكد من أن حالة الاختيار تلغي حالة عدم التفعيل في حال التداخل */
+.payment-suggestion-label.disabled-suggestion.active-payment-suggestion {
+    /* يجب عدم حدوث ذلك منطقياً، لكن كاحتياط */
+    opacity: 0.5;
+    background-color: #f0f0f0;
+    border-color: #ccc;
+    color: #333;
+    box-shadow: none;
+}
+
+
+/* تأثير التمرير (Hover) */
+.payment-suggestion-label:hover:not(.disabled-suggestion) {
+    background-color: #FFF2F2;
+    border-color: #FE0000;
+    color: #FE0000;
+}
+
+/* حالة عدم التفعيل (Disabled State) */
+.payment-suggestion-label.disabled-suggestion {
+    cursor: not-allowed;
+    opacity: 0.5;
+    background-color: #FFF2F2;
+    color: #333;
+    border-color: #ccc;
+}
+/* تنسيق خطوط الملخص لضمان العرض الأفقي والتوزيع */
+.final-summary-box .summary-line {
+    /* أساس التوزيع الأفقي: Flexbox */
+    display: flex;
+    /* لتوزيع العناصر على الأطراف (الاسم في اليمين، القيمة في اليسار) */
+    justify-content: space-between; 
+    /* للتأكد من محاذاة العناصر بشكل عمودي */
+    align-items: center; 
+    padding: 0.3rem 0;
+    font-size: 1rem;
+    width: 100%; /* تأكد أن السطر يأخذ العرض الكامل للبوكس */
+}
+
+/* تنسيق المجموع الفرعي (المستحق) */
+.final-summary-box .sub-total {
+    font-size: 1.1rem;
+    color: #555;
+    padding-top: 0.5rem;
+}
+
+/* تنسيق المجموع الكلي مع الإكرامية */
+.final-summary-box .grand-total {
+    font-size: 1.25rem;
+    padding-top: 0.5rem;
+    /* للتأكد من وجود خط فاصل سميك كما في التصميم */
+    border-top: 2px solid #FE0000; 
+}
+
+/* ====== خيارات الدفع (كاش / فيزا / كاش+فيزا) ====== */
+.payment-option-label {
+  flex: 1;
+  min-width: 100px;
+  text-align: center;
+  padding: 12px;
+  border: 2px solid #eee;
+  border-radius: 12px;
+  cursor: pointer;
+  background-color: #fff;
+  color: #333;
+  font-weight: 600;
+  transition: all 0.3s ease;
+}
+
+.payment-option-label:hover {
+  border-color: #dc3545;
+  color: #dc3545;
+}
+
+.active-payment {
+  background-color: #dc3545;
+  border-color: #dc3545;
+}
+
+/* ====== اقتراحات الدفع (50 / 100 / المبلغ نفسه) ====== */
+.payment-suggestions-container {
+  margin-bottom: 15px;
+}
+
+.payment-suggestion-label {
+  flex: 1;
+  min-width: 80px;
+  text-align: center;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+  border: 1px solid #ddd;
+}
+
+.payment-suggestion-label:hover {
+  background: #e9ecef;
+  border-color: #bbb;
+}
+
+.disabled-suggestion {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+/* ====== input الدفع ====== */
+#cashPaymentInput.form-control {
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+  font-size: 1.1rem;
+  border: 1px solid #ddd;
+  transition: border-color 0.3s;
+}
+
+#cashPaymentInput.form-control:focus {
+  border-color: #dc3545;
+  box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.25);
+}
+
+/* ====== الملخص النهائي ====== */
+.final-summary-box {
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 12px;
+}
+
+.summary-line {
+  display: flex;
+  justify-content: space-between;
+  margin: 6px 0;
+  font-size: 0.95rem;
+}
+
+.sub-total {
+  font-size: 1rem;
+  font-weight: 600;
+}
+/* تنسيق عام للنموذج */
+.tip-modal-header {
+  direction: rtl;
+}
+
+.modal-body {
+  direction: rtl;
+}
+
+.modal-footer {
+  direction: rtr;
+}
+
+/* خيارات الإكرامية أفقياً */
+.tip-options-horizontal {
+  direction: rtl;
+}
+
+.tip-option-horizontal {
+  border: 2px solid #dee2e6;
+  border-radius: 12px;
+  padding: 15px 10px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background-color: #f8f9fa;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+}
+
+.tip-option-horizontal:hover {
+  border-color: #adb5bd;
+  background-color: #e9ecef;
+}
+
+.active-tip-horizontal {
+  border-color: #dc3545;
+  background-color: #fff5f5;
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.1);
+}
+
+.disabled-tip-horizontal {
+  opacity: 0.5;
+  cursor: not-allowed;
+  background-color: #f8f9fa;
+}
+
+.disabled-tip-horizontal:hover {
+  border-color: #dee2e6;
+  background-color: #f8f9fa;
+}
+
+/* تصميم ال radio buttons */
+.option-radio {
+  width: 20px;
+  height: 20px;
+  border: 2px solid #adb5bd;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  transition: all 0.3s ease;
+}
+
+.active-tip-horizontal .option-radio {
+  border-color: #dc3545;
+}
+
+.radio-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background-color: transparent;
+  transition: all 0.3s ease;
+}
+
+.radio-dot-active {
+  background-color: #dc3545;
+}
+
+.radio-dot-disabled {
+  background-color: #adb5bd;
+}
+
+.option-title {
+  font-size: 0.9rem;
+  color: #495057;
+}
+
+.active-tip-horizontal .option-title {
+  color: #dc3545;
+}
+
+/* حقل الإدخال */
+.tip-input-section {
+  direction: rtl;
+}
+
+.tip-input-group .form-control {
+  text-align: right;
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+.tip-input-group .input-group-text {
+  background-color: #f8f9fa;
+  font-weight: bold;
+}
+
+/* ملخص الإكرامية */
+.tip-summary-final {
+  background-color: #f8f9fa;
+  border: 1px solid #e9ecef;
+}
+
+/* زر التأكيد */
+.confirm-tip-btn {
+  font-size: 1.1rem;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.confirm-tip-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.confirm-tip-btn:not(:disabled):hover {
+  /* transform: translateY(-2px); */
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+  color: #f8f9fa !important;
+}
+
+/* الخطوط الفاصلة */
+.summary-line {
+  padding: 8px 0;
+}
+
+.border-top {
+  border-top: 1px solid #dee2e6 !important;
+}
+/* تنسيق الحالة العادية لخيار الإكرامية */
+.tip-radio-option .form-check-label {
+    border: 1px solid #ddd; /* حدود رمادية فاتحة في الحالة العادية */
+    background-color: #fff; /* خلفية بيضاء عادية */
+    color: #333;
+    cursor: pointer;
+    transition: all 0.2s ease-in-out;
+}
+/* حالة الاختيار (Active State) */
+.tip-radio-option.active .form-check-label {
+    /* تطبيق الألوان الحمراء كما في .active-payment */
+    background-color: #FFF2F2; /* خلفية فاتحة جدًا للون الأحمر (#FE0000) */
+    color: #FE0000; /* لون النص باللون الأحمر */
+    border-color: #FE0000; /* الحدود باللون الأحمر */
+    box-shadow: 0 0 5px rgba(254, 0, 0, 0.2);
+}
+
+/* تأثير التمرير (لتحسين تجربة المستخدم) */
+.tip-radio-option:hover .form-check-label {
+    border-color: #fca0a0; /* لون أحمر خفيف عند التمرير */
+}
+
+/* تنسيق النصوص */
+.text-muted {
+  color: #6c757d !important;
+}
+
+.text-success {
+  color: #198754 !important;
+}
+
+.text-danger {
+  color: #dc3545 !important;
+}

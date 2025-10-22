@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { OrdersComponent } from './orders/orders.component';
+import { NewOrdersComponent } from './new-orders/new-orders.component';
 import { HomeComponent } from './home/home.component';
 import { LoginComponent } from './login/login.component';
 import { TablesComponent } from './tables/tables.component';
@@ -32,7 +33,8 @@ export const routes: Routes = [
     canActivateChild: [AuthGuard],
     children: [
       { path: 'home', component: HomeComponent },
-      { path: 'orders', component: OrdersComponent }, 
+      // { path: 'orders', component: OrdersComponent },
+      { path: 'orders', component: NewOrdersComponent },
       { path: 'tables', component: TablesComponent },
       { path: 'pills', component: PillsComponent },
       { path: 'delivery-details', component: DeliveryDetailsComponent },

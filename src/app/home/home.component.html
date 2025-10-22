@@ -1,16 +1,17 @@
 <div class="row m-0 mb-5">
   <div class="col-md-8">
     <app-totals-card></app-totals-card>
-    <app-orders-card></app-orders-card>
-    <app-categories></app-categories>
+    <!-- <app-orders-card></app-orders-card> -->
+    <!-- <app-categories></app-categories> -->
+    <app-newcategories></app-newcategories>
   </div>
   <app-side-details class="col-md-4"></app-side-details>
 </div>
 
 <!-- login-logout cash amount modal  -->
 
- <div *ngIf="showModal" class="modal fade" id="welcomeModal" tabindex="-1" aria-labelledby="welcomeModalLabel"
-     data-bs-backdrop="static" data-bs-keyboard="false">
+<div *ngIf="showModal" class="modal fade" id="welcomeModal" tabindex="-1" aria-labelledby="welcomeModalLabel"
+  data-bs-backdrop="static" data-bs-keyboard="false">
   <div class="modal-dialog modal-dialog-centered modal-md">
     <div class="modal-content">
       <div class="modal-body">
@@ -19,7 +20,7 @@
         </div>
         <h5 class="text-dark fw-bold text-center">مرحبا</h5>
         <h5 class="main-color fw-bold text-center">فرع <span>{{ branch || 'الفرع' }} </span></h5>
-        
+
         <div class="card p-3 my-2">
           <div class="row">
             <div class="col-12">
@@ -28,8 +29,9 @@
                 <span>{{ shiftData?.time || 'التوقيت' }}</span>
               </p>
             </div>
-            <div class="col-6 user d-flex justify-content-start"> 
-              <img [src]="imageUrl" (error)="imageUrl = 'assets/images/user.png'" alt="User Image" class="user-img-modal">
+            <div class="col-6 user d-flex justify-content-start">
+              <img [src]="imageUrl" (error)="imageUrl = 'assets/images/user.png'" alt="User Image"
+                class="user-img-modal">
               <div class="user-info">
                 <h6>{{ fullName || 'الاسم' }}</h6>
                 <h6 class="text-muted"><small>كاشير</small></h6>
@@ -56,40 +58,36 @@
           <p class="fw-bold">يوجد {{ deficitMessage }} في الوردية السابقة</p>
           <p class="text-muted small">يرجى مراجعة الإدارة بشأن هذا الفارق</p>
         </div>
-<div *ngIf="currentBalance" class="card p-3 my-2">
-  <h6 class="fw-bold text-center">رصيد الورديه السابقة</h6>
-  <div class="row">
-    <div class="col-4 text-center">
-      <small class="text-muted">نقدي</small>
-      <h6 class="fw-bold">{{ currentBalance.cash | number:'1.2-2' }} {{ currency_Symbol }}</h6>
-    </div>
-    <div class="col-4 text-center">
-      <small class="text-muted">إلكتروني</small>
-      <h6 class="fw-bold">{{ currentBalance.visa | number:'1.2-2' }} {{ currency_Symbol }}</h6>
-    </div>
-    <div class="col-4 text-center">
-      <small class="text-muted">الإجمالي</small>
-      <h6 class="fw-bold">{{ currentBalance.total | number:'1.2-2' }} {{ currency_Symbol }}</h6>
-    </div>
-  </div>
-</div>
+        <div *ngIf="currentBalance" class="card p-3 my-2">
+          <h6 class="fw-bold text-center">رصيد الورديه السابقة</h6>
+          <div class="row">
+            <div class="col-4 text-center">
+              <small class="text-muted">نقدي</small>
+              <h6 class="fw-bold">{{ currentBalance.cash | number:'1.2-2' }} {{ currency_Symbol }}</h6>
+            </div>
+            <div class="col-4 text-center">
+              <small class="text-muted">إلكتروني</small>
+              <h6 class="fw-bold">{{ currentBalance.visa | number:'1.2-2' }} {{ currency_Symbol }}</h6>
+            </div>
+            <div class="col-4 text-center">
+              <small class="text-muted">الإجمالي</small>
+              <h6 class="fw-bold">{{ currentBalance.total | number:'1.2-2' }} {{ currency_Symbol }}</h6>
+            </div>
+          </div>
+        </div>
         <!-- Input Form (only shown when no deficit) -->
-        <div  class="data p-2">
+        <div class="data p-2">
           <h5>من فضلك أدخل البيانات التالية</h5>
           <h6 class="text-danger">برجاء ادخال المبلغ الموجود في الدرج حاليا لفتح الوردية</h6>
-          
+
           <!-- Cash Input -->
           <h6><small><i class="fa-solid fa-money-bill main-color ms-1"></i>المبلغ النقدي الحالي</small></h6>
           <div class="input-group position-relative mb-3">
-            <input type="number" class="form-control" id="cashInput"
-                   [(ngModel)]="enteredCash" [readOnly]="showDeficitMessage"
-                   (input)="onCashInput($event)"
-                   [class.is-invalid]="errorMessage"
-                   placeholder="أدخل المبلغ النقدي"
-                   required
-                   min="0">
+            <input type="number" class="form-control" id="cashInput" [(ngModel)]="enteredCash"
+              [readOnly]="showDeficitMessage" (input)="onCashInput($event)" [class.is-invalid]="errorMessage"
+              placeholder="أدخل المبلغ النقدي" required min="0">
           </div>
-          
+
           <!-- Visa Input -->
           <h6><small><i class="fa-solid fa-credit-card main-color ms-1"></i>إجمالي مدفوعات البطاقة</small></h6>
           <!-- <div class="input-group position-relative mb-3">
@@ -101,29 +99,24 @@
                    required
                    min="0">
           </div> -->
-<div *ngIf="visaTotal !== null" class="input-group position-relative mb-3">
-  <h4 class="form-control ">{{ visaTotal }} {{ currency_Symbol }}</h4>
-</div>
+          <div *ngIf="visaTotal !== null" class="input-group position-relative mb-3">
+            <h4 class="form-control ">{{ visaTotal }} {{ currency_Symbol }}</h4>
+          </div>
           <div *ngIf="errorMessage" class="mt-2">
             <small class="text-danger">{{ errorMessage }}</small>
           </div>
         </div>
       </div>
-      
+
       <div class="modal-footer border-0">
         <!-- Start Shift Button (shown when deficit exists) -->
-        <button *ngIf="showDeficitMessage" 
-                type="button" 
-                class="btn btn-primary w-100 py-2" 
-                (click)="startShift()">
+        <button *ngIf="showDeficitMessage" type="button" class="btn btn-primary w-100 py-2" (click)="startShift()">
           <i class="fas fa-play-circle me-2"></i>بدء الوردية
         </button>
-        
+
         <!-- Save Button (shown when no deficit) -->
-        <button *ngIf="!showDeficitMessage" 
-                type="button" 
-                class="btn btn-primary w-100 py-2" 
-                (click)="validateAndSave()">
+        <button *ngIf="!showDeficitMessage" type="button" class="btn btn-primary w-100 py-2"
+          (click)="validateAndSave()">
           <i class="fas fa-save me-2"></i>حفظ
         </button>
       </div>
