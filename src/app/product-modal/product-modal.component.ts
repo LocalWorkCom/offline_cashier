@@ -62,12 +62,86 @@ export class ProductModalComponent implements OnInit {
     this.productService.updateSavedOrders(updatedOrders);
   }
 
+//  getProduct(product: any): any {
+//   if (localStorage.getItem('selectedOrderType') === 'talabat') {
+//     if (Array.isArray(product.Id_menus_integrations) && product.Id_menus_integrations.length > 0) {
+//       for (let integration of product.Id_menus_integrations) {
+//         if (integration.name_en?.toLowerCase().includes('talabat')) {
+//           console.log('✅ Talabat integration found:', integration);
+
+//           // تحديث القيم داخل الكائن بدون كسر الـ keys الأصلية
+//           Object.assign(product, {
+//             price: integration.menus_integration_dishs?.[0]?.price || product.price,
+//             sizes: integration.menus_integration_dish_sizes || [],
+//             addon_categories: integration.menus_integration_dish_addons || [],
+//           });
+//         }
+//       }
+//     }
+//   }
+
+//   return product;
+// }
+
+getProduct(product: any): any {
+
+  console.log('Original Product:', product);
+  if (localStorage.getItem('selectedOrderType') === 'talabat') {
+    if (Array.isArray(product.Id_menus_integrations) && product.Id_menus_integrations.length > 0) {
+      for (let integration of product.Id_menus_integrations) {
+        if (integration.name_en?.toLowerCase().includes('talabat')) {
+          console.log('✅ Talabat integration found:', integration);
+
+          // تحديث السعر الأساسي للطبق
+          const newPrice = integration.menus_integration_dishs?.[0]?.price || product.price;
+          product.price = parseFloat(newPrice);
+
+          // تحديث الأسعار داخل الـ sizes
+          if (Array.isArray(product.sizes) && Array.isArray(integration.menus_integration_dish_sizes)) {
+            product.sizes = product.sizes.map((size: any) => {
+              const matchedSize = integration.menus_integration_dish_sizes.find(
+                (s: any) => s.branch_menu_size_id === size.id
+              );
+              if (matchedSize) {
+                return { ...size, price: parseFloat(matchedSize.price) };
+              }
+              return size;
+            });
+          }
+
+          // تحديث الأسعار داخل الـ addons
+          if (Array.isArray(product.addon_categories) && Array.isArray(integration.menus_integration_dish_addons)) {
+            product.addon_categories = product.addon_categories.map((category: any) => ({
+              ...category,
+              addons: category.addons.map((addon: any) => {
+                const matchedAddon = integration.menus_integration_dish_addons.find(
+                  (a: any) => a.branch_menu_addon_id === addon.id
+                );
+                if (matchedAddon) {
+                  return { ...addon, price: parseFloat(matchedAddon.price) };
+                }
+                return addon;
+              }),
+            }));
+          }
+        }
+      }
+    }
+  }
+
+  return product;
+}
+
 
   ngOnInit(): void {
     console.log('iit');
-    
+
     this.productService.product$.subscribe(product => {
-      this.selectedProduct = product;
+      // this.selectedProduct = product;
+     this.selectedProduct = this.getProduct(product);
+    //  console.log('Selected Product in Modal after change:', this.selectedProduct);
+
+
 
       if (!this.selectedSize && this.selectedProduct?.sizes?.length) {
         const defaultSize = this.selectedProduct.sizes.find((size: { default_size: any; }) => size.default_size);
@@ -394,10 +468,67 @@ export class ProductModalComponent implements OnInit {
   //   setTimeout(() => this.isAdding = false, 300); // reset guard
   // }
 
-  handleAddToCart() {
-    if (this.isAdding) return;   // ⛔ block double fire
-    this.isAdding = true;
+  // handleAddToCart() {
+  //   if (this.isAdding) return;   // ⛔ block double fire
+  //   this.isAdding = true;
 
+  //   const currentUrl = this.router.url;
+  //   console.log('🧭 Current route:', currentUrl);
+
+  //   const isHoldOrder = currentUrl.includes('/onhold-orders/');
+  //   console.log(isHoldOrder ? '📝 Adding to ON HOLD order' : '🛍️ Adding to NEW cart');
+
+  //   if (!this.canAddToCart()) {
+  //     console.warn("🚨 Cannot add to cart: Minimum addon requirement not met!");
+  //     this.isAdding = false;
+  //     return;
+  //   }
+
+  //   // Prepare the cart item for IndexedDB
+  //   const cartItem = this.prepareCartItemForIndexedDB(isHoldOrder);
+
+  //   if (navigator.onLine) {
+  //     // Online: Use the original functions and also store in IndexedDB
+  //     try {
+  //       if (isHoldOrder) {
+  //         this.addToHoldCart(); // Call the original method
+  //       } else {
+  //         this.addToCart(); // Call the original method
+  //       }
+
+  //       // Also store in IndexedDB with sync status
+  //       cartItem.isSynced = true;
+  //       this.dbService.addToCart(cartItem)
+  //         .then(() => {
+  //           console.log('✅ Item also stored in IndexedDB');
+  //         })
+  //         .catch(error => {
+  //           console.error('❌ Error storing in IndexedDB:', error);
+  //         });
+
+  //     } catch (error) {
+  //       console.error('❌ Online cart failed, storing offline:', error);
+
+  //       // Fallback to offline storage
+  //       cartItem.isSynced = false;
+  //       this.storeOfflineCartItem(cartItem, isHoldOrder);
+  //     }
+
+  //     this.cdr.detectChanges();
+  //   } else {
+  //     // Offline: Store in IndexedDB only
+  //     cartItem.isSynced = false;
+  //     this.storeOfflineCartItem(cartItem, isHoldOrder);
+  //     this.cdr.detectChanges();
+  //   }
+
+  //   setTimeout(() => this.isAdding = false, 300); // reset guard
+  // }
+  async handleAddToCart() {
+  if (this.isAdding) return; // ⛔ Block double click
+  this.isAdding = true;
+
+  try {
     const currentUrl = this.router.url;
     console.log('🧭 Current route:', currentUrl);
 
@@ -406,50 +537,39 @@ export class ProductModalComponent implements OnInit {
 
     if (!this.canAddToCart()) {
       console.warn("🚨 Cannot add to cart: Minimum addon requirement not met!");
-      this.isAdding = false;
       return;
     }
 
-    // Prepare the cart item for IndexedDB
     const cartItem = this.prepareCartItemForIndexedDB(isHoldOrder);
 
     if (navigator.onLine) {
-      // Online: Use the original functions and also store in IndexedDB
-      try {
-        if (isHoldOrder) {
-          this.addToHoldCart(); // Call the original method
-        } else {
-          this.addToCart(); // Call the original method
-        }
-
-        // Also store in IndexedDB with sync status
-        cartItem.isSynced = true;
-        this.dbService.addToCart(cartItem)
-          .then(() => {
-            console.log('✅ Item also stored in IndexedDB');
-          })
-          .catch(error => {
-            console.error('❌ Error storing in IndexedDB:', error);
-          });
-
-      } catch (error) {
-        console.error('❌ Online cart failed, storing offline:', error);
-
-        // Fallback to offline storage
-        cartItem.isSynced = false;
-        this.storeOfflineCartItem(cartItem, isHoldOrder);
+      // Online mode
+      if (isHoldOrder) {
+        await this.addToHoldCart();
+      } else {
+        await this.addToCart();
       }
 
-      this.cdr.detectChanges();
+      cartItem.isSynced = true;
+      await this.dbService.addToCart(cartItem);
+      console.log('✅ Item stored in IndexedDB (Online)');
     } else {
-      // Offline: Store in IndexedDB only
+      // Offline mode
       cartItem.isSynced = false;
-      this.storeOfflineCartItem(cartItem, isHoldOrder);
-      this.cdr.detectChanges();
+      await this.storeOfflineCartItem(cartItem, isHoldOrder);
+      console.log('📦 Stored offline in IndexedDB');
     }
 
-    setTimeout(() => this.isAdding = false, 300); // reset guard
+    this.cdr.detectChanges();
+
+  } catch (error) {
+    console.error('❌ Error while adding to cart:', error);
+  } finally {
+    // ✅ Reset the guard only after all operations finish
+    setTimeout(() => this.isAdding = false, 1000);
   }
+}
+
   // Helper method to prepare cart item for IndexedDB
   private prepareCartItemForIndexedDB(isHoldOrder: boolean = false): any {
     // Prepare dish details

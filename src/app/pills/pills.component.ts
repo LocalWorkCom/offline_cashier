@@ -829,7 +829,7 @@ onScroll(): void {
       if (match) {
         this.highlightedPillId = `pill-${match.order_number}`;
 
-        // 👇 Set the order type tab (e.g. dine-in, Delivery, Takeaway)
+        // 👇 Set the order type tab (e.g. dine-in, Delivery, Takeaway , talabat)
         this.orderTypeFilter = match.order_type;
 
         // 👇 Re-filter pills again now that the tab changed

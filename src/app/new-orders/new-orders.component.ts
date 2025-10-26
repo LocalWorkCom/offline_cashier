@@ -69,7 +69,7 @@ export class NewOrdersComponent implements OnInit, OnDestroy {
   hasMore = true;
 
   // Constants for performance
-  readonly ORDER_TYPES = ['All', 'dine-in', 'Takeaway', 'Delivery'];
+  readonly ORDER_TYPES = ['All', 'dine-in', 'Takeaway', 'Delivery', 'talabat'];
   readonly STATUSES = ['all', 'pending', 'in_progress', 'readyForPickup', 'completed', 'cancelled', 'static'];
 
   // TrackBy Functions
@@ -419,7 +419,8 @@ async syncAllorders(): Promise<void> {
       'All': 'الكل',
       'Takeaway': 'إستلام',
       'Delivery': 'توصيل',
-      'dine-in': 'فى المطعم'
+      'dine-in': 'فى المطعم',
+      'talabat': 'طلبات',
     };
     return labels[type] || type;
   }
@@ -427,6 +428,7 @@ async syncAllorders(): Promise<void> {
   getOrderTypeImage(type: string): string {
     const images: { [key: string]: string } = {
       'Takeaway': 'assets/images/out.png',
+      'talabat': 'assets/images/out.png',
       'Delivery': 'assets/images/delivery.png',
       'dine-in': 'assets/images/in.png'
     };
@@ -488,6 +490,7 @@ async syncAllorders(): Promise<void> {
     const translations: { [key: string]: string } = {
       'dine-in': 'فى المطعم',
       'Takeaway': 'إستلام',
+      'talabat': 'طلبات',
       'Delivery': 'توصيل'
     };
     return translations[type] || type;
