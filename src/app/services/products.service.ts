@@ -211,7 +211,7 @@ loadCart(): void {
 
   clearCart(): void {
     this.cart = [];
-    localStorage.removeItem('cart');
+    // localStorage.removeItem('cart');
     this.saveCart();
   }
 

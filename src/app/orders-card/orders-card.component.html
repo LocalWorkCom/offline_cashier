@@ -324,6 +324,24 @@
             </ng-template>
           </button>
         </li>
+
+        <!-- talabat -->
+        <li class="nav-item" role="presentation">
+          <button class="nav-link sub mb-2" id="pills-talabat-tab" data-bs-toggle="pill"
+            data-bs-target="#pills-talabat" [ngClass]="{ active: selectedOrderType === 'talabat' }"
+            (click)="selectOrderType('talabat')">
+            <figure class="mb-0">
+              <img src="assets/images/out.png" alt="" />
+            </figure>
+
+            <div *ngIf="selectedStatusx === 'static'; else dynamictalabat">
+              <span> طلبات ({{ orderTypeStaticCounts['talabat'] }})</span>
+            </div>
+            <ng-template #dynamictalabat>
+              <span> طلبات ({{ orderTypeCounts['talabat'] }})</span>
+            </ng-template>
+          </button>
+        </li>
       </ul>
 
       <!-- Status Filter -->

@@ -73,7 +73,7 @@ export class OrdersComponent implements OnDestroy {
   selectedOrderTypeStatus: string = 'All';
   // selectedOrderTypeStatus: string = 'dine-in';
   filteredCartItems: any;
-  allowedOrderTypes = ['Takeaway', 'Delivery', 'dine-in'];
+  allowedOrderTypes = ['Takeaway', 'Delivery', 'dine-in' , 'talabat'];
   allowedStatuses = [
     'pending',
     'in_progress',
@@ -774,7 +774,8 @@ filterOrdersInput(): void {
       case 'readyForPickup':
         if (
           this.selectedOrderTypeStatus === 'Delivery' ||
-          this.selectedOrderTypeStatus === 'Takeaway'
+          this.selectedOrderTypeStatus === 'Takeaway'||
+        this.selectedOrderTypeStatus === 'talabat' 
         ) {
           return 'جاهزة للاستلام';
         } else {
@@ -803,6 +804,7 @@ filterOrdersInput(): void {
       'dine-in': 'فى المطعم',
       Takeaway: ' إستلام',
       Delivery: 'توصيل',
+      talabat: 'طلبات',
     };
 
     return translations[type] || type;
@@ -845,10 +847,11 @@ filterOrdersInput(): void {
       Takeaway: 'assets/images/out.png',
       Delivery: 'assets/images/delivery.png',
       'dine-in': 'assets/images/in.png',
+      'talabat': 'assets/images/in.png',
     };
 
     return (
-      images[type as 'Takeaway' | 'Delivery' | 'dine-in'] ||
+      images[type as 'Takeaway' | 'Delivery' | 'dine-in' | 'talabat'] ||
       'assets/images/default.png'
     );
   }
@@ -1035,6 +1038,7 @@ filterOrdersInput(): void {
       Takeaway: ' إستلام',
       Delivery: 'توصيل',
       'dine-in': 'فى المطعم',
+      'talabat': 'طلبات',
     };
     return translations[orderType] || orderType;
   }

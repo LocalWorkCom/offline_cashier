@@ -1,5 +1,6 @@
 @if(!currentOrderData){
-@if (selectedOrderType === 'Takeaway'|| selectedOrderType === 'dine-in') {
+@if (selectedOrderType === 'Takeaway'|| selectedOrderType === 'dine-in' ||
+selectedOrderType === 'talabat') {
 <div class="card mt-3 p-3" data-bs-toggle="modal" data-bs-target="#clientModal">
   <div class="d-flex justify-content-between align-items-center">
     <div>
@@ -78,6 +79,21 @@
           <img src="assets/images/delivery.png" alt />
         </figure>
         <span>توصيل</span>
+      </button>
+    </li>
+
+    <!-- talabat Tab -->
+    <li class="nav-item mb-2" role="presentation">
+      <button class="nav-link sub"
+        [class.active]="selectedOrderType === 'talabat'"
+        (click)="selectOrderType('talabat')"
+        id="pills-side-out-tab" data-bs-toggle="pill"
+        data-bs-target="#pills-side-out" type="button" role="tab"
+        aria-controls="pills-side-out" aria-selected="false">
+        <figure class="mb-0">
+          <img src="assets/images/out.png" alt />
+        </figure>
+        <span> طلبات</span>
       </button>
     </li>
   </ul>
@@ -171,6 +187,13 @@
       </div>
       }
     </div>
+    <!-- talabat Tab Pane -->
+    <div class="tab-pane fade" [class.active]="selectedOrderType === 'talabat'"
+      [class.show]="selectedOrderType === 'talabat'" id="pills-side-out"
+      role="tabpanel"
+      aria-labelledby="pills-side-out-tab">
+      <!-- talabat content (if any) -->
+    </div>
   </div>
 </div>
 }@else if(currentOrderData) {
@@ -231,6 +254,19 @@
           <img src="assets/images/delivery.png" alt />
         </figure>
         <span>توصيل</span>
+      </button>
+    </li>
+
+    <!-- talabat -->
+    <li class="nav-item mb-2">
+      <button
+        class="nav-link sub {{ currentOrderData.order_details?.order_type === 'talabat' ? 'active' : '' }}"
+        type="button"
+        [disabled]="currentOrderData.order_details?.order_type !== 'talabat'">
+        <figure class="mb-0">
+          <img src="assets/images/out.png" alt />
+        </figure>
+        <span>طلبات</span>
       </button>
     </li>
   </ul>
@@ -405,7 +441,8 @@
         </p>
         }
       </li>
-      } @if (selectedOrderType === 'في المطعم' || selectedOrderType ===
+      }
+      @if (selectedOrderType === 'في المطعم' || selectedOrderType ===
       'dine-in') {
       <li class="order-list">
         <p>رسوم الخدمة</p>
@@ -446,7 +483,9 @@
       }
     </ul>
 
-    @if (branchData?.tax_application === false) {
+    @if (branchData?.tax_application === false && (selectedOrderType !==
+    'talabat' && selectedOrderType !== 'طلبات'))
+    {
     <div class="message bg-lightYellow p-2 rounded-3 mb-3">
       <small>
         تضاف ضريبة القيمة المضافة
@@ -618,13 +657,15 @@
 
 
       </div> -->
+
       <div
-        *ngIf="(currentOrderData && currentOrderData.total_due > 0) || getCartTotal() > 0"
+        *ngIf="(currentOrderData && currentOrderData.total_due > 0) || getCartTotal() > 0 "
         class="my-3">
 
-        <!-- خيارات الدفع -->
+        <!-- خياات الدفع -->
         <div class="card p-3 mb-3">
-          <div class="d-flex justify-content-between flex-wrap gap-2">
+          <div class="d-flex justify-content-between flex-wrap gap-2"
+            *ngIf="selectedOrderType !== 'talabat'">
             <label class="payment-option-label"
               [class.active-payment]="selectedPaymentMethod === 'cash'"
               (click)="selectPaymentMethod('cash')">
@@ -633,11 +674,11 @@
             </label>
 
             <label class="payment-option-label"
-                [class.active-payment]="selectedPaymentMethod === 'credit'"
-                (click)="selectPaymentMethod('credit')">
-                <i class="fab fa-cc-visa me-1"></i>
-                <span class="label-text">فيزا</span>
-              </label>
+              [class.active-payment]="selectedPaymentMethod === 'credit'"
+              (click)="selectPaymentMethod('credit')">
+              <i class="fab fa-cc-visa me-1"></i>
+              <span class="label-text">فيزا</span>
+            </label>
 
             <label class="payment-option-label"
               [class.active-payment]="selectedPaymentMethod === 'cash + credit'"
@@ -646,58 +687,68 @@
               <span class="label-text">كاش + فيزا</span>
             </label>
           </div>
+          <ng-container
+            *ngIf="selectedOrderType === 'talabat' && selectedPaymentStatus === 'paid'">
+            <label class="payment-option-label"
+              [class.active-payment]="selectedPaymentMethod === 'cash'"
+              (click)="selectPaymentMethod('cash')">
+              <i class="fas fa-money-bill-wave me-1"></i>
+              <span class="label-text">كاش</span>
+            </label>
+          </ng-container>
         </div>
+        <ng-container
+          *ngIf="selectedOrderType !== 'talabat' && selectedPaymentStatus === 'paid'">
+          <!-- إدخال الدفع عند اختيار كاش أو كاش + فيزا -->
+          <div *ngIf="(selectedPaymentMethod === 'cash' || selectedPaymentMethod === 'credit') && selectedOrderType !== 'talabat'">
+            <div class="card p-3 mt-3">
 
-        <!-- إدخال الدفع عند اختيار كاش أو كاش + فيزا -->
-        <div
-          *ngIf="selectedPaymentMethod === 'cash' || selectedPaymentMethod === 'credit'">
-          <div class="card p-3 mt-3">
+              <ng-container *ngIf="getCartTotal() as billAmount">
+                <!-- اقتراحات المبالغ -->
+                <div
+                  class="d-flex justify-content-between flex-wrap gap-2 payment-suggestions-container">
 
-            <ng-container *ngIf="getCartTotal() as billAmount">
-              <!-- اقتراحات المبالغ -->
-              <div
-                class="d-flex justify-content-between flex-wrap gap-2 payment-suggestions-container">
-
-                <label class="payment-suggestion-label"
-                  [class.active-payment-suggestion]="selectedSuggestionType === 'billAmount'"
-                  (click)="selectPaymentSuggestionAndOpenModal('billAmount', billAmount, billAmount, tipModalContent)">
-                  <strong>{{ billAmount | number:'1.0-0' }} ج.م</strong>
-                </label>
-
-                <ng-container
-                  *ngIf="getNearestAmount(billAmount, 50) as amount50">
                   <label class="payment-suggestion-label"
-                    [class.disabled-suggestion]="amount50 < billAmount"
-                    [class.active-payment-suggestion]="selectedSuggestionType === 'amount50'"
-                    (click)="selectPaymentSuggestionAndOpenModal('amount50', billAmount, amount50, tipModalContent)">
-                    <strong>{{ amount50 | number:'1.0-0' }} ج.م</strong>
+                    [class.active-payment-suggestion]="selectedSuggestionType === 'billAmount'"
+                    (click)="selectPaymentSuggestionAndOpenModal('billAmount', billAmount, billAmount, tipModalContent)">
+                    <strong>{{ billAmount | number:'1.0-0' }} ج.م</strong>
                   </label>
-                </ng-container>
 
-                <ng-container
-                  *ngIf="getNearestAmount(billAmount, 100) as amount100">
-                  <label class="payment-suggestion-label"
-                    [class.disabled-suggestion]="amount100 < billAmount"
-                    [class.active-payment-suggestion]="selectedSuggestionType === 'amount100'"
-                    (click)="selectPaymentSuggestionAndOpenModal('amount100', billAmount, amount100, tipModalContent)">
-                    <strong>{{ amount100 | number:'1.0-0' }} ج.م</strong>
-                  </label>
-                </ng-container>
-              </div>
+                  <ng-container
+                    *ngIf="getNearestAmount(billAmount, 50) as amount50">
+                    <label class="payment-suggestion-label"
+                      [class.disabled-suggestion]="amount50 < billAmount"
+                      [class.active-payment-suggestion]="selectedSuggestionType === 'amount50'"
+                      (click)="selectPaymentSuggestionAndOpenModal('amount50', billAmount, amount50, tipModalContent)">
+                      <strong>{{ amount50 | number:'1.0-0' }} ج.م</strong>
+                    </label>
+                  </ng-container>
 
-              <!-- إدخال مبلغ يدوي -->
-              <div class="card p-3 mb-3">
-                <label for="cashPaymentInput" class="form-label fw-bold">حدد
-                  الدفع</label>
-                <input type="number" class="form-control"
-                  [(ngModel)]="cashPaymentInput"
-                  [ngModelOptions]="{standalone: true}"
-                  placeholder="المبلغ المدفوع"
-                  (change)="handleManualPaymentBlur(billAmount, tipModalContent)">
-              </div>
-            </ng-container>
+                  <ng-container
+                    *ngIf="getNearestAmount(billAmount, 100) as amount100">
+                    <label class="payment-suggestion-label"
+                      [class.disabled-suggestion]="amount100 < billAmount"
+                      [class.active-payment-suggestion]="selectedSuggestionType === 'amount100'"
+                      (click)="selectPaymentSuggestionAndOpenModal('amount100', billAmount, amount100, tipModalContent)">
+                      <strong>{{ amount100 | number:'1.0-0' }} ج.م</strong>
+                    </label>
+                  </ng-container>
+                </div>
+
+                <!-- إدخال مبلغ يدوي -->
+                <div class="card p-3 mb-3">
+                  <label for="cashPaymentInput" class="form-label fw-bold">حدد
+                    الدفع</label>
+                  <input type="number" class="form-control"
+                    [(ngModel)]="cashPaymentInput"
+                    [ngModelOptions]="{standalone: true}"
+                    placeholder="المبلغ المدفوع"
+                    (change)="handleManualPaymentBlur(billAmount, tipModalContent)">
+                </div>
+              </ng-container>
+            </div>
           </div>
-        </div>
+        </ng-container>
         <!-- إدخال الدفع عند اختيار كاش + فيزا -->
         <div *ngIf="selectedPaymentMethod === 'cash + credit'"
           class="card p-3 mt-3">
@@ -709,9 +760,7 @@
               <input type="number" class="form-control" id="cashAmountInput"
                 [(ngModel)]="cashAmountMixed"
                 [ngModelOptions]="{standalone: true}"
-                placeholder="المبلغ المدفوع كاش"
-                min="0"
-                step="0.01"
+                placeholder="المبلغ المدفوع كاش" min="0" step="0.01"
                 (change)="openMixedPaymentTipModal(billAmount, tipModalContent)">
 
               <!-- رسالة خطأ للكاش -->
@@ -728,9 +777,7 @@
               <input type="number" class="form-control" id="creditAmountInput"
                 [(ngModel)]="creditAmountMixed"
                 [ngModelOptions]="{standalone: true}"
-                placeholder="المبلغ المدفوع فيزا"
-                min="0"
-                step="0.01"
+                placeholder="المبلغ المدفوع فيزا" min="0" step="0.01"
                 (change)="openMixedPaymentTipModal(billAmount, tipModalContent)">
 
               <!-- رسالة خطأ للفيزا -->
@@ -788,11 +835,26 @@
         </div> -->
 
         <hr class="my-2">
-
+        <!-- ✅ قسم المبلغ الإضافي المطلوب -->
+        <div
+          *ngIf="finalTipSummary.additionalPaymentRequired && finalTipSummary.additionalPaymentRequired > 0"
+          class="alert alert-warning mb-3">
+          <div class="d-flex align-items-center">
+            <i class="fas fa-exclamation-triangle me-2"></i>
+            <div>
+              <strong>مبلغ إضافي مطلوب:</strong>
+              <span class="fw-bold">{{ finalTipSummary.additionalPaymentRequired
+                | number:'1.2-2' }} ج.م</span>
+              <br>
+              <small>لتحقيق الإكرامية المطلوبة</small>
+            </div>
+          </div>
+        </div>
         <div class="summary-line sub-total">
           <span>المجموع الفرعي (المستحق):</span>
           <span class="summary-value">{{ finalTipSummary.billAmount |
-            number:'1.2-2' }} ج.م</span> </div>
+            number:'1.2-2' }} ج.م</span>
+        </div>
 
         <hr class="my-2">
 
@@ -828,6 +890,23 @@
         </div>
       </div>
       }
+      <!-- في حالة غير مدفوع -->
+      <div
+        *ngIf="selectedOrderType === 'talabat' && selectedPaymentStatus === 'unpaid'"
+        class="card p-3 mb-3">
+        <div class="d-flex justify-content-between flex-wrap gap-2">
+          <!-- الحالة الخاصة بطلبات + غير مدفوع - تظهر آجل فقط -->
+          <!-- <ng-container *ngIf="selectedOrderType === 'talabat' && selectedPaymentStatus === 'unpaid'"> -->
+          <label class="payment-option-label"
+            [class.active-payment]="selectedPaymentMethod === 'deferred'"
+            (click)="selectPaymentMethod('deferred')">
+            <i class="fas fa-calendar-alt me-1"></i>
+            <span class="label-text">آجل</span>
+          </label>
+          <!-- </ng-container> -->
+
+        </div>
+      </div>
       @if (amountError) {
       <div class="alert alert-danger text-center" role="alert">
         يجب أدخال الإجمالي. {{ getCartTotal().toFixed(2) }} {{ currencySymbol }}
@@ -1100,7 +1179,8 @@
           <div class="d-flex justify-content-between align-items-center py-2"
             *ngIf="
               invoices[0].order_type === 'Delivery' ||
-              invoices[0].order_type === 'Takeaway'
+              invoices[0].order_type === 'Takeaway' ||
+              invoices[0].order_type === 'talabat'
             ">
             <h6 class="mb-0 fw-bold">حالة الدفع:</h6>
             <p class="mb-0 fw-bold">
@@ -1173,7 +1253,8 @@
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
       <div class="modal-header border-0">
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
+        <button type="button" class="btn-close" data-bs-dismiss="modal"
+          aria-label="Close"
           (click)=" closeModal(true)"></button>
       </div>
       <div class="modal-body">
@@ -1184,7 +1265,8 @@
           <img src="assets/images/coupon-icon.png" alt />
           وفرناها عليك
         </h6>
-        <input class="form-control" type="text" [(ngModel)]="couponCode" placeholder="أدخل الكوبون" />
+        <input class="form-control" type="text" [(ngModel)]="couponCode"
+          placeholder="أدخل الكوبون" />
 
         <!-- <input class="form-control" type="text"  id="couponCode" placeholder="أدخل الكوبون" /> -->
         @if (successMessage) {
@@ -1401,8 +1483,7 @@
       <div class="row g-2">
         <!-- بدون اكرامية -->
         <div class="col-4">
-          <div
-            class="tip-option-horizontal text-center"
+          <div class="tip-option-horizontal text-center"
             [class.active-tip-horizontal]="selectedTipType === 'no_tip'"
             (click)="selectTipOption('no_tip')">
             <div class="option-radio">
@@ -1415,8 +1496,7 @@
 
         <!-- صبلغ محدد -->
         <div class="col-4">
-          <div
-            class="tip-option-horizontal text-center"
+          <div class="tip-option-horizontal text-center"
             [class.active-tip-horizontal]="selectedTipType === 'tip_specific_amount'"
             [class.disabled-tip-horizontal]="tempChangeAmount <= 0"
             (click)="selectTipOption('tip_specific_amount')">
@@ -1431,8 +1511,7 @@
 
         <!-- الصبلغ كله -->
         <div class="col-4">
-          <div
-            class="tip-option-horizontal text-center"
+          <div class="tip-option-horizontal text-center"
             [class.active-tip-horizontal]="selectedTipType === 'tip_the_change'"
             [class.disabled-tip-horizontal]="tempChangeAmount <= 0"
             (click)="tempChangeAmount > 0 ? selectTipOption('tip_the_change') : null">
@@ -1451,12 +1530,9 @@
     @if(selectedTipType === 'tip_specific_amount') {
     <div class="tip-input-section mb-4 text-center">
       <div class="tip-input-large">
-        <input type="number"
-          class="form-control form-control-lg text-center"
+        <input type="number" class="form-control form-control-lg text-center"
           [(ngModel)]="specificTipAmount"
-          placeholder="0"
-          min="0"
-          step="0.01">
+          placeholder="0" min="0" step="0.01">
       </div>
     </div>
     }

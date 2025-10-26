@@ -67,6 +67,8 @@ export class SideHoldCartComponent implements OnInit {
       'في المطعم': 'dine-in',
       'خارج المطعم': 'Takeaway',
       توصيل: 'Delivery',
+      'طلبات': 'talabat',
+
     };
     this.order.type = typeMapping[type] || type;
 
@@ -122,7 +124,7 @@ export class SideHoldCartComponent implements OnInit {
   // }
 
 
-  
+
 
 
 

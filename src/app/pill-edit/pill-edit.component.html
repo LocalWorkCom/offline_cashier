@@ -205,7 +205,7 @@
           isShow
         ">
         <div
-          *ngIf="invoices[0].transactions[0].payment_status === 'unpaid' && (invoices[0].order_type === 'Takeaway' || invoices[0].order_type === 'dine-in' || (invoices[0].order_type === 'Delivery' && Delivery_show_delivered_only))">
+          *ngIf="invoices[0].transactions[0].payment_status === 'unpaid' && (invoices[0].order_type === 'Takeaway'|| invoices[0].order_type === 'talabat' || invoices[0].order_type === 'dine-in' || (invoices[0].order_type === 'Delivery' && Delivery_show_delivered_only))">
           <div class="d-flex gap-4">
             <!--  *ngIf="invoices[0].transactions[0].payment_status != 'paid'" ALAAA -->
             <button class="fs-6 rounded-4 w-50 btn" [ngClass]="{
@@ -225,7 +225,7 @@
         </div>
       </div>
       <div class=" w-100 my-3"
-        *ngIf="paymentStatus == 'paid' &&  ( invoices[0]?.order_type =='Takeaway' || invoices[0]?.order_type =='dine-in')">
+        *ngIf="paymentStatus == 'paid' &&  ( invoices[0]?.order_type =='Takeaway' || invoices[0]?.order_type =='talabat' || invoices[0]?.order_type =='dine-in')">
         <!-- <div class="mb-3 d-flex justify-content-between align-items-center">
           <label for="cash_amount" class="form-label">الكاش : </label>
           <input type="number" class="form-control w-75" id="cash_amount" [(ngModel)]="cash_value">

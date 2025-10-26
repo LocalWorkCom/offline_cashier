@@ -54,7 +54,7 @@ interface Country {
   templateUrl: './side-details.component.html',
   styleUrl: './side-details.component.css',
 })
-export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
+export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('printedPill') printedPill!: ElementRef;
   @ViewChild('couponModalRef') couponModalRef!: ElementRef;
   // hanan front
@@ -156,6 +156,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
   clientError: any;
 
   // hanan front
+  isOrderTypeSelected: boolean = false;
+
   selectedPaymentSuggestion: number | null = null;
 
   // selectedPaymentMethod: 'cash' | 'credit' | 'cash + credit' | null = null;
@@ -182,6 +184,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
     changeToReturn: number; // المتبقي للرد
     cashAmountMixed?: number; // المبلغ المدفوع كاش في الدفع المختلط
     creditAmountMixed?: number; // المبلغ المدفوع فيزا في الدفع المختلط
+    additionalPaymentRequired?: number; // ✅ جديد
+    originalPaymentAmount?: number;     // ✅ جديد
   } | null = null;
   // متغيرات لإدارة خيارات الإكرامية داخل المودال
   selectedTipType: 'tip_the_change' | 'tip_specific_amount' | 'no_tip' = 'no_tip';
@@ -303,6 +307,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
       console.log('No data found in localStorage.');
     }
     const storedItems = localStorage.getItem('cart');
+    console.log("storedItems", storedItems);
     if (storedItems) {
       this.cartItems = JSON.parse(storedItems);
     }
@@ -382,7 +387,16 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
 
     this.updateTotalPrice();
     this.cdr.detectChanges();
+    // ✅ الشرط المطلوب: إذا كان الطلب من طلبات وغير مدفوع
+    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
+      this.selectedPaymentMethod = 'deferred';
+      console.log('✅ تم تعيين طريقة الدفع تلقائياً إلى "آجل"');
+    }
 
+    // إذا كان الطلب من طلبات ومدفوع
+    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'paid') {
+      this.selectedPaymentMethod = 'cash';
+    }
   }
 
 
@@ -708,7 +722,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
   loadCart() {
     this.dbService.getCartItems()
       .then((cartItems: any[]) => {
-        this.cartItems = cartItems || [];
+        if (cartItems && cartItems.length > 0) {
+          this.cartItems = cartItems;
+        } else {
+          // Fallback إلى localStorage إذا لزم الأمر
+          const storedCart = localStorage.getItem('cart');
+          this.cartItems = storedCart ? JSON.parse(storedCart) : [];
+        }
         this.updateTotalPrice();
         console.log('✅ Cart loaded from IndexedDB:', this.cartItems);
         this.cdr.detectChanges();
@@ -825,8 +845,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
       0
     );
     // this.loadCouponFromLocalStorage()
-    if(this.appliedCoupon)
-    this.applyCoupon();
+    if (this.appliedCoupon)
+      this.applyCoupon();
     this.getTax()
     this.cdr.detectChanges();
 
@@ -1029,6 +1049,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
     } else {
       total = subtotal + taxAmount + serviceFee + deliveryFee;
       // console.log(total, 'third', subtotal, taxAmount, serviceFee, deliveryFee);
+    }
+
+    if ((this.selectedOrderType === 'talabat' || this.selectedOrderType === 'طلبات')) {
+      total = subtotal;
     }
 
     // Step 8: Final safeguard
@@ -1532,6 +1556,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
     );
   }
   getItemTotal(item: any): number {
+    //   console.log(item?.dish.id, 'itemttttttttttt');
+    // console.log(this.findCategoryByDishId(item?.dish.id), 'this.findCategoryByDishId(item?.dish.id)itemttttttttttt');
     let basePrice = 0;
 
     // Case 1: new cart structure (with selectedSize, dish, and selectedAddons)
@@ -2398,21 +2424,21 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
     const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
 
     // ... rest of your order data preparation
-    if (this.credit_amountt) {
-      this.selectedPaymentMethod = "credit"
-      console.log(this.selectedPaymentMethod, "1");
+    // if (this.credit_amountt) {
+    //   this.selectedPaymentMethod = "credit"
+    //   console.log(this.selectedPaymentMethod, "1");
 
-    } else {
-      this.selectedPaymentMethod = "cash"
-      console.log(this.selectedPaymentMethod, "2");
-    }
+    // } else {
+    //   this.selectedPaymentMethod = "cash"
+    //   console.log(this.selectedPaymentMethod, "2");
+    // }
 
 
     return {
       orderId: this.finalOrderId || Date.now(),
       type: this.selectedOrderType,
       branch_id: branchId,
-      payment_method: this.selectedPaymentMethod,
+      payment_method: this.selectedPaymentMethod ?? 'cash',
       payment_status: this.selectedPaymentStatus,
       cash_amount: this.selectedPaymentMethod === "cash" ? this.finalTipSummary?.billAmount ?? 0 : 0,
       credit_amount: this.selectedPaymentMethod === "credit" ? this.finalTipSummary?.billAmount ?? 0 : 0,
@@ -2465,9 +2491,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
       // tip_specific_amount:this.finalTipSummary?.tipAmount ?? 0,
       tip_specific_amount: this.specificTipAmount ? this.finalTipSummary?.tipAmount : 0,
       payment_amount: this.finalTipSummary?.paymentAmount ?? 0,
-      bill_amount: this.finalTipSummary?.billAmount ?? 0,
-      total_with_tip: (this.finalTipSummary?.tipAmount ?? 0) + (this.finalTipSummary?.billAmount ?? 0),
+      bill_amount: this.finalTipSummary?.billAmount ?? this.getCartTotal(),
+      total_with_tip: this.finalTipSummary ? (this.finalTipSummary.tipAmount ?? 0) + (this.finalTipSummary.billAmount ?? 0) : this.getCartTotal(),
       returned_amount: this.finalTipSummary?.changeToReturn ?? 0,
+      menu_integration: this.selectedOrderType === 'talabat' ? true : false,
+      payment_status_menu_integration: this.selectedPaymentStatus,
+      payment_method_menu_integration: this.selectedPaymentMethod,
+
       // dalia end tips
     };
   }
@@ -2814,7 +2844,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
         }, 200);
         this.removeCouponFromLocalStorage();
       }
-
+      if (this.selectedOrderType === 'talabat') {
+        const dataOrderId = (response as any).data.order_id;
+        this.createdOrderId = dataOrderId;
+        await this.fetchPillsDetails(this.pillId);
+        setTimeout(() => {
+          this.printInvoice();
+        }, 200);
+        this.removeCouponFromLocalStorage();
+      }
       const orderId = (response as any).data?.order_id;
       if (!orderId) {
         this.falseMessage = 'لم يتم استلام رقم الطلب من الخادم.';
@@ -3333,14 +3371,34 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
 
   // start hanan
   selectOrderType(type: string) {
+    // حفظ العربة الحالية مؤقتاً
+    const currentCart = [...this.cartItems];
     this.clearOrderTypeData();
     const typeMapping: { [key: string]: string } = {
       'في المطعم': 'dine-in',
       'خارج المطعم': 'Takeaway',
       توصيل: 'Delivery',
+      طلبات: 'talabat'
     };
-    this.selectedOrderType = typeMapping[type] || type
 
+    // استعادة العربة إذا تم مسحها بالخطأ
+    if (this.cartItems.length === 0 && currentCart.length > 0) {
+      this.cartItems = currentCart;
+      this.saveCart();
+    }
+
+    let i: any;
+    for (i = 0; i < this.cartItems.length; i++) {
+      this.findCategoryByDishId(this.cartItems[i]);
+    }
+
+    this.selectedOrderType = typeMapping[type] || type
+    localStorage.setItem('selectedOrderType', this.selectedOrderType);
+    this.isOrderTypeSelected = true; // ✅ تم اختيار نوع الطلب
+    // ✅ الشرط الجديد: إذا كان الطلب من طلبات وغير مدفوع، اختيار آجل تلقائياً
+    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
+      this.selectedPaymentMethod = 'deferred';
+    }
     // Store in IndexedDB instead of localStorage
     try {
 
@@ -3359,6 +3417,223 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
     }
   }
   // end hanan
+  //talabat start
+  // async findCategoryByDishId(cartitem: any): Promise<any> {
+  //   try {
+  //     console.log('🔍 Searching for category by dish ID:', cartitem);
+
+  //     const allCategories = await this.dbService.getAll('categories');
+
+  //     for (const category of allCategories) {
+  //       // البحث في dishes array داخل الفئة
+  //       if (category.dishes && Array.isArray(category.dishes)) {
+  //         const foundDish = category.dishes.find((dishItem: any) => {
+
+  //           // console.log('Checking dish item:', dishItem.dish?.id);
+  //           if (dishItem.dish?.id === cartitem.dish.id && dishItem.dish.Id_menus_integrations[0].name_en?.toLowerCase().includes('talabat')) {
+  //             // console.log('dishItem:', dishItem.dish.Id_menus_integrations[0].name_en);
+  //             this.updateCartPricesFromDish(cartitem, this.getProduct(this.convertDish(dishItem)));
+  //           }
+  //         });
+
+  //         if (foundDish) {
+  //           console.log('✅ Found category for dish:', foundDish.dish);
+  //           // return foundDish;
+
+  //         }
+  //       }
+  //     }
+
+  //     console.log('❌ No category found for dish ID:');
+  //     return null;
+
+  //   } catch (error) {
+  //     console.error('❌ Error finding category by dish ID:', error);
+  //     return null;
+  //   }
+  // }
+  async findCategoryByDishId(cartItem: any): Promise<void> {
+    try {
+      console.log('🔍 Searching for category by dish ID:', cartItem);
+      // ✅ فقط إذا كان نوع الطلب "طلبات" نبحث في talabat
+      if (this.selectedOrderType !== 'talabat') {
+        console.log('✅ Not talabat order type, keeping all items');
+        // return; // لا تفعل شيئاً لأنواع الطلبات الأخرى
+      }
+      const allCategories = await this.dbService.getAll('categories');
+      let found = false; // لتتبع إذا تم العثور على الطبق
+
+      for (const category of allCategories) {
+        if (category.dishes && Array.isArray(category.dishes)) {
+          for (const dishItem of category.dishes) {
+            if (
+              dishItem.dish?.id === cartItem.dish.id &&
+              dishItem.dish.Id_menus_integrations?.[0]?.name_en?.toLowerCase()?.includes('talabat')
+            ) {
+              found = true;
+
+              const converted = this.convertDish(dishItem);
+              const product = this.getProduct(converted);
+
+              console.log('✅ Found dish for update:', product);
+              this.updateCartPricesFromDish(cartItem, product);
+              break; // خلاص وجدناه، نخرج من اللوب
+            }
+          }
+        }
+
+        if (found) break; // نوقف لو وجدناه في كاتيجوري
+      }
+
+      // ❌ لو مفيش dish مطابق
+      if (!found && this.selectedOrderType === 'talabat') {
+        console.warn('❌ No matching dish found for cart item, removing it...');
+        this.removeCartItem(cartItem);
+
+      }
+
+    } catch (error) {
+      console.error('❌ Error finding category by dish ID:', error);
+    }
+  }
+
+  removeCartItem(cartItem: any) {
+    console.log('🗑️ Removing cart item:', cartItem);
+    // 🧩 قراءة الكارت الحالي من localStorage
+    const storedItems = localStorage.getItem('cart');
+    if (!storedItems) return;
+
+    let cart = JSON.parse(storedItems);
+
+    // 🗑️ حذف العنصر المطلوب بناءً على uniqueId (أو id لو ده اللي بتستخدميه)
+    cart = cart.filter((item: any) => item.uniqueId !== cartItem.uniqueId);
+
+    // 💾 تحديث localStorage بالكارت الجديد
+    localStorage.setItem('cart', JSON.stringify(cart));
+    this.dbService.removeFromCart(cartItem.cartItemId); // تحديث IndexedDB لو بتستخدميها للكارت
+    this.cartItems = cart; // تحديث المتغير المحلي لو عندك واحد
+
+    console.log(`🗑️ Removed item from cart:`, cartItem.dish?.name);
+  }
+
+
+  updateCartPricesFromDish(cartItem: any, dishData: any) {
+    // 1. تحديث سعر الطبق الرئيسي
+    cartItem.dish.price = dishData.price;
+
+    // 2. تحديث سعر الحجم (لو موجود)
+    if (cartItem.selectedSize) {
+      const updatedSize = dishData.sizes?.find(
+        (s: any) => s.id === cartItem.selectedSize.id
+      );
+      if (updatedSize) {
+        cartItem.selectedSize.price = updatedSize.price;
+        cartItem.selectedSize.currency_symbol = updatedSize.currency_symbol || dishData.currency_symbol;
+      }
+    }
+
+    // 3. تحديث أسعار الإضافات (addons)
+    if (cartItem.selectedAddons?.length) {
+      cartItem.selectedAddons = cartItem.selectedAddons.map((addon: any) => {
+        // دور على الاضافة نفسها داخل dishData
+        const updatedAddon = dishData.addon_categories
+          ?.flatMap((cat: any) => cat.addons)
+          ?.find((a: any) => a.id === addon.id);
+
+        if (updatedAddon) {
+          addon.price = updatedAddon.price;
+          addon.currency_symbol = updatedAddon.currency_symbol || dishData.currency_symbol;
+        }
+
+        return addon;
+      });
+    }
+
+    console.log('Updated cart item after price sync:', cartItem);
+
+    // 4. إعادة حساب المجموع النهائي بعد التحديث
+    this.recalculateTotal(cartItem);
+  }
+  recalculateTotal(cartItem: any) {
+    const base = cartItem.dish.price || 0;
+    const size = cartItem.selectedSize?.price || 0;
+    const addons = cartItem.selectedAddons?.reduce((sum: number, a: any) => sum + (a.price || 0), 0) || 0;
+    const qty = cartItem.quantity || 1;
+
+    cartItem.totalPrice = (base + size + addons) * qty;
+    cartItem.finalPrice = cartItem.totalPrice;
+  }
+
+  convertDish(original: any) {
+    const dish = original.dish;
+
+    return {
+      id: dish.id,
+      name: dish.name,
+      description: dish.description,
+      price: dish.price,
+      currency_symbol: dish.currency_symbol,
+      image: dish.image,
+      share_link: dish.share_link,
+      has_addon: dish.addon_categories?.length > 0,
+      has_size: dish.sizes?.length > 0,
+      is_integration: true,
+      addon_categories: original.addon_categories || [],
+      sizes: original.sizes || [],
+      Id_menus_integrations: dish.Id_menus_integrations || []
+    };
+  }
+
+
+  getProduct(product: any): any {
+    console.log('Original Product:', product);
+    if (localStorage.getItem('selectedOrderType') === 'talabat') {
+      if (Array.isArray(product.Id_menus_integrations) && product.Id_menus_integrations.length > 0) {
+        for (let integration of product.Id_menus_integrations) {
+          if (integration.name_en?.toLowerCase().includes('talabat')) {
+            console.log('✅ Talabat integration found:', integration);
+
+            // تحديث السعر الأساسي للطبق
+            const newPrice = integration.menus_integration_dishs?.[0]?.price || product.price;
+            product.price = parseFloat(newPrice);
+
+            // تحديث الأسعار داخل الـ sizes
+            if (Array.isArray(product.sizes) && Array.isArray(integration.menus_integration_dish_sizes)) {
+              product.sizes = product.sizes.map((size: any) => {
+                const matchedSize = integration.menus_integration_dish_sizes.find(
+                  (s: any) => s.branch_menu_size_id === size.id
+                );
+                if (matchedSize) {
+                  return { ...size, price: parseFloat(matchedSize.price) };
+                }
+                return size;
+              });
+            }
+
+            // تحديث الأسعار داخل الـ addons
+            if (Array.isArray(product.addon_categories) && Array.isArray(integration.menus_integration_dish_addons)) {
+              product.addon_categories = product.addon_categories.map((category: any) => ({
+                ...category,
+                addons: category.addons.map((addon: any) => {
+                  const matchedAddon = integration.menus_integration_dish_addons.find(
+                    (a: any) => a.branch_menu_addon_id === addon.id
+                  );
+                  if (matchedAddon) {
+                    return { ...addon, price: parseFloat(matchedAddon.price) };
+                  }
+                  return addon;
+                }),
+              }));
+            }
+          }
+        }
+      }
+    }
+
+    return product;
+  }
+
+  //talabat end
 
   clearOrderTypeData() {
     // Clear data based on the previously selected order type
@@ -3375,15 +3650,17 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
         // this.address = '';
         // this.clientName = ' ';
         // this.addressPhone = '';
-        // localStorage.removeItem('form_data');
+        localStorage.removeItem('form_data');
 
-        // localStorage.removeItem('address_id');
+        localStorage.removeItem('address_id');
         break;
 
       case 'Takeaway':
         // No specific data to clear for Takeaway
         break;
-
+      case 'talabat':
+        // No specific data to clear for talabat
+        break;
       default:
         break;
     }
@@ -3407,6 +3684,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
           const sorted = savedOrderTypes.sort((a, b) => b.id - a.id);
           const last = sorted[0];
           this.selectedOrderType = last.value;
+          this.isOrderTypeSelected = true; // ✅ تم تحميل نوع الطلب
 
           console.log('Last ID:', last.id); // This is the last ID
         } else {
@@ -3414,6 +3692,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
           const fallbackOrderType = localStorage.getItem('selectedOrderType');
           if (fallbackOrderType) {
             this.selectedOrderType = fallbackOrderType;
+            this.isOrderTypeSelected = true; // ✅ تم تحميل نوع الطلب
+
             // Migrate to IndexedDB with ID
             this.dbService.saveData('selectedOrderType', {
               id: new Date().getTime(),
@@ -3428,6 +3708,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
       const fallbackOrderType = localStorage.getItem('selectedOrderType');
       if (fallbackOrderType) {
         this.selectedOrderType = fallbackOrderType;
+        this.isOrderTypeSelected = true; // ✅ تم تحميل نوع الطلب
+
       }
     }
   }
@@ -3496,6 +3778,21 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
   }
 
   updatePaymentOptions() {
+    // ✅ الشرط الجديد: إذا كان نوع الطلب "طلبات" وغير مدفوع، اختيار آجل تلقائياً
+    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
+      this.selectedPaymentMethod = 'deferred';
+      return;
+    }
+    // إذا كان نوع الطلب "طلبات"، عيّن طريقة الدفع المناسبة تلقائياً
+    if (this.selectedOrderType === 'talabat') {
+      if (this.selectedPaymentStatus === 'paid') {
+        this.selectedPaymentMethod = 'cash'; // مدفوع → كاش
+      } else if (this.selectedPaymentStatus === 'unpaid') {
+        this.selectedPaymentMethod = 'deferred'; // غير مدفوع → آجل
+      }
+      return;
+    }
+
     // If Visa is selected, force "paid" as payment status
     if (this.selectedPaymentMethod === 'credit') {
       this.selectedPaymentStatus = 'paid';
@@ -3510,8 +3807,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
       this.selectedPaymentStatus = 'paid'; // Default for dine-in
     }
   }
-  closeModal(_removeCoupon:boolean=false) {
-    if(_removeCoupon==true){
+  closeModal(_removeCoupon: boolean = false) {
+    if (_removeCoupon == true) {
       this.removeCoupon()
     }
     const modals = document.querySelectorAll('.modal.show');
@@ -3528,12 +3825,25 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
   onPaymentStatusChange() {
     // const savedStatus = localStorage.getItem('selectedPaymentStatus');
     // this.selectedPaymentStatus = savedStatus || 'unpaid';
+    // ✅ الشرط الجديد: إذا كان الطلب من طلبات وغير مدفوع، اختيار آجل تلقائياً
+    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
+      this.selectedPaymentMethod = 'deferred';
+    }
+
+    // إذا كان نوع الطلب "طلبات"، عيّن طريقة الدفع المناسبة
+    if (this.selectedOrderType === 'talabat') {
+      if (this.selectedPaymentStatus === 'paid') {
+        this.selectedPaymentMethod = 'cash'; // مدفوع → كاش
+      } else if (this.selectedPaymentStatus === 'unpaid') {
+        this.selectedPaymentMethod = 'deferred'; // غير مدفوع → آجل
+      }
+    }
     console.log('Payment Status:', this.selectedPaymentStatus); // paid or unpaid
     if (this.selectedPaymentStatus === 'unpaid') {
       this.cash_amountt = 0;
       this.credit_amountt = 0;
       this.referenceNumber = '';
-      this.selectedPaymentMethod = '';
+      // this.selectedPaymentMethod = '';
       localStorage.removeItem('cash_amountt');
       localStorage.removeItem('credit_amountt');
       localStorage.removeItem('referenceNumber');
@@ -3859,7 +4169,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
         buildingNumber: formData.buildingNumber || '',
       };
     }
-
+    if (this.selectedOrderType.toLowerCase() === 'talabat') {
+      const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+    }
     // ===== ORDER DATA =====
     const orderData: any = {
       orderId: orderIdToUse,
@@ -4207,9 +4519,21 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
   }
 
   // hanan
-  selectPaymentMethod(method: 'cash' | 'credit' | 'cash + credit'): void {
+  selectPaymentMethod(method: 'cash' | 'credit' | 'cash + credit' | 'deferred'): void {
     this.selectedPaymentMethod = method;
+    console.log('Selected Payment Method:', this.selectedPaymentMethod);
 
+    // إذا كان نوع الطلب "طلبات" وغير مدفوع، تأكدي أن الطريقة هي "آجل"
+    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
+      this.selectedPaymentMethod = 'deferred';
+      // return;
+    }
+
+    // إذا كان نوع الطلب "طلبات" ومدفوع، تأكدي أن الطريقة هي "كاش"
+    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'paid') {
+      this.selectedPaymentMethod = 'cash';
+      // return;
+    }
     // إعادة تعيين القيم عند تغيير طريقة الدفع
     if (method === 'cash') {
       this.cashAmountMixed = 0;
@@ -4227,6 +4551,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
       const billAmount = this.getCartTotal();
       this.cashAmountMixed = billAmount / 2;
       this.creditAmountMixed = billAmount / 2;
+    }
+    else if (method === 'deferred') {
+      // إعادة تعيين القيم للدفع الآجل
+      this.cashAmountMixed = 0;
+      this.creditAmountMixed = 0;
+      this.cashPaymentInput = 0;
     }
   }
 
@@ -4300,14 +4630,24 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
   // تحديث دالة تأكيد الإكرامية
   confirmTipAndClose(modal: any): void {
     let finalTipAmount: number = 0;
+    let additionalPaymentRequired: number = 0;
+    let originalPaymentAmount: number = this.tempPaymentAmount;
 
     if (this.selectedTipType === 'tip_the_change') {
       finalTipAmount = this.tempChangeAmount;
+      additionalPaymentRequired = 0;
     } else if (this.selectedTipType === 'tip_specific_amount') {
       finalTipAmount = Math.max(0, this.specificTipAmount);
+
+      // ✅ حساب المبلغ الإضافي المطلوب
+      if (finalTipAmount > this.tempChangeAmount) {
+        additionalPaymentRequired = finalTipAmount - this.tempChangeAmount;
+        // تحديث المبلغ المدفوع الإجمالي
+        this.tempPaymentAmount = this.tempPaymentAmount + additionalPaymentRequired;
+      }
     }
 
-    const changeToReturn = Math.max(0, this.tempChangeAmount - finalTipAmount);
+    const changeToReturn = Math.max(0, this.tempPaymentAmount - (this.tempBillAmount + finalTipAmount));
 
     // حساب المبالغ النهائية بناءً على طريقة الدفع
     let cashFinal = 0;
@@ -4318,24 +4658,16 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
     } else if (this.selectedPaymentMethod === 'credit') {
       creditFinal = this.tempPaymentAmount;
     } else if (this.selectedPaymentMethod === 'cash + credit') {
-      // توزيع المبلغ على الكاش والفيزا مع احتساب الإكرامية
-      const totalPaid = this.cashAmountMixed + this.creditAmountMixed;
+      const totalPaid = this.cashAmountMixed + this.creditAmountMixed + additionalPaymentRequired;
 
       if (totalPaid > 0) {
-        const cashRatio = this.cashAmountMixed / totalPaid;
-        const creditRatio = this.creditAmountMixed / totalPaid;
+        const cashRatio = this.cashAmountMixed / (this.cashAmountMixed + this.creditAmountMixed);
+        const creditRatio = this.creditAmountMixed / (this.cashAmountMixed + this.creditAmountMixed);
 
         const totalWithTip = this.tempBillAmount + finalTipAmount;
 
-        // إذا كان المبلغ المدفوع أكبر من المستحق + الإكرامية
-        if (totalPaid >= totalWithTip) {
-          cashFinal = totalWithTip * cashRatio;
-          creditFinal = totalWithTip * creditRatio;
-        } else {
-          // إذا كان المبلغ المدفوع أقل، نستخدم المبالغ المدخلة كما هي
-          cashFinal = this.cashAmountMixed;
-          creditFinal = this.creditAmountMixed;
-        }
+        cashFinal = totalWithTip * cashRatio;
+        creditFinal = totalWithTip * creditRatio;
       }
     }
 
@@ -4350,33 +4682,37 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
       tipAmount: finalTipAmount,
       grandTotalWithTip: this.tempBillAmount + finalTipAmount,
       changeToReturn: changeToReturn,
-      // إضافة المبالغ التفصيلية للدفع المختلط
       cashAmountMixed: cashFinal,
-      creditAmountMixed: creditFinal
+      creditAmountMixed: creditFinal,
+      additionalPaymentRequired: additionalPaymentRequired, // ✅ جديد
+      originalPaymentAmount: originalPaymentAmount         // ✅ جديد
     };
 
-    modal.close({
-      tipAmount: finalTipAmount,
-      changeToReturn: changeToReturn,
-      cashAmount: cashFinal,
-      creditAmount: creditFinal,
-      paymentMethod: this.selectedPaymentMethod
-    });
+    // ✅ إذا كان هناك مبلغ إضافي مطلوب، نعرض تأكيد للمستخدم
+    if (additionalPaymentRequired > 0) {
+      this.showAdditionalPaymentConfirmation(additionalPaymentRequired, modal);
+    } else {
+      modal.close(this.finalTipSummary);
+    }
 
     // إعادة تعيين المتغيرات
-    // this.cashPaymentInput = 0;
-    // this.cashAmountMixed = 0;
-    // this.creditAmountMixed = 0;
     this.selectedTipType = 'no_tip';
     this.specificTipAmount = 0;
-    this.cashAmountMixed = this.cashAmountMixed; // ابقى كما هو
-    this.creditAmountMixed = this.creditAmountMixed;
-    // إعادة تعيين cashPaymentInput فقط إذا كان مستخدم
-
-    if (this.selectedPaymentMethod === 'cash' || this.selectedPaymentMethod === 'credit') {
-      this.cashPaymentInput = 0;
-    }
   }
+  showAdditionalPaymentConfirmation(additionalAmount: number, modal: any) {
+  const confirmed = confirm(
+    `لتحقيق الإكرامية المطلوبة (${this.specificTipAmount} ج.م)، تحتاج لدفع ${additionalAmount} ج.م إضافية.\n\nهل تريد المتابعة؟`
+  );
+
+  if (confirmed) {
+    modal.close(this.finalTipSummary);
+  } else {
+    // إلغاء وتراجع عن الحسابات
+    this.tempPaymentAmount = this.finalTipSummary!.originalPaymentAmount!;
+    this.finalTipSummary = null;
+    this.specificTipAmount = 0;
+  }
+}
 
   getChangeToReturn(changeAmount: number, tipAmount: number): number {
     return Math.max(0, changeAmount - tipAmount);
@@ -4387,10 +4723,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit ,OnDestroy{
     this.selectedPaymentSuggestion = paymentAmount;
 
     if (paymentAmount >= billAmount) {
-        this.cashPaymentInput = paymentAmount;
-        this.openTipModal(modalContent, billAmount, paymentAmount);
+      this.cashPaymentInput = paymentAmount;
+      this.openTipModal(modalContent, billAmount, paymentAmount);
     }
-}
+  }
 
   handleManualPaymentBlur(billAmount: number, modalContent: any): void {
     this.selectedPaymentSuggestion = null; // إعادة تعيين عند الإدخال اليدوي
