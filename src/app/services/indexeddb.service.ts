@@ -846,60 +846,60 @@ export class IndexeddbService {
     try {
       console.log("🟢 Saving pending order:", orderData);
       await this.ensureInit();
-  
+
       const formData = await this.getLastFormData();
       let delivery_fees = 0;
-  
+
       // 🟢 Get delivery fees from area if available
       if (formData) {
         const area = await this.getAreaById(Number(formData.area_id));
         delivery_fees = area ? parseFloat(area.delivery_fees) : 0;
       }
-  
+
       return new Promise((resolve, reject) => {
         const tx = this.db.transaction(["orders", "pills"], "readwrite");
         const ordersStore = tx.objectStore("orders");
         const pillsStore = tx.objectStore("pills");
-  
+
         // 🆔 Generate unique order ID
         const orderId = orderData.orderId || Date.now();
-  
+
         // 🧮 Calculate total item count
         const count_item =
           orderData.items?.reduce(
             (sum: number, item: any) => sum + (item.quantity ?? 0),
             0
           ) ?? 0;
-  
+
         // 🧾 Build order summary once and reuse it
         const buildOrderSummary = () => {
           const subtotal_price_before_coupon = orderData.items.reduce(
             (sum: number, item: any) => sum + item.finalPrice * item.quantity,
             0
           );
-  
+
           const coupon_value = orderData.coupon_value || 0;
           const subtotal_price = subtotal_price_before_coupon - coupon_value;
-  
+
           let service_percentage = 0;
           let service_fees = 0;
           let delivery_fees_value = 0;
-  
+
           if (orderData.type === "dine-in") {
             service_percentage = 12;
             service_fees = (subtotal_price * service_percentage) / 100;
           } else if (orderData.type === "delivery") {
             delivery_fees_value = Number(delivery_fees) || 0;
           }
-  
+
           const tax_percentage = 14;
           const tax_value =
             ((subtotal_price + service_fees) * tax_percentage) / 100;
-  
+
           // const total_price =
           //   subtotal_price + service_fees + tax_value + Number(delivery_fees);
 
-        const total_price = orderData.total_with_tip;
+          const total_price = orderData.total_with_tip;
           return {
             coupon_code: orderData.coupon_code || null,
             coupon_id: orderData.coupon_id || null,
@@ -920,17 +920,24 @@ export class IndexeddbService {
             total_price,
           };
         };
-  
+
         const summary = buildOrderSummary();
         const currency_symbol = orderData.items[0]?.currency_symbol || "ج.م";
-        const branchData = JSON.parse(localStorage.getItem("branchData") || "{}");
-  
+        // جلب وتنسيق بيانات الفرع
+        const rawBranchData = JSON.parse(localStorage.getItem("branchData") || "{}");
+        const branchData = {
+          branch_name: rawBranchData.name_ar || rawBranchData.name || "الفرع الرئيسي",
+          branch_phone: "01242542154", // أو من مصدر آخر
+          branch_address: rawBranchData.address_ar || rawBranchData.address || "العنوان الرئيسي",
+          floor_name: "الطابق الأرضي"
+        };
+     
         // 🟢 Order object
         const orderWithMetadata: any = {
           formdata_delivery: formData,
           formdata_delivery_area_id: formData ? formData.area_id : null,
           delivery_fees_amount: delivery_fees,
-  
+
           order_details: {
             order_id: orderId,
             order_type: orderData.type || "dine-in",
@@ -952,7 +959,7 @@ export class IndexeddbService {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
-  
+
           details_order: {
             currency_symbol,
             order_type: orderData.type || "dine-in",
@@ -976,8 +983,8 @@ export class IndexeddbService {
               quantity: item.quantity,
               note: item.note || "",
               addons: item.selectedAddons
-              ? item.selectedAddons.map((addon: any) => addon.name)
-              : [],
+                ? item.selectedAddons.map((addon: any) => addon.name)
+                : [],
               coupon_id: item.coupon_id || null,
               coupon_title: item.coupon_title || null,
               coupon_value: item.coupon_value || 0,
@@ -987,7 +994,7 @@ export class IndexeddbService {
             })),
             order_summary: summary,
           },
-  
+
           order_items: orderData.items.map((item: any) => ({
             addon_categories: item.addon_categories,
             currency_symbol,
@@ -1004,10 +1011,10 @@ export class IndexeddbService {
             total_dish_price: item.finalPrice,
             dish_status: "pending",
           })),
-  
+
           total_price: summary.total_price,
           currency_symbol,
-  
+
           // 💰 Tips Section
           change_amount: orderData.change_amount || 0,
           tips_aption: orderData.tips_aption ?? "no_tip",
@@ -1020,7 +1027,7 @@ export class IndexeddbService {
           menu_integration: orderData.type === 'talabat' ? true : false,
           payment_status_menu_integration: orderData.payment_status,
           payment_method_menu_integration: orderData.payment_method,
-  
+
           // ⚙️ Metadata
           isOffline: true,
           isSynced: false,
@@ -1028,13 +1035,13 @@ export class IndexeddbService {
           savedAt: new Date().toISOString(),
           createdAt: new Date().toISOString(),
         };
-  
+
         // 🧾 Save to IndexedDB (orders)
         const orderRequest = ordersStore.put(orderWithMetadata);
-  
+
         orderRequest.onsuccess = () => {
           console.log("✅ Order saved to IndexedDB with ID:", orderId);
-  
+
           // 🧾 Save invoice in pills store
           const newInvoice = {
             id: `temp_${Date.now()}_${Math.random()}`,
@@ -1052,19 +1059,19 @@ export class IndexeddbService {
             currency_symbol,
             print_count: 0,
             table_number: orderData.table_id || null,
-  
+
             invoice_details: [
               {
                 address_details: formData || null,
                 currency_symbol,
                 delivery_name: null,
-  
+
                 branch_details: {
                   branch_id: orderData.branch_id || null,
-                  branch_name: branchData.branch_name || "test",
-                  branch_phone: branchData.branch_phone || "test",
-                  branch_address: branchData.branch_address || "test",
-                  floor_name: branchData.floor_name || "test",
+                  branch_name: branchData.branch_name,
+                  branch_phone: branchData.branch_phone,
+                  branch_address: branchData.branch_address,
+                  floor_name: branchData.floor_name,
                   floor_partition_name:
                     orderData.floor_partition_name || "test",
                   invoice_number: `INV-OFF-${orderId}`,
@@ -1072,7 +1079,7 @@ export class IndexeddbService {
                   table_id: orderData.table_id || null,
                   created_at: new Date().toISOString(),
                 },
-  
+
                 cashier_info: {
                   first_name: orderData.cashier_first_name || "test",
                   last_name: orderData.cashier_last_name || "test",
@@ -1080,10 +1087,10 @@ export class IndexeddbService {
                   phone_number: orderData.cashier_phone || "test",
                   employee_code: orderData.cashier_code || "test",
                 },
-  
+
                 invoice_summary: summary,
                 is_refund: false,
-  
+
                 orderDetails: orderData.items.map((item: any, idx: number) => ({
                   order_detail_id: idx + 1,
                   dish_id: item.dish_id,
@@ -1099,7 +1106,7 @@ export class IndexeddbService {
                   total_dish_price_coupon_applied:
                     item.finalPrice * item.quantity - (item.coupon_value || 0),
                 })),
-  
+
                 order_status: "pending",
                 order_type: orderData.type || "dine-in",
                 transactions: [
@@ -1114,7 +1121,7 @@ export class IndexeddbService {
                 ],
               },
             ],
-  
+
             invoice_tips: [
               {
                 change_amount: orderData.change_amount || 0,
@@ -1127,27 +1134,27 @@ export class IndexeddbService {
                 returned_amount: orderData.returned_amount ?? 0,
               },
             ],
-  
+
             isOffline: true,
             isSynced: false,
             status: "pending",
             saved_at: new Date().toISOString(),
             created_at: new Date().toISOString(),
           };
-  
+
           const pillRequest = pillsStore.put(newInvoice);
-  
+
           pillRequest.onsuccess = () => {
             console.log("✅ Invoice saved in pills store:", newInvoice);
             resolve();
           };
-  
+
           pillRequest.onerror = (err) => {
             console.error("❌ Error saving invoice:", err);
             reject(err);
           };
         };
-  
+
         orderRequest.onerror = (e) => {
           console.error("❌ Error saving order to IndexedDB:", e);
           reject(e);
@@ -1158,7 +1165,7 @@ export class IndexeddbService {
       throw error;
     }
   }
-  
+
 
 
 
@@ -1649,30 +1656,30 @@ export class IndexeddbService {
       console.error(`Error opening DB "${dbName}"`);
     };
   }
-//   async updatePill(updatedPill: any): Promise<void> {
-//   await this.ensureInit();
-//   return new Promise(async (resolve, reject) => {
-//     try {
-//       const tx = this.db!.transaction("pills", "readwrite");
-//       const store = tx.objectStore("pills");
+  //   async updatePill(updatedPill: any): Promise<void> {
+  //   await this.ensureInit();
+  //   return new Promise(async (resolve, reject) => {
+  //     try {
+  //       const tx = this.db!.transaction("pills", "readwrite");
+  //       const store = tx.objectStore("pills");
 
-//       // ✅ put يضيف جديد أو يحدث الموجود تلقائي
-//       const request = store.put(updatedPill);
+  //       // ✅ put يضيف جديد أو يحدث الموجود تلقائي
+  //       const request = store.put(updatedPill);
 
-//       request.onsuccess = () => {
-//         // console.log("✅ Pill added/updated in IndexedDB:", updatedPill);
-//         resolve();
-//       };
+  //       request.onsuccess = () => {
+  //         // console.log("✅ Pill added/updated in IndexedDB:", updatedPill);
+  //         resolve();
+  //       };
 
-//       request.onerror = (err) => {
-//         console.error("❌ Error updating/adding pill:", err);
-//         reject(err);
-//       };
-//     } catch (error) {
-//       reject(error);
-//     }
-//   });
-// }
+  //       request.onerror = (err) => {
+  //         console.error("❌ Error updating/adding pill:", err);
+  //         reject(err);
+  //       };
+  //     } catch (error) {
+  //       reject(error);
+  //     }
+  //   });
+  // }
 
 
 
@@ -1719,52 +1726,52 @@ export class IndexeddbService {
 
 
   async updatePill(updatedPill: any): Promise<void> {
-  await this.ensureInit();
-  return new Promise((resolve, reject) => {
-    try {
-      const tx = this.db!.transaction("pills", "readwrite");
-      const store = tx.objectStore("pills");
+    await this.ensureInit();
+    return new Promise((resolve, reject) => {
+      try {
+        const tx = this.db!.transaction("pills", "readwrite");
+        const store = tx.objectStore("pills");
 
-      // ✅ put: يضيف أو يحدث بناءً على المفتاح الأساسي (id أو invoice_number)
-      const request = store.put(updatedPill);
+        // ✅ put: يضيف أو يحدث بناءً على المفتاح الأساسي (id أو invoice_number)
+        const request = store.put(updatedPill);
+
+        request.onsuccess = () => {
+          // console.log("✅ Pill added/updated in IndexedDB:", updatedPill.invoice_number);
+          resolve();
+        };
+
+        request.onerror = (err) => {
+          console.error("❌ Error updating/adding pill:", err);
+          reject(err);
+        };
+      } catch (error) {
+        console.error("❌ Exception while updating pill:", error);
+        reject(error);
+      }
+    });
+  }
+
+  async updateOrderById(orderId: number, updatedOrder: any): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction("orders", "readwrite");
+      const store = tx.objectStore("orders");
+
+      // لازم الـ orderId يكون هو الـ key بتاع الـ object
+      updatedOrder.id = orderId;
+
+      const request = store.put(updatedOrder);
 
       request.onsuccess = () => {
-        // console.log("✅ Pill added/updated in IndexedDB:", updatedPill.invoice_number);
+        console.log("✅ Order updated in IndexedDB:", updatedOrder);
         resolve();
       };
 
-      request.onerror = (err) => {
-        console.error("❌ Error updating/adding pill:", err);
-        reject(err);
+      request.onerror = (event) => {
+        console.error("❌ Error updating order:", (event.target as any).error);
+        reject((event.target as any).error);
       };
-    } catch (error) {
-      console.error("❌ Exception while updating pill:", error);
-      reject(error);
-    }
-  });
-}
-
-async updateOrderById(orderId: number, updatedOrder: any): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const tx = this.db.transaction("orders", "readwrite");
-    const store = tx.objectStore("orders");
-
-    // لازم الـ orderId يكون هو الـ key بتاع الـ object
-    updatedOrder.id = orderId;
-
-    const request = store.put(updatedOrder);
-
-    request.onsuccess = () => {
-      console.log("✅ Order updated in IndexedDB:", updatedOrder);
-      resolve();
-    };
-
-    request.onerror = (event) => {
-      console.error("❌ Error updating order:", (event.target as any).error);
-      reject((event.target as any).error);
-    };
-  });
-}
+    });
+  }
 
 
 
