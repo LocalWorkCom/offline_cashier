@@ -55,9 +55,7 @@ export class IndexeddbService {
         }
 
         if (!this.db.objectStoreNames.contains('tables')) {
-          // this.db.createObjectStore('tables', { keyPath: 'id' });
-            const tableStore = this.db.createObjectStore('tables', { keyPath: 'id', autoIncrement: true });
-           tableStore.createIndex('table_number', 'table_number', { unique: false });
+          this.db.createObjectStore('tables', { keyPath: 'id' });
         }
 
         if (!this.db.objectStoreNames.contains('selectedTable')) {
@@ -848,56 +846,56 @@ export class IndexeddbService {
     try {
       console.log("🟢 Saving pending order:", orderData);
       await this.ensureInit();
-
+  
       const formData = await this.getLastFormData();
       let delivery_fees = 0;
-
+  
       // 🟢 Get delivery fees from area if available
       if (formData) {
         const area = await this.getAreaById(Number(formData.area_id));
         delivery_fees = area ? parseFloat(area.delivery_fees) : 0;
       }
-
+  
       return new Promise((resolve, reject) => {
         const tx = this.db.transaction(["orders", "pills"], "readwrite");
         const ordersStore = tx.objectStore("orders");
         const pillsStore = tx.objectStore("pills");
-
+  
         // 🆔 Generate unique order ID
         const orderId = orderData.orderId || Date.now();
-
+  
         // 🧮 Calculate total item count
         const count_item =
           orderData.items?.reduce(
             (sum: number, item: any) => sum + (item.quantity ?? 0),
             0
           ) ?? 0;
-
+  
         // 🧾 Build order summary once and reuse it
         const buildOrderSummary = () => {
           const subtotal_price_before_coupon = orderData.items.reduce(
             (sum: number, item: any) => sum + item.finalPrice * item.quantity,
             0
           );
-
+  
           const coupon_value = orderData.coupon_value || 0;
           const subtotal_price = subtotal_price_before_coupon - coupon_value;
-
+  
           let service_percentage = 0;
           let service_fees = 0;
           let delivery_fees_value = 0;
-
+  
           if (orderData.type === "dine-in") {
             service_percentage = 12;
             service_fees = (subtotal_price * service_percentage) / 100;
           } else if (orderData.type === "delivery") {
             delivery_fees_value = Number(delivery_fees) || 0;
           }
-
+  
           const tax_percentage = 14;
           const tax_value =
             ((subtotal_price + service_fees) * tax_percentage) / 100;
-
+  
           // const total_price =
           //   subtotal_price + service_fees + tax_value + Number(delivery_fees);
 
@@ -922,18 +920,17 @@ export class IndexeddbService {
             total_price,
           };
         };
-
+  
         const summary = buildOrderSummary();
         const currency_symbol = orderData.items[0]?.currency_symbol || "ج.م";
         const branchData = JSON.parse(localStorage.getItem("branchData") || "{}");
-
+  
         // 🟢 Order object
         const orderWithMetadata: any = {
           formdata_delivery: formData,
           formdata_delivery_area_id: formData ? formData.area_id : null,
           delivery_fees_amount: delivery_fees,
-          edit_invoice:false,
-
+  
           order_details: {
             order_id: orderId,
             order_type: orderData.type || "dine-in",
@@ -955,7 +952,7 @@ export class IndexeddbService {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
-
+  
           details_order: {
             currency_symbol,
             order_type: orderData.type || "dine-in",
@@ -990,7 +987,7 @@ export class IndexeddbService {
             })),
             order_summary: summary,
           },
-
+  
           order_items: orderData.items.map((item: any) => ({
             addon_categories: item.addon_categories,
             currency_symbol,
@@ -1007,10 +1004,10 @@ export class IndexeddbService {
             total_dish_price: item.finalPrice,
             dish_status: "pending",
           })),
-
+  
           total_price: summary.total_price,
           currency_symbol,
-
+  
           // 💰 Tips Section
           change_amount: orderData.change_amount || 0,
           tips_aption: orderData.tips_aption ?? "no_tip",
@@ -1023,7 +1020,7 @@ export class IndexeddbService {
           menu_integration: orderData.type === 'talabat' ? true : false,
           payment_status_menu_integration: orderData.payment_status,
           payment_method_menu_integration: orderData.payment_method,
-
+  
           // ⚙️ Metadata
           isOffline: true,
           isSynced: false,
@@ -1031,13 +1028,13 @@ export class IndexeddbService {
           savedAt: new Date().toISOString(),
           createdAt: new Date().toISOString(),
         };
-
+  
         // 🧾 Save to IndexedDB (orders)
         const orderRequest = ordersStore.put(orderWithMetadata);
-
+  
         orderRequest.onsuccess = () => {
           console.log("✅ Order saved to IndexedDB with ID:", orderId);
-
+  
           // 🧾 Save invoice in pills store
           const newInvoice = {
             id: `temp_${Date.now()}_${Math.random()}`,
@@ -1055,13 +1052,13 @@ export class IndexeddbService {
             currency_symbol,
             print_count: 0,
             table_number: orderData.table_id || null,
-
+  
             invoice_details: [
               {
                 address_details: formData || null,
                 currency_symbol,
                 delivery_name: null,
-
+  
                 branch_details: {
                   branch_id: orderData.branch_id || null,
                   branch_name: branchData.branch_name || "test",
@@ -1075,7 +1072,7 @@ export class IndexeddbService {
                   table_id: orderData.table_id || null,
                   created_at: new Date().toISOString(),
                 },
-
+  
                 cashier_info: {
                   first_name: orderData.cashier_first_name || "test",
                   last_name: orderData.cashier_last_name || "test",
@@ -1083,10 +1080,10 @@ export class IndexeddbService {
                   phone_number: orderData.cashier_phone || "test",
                   employee_code: orderData.cashier_code || "test",
                 },
-
+  
                 invoice_summary: summary,
                 is_refund: false,
-
+  
                 orderDetails: orderData.items.map((item: any, idx: number) => ({
                   order_detail_id: idx + 1,
                   dish_id: item.dish_id,
@@ -1102,7 +1099,7 @@ export class IndexeddbService {
                   total_dish_price_coupon_applied:
                     item.finalPrice * item.quantity - (item.coupon_value || 0),
                 })),
-
+  
                 order_status: "pending",
                 order_type: orderData.type || "dine-in",
                 transactions: [
@@ -1117,7 +1114,7 @@ export class IndexeddbService {
                 ],
               },
             ],
-
+  
             invoice_tips: [
               {
                 change_amount: orderData.change_amount || 0,
@@ -1130,27 +1127,27 @@ export class IndexeddbService {
                 returned_amount: orderData.returned_amount ?? 0,
               },
             ],
-
+  
             isOffline: true,
             isSynced: false,
             status: "pending",
             saved_at: new Date().toISOString(),
             created_at: new Date().toISOString(),
           };
-
+  
           const pillRequest = pillsStore.put(newInvoice);
-
+  
           pillRequest.onsuccess = () => {
             console.log("✅ Invoice saved in pills store:", newInvoice);
             resolve();
           };
-
+  
           pillRequest.onerror = (err) => {
             console.error("❌ Error saving invoice:", err);
             reject(err);
           };
         };
-
+  
         orderRequest.onerror = (e) => {
           console.error("❌ Error saving order to IndexedDB:", e);
           reject(e);
@@ -1161,7 +1158,7 @@ export class IndexeddbService {
       throw error;
     }
   }
-
+  
 
 
 
@@ -1597,76 +1594,30 @@ export class IndexeddbService {
 
 
   // Update a single table by id
-  // async updateTableStatus(tableId: number, newStatus: number): Promise<void> {
-  //   await this.ensureInit();
+  async updateTableStatus(tableId: number, newStatus: number): Promise<void> {
+    await this.ensureInit();
 
-  //   return new Promise((resolve, reject) => {
-  //     const tx = this.db.transaction('tables', 'readwrite');
-  //     const store = tx.objectStore('tables');
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('tables', 'readwrite');
+      const store = tx.objectStore('tables');
 
-  //     const getReq = store.get(tableId);
-  //     getReq.onsuccess = () => {
-  //       const table = getReq.result;
-  //       if (!table) {
-  //         reject(`Table ${tableId} not found`);
-  //         return;
-  //       }
+      const getReq = store.get(tableId);
+      getReq.onsuccess = () => {
+        const table = getReq.result;
+        if (!table) {
+          reject(`Table ${tableId} not found`);
+          return;
+        }
 
-  //       table.status = newStatus;
-  //       const putReq = store.put(table);
-
-  //       putReq.onsuccess = () => resolve();
-  //       putReq.onerror = (e) => reject(e);
-  //     };
-  //     getReq.onerror = (e) => reject(e);
-  //   });
-  // }
-
-  async updateTableStatus(identifier: number, newStatus: number): Promise<void> {
-  await this.ensureInit();
-
-  return new Promise((resolve, reject) => {
-    const tx = this.db.transaction('tables', 'readwrite');
-    const store = tx.objectStore('tables');
-
-    // حاول الأول بالـ id
-    const getById = store.get(identifier);
-
-    getById.onsuccess = () => {
-      let table = getById.result;
-
-      if (table) {
-        // ✅ لو لقاها بالـ id
         table.status = newStatus;
         const putReq = store.put(table);
+
         putReq.onsuccess = () => resolve();
         putReq.onerror = (e) => reject(e);
-      } else {
-        // ❌ مش لقاها بالـ id → نجرب بالـ table_number
-        const index = store.index('table_number');
-        const getByTableNumber = index.get(identifier);
-
-        getByTableNumber.onsuccess = () => {
-          const tableByNumber = getByTableNumber.result;
-          if (!tableByNumber) {
-            reject(`Table with ID or table_number ${identifier} not found`);
-            return;
-          }
-
-          tableByNumber.status = newStatus;
-          const putReq = store.put(tableByNumber);
-          putReq.onsuccess = () => resolve();
-          putReq.onerror = (e) => reject(e);
-        };
-
-        getByTableNumber.onerror = (e) => reject(e);
-      }
-    };
-
-    getById.onerror = (e) => reject(e);
-  });
-}
-
+      };
+      getReq.onerror = (e) => reject(e);
+    });
+  }
 
 
 
