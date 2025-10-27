@@ -73,7 +73,7 @@
                 <i class="fa-solid fa-chair fs-6 me-1"></i>
                 <small class="fw-bold">طاولة</small>
               </div>
-              <small class="fw-bold">{{ order.tableNumber }}</small>
+              <small class="fw-bold">{{ order.tableNumber   }}</small>
             </div>
             <div class="date d-flex justify-content-between mb-1">
               <h6 class="text-muted">
@@ -91,7 +91,7 @@
             <div class="num-items d-flex justify-content-between mb-1 border-bottom">
               <h6 class="text-muted"><small>عدد العناصر</small></h6>
               <h6 class="text-muted">
-                <small>{{ order.order_items_count }}</small>
+                <small>{{ order.order_items_count  }}</small>
               </h6>
             </div>
 
@@ -234,7 +234,7 @@
                 <div class="d-flex align-items-center gap-1">
                   <small class="fw-bold">طاولة</small>
                 </div>
-                <small class="fw-bold">{{ order.order_details.table_number }}</small>
+                <small class="fw-bold">{{ order.order_details.table_number ?? order.order_details.table_id  }}</small>
               </div>
               <div class="d-flex align-items-center justify-content-end my-2">
                 @if (order.order_details.payment_status == "unpaid") {
@@ -292,7 +292,7 @@
               <div class="num-items d-flex justify-content-between mb-1 border-bottom">
                 <h6 class="text-muted"><small>عدد العناصر</small></h6>
                 <h6 class="text-muted">
-                  <small>{{ order.order_details.order_items_count }}</small>
+                  <small>{{ order.order_details.order_items_count  }}</small>
                 </h6>
               </div>
 
