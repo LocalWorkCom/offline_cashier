@@ -1,5 +1,4 @@
-<ng-container *ngIf="filteredOrders$ | async as filteredOrders">
-<div class="requests p-3" *ngIf="filteredOrders && filteredOrders.length > 0">
+<div class="requests p-3" *ngIf="(filteredOrders$ | async) && (filteredOrders$ | async)!.length > 0">
   <!-- Order Type Tabs -->
   <h4>الطلبات</h4>
   <ul class="nav nav-requests mb-4 px-0" role="tablist">
@@ -39,9 +38,8 @@
     <ng-container *ngIf="selectedStatus === 'static'; else dynamicOrders">
 
       <!-- Static Orders -->
-      <ng-container *ngIf="displayedOrders$ | async as displayedOrders">
       <div class="row m-0">
-        <div *ngFor="let order of displayedOrders; trackBy: trackByOrderId"
+        <div *ngFor="let order of (filteredOrders$ | async) || []; trackBy: trackByOrderId"
           class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4">
           <!-- Order Card -->
           <div class="card p-2 d-flex flex-column justify-content-between h-100"
@@ -188,20 +186,12 @@
           </div>
         </div>
       </div>
-      <!-- Load More Button -->
-      <div class="text-center mt-3" *ngIf="hasMoreOrders()">
-        <button class="btn btn-primary" (click)="loadMoreOrders()">
-          تحميل المزيد
-        </button>
-      </div>
-      </ng-container>
     </ng-container>
 
     <!-- Dynamic Orders -->
     <ng-template #dynamicOrders>
-      <ng-container *ngIf="displayedOrders$ | async as displayedOrders">
       <div class="row m-0">
-        <div *ngFor="let order of displayedOrders; trackBy: trackByOrderId"
+        <div *ngFor="let order of (filteredOrders$ | async) || []; trackBy: trackByOrderId"
           class="col-xl-4 col-md-6 col-sm-12 mb-4">
 
           <!-- Dynamic Order Card -->
@@ -586,17 +576,9 @@
           </div>
         </div>
       </div>
-      <!-- Load More Button -->
-      <div class="text-center mt-3" *ngIf="hasMoreOrders()">
-        <button class="btn btn-primary" (click)="loadMoreOrders()">
-          تحميل المزيد
-        </button>
-      </div>
-      </ng-container>
     </ng-template>
   </div>
 </div>
-</ng-container>
 
 <!-- Loading State -->
 <div *ngIf="loading" class="text-center p-5">
@@ -607,12 +589,10 @@
 </div>
 
 <!-- Empty State -->
-<ng-container *ngIf="filteredOrders$ | async as filteredOrders">
-<div *ngIf="!loading && (filteredOrders?.length === 0 || !filteredOrders)"
+<div *ngIf="!loading && ((filteredOrders$ | async)?.length === 0 || !(filteredOrders$ | async))"
   class="text-center p-5">
   <p class="text-muted">لا توجد طلبات لعرضها</p>
 </div>
-</ng-container>
 
 
 <ng-template #messageModal let-modal>
