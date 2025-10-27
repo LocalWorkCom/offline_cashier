@@ -542,6 +542,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
             payment_status_menu_integration: order.payment_status_menu_integration,
             payment_method_menu_integration: order.payment_method_menu_integration,
 
+
             // dalia end tips
 
 
@@ -842,7 +843,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   // end hanan
   updateTotalPrices() {
     this.cartItems.forEach((item) => {
-      item.totalPrice = item.quantity * item.price;
+    // const price = parseFloat(item.dish.price) || 0;
+    // const quantity = parseFloat(item.quantity) || 0;
+
+    item.totalPrice = this.getItemTotal(item);
+    item.final_Price = this.getItemTotal(item);
+    item.finalPrice = this.getItemTotal(item);
     });
     this.totalPrice = this.cartItems.reduce(
       (total, item) => total + item.totalPrice,
@@ -2465,7 +2471,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
           sizeName: item.selectedSize?.name || '',
           sizeDescription: item.selectedSize?.description || '',
           note: item.note || '',
-          finalPrice: item.finalPrice || 0,
+          finalPrice: item.final_Price || 0,
           selectedAddons: item.selectedAddons || [],
           addon_categories: item.addon_categories
             ?.map((category: { id: any; addons: { id: any }[] }) => {
@@ -2561,6 +2567,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       }, 1500);
       return;
     }
+
+    console.log("this cartItems " ,this.cartItems);
 
     if (!this.selectedOrderType) {
       this.isLoading = false;
