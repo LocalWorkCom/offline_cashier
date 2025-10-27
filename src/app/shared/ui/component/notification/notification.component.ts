@@ -160,7 +160,9 @@ export class NotificationComponent implements OnInit, OnDestroy, AfterViewInit {
       );
     });
 
-    return allNotifications;
+  // Remove any date group that now has no notifications
+  return allNotifications.filter((item) => item.notifications.length > 0);
+    // return allNotifications;
   }
 
   ngOnDestroy(): void {

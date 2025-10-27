@@ -1,4 +1,9 @@
-import { ChangeDetectorRef, Component, OnDestroy } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  OnDestroy,
+  ViewChild,
+} from '@angular/core';
 import {
   ActivatedRoute,
   Router,
@@ -24,30 +29,30 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Modal } from 'bootstrap';
 import { log } from 'node:console';
 import { baseUrl } from '../environment';
-
+import { EditOrderModalComponent } from '../edit-order-modal/edit-order-modal.component';
+import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { ProductsService } from '../services/products.service';
 import { IndexeddbService } from '../services/indexeddb.service';
+import { json } from 'node:stream/consumers';
 
 @Component({
   selector: 'app-orders',
   standalone: true,
   templateUrl: './orders.component.html',
   styleUrls: ['./orders.component.css'],
-  imports: [RouterLink, ShowLoaderUntilPageLoadedDirective
-    , RouterLinkActive, CommonModule, FormsModule, AccordionModule],
+  imports: [
+    RouterLink,
+    ShowLoaderUntilPageLoadedDirective,
+    RouterLinkActive,
+    CommonModule,
+    FormsModule,
+    AccordionModule,
+  ],
 })
 export class OrdersComponent implements OnDestroy {
-
-   // Add these properties
   private isOnline: boolean = navigator.onLine;
-  private ordersLastSync: number = 0;
-  private syncInterval: any;
-   // Add these properties for last order display
-  lastOrderFromIndexedDB: any = null;
   isLastOrderLoading: boolean = false;
   lastOrderError: string = '';
-  currentOrderNumber: string = '#CS-1000';
-  nextOrderNumber: string = '#CS-1001';
-
   orders: any[] = [];
   ordersStatus: string[] = []; //
   filteredOrdersByStatus: { status: string; orders: any[] }[] = [];
@@ -68,14 +73,25 @@ export class OrdersComponent implements OnDestroy {
   selectedOrderTypeStatus: string = 'All';
   // selectedOrderTypeStatus: string = 'dine-in';
   filteredCartItems: any;
-  allowedOrderTypes = ['Takeaway', 'Delivery', 'dine-in'];
-  allowedStatuses = ['pending', 'in_progress', 'readyForPickup', 'completed', 'cancelled', 'on_way', 'delivered'];
+  allowedOrderTypes = ['Takeaway', 'Delivery', 'dine-in' , 'talabat'];
+  allowedStatuses = [
+    'pending',
+    'in_progress',
+    'readyForPickup',
+    'completed',
+    'cancelled',
+    'on_way',
+    'delivered',
+  ];
   private destroy$ = new Subject<void>();
   loading: boolean = true;
-  isFilterdFromClientSide: boolean = true
+  isFilterdFromClientSide: boolean = true;
   private activeOrderChannels: Set<string> = new Set();
   order: any;
   errorMessage: any;
+  apiUrl = `${baseUrl}`;
+  removeLoading: boolean = false;
+
   constructor(
     private ordersService: OrdersService,
     private router: Router,
@@ -88,9 +104,9 @@ export class OrdersComponent implements OnDestroy {
     private orderChange: DishStatusService,
     private cdr: ChangeDetectorRef,
     private http: HttpClient,
-    private dbService: IndexeddbService // Add IndexedDB service
-
-
+    private NgbModal: NgbModal,
+    private productsService: ProductsService,
+    private dbService: IndexeddbService
   ) {
     // const navigation = this.router.getCurrentNavigation();
     // this.orderDetails = navigation?.extras.state?.['orderData'];
@@ -98,137 +114,41 @@ export class OrdersComponent implements OnDestroy {
     // console.log(this.orderDetails,'orderDetails')
   }
 
-  // ngOnInit(): void {
-  //   this.selectedOrderTypeStatus = 'All';
-  //   this.loadCartItems();
-  //   this.filterCartItems();
-  //   this.fetchOrdersData();
-  //   this.fetchOrderDetails();
-  //   // this.setupPusherListeners();
-  //   // this.listenToDishChange();
-  //   // this.listenToOrderChange()
-  //   this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe({
-  //     next: (params) => {
-  //       this.orderId = params.get('id');
-  //       if (this.orderId) {
-  //         this.fetchOrderDetails();
-  //       }
-  //     },
-  //     error: (err) => {
-  //       this.error = 'Error retrieving order ID from route.';
-  //     },
-  //   });
-
-  //   // 'pusher'
-  //   // this.listenToNewOrder();
-
-  // }
-
-
   ngOnInit(): void {
-
+    console.log("this.isOnline",this.isOnline);
     this.selectedOrderTypeStatus = 'All';
+    if(this.isOnline == false)
+    {
+      this.loadOrdersFromIndexedDB();
+    }
+    else
+    {
+      this.fetchOrdersFromAPI();
+    }
+
     this.loadCartItems();
     this.filterCartItems();
-
-    // Set up online/offline detection
-    this.setupOnlineOfflineDetection();
-
-    // Load orders from IndexedDB first, then try to fetch from API
-    this.loadOrdersFromIndexedDB();
-       // Load last order from IndexedDB
-    this.loadLastOrderFromIndexedDB();
-
+    // this.fetchOrdersData();
     this.fetchOrderDetails();
-
-    // ... rest of ngOnInit code ...
-
-    // Set up periodic sync (every 5 minutes)
-    this.syncInterval = setInterval(() => {
-      if (this.isOnline) {
-        this.fetchOrdersFromAPI();
-      }
-    }, 5 * 60 * 1000); // 5 minutes
-  }
-    // Load the last order from IndexedDB
-// orders.component.ts - Updated method
-// orders.component.ts - Add this method
-
-// Method to process the order number and store the next one
-processOrderNumber(): void {
-  this.dbService.processAndStoreNextOrderNumber().then(result => {
-    console.log('Order number processed successfully:');
-    console.log('Current:', result.current);
-    console.log('Next:', result.next);
-
-    // You can store these in component properties if needed
-    this.currentOrderNumber = result.current;
-    this.nextOrderNumber = result.next;
-
-  }).catch((error: any) => {
-    console.error('Error processing order number:', error);
-  });
-}
-// orders.component.ts - Add this method
-
-// Get the stored next order number
-getNextOrderNumberFromStorage(): void {
-  this.dbService.getStoredNextOrderNumber().then(nextNumber => {
-    console.log('Next order number from storage:', nextNumber);
-    this.nextOrderNumber = nextNumber;
-  }).catch((error: any) => {
-    console.error('Error getting next order number:', error);
-  });
-}
-
-
-loadLastOrderFromIndexedDB(): void {
-  this.isLastOrderLoading = true;
-  this.lastOrderError = '';
-
-  this.dbService.getLastOrderNumberFromDB().then((orderNumber: string) => {
-    this.isLastOrderLoading = false;
-
-    if (orderNumber) {
-      console.log('Last order number from IndexedDB:', orderNumber);
-
-      // Extract numeric part and increment
-      const result = this.dbService.extractAndIncrementOrderNumber(orderNumber);
-
-      this.currentOrderNumber = result.current;
-      this.nextOrderNumber = result.next;
-
-      console.log('Current order number:', this.currentOrderNumber);
-      console.log('Next order number:', this.nextOrderNumber);
-
-      // Save the next order number
-      this.dbService.saveNextOrderNumber(this.nextOrderNumber).then(() => {
-        console.log('Next order number saved to IndexedDB:', this.nextOrderNumber);
-      }).catch((err: any) => {
-        console.error('Error saving next order number:', err);
-      });
-    } else {
-      console.log('No orders found in IndexedDB');
-    }
-  }).catch((err: any) => {
-    console.error('Error loading last order from IndexedDB:', err);
-    this.lastOrderError = 'فشل في تحميل آخر طلب من التخزين المحلي';
-    this.isLastOrderLoading = false;
-  });
-}
-  // Set up online/offline detection
-  private setupOnlineOfflineDetection(): void {
-    window.addEventListener('online', () => {
-      this.isOnline = true;
-      console.log('Online - syncing data');
-      this.fetchOrdersFromAPI();
+    // this.setupPusherListeners();
+    this.listenToDishChange();
+    // this.listenToOrderChange();
+    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe({
+      next: (params) => {
+        this.orderId = params.get('id');
+        if (this.orderId) {
+          this.fetchOrderDetails();
+        }
+      },
+      error: (err) => {
+        this.error = 'Error retrieving order ID from route.';
+      },
     });
-
-    window.addEventListener('offline', () => {
-      this.isOnline = false;
-      console.log('Offline - using cached data');
-    });
+    // 'pusher'
+    this.listenToNewOrder();
   }
+
+  //start dalia
 
   // Load orders from IndexedDB
   private loadOrdersFromIndexedDB(): void {
@@ -267,7 +187,6 @@ loadLastOrderFromIndexedDB(): void {
       }
     });
   }
-
   // Fetch orders from API
   private fetchOrdersFromAPI(): void {
     this.loading = false;
@@ -310,7 +229,6 @@ loadLastOrderFromIndexedDB(): void {
       },
     });
   }
-
   // Process orders (common method for both API and IndexedDB data)
   private processOrders(orders: any[]): void {
     this.currencySymbol = orders[0]?.currency_symbol;
@@ -333,36 +251,73 @@ loadLastOrderFromIndexedDB(): void {
     this.filterOrders();
     this.loading = true;
   }
+  //end dalia
 
-  // listenToNewOrder() {
-  //   this.newOrder.listenToNewOrder();
-  //   this.newOrder.orderAdded$.pipe(takeUntil(this.destroy$)).subscribe((newOrder) => {
-  //     this.orders = [newOrder.data.Order, ...this.orders]
-  //     if ((this.selectedOrderTypeStatus == 'dine-in' || (newOrder.data.Order.order_details.order_type.toLowerCase() == this.selectedOrderTypeStatus.toLowerCase())
-  //       && (this.selectedStatus == 'all' || newOrder.data.Order.order_details.status.toLowerCase() == this.selectedStatus.toLocaleLowerCase()))) {
-  //       this.filteredOrders = [...this.orders]
-  //     }
-
-  //   })
-  // }
-
-  // Update your listenToNewOrder method to save to IndexedDB
   listenToNewOrder() {
     this.newOrder.listenToNewOrder();
-    this.newOrder.orderAdded$.pipe(takeUntil(this.destroy$)).subscribe((newOrder) => {
-      this.orders = [newOrder.data.Order, ...this.orders];
+    this.newOrder.orderAdded$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((newOrder) => {
+        this.orders = [newOrder.data.Order, ...this.orders];
+        console.log(
+          this.selectedOrderTypeStatus,
+          'new selectedOrderTypeStatus arrived'
+        );
+        const orderType =
+          newOrder.data.Order.order_details.order_type?.toLowerCase();
+        const status = newOrder.data.Order.order_details.status?.toLowerCase();
 
-      // Save new orders to IndexedDB
-      this.dbService.saveOrders(this.orders).catch(err => {
-        console.error('Error saving new orders to IndexedDB:', err);
+        const isAllOrderTypes =
+          this.selectedOrderTypeStatus?.toLowerCase() === 'all';
+        const isAllStatuses = this.selectedStatus?.toLowerCase() === 'all';
+
+        const matchesOrderType =
+          isAllOrderTypes ||
+          orderType === this.selectedOrderTypeStatus?.toLowerCase();
+
+        const matchesStatus =
+          isAllStatuses || status === this.selectedStatus?.toLowerCase();
+
+        if (matchesOrderType && matchesStatus) {
+          this.filteredOrders = [...this.orders];
+        }
+
+        // if (this.selectedOrderTypeStatus.toLowerCase()=='all'||
+        //   (this.selectedOrderTypeStatus == 'dine-in' ||
+        //   (newOrder.data.Order.order_details.order_type.toLowerCase() ==
+        //     this.selectedOrderTypeStatus.toLowerCase() &&
+        //     (this.selectedStatus == 'all' ||
+        //       newOrder.data.Order.order_details.status.toLowerCase() ==
+        //         this.selectedStatus.toLocaleLowerCase())))
+        // ) {
+        //   console.log('fatema new order added to list');
+
+        //   this.filteredOrders = [...this.orders];
+        // }
       });
-
-      if ((this.selectedOrderTypeStatus == 'dine-in' || (newOrder.data.Order.order_details.order_type.toLowerCase() == this.selectedOrderTypeStatus.toLowerCase())
-        && (this.selectedStatus == 'all' || newOrder.data.Order.order_details.status.toLowerCase() == this.selectedStatus.toLocaleLowerCase()))) {
-        this.filteredOrders = [...this.orders];
-      }
-    });
   }
+  // listenToOrderChangeStatus(orders:any){
+  //   this.orderChangeStatus.orderChange(orders)
+  // }
+
+  // private subscribeToOrderStatusChannel(orderId: string | undefined): void {
+  //   if (!orderId || this.activeOrderChannels.has(orderId)) return;
+
+  //   const channelName = `order-status-${orderId}`;
+  //   this.pusherService.pipe(takeUntil(this.destroy$)).subscribe(channelName, 'order-status-update', (data: any) => {
+  //     console.log(`Order status update received for order ${orderId}:`, data);
+  //     this.handleOrderStatusUpdate(data);
+  //   });
+
+  //   this.activeOrderChannels.add(orderId);
+  // }
+
+  // private unsubscribeFromOrderStatusChannel(orderId: string | undefined): void {
+  //   if (!orderId || !this.activeOrderChannels.has(orderId)) return;
+
+  //   const channelName = `order-status-${orderId}`;
+  //   this.activeOrderChannels.delete(orderId);
+  // }
 
   private handleOrderStatusUpdate(data: any): void {
     // data should contain data.order and data.status as per your backend team's spec
@@ -370,7 +325,7 @@ loadLastOrderFromIndexedDB(): void {
     const newStatus = data.status;
 
     const index = this.orders.findIndex(
-      order => order.order_details?.order_id === updatedOrder.order_id
+      (order) => order.order_details?.order_id === updatedOrder.order_id
     );
 
     if (index !== -1) {
@@ -379,21 +334,22 @@ loadLastOrderFromIndexedDB(): void {
         ...this.orders[index],
         order_details: {
           ...this.orders[index].order_details,
-          status: newStatus
+          status: newStatus,
         },
-        recentlyUpdated: true
+        recentlyUpdated: true,
       };
 
       // Show notification
       this.showUpdateNotification(
-        `تم تحديث حالة الطلب #${updatedOrder.order_number} إلى ${this.getStatusText(newStatus)}`,
+        `تم تحديث حالة الطلب #${updatedOrder.order_number
+        } إلى ${this.getStatusText(newStatus)}`,
         'info'
       );
 
       // Reset the update flag after 5 seconds
       setTimeout(() => {
         const updatedIndex = this.orders.findIndex(
-          order => order.order_details?.order_id === updatedOrder.order_id
+          (order) => order.order_details?.order_id === updatedOrder.order_id
         );
         if (updatedIndex !== -1) {
           this.orders[updatedIndex].recentlyUpdated = false;
@@ -408,7 +364,7 @@ loadLastOrderFromIndexedDB(): void {
 
   private handleOrderUpdate(updatedOrder: any): void {
     const index = this.orders.findIndex(
-      order => order.order_details?.order_id === updatedOrder.order_id
+      (order) => order.order_details?.order_id === updatedOrder.order_id
     );
 
     if (index !== -1) {
@@ -417,13 +373,13 @@ loadLastOrderFromIndexedDB(): void {
         recentlyUpdated: true,
         order_details: {
           ...this.orders[index].order_details,
-          ...updatedOrder
-        }
+          ...updatedOrder,
+        },
       };
 
       setTimeout(() => {
         const updatedIndex = this.orders.findIndex(
-          order => order.order_details?.order_id === updatedOrder.order_id
+          (order) => order.order_details?.order_id === updatedOrder.order_id
         );
         if (updatedIndex !== -1) {
           this.orders[updatedIndex].recentlyUpdated = false;
@@ -437,12 +393,13 @@ loadLastOrderFromIndexedDB(): void {
   private handleNewOrder(newOrder: any): void {
     this.orders.unshift({
       ...newOrder,
-      isNewOrder: true
+      isNewOrder: true,
     });
 
     setTimeout(() => {
       const newOrderIndex = this.orders.findIndex(
-        order => order.order_details?.order_id === newOrder.order_details?.order_id
+        (order) =>
+          order.order_details?.order_id === newOrder.order_details?.order_id
       );
       if (newOrderIndex !== -1) {
         this.orders[newOrderIndex].isNewOrder = false;
@@ -451,42 +408,49 @@ loadLastOrderFromIndexedDB(): void {
 
     this.filterOrders();
   }
-  filterOrdersInput(): void {
-    const search = this.searchOrderNumber?.trim().toLowerCase();
+filterOrdersInput(): void {
+  const search = this.searchOrderNumber?.trim().toLowerCase();
 
-    // Reset view if search is empty
-    if (!search) {
-      this.filterOrders();
-      return;
-    }
-
-    // Find the order that matches the search
-    const foundOrder = this.orders.find(order =>
-      order.order_details?.order_number?.toString().toLowerCase().includes(search)
-    );
-
-    if (foundOrder) {
-      this.selectedOrderTypeStatus = foundOrder.order_details?.order_type;
-      this.selectedStatus = 'all';
-
-      // Show only the matched order
-      this.filteredOrders = [foundOrder];
-
-      // Optional: scroll and highlight
-      setTimeout(() => {
-        document.querySelectorAll('.highlight-order').forEach(el => el.classList.remove('highlight-order'));
-
-        const el = document.getElementById(`order-${foundOrder.order_details?.order_number}`);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-          el.classList.add('highlight-order');
-        }
-      }, 100);
-    } else {
-      // No match
-      this.filteredOrders = [];
-    }
+  // Reset view if search is empty
+  if (!search) {
+    this.filterOrders();
+    return;
   }
+
+  // Find all orders that match the search
+  const foundOrders = this.orders.filter((order) =>
+    order.order_details?.order_number
+      ?.toString()
+      .toLowerCase()
+      .includes(search)
+  );
+
+  if (foundOrders.length > 0) {
+    this.selectedOrderTypeStatus = foundOrders[0].order_details?.order_type;
+    this.selectedStatus = 'all';
+
+    // Show all matched orders
+    this.filteredOrders = foundOrders;
+
+    // Optional: scroll and highlight the first one
+    setTimeout(() => {
+      document
+        .querySelectorAll('.highlight-order')
+        .forEach((el) => el.classList.remove('highlight-order'));
+
+      const el = document.getElementById(
+        `order-${foundOrders[0].order_details?.order_number}`
+      );
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        el.classList.add('highlight-order');
+      }
+    }, 100);
+  } else {
+    // No match
+    this.filteredOrders = [];
+  }
+}
 
 
   increaseItem(item: any, index: number): void {
@@ -525,12 +489,15 @@ loadLastOrderFromIndexedDB(): void {
     const quantity = item.selectedQuantity ?? item.quantity;
 
     const basePrice = item.base_price || 0;
-    const addonsPrice = item.addons?.reduce((sum: number, addon: any) => sum + (addon.price || 0), 0) || 0;
+    const addonsPrice =
+      item.addons?.reduce(
+        (sum: number, addon: any) => sum + (addon.price || 0),
+        0
+      ) || 0;
 
     const totalPrice = (basePrice + addonsPrice) * quantity;
     return totalPrice;
   }
-
 
   highlightMatch(text: string, search: string): SafeHtml {
     if (!search) return text;
@@ -541,52 +508,27 @@ loadLastOrderFromIndexedDB(): void {
 
   private handleOrderDeletion(deletedOrder: any): void {
     this.orders = this.orders.filter(
-      order => order.order_details?.order_id !== deletedOrder.order_id
+      (order) => order.order_details?.order_id !== deletedOrder.order_id
     );
     this.filterOrders();
   }
-  // // Update ngOnDestroy to clean up all subscriptions
-  // ngOnDestroy(): void {
-  //   this.destroy$.next();
-  //   this.destroy$.complete();
-  //   this.newOrder.stopListening();
-  //   this.orderChangeStatus.stopListeningOfOrderStatus();
-  //   this.orderChange.stopListening()
-  //   // this.activeOrderChannels.forEach(orderId => {
-  //   //   this.unsubscribeFromOrderStatusChannel(orderId);
-  //   // });
-  //   // this.activeOrderChannels.clear();
-
-  // }
-
-    // Update ngOnDestroy to clear interval
+  // Update ngOnDestroy to clean up all subscriptions
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
     this.newOrder.stopListening();
     this.orderChangeStatus.stopListeningOfOrderStatus();
     this.orderChange.stopListening();
-
-    // Clear sync interval
-    if (this.syncInterval) {
-      clearInterval(this.syncInterval);
-    }
+    // this.activeOrderChannels.forEach(orderId => {
+    //   this.unsubscribeFromOrderStatusChannel(orderId);
+    // });
+    // this.activeOrderChannels.clear();
   }
 
-    // Add a method to manually refresh orders
-  refreshOrders(): void {
-    this.loading = false;
-    if (this.isOnline) {
-      this.fetchOrdersFromAPI();
-    } else {
-      // Show message that we're offline
-      console.log('Cannot refresh - offline');
-      this.loading = true;
-    }
-  }
-
-
-  private showUpdateNotification(message: string, type: 'success' | 'info' | 'warning' | 'error' = 'info') {
+  private showUpdateNotification(
+    message: string,
+    type: 'success' | 'info' | 'warning' | 'error' = 'info'
+  ) {
     // Simple notification implementation - consider using a proper toast service
     const toast = document.createElement('div');
     toast.className = `toast show position-fixed bottom-0 end-0 m-3 bg-${type} text-white`;
@@ -640,7 +582,7 @@ loadLastOrderFromIndexedDB(): void {
     }
   }
   loadOrderToCart(orderId: number) {
-    localStorage.setItem('cart', JSON.stringify([]));
+    localStorage.setItem('holdCart', JSON.stringify([]));
 
     const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
     const selectedOrder = savedOrders.find((o: any) => o.orderId === orderId);
@@ -650,7 +592,9 @@ loadLastOrderFromIndexedDB(): void {
       return;
     }
 
-    const existingCart: any[] = JSON.parse(localStorage.getItem('cart') || '[]');
+    const existingCart: any[] = JSON.parse(
+      localStorage.getItem('holdCart') || '[]'
+    );
     const orderItems: any[] = selectedOrder.items || [];
 
     // Normalize function to compare uniqueness
@@ -662,11 +606,11 @@ loadLastOrderFromIndexedDB(): void {
         .map((addon: any) => addon.id)
         .sort()
         .join(','),
-      note: item.note?.trim() || ''
+      note: item.note?.trim() || '',
     });
 
     const existingKeys = new Set(
-      existingCart.map(item => {
+      existingCart.map((item) => {
         const norm = normalize(item);
         return `${norm.dishId}-${norm.sizeId}-${norm.addons}-${norm.note}`;
       })
@@ -674,7 +618,7 @@ loadLastOrderFromIndexedDB(): void {
 
     // Re-map new items into the expected cart structure
     const newItems = orderItems
-      .filter(item => {
+      .filter((item) => {
         const norm = normalize(item);
         const key = `${norm.dishId}-${norm.sizeId}-${norm.addons}-${norm.note}`;
         return !existingKeys.has(key);
@@ -694,8 +638,9 @@ loadLastOrderFromIndexedDB(): void {
 
         const addon_categories = item.addon_categories || [];
 
-        const selectedAddons = addon_categories
-          .flatMap((cat: any) => cat.addons || []);
+        const selectedAddons = addon_categories.flatMap(
+          (cat: any) => cat.addons || []
+        );
 
         return {
           dish: {
@@ -720,11 +665,14 @@ loadLastOrderFromIndexedDB(): void {
       });
 
     const updatedCart = [...existingCart, ...newItems];
-    localStorage.setItem('cart', JSON.stringify(updatedCart));
+    localStorage.setItem('holdCart', JSON.stringify(updatedCart));
 
     // Set order data
     if (selectedOrder.FormDataDetails) {
-      localStorage.setItem('FormDataDetails', JSON.stringify(selectedOrder.FormDataDetails));
+      localStorage.setItem(
+        'FormDataDetails',
+        JSON.stringify(selectedOrder.FormDataDetails)
+      );
     }
     if (selectedOrder.type) {
       localStorage.setItem('selectedOrderType', selectedOrder.type);
@@ -734,23 +682,29 @@ loadLastOrderFromIndexedDB(): void {
     this.router.navigate(['/home']);
   }
 
-
   // fetchOrdersData(): void {
   //   this.loading = false;
-  //   this.ordersListService.getOrdersList().pipe(
-  //     finalize(() => {
-  //       this.loading = true;
-  //     })
-  //     , takeUntil(this.destroy$)).subscribe({
+  //   this.ordersListService
+  //     .getOrdersList()
+  //     .pipe(
+  //       finalize(() => {
+  //         this.loading = true;
+  //       }),
+  //       takeUntil(this.destroy$)
+  //     )
+  //     .subscribe({
   //       next: (response) => {
-  //         console.log(response.data.orders)
+  //         console.log(response.data.orders);
 
   //         if (response.status && response.data.orders) {
   //           this.currencySymbol = response.data.orders[0]?.currency_symbol;
   //           this.orders = response.data.orders
-  //             .filter((order: any) =>
-  //               this.allowedOrderTypes.includes(order.order_details?.order_type) &&
-  //               this.allowedStatuses.includes(order.order_details?.status)
+  //             .filter(
+  //               (order: any) =>
+  //                 this.allowedOrderTypes.includes(
+  //                   order.order_details?.order_type
+  //                 ) &&
+  //                 this.allowedStatuses.includes(order.order_details?.status)
   //             )
   //             .map((order: any) => ({
   //               ...order,
@@ -759,11 +713,12 @@ loadLastOrderFromIndexedDB(): void {
   //           // this.listenToOrderChangeStatus(this.orders)
 
   //           this.ordersStatus = Array.from(
-  //             new Set(this.orders.map(order => order.order_details?.status || ""))
-  //           ).filter(status => this.allowedStatuses.includes(status));
+  //             new Set(
+  //               this.orders.map((order) => order.order_details?.status || '')
+  //             )
+  //           ).filter((status) => this.allowedStatuses.includes(status));
 
   //           if (this.ordersStatus.length > 0) this.ordersStatus.unshift('all');
-
 
   //           // // Subscribe to order-specific channels here
   //           // this.orders.forEach(order => {
@@ -772,7 +727,6 @@ loadLastOrderFromIndexedDB(): void {
 
   //           this.filterOrders();
   //         } else {
-
   //           console.warn('No orders found in response.');
   //         }
   //       },
@@ -781,16 +735,6 @@ loadLastOrderFromIndexedDB(): void {
   //       },
   //     });
   // }
-
-    // Update your existing fetchOrdersData method to use the new approach
-  fetchOrdersData(): void {
-    if (this.isOnline) {
-      this.fetchOrdersFromAPI();
-    } else {
-      this.loadOrdersFromIndexedDB();
-    }
-  }
-
 
   selectStatusGroup(index: number): void {
     this.selectedStatus = this.ordersStatus[index];
@@ -818,15 +762,21 @@ loadLastOrderFromIndexedDB(): void {
   }
 
   getStatusText(status: any): string {
+
     switch (status) {
       case 'all':
-        return "الكل";
+        return 'الكل';
+      case 'pending':
       case 'pending':
         return 'بانتظار التحضير';
       case 'completed':
         return 'مكتملة ';
       case 'readyForPickup':
-        if (this.selectedOrderTypeStatus === 'Delivery' || this.selectedOrderTypeStatus === 'Takeaway') {
+        if (
+          this.selectedOrderTypeStatus === 'Delivery' ||
+          this.selectedOrderTypeStatus === 'Takeaway'||
+        this.selectedOrderTypeStatus === 'talabat' 
+        ) {
           return 'جاهزة للاستلام';
         } else {
           return 'جاهزة للتقديم';
@@ -844,18 +794,17 @@ loadLastOrderFromIndexedDB(): void {
       case 'cancel':
         return 'ملغية';
       default:
-        return `Unknown : ${status}`
+
+        return `Unknown : ${status}`;
     }
   }
-
-
 
   translateType(type: string): string {
     const translations: { [key: string]: string } = {
       'dine-in': 'فى المطعم',
       Takeaway: ' إستلام',
       Delivery: 'توصيل',
-
+      talabat: 'طلبات',
     };
 
     return translations[type] || type;
@@ -869,9 +818,10 @@ loadLastOrderFromIndexedDB(): void {
     }
 
     if (this.selectedStatus === 'static') {
-      return this.cartItems?.filter(
-        (item: any) => item.type === orderType
-      )?.length || 0;
+      return (
+        this.cartItems?.filter((item: any) => item.type === orderType)
+          ?.length || 0
+      );
     }
 
     return this.orders.filter(
@@ -897,11 +847,11 @@ loadLastOrderFromIndexedDB(): void {
       Takeaway: 'assets/images/out.png',
       Delivery: 'assets/images/delivery.png',
       'dine-in': 'assets/images/in.png',
+      'talabat': 'assets/images/in.png',
     };
 
-
     return (
-      images[type as 'Takeaway' | 'Delivery' | 'dine-in'] ||
+      images[type as 'Takeaway' | 'Delivery' | 'dine-in' | 'talabat'] ||
       'assets/images/default.png'
     );
   }
@@ -912,15 +862,16 @@ loadLastOrderFromIndexedDB(): void {
     // filter by order type (skip if "All")
     if (this.selectedOrderTypeStatus !== 'All') {
       filtered = filtered.filter(
-        (order) => order.order_details?.order_type === this.selectedOrderTypeStatus
+        (order) =>
+          order.order_details?.order_type === this.selectedOrderTypeStatus
       );
     }
 
     // filter by status
     if (this.selectedStatus === 'completed') {
       // completed includes delivered
-      filtered = filtered.filter(
-        (order) => ['completed', 'delivered'].includes(order.order_details?.status)
+      filtered = filtered.filter((order) =>
+        ['completed', 'delivered'].includes(order.order_details?.status)
       );
     } else if (this.selectedStatus === 'static') {
       const stored = localStorage.getItem('savedOrders');
@@ -929,6 +880,7 @@ loadLastOrderFromIndexedDB(): void {
       if (this.selectedOrderTypeStatus === 'All') {
         filtered = parsed; //  take all saved orders
       } else {
+        ``;
         filtered = parsed.filter(
           (item: any) => item.type === this.selectedOrderTypeStatus
         );
@@ -943,7 +895,10 @@ loadLastOrderFromIndexedDB(): void {
     if (this.searchText) {
       const search = this.searchText.toLowerCase();
       filtered = filtered.filter((order) =>
-        order.order_details?.order_number?.toString().toLowerCase().includes(search)
+        order.order_details?.order_number
+          ?.toString()
+          .toLowerCase()
+          .includes(search)
       );
     }
 
@@ -984,7 +939,6 @@ loadLastOrderFromIndexedDB(): void {
   //   this.filteredOrders = filtered;
   // }
 
-
   handleRedirect(item: any): void {
     // console.log('Clicked item:', item);
     if (
@@ -1011,35 +965,32 @@ loadLastOrderFromIndexedDB(): void {
     const status = order.order_details.status;
     const orderId = order.order_details.order_id;
 
-
     if (
       type === 'Delivery' &&
-      (status === 'pending' || status === 'in_progress' || status === 'readyForPickup')
+      (status === 'pending' ||
+        status === 'in_progress' ||
+        status === 'readyForPickup')
     ) {
       return '/cart/' + orderId;
     }
-
 
     // if (type === 'Takeaway' && status === 'readyForPickup') {
     //   return '/cart/' + orderId;
     // }
 
-
     return '/order-details/' + orderId;
   }
-
-
 
   selectOrderType(orderType: string): void {
     console.log('fatema', orderType, this.selectedOrderTypeStatus);
 
     this.selectedOrderTypeStatus = orderType;
     this.filterOrders();
-    this.filterOrdersInput()
+    this.filterOrdersInput();
   }
   selectStatus(status: string): void {
     this.selectedStatus = status;
-    this.filterOrdersInput()
+    this.filterOrdersInput();
     this.filterOrders();
   }
   getTotalPrice(order: any): number {
@@ -1049,12 +1000,18 @@ loadLastOrderFromIndexedDB(): void {
       const basePrice = item.size_price || item.dish_price || 0;
 
       // Total price of all selected addons
-      const addonsTotal = (item.addon_categories || []).reduce((sum: number, category: any) => {
-        const addonSum = (category.addons || []).reduce((acc: number, addon: any) => {
-          return acc + (addon.price || 0);
-        }, 0);
-        return sum + addonSum;
-      }, 0);
+      const addonsTotal = (item.addon_categories || []).reduce(
+        (sum: number, category: any) => {
+          const addonSum = (category.addons || []).reduce(
+            (acc: number, addon: any) => {
+              return acc + (addon.price || 0);
+            },
+            0
+          );
+          return sum + addonSum;
+        },
+        0
+      );
 
       const itemTotal = (basePrice + addonsTotal) * item.quantity;
       total += itemTotal;
@@ -1065,10 +1022,15 @@ loadLastOrderFromIndexedDB(): void {
 
   getAddonsTotal(item: any): number {
     return (item.addon_categories || []).reduce((sum: number, cat: any) => {
-      return sum + (cat.addons || []).reduce((aSum: number, addon: any) => aSum + (addon.price || 0), 0);
+      return (
+        sum +
+        (cat.addons || []).reduce(
+          (aSum: number, addon: any) => aSum + (addon.price || 0),
+          0
+        )
+      );
     }, 0);
   }
-
 
   getOrderTypeLabel(orderType: string): string {
     const translations: { [key: string]: string } = {
@@ -1076,24 +1038,25 @@ loadLastOrderFromIndexedDB(): void {
       Takeaway: ' إستلام',
       Delivery: 'توصيل',
       'dine-in': 'فى المطعم',
+      'talabat': 'طلبات',
     };
     return translations[orderType] || orderType;
   }
 
   statusLabels: Record<string, string> = {
-    "all": "الكل",
-    "pending": "بانتظار التحضير",
-    "in_progress": "قيد التحضير",
-    "on_way": "في الطريق",
-    "completed": "مكتملة ",
-    "cancelled": "ملغية",
-    "static": "معلقة",
+    all: 'الكل',
+    pending: 'بانتظار التحضير',
+    in_progress: 'قيد التحضير',
+    on_way: 'في الطريق',
+    completed: 'مكتملة ',
+    cancelled: 'ملغية',
+    static: 'معلقة',
   };
-
 
   getStatusLabel(status: string): string {
     if (status === 'readyForPickup') {
-      return (this.selectedOrderTypeStatus === 'Delivery' || this.selectedOrderTypeStatus === 'Takeaway')
+      return this.selectedOrderTypeStatus === 'Delivery' ||
+        this.selectedOrderTypeStatus === 'Takeaway'
         ? 'جاهزة للاستلام'
         : 'جاهزة للتقديم';
     }
@@ -1101,14 +1064,14 @@ loadLastOrderFromIndexedDB(): void {
     return this.statusLabels[status] || status;
   }
 
-
-
   getFilteredStatuses(): string[] {
-
     const baseStatuses = ['pending', 'in_progress', 'readyForPickup'];
     const finalStatuses = ['completed', 'cancelled'];
 
-    if (this.selectedOrderTypeStatus === 'Takeaway' && this.selectedStatus === 'all') {
+    if (
+      this.selectedOrderTypeStatus === 'Takeaway' &&
+      this.selectedStatus === 'all'
+    ) {
       return [...baseStatuses, ...finalStatuses];
     }
 
@@ -1151,7 +1114,6 @@ loadLastOrderFromIndexedDB(): void {
     ).length;
   }
 
-
   // getStatusCount(status: string, orderType: string): number {
   //   if (status === 'static') {
 
@@ -1173,21 +1135,23 @@ loadLastOrderFromIndexedDB(): void {
   //   ).length;
   // }
 
+  // listenToOrderChange() {
+  //   this.orderChangeStatus.listenToOrder();
 
-  listenToOrderChange() {
-    this.orderChangeStatus.listenToOrder();
-
-    this.orderChangeStatus.OrderStatusUpdated$.pipe(takeUntil(this.destroy$)).subscribe((updatedOrder) => {
-      console.log('Incoming order update from dashboard:', updatedOrder);
-      this.upsertOrder(updatedOrder);
-    });
-  }
+  //   this.orderChangeStatus.OrderStatusUpdated$.pipe(
+  //     takeUntil(this.destroy$)
+  //   ).subscribe((updatedOrder) => {
+  //     console.log('Incoming order update from dashboard:', updatedOrder);
+  //     this.upsertOrder(updatedOrder);
+  //   });
+  // }
   // private upsertOrder(order: any): void {
-  //   const orderId = order?.orderId;
-  //   const newStatus = order?.status_name;
+  //   const orderId = order.orderId;
+  //   // const newStatus = order?.status_name; change from BE without knowledge of frontend team
+  //   const newStatus = order?.status;
 
   //   const index = this.orders.findIndex(
-  //     o => Number(o.order_details?.order_id) === orderId
+  //     (o) => Number(o.order_details?.order_id) === orderId
   //   );
 
   //   if (index !== -1) {
@@ -1198,18 +1162,28 @@ loadLastOrderFromIndexedDB(): void {
   //       order_details: {
   //         ...existingOrder.order_details,
   //         status: newStatus,
-  //       }
+  //       },
   //     };
 
   //     this.orders.splice(index, 1, updatedOrder);
-  //     console.log('status', newStatus, this.selectedStatus, this.selectedOrderTypeStatus.toLowerCase(), existingOrder.order_details.order_type.toLowerCase());
+  //     console.log(
+  //       'status',
+  //       newStatus,
+  //       this.selectedStatus,
+  //       this.selectedOrderTypeStatus.toLowerCase(),
+  //       existingOrder.order_details.order_type.toLowerCase()
+  //     );
 
-  //     if (((newStatus.toLowerCase() == this.selectedStatus.toLowerCase())) && this.selectedOrderTypeStatus.toLowerCase() == existingOrder.order_details.order_type.toLowerCase()) {
+  //     if (
+  //       newStatus.toLowerCase() == this.selectedStatus.toLowerCase() &&
+  //       this.selectedOrderTypeStatus.toLowerCase() ==
+  //       existingOrder.order_details.order_type.toLowerCase()
+  //     ) {
   //       // this.filteredOrders=[...this.orders]
-  //       this.filteredOrders = [updatedOrder, ...this.filteredOrders]
+  //       this.filteredOrders = [updatedOrder, ...this.filteredOrders];
   //     }
   //   } else if (order?.order_details) {
-  //     this.orders.unshift(order)
+  //     this.orders.unshift(order);
   //   }
 
   //   this.orders = [...this.orders]; // Trigger change detection
@@ -1220,100 +1194,40 @@ loadLastOrderFromIndexedDB(): void {
   //   console.log('Order status updated or inserted:', this.filteredOrder);
   // }
 
-  // Update your order change handlers to save to IndexedDB
-  private upsertOrder(order: any): void {
-    const orderId = order?.orderId;
-    const newStatus = order?.status_name;
-
-    const index = this.orders.findIndex(
-      o => Number(o.order_details?.order_id) === orderId
-    );
-
-    if (index !== -1) {
-      // Only update the order status (not replace entire order)
-      const existingOrder = this.orders[index];
-      const updatedOrder = {
-        ...existingOrder,
-        order_details: {
-          ...existingOrder.order_details,
-          status: newStatus,
-        }
-      };
-
-      this.orders.splice(index, 1, updatedOrder);
-
-      // Save updated orders to IndexedDB
-      this.dbService.saveOrders(this.orders).catch(err => {
-        console.error('Error saving updated orders to IndexedDB:', err);
-      });
-
-      if (((newStatus.toLowerCase() == this.selectedStatus.toLowerCase())) && this.selectedOrderTypeStatus.toLowerCase() == existingOrder.order_details.order_type.toLowerCase()) {
-        this.filteredOrders = [updatedOrder, ...this.filteredOrders];
-      }
-    } else if (order?.order_details) {
-      this.orders.unshift(order);
-
-      // Save new orders to IndexedDB
-      this.dbService.saveOrders(this.orders).catch(err => {
-        console.error('Error saving new orders to IndexedDB:', err);
-      });
-    }
-
-    this.orders = [...this.orders]; // Trigger change detection
-    this.filterOrders();
-    this.cdr.detectChanges();
-  }
-
   listenToDishChange() {
     this.orderChange.listenToDishStatusInOrder();
-    this.orderChange.dishChanged$.pipe(takeUntil(this.destroy$)).subscribe((dishChanged) => {
-      console.log(' Incoming dish update:', dishChanged);
+    this.orderChange.dishChanged$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((dishChanged) => {
+        console.log(' Incoming dish update:', dishChanged);
 
-      const targetOrderId = Number(dishChanged.data?.order_id);
-      const targetDishId = Number(dishChanged.data?.dish_ids?.[0]);
+        const targetOrderId = Number(dishChanged?.order_id);
+        // const targetDishId = Number(dishChanged.data?.dish_ids?.[0]);
 
-      const orderIndex = this.orders.findIndex(
-        order => Number(order.order_details?.order_id) === targetOrderId
-      );
+        const orderIndex = this.orders.findIndex(
+          (order) => Number(order.order_details?.order_id) === targetOrderId
+        );
 
-      if (orderIndex !== -1) {
-        const currentOrder = this.orders[orderIndex];
+        if (orderIndex !== -1) {
+          const currentOrder = this.orders[orderIndex];
 
-        const updatedItems = currentOrder.order_items.map((item: any) => {
-          if (item.item_id === targetDishId) {
-            const updatedItem = {
-              ...item,
-              dish_status: dishChanged.data.status
-            };
-            console.log(' Updated item:', updatedItem);
-            return updatedItem;
-          }
-          return item;
-        });
+          
+          const updatedOrder = {
+            ...currentOrder,
+            ...dishChanged,
 
+          };
 
-        const updatedOrder = {
-          ...currentOrder,
-          order_items: updatedItems,
-          order_details: {
-            ...currentOrder.order_details,
-            status: dishChanged.data.order_status,
-          }
-        };
-
-        this.orders.splice(orderIndex, 1, updatedOrder);
-        this.orders = [...this.orders];
-        this.filterOrders()
-        //    this.orders=[dishChanged.data.Order,...this.orders]
-        // if((dishChanged.data.Order.order_details.order_type.toLowerCase()==this.selectedOrderTypeStatus.toLowerCase()&&( this.selectedStatus=='all'||dishChanged.data.Order.order_details.status.toLowerCase()==this.selectedStatus.toLocaleLowerCase()))){
-        // this.filteredOrders=[...this.orders]
-        // }
-        this.cdr.detectChanges();
-        console.log(' Order status updated:', updatedOrder);
-      } else {
-        console.warn(' Order not found for update:', targetOrderId);
-      }
-    });
+          this.orders.splice(orderIndex, 1, updatedOrder);
+          this.orders = [...this.orders];
+          this.filterOrders();
+        
+          this.cdr.detectChanges();
+          console.log(' Order status updated:', updatedOrder);
+        } else {
+          console.warn(' Order not found for update:', targetOrderId);
+        }
+      });
   }
   filterOrders(): void {
     this.isFilterdFromClientSide = false;
@@ -1347,7 +1261,9 @@ loadLastOrderFromIndexedDB(): void {
     this.selectedOrderIdToDelete = orderId;
 
     // Show modal (Bootstrap)
-    const modal = new bootstrap.Modal(document.getElementById('deleteOrderModal')!);
+    const modal = new bootstrap.Modal(
+      document.getElementById('deleteOrderModal')!
+    );
     modal.show();
   }
 
@@ -1359,7 +1275,9 @@ loadLastOrderFromIndexedDB(): void {
 
     const orders = JSON.parse(saved);
 
-    const updatedOrders = orders.filter((order: any) => order.orderId !== this.selectedOrderIdToDelete);
+    const updatedOrders = orders.filter(
+      (order: any) => order.orderId !== this.selectedOrderIdToDelete
+    );
 
     localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
 
@@ -1382,7 +1300,7 @@ loadLastOrderFromIndexedDB(): void {
   cancelErrorMessage: string = '';
   cancelSuccessMessage: string = '';
   cancelMessage: any;
-  submitCancelRequest(order: any): void {
+  /*   submitCancelRequest(order: any): void {
     const selectedItems = order.order_items
       .filter((item: any) => item.isChecked)
       .map((item: any) => {
@@ -1394,14 +1312,13 @@ loadLastOrderFromIndexedDB(): void {
           item_name: item.dish_name,
           item_id: item.order_detail_id,
           quantity: returnedQuantity,
-          isFullyReturned: selectedQuantity === 0
+          isFullyReturned: selectedQuantity === 0,
         };
       })
       .filter((item: any) => item.quantity > 0);
 
-
     if (selectedItems.length === 0) {
-      this.cancelErrorMessage = "يرجى اختيار صنف واحد على الأقل بكمية مرتجعة";
+      this.cancelErrorMessage = 'يرجى اختيار صنف واحد على الأقل بكمية مرتجعة';
       this.cancelSuccessMessage = '';
 
       setTimeout(() => {
@@ -1411,13 +1328,19 @@ loadLastOrderFromIndexedDB(): void {
       return;
     }
     if (
-      order.order_details.status !== 'cancelled' && !(order.order_details.payment_status == 'unpaid' && order.order_details.status ===
-        'pending')) {
+      order.order_details.status !== 'cancelled' &&
+      !(
+        order.order_details.payment_status == 'unpaid' &&
+        order.order_details.status === 'pending'
+      )
+    ) {
       this.cancelMessage = `تم ارسال المرتجع الي مدير الفرع
 وبانتظار الموافقة`;
-    } else if (order.order_details.payment_status == 'unpaid' && order.order_details.status === 'pending') {
-      this.cancelMessage = "تم بنجاح"
-
+    } else if (
+      order.order_details.payment_status == 'unpaid' &&
+      order.order_details.status === 'pending'
+    ) {
+      this.cancelMessage = 'تم بنجاح';
     }
 
     // ✅ تحديد النوع: full إذا كل الأصناف المختارة تم إرجاعها بالكامل
@@ -1430,128 +1353,343 @@ loadLastOrderFromIndexedDB(): void {
       items: selectedItems.map((item: any) => ({
         item_id: item.item_id,
         quantity: item.quantity,
-        item_name: item.item_name
-      })), type: isFullReturn ? 'full' : 'partial',
-      reason: this.cancelReason || ''
+        item_name: item.item_name,
+      })),
+      type: isFullReturn ? 'full' : 'partial',
+      reason: this.cancelReason || '',
     };
 
-    console.log("Sending:", body, selectedItems, order);
-    this.http.post(`${baseUrl}api/orders/cashier/request-cancel`, body).subscribe({
-      next: (res: any) => {
-        this.cancelSuccessMessage = 'تم إرسال طلب المرتجع بنجاح';
-        this.cancelErrorMessage = ''; // clear previous errors
+    console.log('Sending:', body, selectedItems, order);
+    this.http
+      .post(`${baseUrl}api/orders/cashier/request-cancel`, body)
+      .subscribe({
+        next: (res: any) => {
+          this.cancelSuccessMessage = 'تم إرسال طلب المرتجع بنجاح';
+          this.cancelErrorMessage = ''; // clear previous errors
+          setTimeout(() => {
+            this.cancelSuccessMessage = '';
+          }, 2000);
+          if (!res?.status) {
+            let errorText = 'حدث خطأ أثناء الإرسال';
+            const reasonErrors = res?.errorData?.reason;
+            if (Array.isArray(reasonErrors) && reasonErrors.length > 0) {
+              errorText = reasonErrors[0]; // " السبب مطلوب."
+            }
+            const statusErrors = res?.errorData?.status;
+            if (Array.isArray(statusErrors) && statusErrors.length > 0) {
+              errorText = statusErrors[0];
+            }
+            const Err = res?.errorData?.error;
+            if (Array.isArray(Err) && Err.length > 0) {
+              errorText = Err[0];
+            }
+            const errorString = res?.errorData?.error;
+            if (typeof errorString === 'string' && errorString.trim() !== '') {
+              errorText = errorString;
+            }
+            console.log(res);
+            this.cancelErrorMessage = errorText;
+            this.cancelSuccessMessage = '';
 
-        // Auto-clear success message
-        setTimeout(() => {
-          this.cancelSuccessMessage = '';
-        }, 4000);
-
-        if (!res?.status) {
-
-          let errorText = 'حدث خطأ أثناء الإرسال';
-          const reasonErrors = res?.errorData?.reason;
-          if (Array.isArray(reasonErrors) && reasonErrors.length > 0) {
-            errorText = reasonErrors[0]; // " السبب مطلوب."
-
+            setTimeout(() => {
+              this.cancelErrorMessage = '';
+            }, 2000);
           }
-          const statusErrors = res?.errorData?.status;
+
+          if (res?.status === true) {
+            this.cancelSuccessMessage = 'تم إرسال طلب المرتجع بنجاح';
+            this.cancelErrorMessage = '';
+            this.cancelReason = '';
+            const modal_id = `modal-${order.order_details.order_id}`;
+            const currentModal = document.getElementById(modal_id);
+            console.log(currentModal);
+
+            if (currentModal) {
+              const modalInstance = bootstrap.Modal.getInstance(currentModal);
+              modalInstance?.hide();
+
+              // ✅ Reset items + reason لما يتقفل المودال (سواء submit أو dismiss)
+              currentModal.addEventListener(
+                'hidden.bs.modal',
+                () => {
+                  order.order_items.forEach((item: any) => {
+                    item.isChecked = false;
+                    item.selectedQuantity = item.quantity; // أو null لو  المدخل يبقى فاضي
+                  });
+                  this.cancelReason = '';
+                },
+                { once: true }
+              );
+            }
+
+            // order.order_items.forEach((item: any) => {
+            //   item.isChecked = false;
+            //   item.selectedQuantity = item.quantity;
+            // });
+            // Close the current modal
+            const modalId = `modal-${order.order_details.order_id}`;
+            const currentModalEl = document.getElementById(modalId);
+            if (currentModalEl) {
+              const modalInstance = bootstrap.Modal.getInstance(currentModalEl);
+              modalInstance?.hide();
+            }
+
+            // Wait for modal close animation
+            setTimeout(() => {
+              const successModalEl =
+                document.getElementById('successSmallModal');
+              if (successModalEl) {
+                const successModal = new bootstrap.Modal(successModalEl, {
+                  backdrop: 'static',
+                });
+                successModal.show();
+
+                // Auto-close after 2 seconds
+                setTimeout(() => {
+                  successModal.hide();
+
+                  // ✅ Remove leftover backdrop after hiding
+                  document
+                    .querySelectorAll('.modal-backdrop')
+                    .forEach((el) => el.remove());
+                  document.body.classList.remove('modal-open');
+                  document.body.style.overflow = ''; // reset scroll
+                }, 1000);
+              }
+            }, 300);
+          }
+        },
+
+        error: (err) => {
+          console.error('Error:', err);
+
+          let errorText;
+
+          // ✅ First check: reason[] errors
+          const reasonErrors = err?.error?.errorData?.error?.reason;
+          if (Array.isArray(reasonErrors) && reasonErrors.length > 0) {
+            errorText = reasonErrors[0]; // "السبب مطلوب."
+          }
+
+          const statusErrors = err?.error?.errorData?.error?.status;
           if (Array.isArray(statusErrors) && statusErrors.length > 0) {
             errorText = statusErrors[0];
           }
-          const Err = res?.errorData?.error;
+          const Err = err?.error?.errorData?.error?.error;
           if (Array.isArray(Err) && Err.length > 0) {
             errorText = Err[0];
           }
-          const errorString = res?.errorData?.error;
+          const errorString = err?.error?.errorData?.error;
           if (typeof errorString === 'string' && errorString.trim() !== '') {
             errorText = errorString;
           }
-          console.log(res)
           this.cancelErrorMessage = errorText;
-          this.cancelSuccessMessage = '';
-        }
+          this.cancelSuccessMessage = ''; // Clear success message on error
 
-        if (res?.status === true) {
+          // Auto-hide after 4s
+          setTimeout(() => {
+            this.cancelErrorMessage = '';
+          }, 4000);
+        },
+      });
+  } */
+
+  isSubmitting = false; // للتحكم في حالة الإرسال
+
+  submitCancelRequest(order: any): void {
+    if (this.isSubmitting) return; // منع تكرار الضغط لو لسه الطلب شغال
+    this.isSubmitting = true; // ⏳ بداية الطلب
+
+    const selectedItems = order.order_items
+      .filter((item: any) => item.isChecked)
+      .map((item: any) => {
+        const originalQuantity = item.quantity;
+        const selectedQuantity = item.selectedQuantity ?? item.quantity;
+        const returnedQuantity = originalQuantity - selectedQuantity;
+
+        return {
+          item_name: item.dish_name,
+          item_id: item.order_detail_id,
+          quantity: returnedQuantity,
+          isFullyReturned: selectedQuantity === 0,
+        };
+      })
+      .filter((item: any) => item.quantity > 0);
+
+    if (selectedItems.length === 0) {
+      this.cancelErrorMessage = 'يرجى اختيار صنف واحد على الأقل بكمية مرتجعة';
+      this.cancelSuccessMessage = '';
+      this.isSubmitting = false; // رجّع الزرار لأنه مفيش إرسال فعلي
+      setTimeout(() => {
+        this.cancelErrorMessage = '';
+      }, 4000);
+      return;
+    }
+
+    if (
+      order.order_details.status !== 'cancelled' &&
+      !(
+        order.order_details.payment_status == 'unpaid' &&
+        order.order_details.status === 'pending'
+      )
+    ) {
+      this.cancelMessage = `تم ارسال المرتجع الي مدير الفرع
+وبانتظار الموافقة`;
+    } else if (
+      order.order_details.payment_status == 'unpaid' &&
+      order.order_details.status === 'pending'
+    ) {
+      this.cancelMessage = 'تم بنجاح';
+    }
+
+    const isFullReturn =
+      selectedItems.length === order.order_items.length &&
+      selectedItems.every((item: any) => item.isFullyReturned);
+
+    const body = {
+      order_id: order.order_details.order_id,
+      items: selectedItems.map((item: any) => ({
+        item_id: item.item_id,
+        quantity: item.quantity,
+        item_name: item.item_name,
+      })),
+      type: isFullReturn ? 'full' : 'partial',
+      reason: this.cancelReason || '',
+    };
+
+    console.log('Sending:', body, selectedItems, order);
+
+    this.http
+      .post(`${baseUrl}api/orders/cashier/request-cancel`, body)
+      .subscribe({
+        next: (res: any) => {
+          this.isSubmitting = false; // ✅ رجّع الزرار بعد الرد
+
           this.cancelSuccessMessage = 'تم إرسال طلب المرتجع بنجاح';
           this.cancelErrorMessage = '';
-          this.cancelReason = '';
+          setTimeout(() => {
+            this.cancelSuccessMessage = '';
+          }, 2000);
 
-          // Close the current modal
-          const modalId = `modal-${order.order_details.order_id}`;
-          const currentModalEl = document.getElementById(modalId);
-          if (currentModalEl) {
-            const modalInstance = bootstrap.Modal.getInstance(currentModalEl);
-            modalInstance?.hide();
+          if (!res?.status) {
+            let errorText = 'حدث خطأ أثناء الإرسال';
+            const reasonErrors = res?.errorData?.reason;
+            if (Array.isArray(reasonErrors) && reasonErrors.length > 0) {
+              errorText = reasonErrors[0];
+            }
+            const statusErrors = res?.errorData?.status;
+            if (Array.isArray(statusErrors) && statusErrors.length > 0) {
+              errorText = statusErrors[0];
+            }
+            const Err = res?.errorData?.error;
+            if (Array.isArray(Err) && Err.length > 0) {
+              errorText = Err[0];
+            }
+            const errorString = res?.errorData?.error;
+            if (typeof errorString === 'string' && errorString.trim() !== '') {
+              errorText = errorString;
+            }
+            console.log(res);
+            this.cancelErrorMessage = errorText;
+            this.cancelSuccessMessage = '';
+
+            setTimeout(() => {
+              this.cancelErrorMessage = '';
+            }, 2000);
           }
 
-          // Wait for modal close animation
-          setTimeout(() => {
-            const successModalEl = document.getElementById('successSmallModal');
-            if (successModalEl) {
-              const successModal = new bootstrap.Modal(successModalEl, { backdrop: 'static' });
-              successModal.show();
+          if (res?.status === true) {
+            this.cancelSuccessMessage = 'تم إرسال طلب المرتجع بنجاح';
+            this.cancelErrorMessage = '';
+            this.cancelReason = '';
+            const modal_id = `modal-${order.order_details.order_id}`;
+            const currentModal = document.getElementById(modal_id);
+            console.log(currentModal);
 
-              // Auto-close after 2 seconds
-              setTimeout(() => {
-                successModal.hide();
+            if (currentModal) {
+              const modalInstance = bootstrap.Modal.getInstance(currentModal);
+              modalInstance?.hide();
 
-                // ✅ Remove leftover backdrop after hiding
-                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-                document.body.classList.remove('modal-open');
-                document.body.style.overflow = ''; // reset scroll
-              }, 2000);
+              currentModal.addEventListener(
+                'hidden.bs.modal',
+                () => {
+                  order.order_items.forEach((item: any) => {
+                    item.isChecked = false;
+                    item.selectedQuantity = item.quantity;
+                  });
+                  this.cancelReason = '';
+                },
+                { once: true }
+              );
             }
-          }, 300);
-        }
 
+            const modalId = `modal-${order.order_details.order_id}`;
+            const currentModalEl = document.getElementById(modalId);
+            if (currentModalEl) {
+              const modalInstance = bootstrap.Modal.getInstance(currentModalEl);
+              modalInstance?.hide();
+            }
 
+            setTimeout(() => {
+              const successModalEl =
+                document.getElementById('successSmallModal');
+              if (successModalEl) {
+                const successModal = new bootstrap.Modal(successModalEl, {
+                  backdrop: 'static',
+                });
+                successModal.show();
 
-      },
+                setTimeout(() => {
+                  successModal.hide();
+                  document
+                    .querySelectorAll('.modal-backdrop')
+                    .forEach((el) => el.remove());
+                  document.body.classList.remove('modal-open');
+                  document.body.style.overflow = '';
+                }, 1000);
+              }
+            }, 300);
+          }
+        },
 
-      error: (err) => {
-        console.error('Error:', err);
+        error: (err) => {
+          this.isSubmitting = false; // ✅ رجّع الزرار بعد الفشل
+          console.error('Error:', err);
 
-        let errorText;
+          let errorText;
+          const reasonErrors = err?.error?.errorData?.error?.reason;
+          if (Array.isArray(reasonErrors) && reasonErrors.length > 0) {
+            errorText = reasonErrors[0];
+          }
 
-        // ✅ First check: reason[] errors
-        const reasonErrors = err?.error?.errorData?.error?.reason;
-        if (Array.isArray(reasonErrors) && reasonErrors.length > 0) {
-          errorText = reasonErrors[0]; // "السبب مطلوب."
-        }
+          const statusErrors = err?.error?.errorData?.error?.status;
+          if (Array.isArray(statusErrors) && statusErrors.length > 0) {
+            errorText = statusErrors[0];
+          }
+          const Err = err?.error?.errorData?.error?.error;
+          if (Array.isArray(Err) && Err.length > 0) {
+            errorText = Err[0];
+          }
+          const errorString = err?.error?.errorData?.error;
+          if (typeof errorString === 'string' && errorString.trim() !== '') {
+            errorText = errorString;
+          }
+          this.cancelErrorMessage = errorText;
+          this.cancelSuccessMessage = '';
 
-        const statusErrors = err?.error?.errorData?.error?.status;
-        if (Array.isArray(statusErrors) && statusErrors.length > 0) {
-          errorText = statusErrors[0];
-        }
-        const Err = err?.error?.errorData?.error?.error;
-        if (Array.isArray(Err) && Err.length > 0) {
-          errorText = Err[0];
-        }
-        const errorString = err?.error?.errorData?.error;
-        if (typeof errorString === 'string' && errorString.trim() !== '') {
-          errorText = errorString;
-        }
-        this.cancelErrorMessage = errorText;
-        this.cancelSuccessMessage = ''; // Clear success message on error
-
-        // Auto-hide after 4s
-        setTimeout(() => {
-          this.cancelErrorMessage = '';
-        }, 4000);
-      }
-
-
-    });
-
-
+          setTimeout(() => {
+            this.cancelErrorMessage = '';
+          }, 4000);
+        },
+      });
   }
+
   status_order: any;
 
   cancelOrder(order: any): void {
-    const orderId = order.order_details.order_id
+    const orderId = order.order_details.order_id;
     if (!orderId) return;
-    console.log("body");
-
+    console.log('body');
 
     const cancelUrl = `${baseUrl}api/orders/cashier/order-cancel`;
 
@@ -1570,14 +1708,14 @@ loadLastOrderFromIndexedDB(): void {
         console.log('Order cancelled successfully:', response);
         this.errorMessage = response.message;
         this.status_order = response.status;
-        setTimeout(() => {
-          this.errorMessage = '';
-        }, 2000);
+
         if (!response.status) {
           this.errorMessage = response.errorData.error[0];
           console.log('Order cancelled failed:', response);
-
         }
+        setTimeout(() => {
+          this.errorMessage = '';
+        }, 2000);
       },
       error: (error) => {
         console.error('Failed to cancel order:', error);
@@ -1591,16 +1729,176 @@ loadLastOrderFromIndexedDB(): void {
         setTimeout(() => {
           this.errorMessage = '';
         }, 2000);
-      }
-
+      },
     });
   }
+  successMessageModal: any;
+  successMessage!: string;
 
+  ngAfterViewInit() {
+    this.successMessageModal = new bootstrap.Modal(
+      document.getElementById('successMessageModal')
+    );
+
+  }
   getStatus(dish: any): string {
     const status = dish?.dish_status || dish?.status;
 
     if (status === 'onhold') return 'onhold'; // hide badge
     return status; // show for pending, completed, etc.
   }
+  openEditModal(item: any) {
+    const hasExtraData = item.size || item.dish_addons[0];
 
+    const modalSize = hasExtraData ? 'lg' : 'md';
+
+    const editModal = this.NgbModal.open(EditOrderModalComponent, {
+      size: modalSize,
+      centered: true,
+    });
+    editModal.componentInstance.itemId = item.order_detail_id;
+    // editModal.componentInstance.selectedItem = item;
+
+    console.log(item, modalSize);
+
+    editModal.result.then(
+      (result) => {
+        if (result) {
+          this.successMessage = 'تم تحديث الطلب بنجاح';
+          this.successMessageModal.show();
+              setTimeout(() => {
+            this.successMessageModal.dismiss();
+            document
+              .querySelectorAll('.modal-backdrop')
+              .forEach((el) => el.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+          }, 1000);
+          console.log('✅ Modal closed with data:', result);
+        }
+      },
+      (reason) => {
+        console.log('❌ Modal dismissed:', reason);
+      }
+    );
+  }
+  message: string = '';
+  messageType: 'success' | 'error' = 'success';
+  errMsg: any;
+  removeDish(orderDetailId: number , quantity: number , order: any): void {
+    this.removeLoading = true;
+    const url = `${this.apiUrl}api/orders/cashier/request-cancel`;
+    console.log(orderDetailId, order,"id to delete");
+
+    // 1️⃣ Find dish inside this order by order_detail_id
+    const dish = order.order_items.find(
+      (d: any) => d.order_detail_id === orderDetailId
+    );
+    if (!dish) {
+      console.warn('❌ Dish not found in this order');
+      return;
+    }
+
+    // 2️⃣ Build request body
+    const body = {
+      order_id: order.order_details.order_id,
+      items: [
+        {
+          item_id: orderDetailId, // API expects this
+          quantity: quantity 
+        },
+      ],
+      type: 'partial',
+      reason: 'cashier reason',
+    };
+
+    // 3️⃣ Call API
+    this.http
+      .post(url, body)
+      .pipe(
+        finalize(() => {
+          this.removeLoading = false; // ✅ يشتغل بعد الـ next أو error
+        })
+      )
+      .subscribe({
+        next: (res: any) => {
+          if (res.status) {
+            order.items = order.order_items.filter(
+              (d: any) => d.order_detail_id !== orderDetailId
+            );
+            const modalElement = document.getElementById('deleteConfirmModal');
+            if (modalElement) {
+              const modalInstance =
+                bootstrap.Modal.getInstance(modalElement) ||
+                new bootstrap.Modal(modalElement);
+              modalInstance.hide();
+            }
+            this.showMessageModal(
+              res.message || 'تم حذف الطلب بنجاح',
+              'success'
+            );
+          } else {
+            // ✅ ناخد كل الرسائل من errorData (بغض النظر عن المفتاح)
+            const errors = res.errorData
+              ? Object.values(res.errorData)
+                .flat()
+                .map((e: any) => String(e))
+              : [];
+            this.errMsg = errors.length
+              ? errors.join(' \n ')
+              : res.message || 'تعذر حذف الطلب';
+            /*           this.showMessageModal(errMsg, 'error');
+             */
+
+            setTimeout(() => {
+              this.errMsg = null;
+            }, 2000);
+          }
+        },
+        error: (err) => {
+          const errors = err.error?.errorData
+            ? Object.values(err.error.errorData)
+              .flat()
+              .map((e: any) => String(e))
+            : [];
+          this.errMsg = errors.length
+            ? errors.join(' \n ')
+            : err.error?.message || 'خطأ في الاتصال بالخادم';
+          /*         this.showMessageModal(errMsg, 'error');
+           */
+          setTimeout(() => {
+            this.errMsg = null;
+          }, 2000);
+        },
+      });
+  }
+  @ViewChild('messageModal') messageModal: any;
+
+  showMessageModal(msg: string, type: 'success' | 'error') {
+    this.message = msg;
+    this.messageType = type;
+
+    const modalRef = this.NgbModal.open(this.messageModal, {
+      centered: true,
+      size: 'sm',
+      keyboard: false,
+    });
+
+    setTimeout(() => {
+      modalRef.close();
+      const backdrops = document.querySelectorAll('.modal-backdrop');
+      backdrops.forEach((backdrop) => backdrop.remove());
+    }, 1500);
+  }
+
+  continueOrder(order: any): void {
+    console.log('tet');
+    this.productsService.destroy(); // 🔥 destroy stream
+
+    localStorage.removeItem('cart');
+    localStorage.setItem('currentOrderId', order.order_details.order_id);
+    localStorage.setItem('currentOrderData', JSON.stringify(order));
+
+    this.router.navigate(['/home']);
+  }
 }

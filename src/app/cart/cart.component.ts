@@ -92,7 +92,7 @@ export class CartComponent {
 
       if (this.cartId) {
         this.fetchOrderDetails();
-        this.loadSelectedCourier();
+        this.loadSelectedCourier(); 
 
       }
     });
@@ -159,7 +159,7 @@ export class CartComponent {
   //   if (storedCourier) {
   //     this.selectedCourier = JSON.parse(storedCourier); // Load selected courier
   //   }
-  // }
+  // } 
 
   loadSelectedCourier() {
     if (!this.cartId) return;
@@ -227,8 +227,6 @@ export class CartComponent {
 
   selectOrderType(type: string) {
     this.selectedOrderType = type;
-    console.log("vvvselectedOrderType",this.selectedOrderType);
-
     localStorage.setItem('selectedOrderType', type); // Save to local storage
   }
   // openCouriersModal() {
@@ -353,9 +351,9 @@ export class CartComponent {
           'Content-Type': 'application/json'
         };
         // 🚀 Send courier + order ID to API with token
-
+       
           this.http.post(`${baseUrl}/api/orders/cashier/update/order`,{
-
+      
           delivery_id: courier.id,
           order_id: orderId
         }, { headers }).subscribe({

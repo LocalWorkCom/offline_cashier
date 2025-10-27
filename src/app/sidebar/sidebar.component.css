@@ -232,3 +232,63 @@ display: none;
 .custom-cursor[readonly] {
   cursor: not-allowed; /* شكل ممنوع عند readonly */
 }
+
+#body-logo{
+ /* background-image: url('../../../public/assets/images/Group.png'); */
+ background-position: center center;
+ background-size: contain;
+
+ background-repeat: no-repeat;
+}
+
+.table-content{
+  display: flex;
+  padding: 5px;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom:1px solid black;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+.table-content:last-child {
+  border-bottom: none;
+}
+.ll .table-content:last-child {
+  border-bottom:1px solid black;
+}
+
+.img{
+  min-height: 70px;
+max-width: 100%; 
+}
+#print-section p ,#print-section span,.total{
+  font-size: 11px;
+}
+#dd{
+  width: 100%;
+   /* background-image: url('../../../public/assets/images/bk2224.png'); */
+ /* background-position: center center; */
+ /* background-size: cover; */
+ position: relative;
+}
+.footer{
+  position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3;
+    width: 100%;
+    display: flex
+;
+    padding:0px 12px;
+}
+ 
+
+.dots{
+  border-bottom:3px dashed black
+}
+.line{
+  padding-bottom:10px;
+  border-bottom:3px solid black
+}
