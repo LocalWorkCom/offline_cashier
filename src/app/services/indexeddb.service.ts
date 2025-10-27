@@ -842,68 +842,73 @@ export class IndexeddbService {
   }
 
 
-
-
   async savePendingOrder(orderData: any): Promise<void> {
     try {
-      console.log("dorder_offline", orderData);
+      console.log("🟢 Saving pending order:", orderData);
       await this.ensureInit();
+  
       const formData = await this.getLastFormData();
-
-
       let delivery_fees = 0;
+  
+      // 🟢 Get delivery fees from area if available
       if (formData) {
-        console.log("formData.area_id", formData.area_id);
         const area = await this.getAreaById(Number(formData.area_id));
         delivery_fees = area ? parseFloat(area.delivery_fees) : 0;
       }
-
+  
       return new Promise((resolve, reject) => {
-        const tx = this.db.transaction("orders", "readwrite");
-        const store = tx.objectStore("orders");
-
-        // Generate a unique ID if orderId is null
+        const tx = this.db.transaction(["orders", "pills"], "readwrite");
+        const ordersStore = tx.objectStore("orders");
+        const pillsStore = tx.objectStore("pills");
+  
+        // 🆔 Generate unique order ID
         const orderId = orderData.orderId || Date.now();
-
-        // 🟢 Order Summary Function
+  
+        // 🧮 Calculate total item count
+        const count_item =
+          orderData.items?.reduce(
+            (sum: number, item: any) => sum + (item.quantity ?? 0),
+            0
+          ) ?? 0;
+  
+        // 🧾 Build order summary once and reuse it
         const buildOrderSummary = () => {
           const subtotal_price_before_coupon = orderData.items.reduce(
-            (sum: number, item: any) =>
-              sum + (item.finalPrice * item.quantity),
+            (sum: number, item: any) => sum + item.finalPrice * item.quantity,
             0
           );
-
+  
           const coupon_value = orderData.coupon_value || 0;
           const subtotal_price = subtotal_price_before_coupon - coupon_value;
-
+  
           let service_percentage = 0;
           let service_fees = 0;
           let delivery_fees_value = 0;
-
-          // تحديد الرسوم حسب نوع الطلب
+  
           if (orderData.type === "dine-in") {
             service_percentage = 12;
             service_fees = (subtotal_price * service_percentage) / 100;
           } else if (orderData.type === "delivery") {
             delivery_fees_value = Number(delivery_fees) || 0;
           }
-
-          // ضريبة ثابتة 14%
+  
           const tax_percentage = 14;
-          const tax_value = ((subtotal_price + service_fees) * tax_percentage) / 100;
+          const tax_value =
+            ((subtotal_price + service_fees) * tax_percentage) / 100;
+  
+          // const total_price =
+          //   subtotal_price + service_fees + tax_value + Number(delivery_fees);
 
-          const total_price =
-            subtotal_price + service_fees + tax_value + Number(delivery_fees);
-
+        const total_price = orderData.total_with_tip;
           return {
-            coupon_code: null,
+            coupon_code: orderData.coupon_code || null,
             coupon_id: orderData.coupon_id || null,
             coupon_title: orderData.coupon_title || null,
             coupon_type: orderData.coupon_type || "fixed",
-            coupon_value: 0,
+            coupon_value,
             delivery_fees: delivery_fees_value,
             order_notes: orderData.note || "",
-            order_number: Date.now(),
+            order_number: orderId,
             service_fees,
             service_percentage,
             subtotal_price,
@@ -915,14 +920,17 @@ export class IndexeddbService {
             total_price,
           };
         };
-
-        // Build order object
+  
+        const summary = buildOrderSummary();
+        const currency_symbol = orderData.items[0]?.currency_symbol || "ج.م";
+        const branchData = JSON.parse(localStorage.getItem("branchData") || "{}");
+  
+        // 🟢 Order object
         const orderWithMetadata: any = {
           formdata_delivery: formData,
           formdata_delivery_area_id: formData ? formData.area_id : null,
           delivery_fees_amount: delivery_fees,
-
-          // Main order details
+  
           order_details: {
             order_id: orderId,
             order_type: orderData.type || "dine-in",
@@ -930,6 +938,7 @@ export class IndexeddbService {
             client_name: orderData.client_name || "",
             client_phone: orderData.client_phone || "",
             status: "pending",
+            order_items_count: count_item,
             cashier_machine_id: orderData.cashier_machine_id,
             order_number: orderId,
             branch_id: orderData.branch_id || null,
@@ -943,34 +952,32 @@ export class IndexeddbService {
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           },
-
-          // details_order (API-like structure)
+  
           details_order: {
-            currency_symbol: orderData.items[0]?.currency_symbol || "ج.م",
+            currency_symbol,
             order_type: orderData.type || "dine-in",
             status: "pending",
-
-            // Transactions
             transactions: [
               {
                 date: new Date().toISOString().split("T")[0],
                 is_refund: 0,
-                paid: buildOrderSummary().total_price || 0,
+                paid: summary.total_price,
                 payment_method: orderData.payment_method || "cash",
                 payment_status: orderData.payment_status || "unpaid",
                 refund: 0,
               },
             ],
-
-            // Order details (line items)
             order_details: orderData.items.map((item: any, idx: number) => ({
-              order_detail_id: idx + 1, // temporary offline ID
+              // addons: item.addon_categories,
+              order_detail_id: idx + 1,
               dish_id: item.dish_id,
               dish_name: item.dish_name,
-              size: item.size || null,
+              size: item.sizeName || null,
               quantity: item.quantity,
               note: item.note || "",
-              addons: item.selectedAddons || [],
+              addons: item.selectedAddons
+              ? item.selectedAddons.map((addon: any) => addon.name)
+              : [],
               coupon_id: item.coupon_id || null,
               coupon_title: item.coupon_title || null,
               coupon_value: item.coupon_value || 0,
@@ -978,15 +985,12 @@ export class IndexeddbService {
               total_dish_price_coupon_applied:
                 item.finalPrice * item.quantity - (item.coupon_value || 0),
             })),
-
-            // Order summary
-            order_summary: buildOrderSummary(),
+            order_summary: summary,
           },
-
-          // Flattened order items
+  
           order_items: orderData.items.map((item: any) => ({
             addon_categories: item.addon_categories,
-            currency_symbol: item.currency_symbol,
+            currency_symbol,
             dish_id: item.dish_id,
             dish_name: item.dish_name,
             dish_price: item.dish_price,
@@ -995,58 +999,43 @@ export class IndexeddbService {
             note: item.note || "",
             addons: item.selectedAddons || [],
             sizeId: item.sizeId,
-            size: item.size || "",
+            size: item.sizeName || "",
             size_name: item.sizeName || "",
-            total_dish_price: item.dish_price,
+            total_dish_price: item.finalPrice,
             dish_status: "pending",
           })),
-
-          // Summary info
-          total_price: buildOrderSummary().total_price, // ✅ من order_summary
-          currency_symbol: orderData.items[0]?.currency_symbol || "ج.م",
-
-              // dalia start tips
-              // tip_amount: this.tipAmount || 0,
-              change_amount: orderData.change_amount || 0,
-              // tips_aption : this.selectedTipType ?? "tip_the_change" ,                  //'tip_the_change', 'tip_specific_amount','no_tip'
-              tips_aption : orderData.tips_aption ?? "tip_the_change" ,                  //'tip_the_change', 'tip_specific_amount','no_tip'
-
-              tip_amount:orderData.tip_amount ?? 0,
-              tip_specific_amount:orderData.tip_specific_amount ?? 0,
-              payment_amount :orderData.payment_amount ?? 0,
-              bill_amount :  orderData.bill_amount ?? 0,
-              total_with_tip: orderData.total_with_tip ?? 0,
-              returned_amount:orderData.returned_amount ?? 0,
-                // dalia end tips
-
-
-          // Metadata
+  
+          total_price: summary.total_price,
+          currency_symbol,
+  
+          // 💰 Tips Section
+          change_amount: orderData.change_amount || 0,
+          tips_aption: orderData.tips_aption ?? "no_tip",
+          tip_amount: orderData.tip_amount ?? 0,
+          tip_specific_amount: orderData.tip_specific_amount ?? 0,
+          payment_amount: orderData.payment_amount ?? 0,
+          bill_amount: orderData.bill_amount ?? 0,
+          total_with_tip: orderData.total_with_tip ?? 0,
+          returned_amount: orderData.returned_amount ?? 0,
+          menu_integration: orderData.type === 'talabat' ? true : false,
+          payment_status_menu_integration: orderData.payment_status,
+          payment_method_menu_integration: orderData.payment_method,
+  
+          // ⚙️ Metadata
           isOffline: true,
           isSynced: false,
           status: "pending",
           savedAt: new Date().toISOString(),
           createdAt: new Date().toISOString(),
         };
-
-        console.log("Saving to IndexedDB:", orderWithMetadata);
-
-        const request = store.put(orderWithMetadata);
-
-        // request.onsuccess = () => {
-        //   console.log("Successfully saved to IndexedDB with ID:", orderId);
-        //   resolve();
-        // };
-
-        request.onsuccess = () => {
+  
+        // 🧾 Save to IndexedDB (orders)
+        const orderRequest = ordersStore.put(orderWithMetadata);
+  
+        orderRequest.onsuccess = () => {
           console.log("✅ Order saved to IndexedDB with ID:", orderId);
-          const branchData = JSON.parse(localStorage.getItem("branchData") || "{}");
-
-
-          // ✅ Save Invoice (Pill) in pills store
-          const pillsTx = this.db.transaction("pills", "readwrite");
-          const pillsStore = pillsTx.objectStore("pills");
-
-
+  
+          // 🧾 Save invoice in pills store
           const newInvoice = {
             id: `temp_${Date.now()}_${Math.random()}`,
             invoice_id: orderId,
@@ -1054,35 +1043,36 @@ export class IndexeddbService {
             order_number: orderId,
             invoice_number: `INV-OFF-${orderId}`,
             invoice_type: "invoice",
-            order_items_count: orderData.items.length,
+            order_items_count: count_item,
             invoice_print_status: "hold",
             order_type: orderData.type || "dine-in",
             order_status: "pending",
             order_time: 30,
             payment_status: orderData.payment_status || "unpaid",
-            currency_symbol: orderData.items[0]?.currency_symbol || "ج.م",
+            currency_symbol,
             print_count: 0,
             table_number: orderData.table_id || null,
-            // ✅ خليها Array زي الـ API
+  
             invoice_details: [
               {
                 address_details: formData || null,
-                currency_symbol: orderData.items[0]?.currency_symbol || "ج.م",
+                currency_symbol,
                 delivery_name: null,
-
+  
                 branch_details: {
                   branch_id: orderData.branch_id || null,
                   branch_name: branchData.branch_name || "test",
                   branch_phone: branchData.branch_phone || "test",
                   branch_address: branchData.branch_address || "test",
                   floor_name: branchData.floor_name || "test",
-                  floor_partition_name: orderData.floor_partition_name || "test",
+                  floor_partition_name:
+                    orderData.floor_partition_name || "test",
                   invoice_number: `INV-OFF-${orderId}`,
                   order_number: orderId,
                   table_id: orderData.table_id || null,
                   created_at: new Date().toISOString(),
                 },
-
+  
                 cashier_info: {
                   first_name: orderData.cashier_first_name || "test",
                   last_name: orderData.cashier_last_name || "test",
@@ -1090,12 +1080,12 @@ export class IndexeddbService {
                   phone_number: orderData.cashier_phone || "test",
                   employee_code: orderData.cashier_code || "test",
                 },
-
-                invoice_summary: buildOrderSummary(),
+  
+                invoice_summary: summary,
                 is_refund: false,
-
+  
                 orderDetails: orderData.items.map((item: any, idx: number) => ({
-                  order_detail_id: idx + 1, // temporary offline ID
+                  order_detail_id: idx + 1,
                   dish_id: item.dish_id,
                   dish_name: item.dish_name,
                   size: item.size || null,
@@ -1109,19 +1099,14 @@ export class IndexeddbService {
                   total_dish_price_coupon_applied:
                     item.finalPrice * item.quantity - (item.coupon_value || 0),
                 })),
-
+  
                 order_status: "pending",
                 order_type: orderData.type || "dine-in",
-                original_invoice_id: null,
-                original_invoice_number: null,
-                print_count: 0,
-                return_type: null,
-
                 transactions: [
                   {
                     date: new Date().toISOString().split("T")[0],
                     is_refund: 0,
-                    paid: buildOrderSummary().total_price || 0,
+                    paid: summary.total_price,
                     payment_method: orderData.payment_method || "cash",
                     payment_status: orderData.payment_status || "unpaid",
                     refund: 0,
@@ -1129,52 +1114,385 @@ export class IndexeddbService {
                 ],
               },
             ],
-
-            invoice_tips : [
-            {
-              change_amount: orderData.change_amount|| 0,
-              tips_aption: orderData.tips_aption ?? "tip_the_change", // 'tip_the_change', 'tip_specific_amount', 'no_tip'
-              tip_amount: orderData.tip_amount ?? 0,
-              tip_specific_amount:orderData.tip_specific_amount ?? 0,
-              payment_amount: orderData.payment_amount ?? 0,
-              bill_amount: orderData.bill_amount ?? 0,
-              total_with_tip: orderData.total_with_tip ?? 0,
-              returned_amount: orderData.returned_amount ?? 0 ,
-            },
-          ],
-
-
+  
+            invoice_tips: [
+              {
+                change_amount: orderData.change_amount || 0,
+                tips_aption: orderData.tips_aption ?? "tip_the_change",
+                tip_amount: orderData.tip_amount ?? 0,
+                tip_specific_amount: orderData.tip_specific_amount ?? 0,
+                payment_amount: orderData.payment_amount ?? 0,
+                bill_amount: orderData.bill_amount ?? 0,
+                total_with_tip: orderData.total_with_tip ?? 0,
+                returned_amount: orderData.returned_amount ?? 0,
+              },
+            ],
+  
             isOffline: true,
             isSynced: false,
             status: "pending",
             saved_at: new Date().toISOString(),
             created_at: new Date().toISOString(),
           };
-
+  
           const pillRequest = pillsStore.put(newInvoice);
-
+  
           pillRequest.onsuccess = () => {
             console.log("✅ Invoice saved in pills store:", newInvoice);
             resolve();
           };
-
+  
           pillRequest.onerror = (err) => {
             console.error("❌ Error saving invoice:", err);
             reject(err);
           };
         };
-
-
-        request.onerror = (e) => {
-          console.error("Error saving to IndexedDB:", e);
+  
+        orderRequest.onerror = (e) => {
+          console.error("❌ Error saving order to IndexedDB:", e);
           reject(e);
         };
       });
     } catch (error) {
-      console.error("Error in savePendingOrder:", error);
+      console.error("❌ Error in savePendingOrder:", error);
       throw error;
     }
   }
+  
+
+
+
+  // async savePendingOrder(orderData: any): Promise<void> {
+  //   try {
+  //     console.log("dorder_offline", orderData);
+  //     await this.ensureInit();
+  //     const formData = await this.getLastFormData();
+
+
+  //     let delivery_fees = 0;
+  //     if (formData) {
+  //       console.log("formData.area_id", formData.area_id);
+  //       const area = await this.getAreaById(Number(formData.area_id));
+  //       delivery_fees = area ? parseFloat(area.delivery_fees) : 0;
+  //     }
+
+  //     return new Promise((resolve, reject) => {
+  //       const tx = this.db.transaction("orders", "readwrite");
+  //       const store = tx.objectStore("orders");
+
+  //       // Generate a unique ID if orderId is null
+  //       const orderId = orderData.orderId || Date.now();
+
+  //       // 🟢 Order Summary Function
+  //       const buildOrderSummary = () => {
+  //         const subtotal_price_before_coupon = orderData.items.reduce(
+  //           (sum: number, item: any) =>
+  //             sum + (item.finalPrice * item.quantity),
+  //           0
+  //         );
+
+  //         const coupon_value = orderData.coupon_value || 0;
+  //         const subtotal_price = subtotal_price_before_coupon - coupon_value;
+
+  //         let service_percentage = 0;
+  //         let service_fees = 0;
+  //         let delivery_fees_value = 0;
+
+  //         // تحديد الرسوم حسب نوع الطلب
+  //         if (orderData.type === "dine-in") {
+  //           service_percentage = 12;
+  //           service_fees = (subtotal_price * service_percentage) / 100;
+  //         } else if (orderData.type === "delivery") {
+  //           delivery_fees_value = Number(delivery_fees) || 0;
+  //         }
+
+  //         // ضريبة ثابتة 14%
+  //         const tax_percentage = 14;
+  //         const tax_value = ((subtotal_price + service_fees) * tax_percentage) / 100;
+
+  //         const total_price =
+  //           subtotal_price + service_fees + tax_value + Number(delivery_fees);
+
+  //         return {
+  //           coupon_code: null,
+  //           coupon_id: orderData.coupon_id || null,
+  //           coupon_title: orderData.coupon_title || null,
+  //           coupon_type: orderData.coupon_type || "fixed",
+  //           coupon_value: 0,
+  //           delivery_fees: delivery_fees_value,
+  //           order_notes: orderData.note || "",
+  //           order_number: Date.now(),
+  //           service_fees,
+  //           service_percentage,
+  //           subtotal_price,
+  //           subtotal_price_before_coupon,
+  //           tax_application: true,
+  //           tax_apply: true,
+  //           tax_percentage,
+  //           tax_value,
+  //           total_price,
+  //         };
+  //       };
+
+  //       // Build order object
+  //       const orderWithMetadata: any = {
+  //         formdata_delivery: formData,
+  //         formdata_delivery_area_id: formData ? formData.area_id : null,
+  //         delivery_fees_amount: delivery_fees,
+
+  //         // Main order details
+  //         order_details: {
+  //           order_id: orderId,
+  //           order_type: orderData.type || "dine-in",
+  //           hasCoupon: !!orderData.coupon_code,
+  //           client_name: orderData.client_name || "",
+  //           client_phone: orderData.client_phone || "",
+  //           status: "pending",
+  //           cashier_machine_id: orderData.cashier_machine_id,
+  //           order_number: orderId,
+  //           branch_id: orderData.branch_id || null,
+  //           table_id: orderData.table_id || null,
+  //           address_id: orderData.address_id || null,
+  //           payment_method: orderData.payment_method || "cash",
+  //           payment_status: orderData.payment_status || "unpaid",
+  //           cash_amount: orderData.cash_amount || 0,
+  //           credit_amount: orderData.credit_amount || 0,
+  //           note: orderData.note || "",
+  //           created_at: new Date().toISOString(),
+  //           updated_at: new Date().toISOString(),
+  //         },
+
+  //         // details_order (API-like structure)
+  //         details_order: {
+  //           currency_symbol: orderData.items[0]?.currency_symbol || "ج.م",
+  //           order_type: orderData.type || "dine-in",
+  //           status: "pending",
+
+  //           // Transactions
+  //           transactions: [
+  //             {
+  //               date: new Date().toISOString().split("T")[0],
+  //               is_refund: 0,
+  //               paid: buildOrderSummary().total_price || 0,
+  //               payment_method: orderData.payment_method || "cash",
+  //               payment_status: orderData.payment_status || "unpaid",
+  //               refund: 0,
+  //             },
+  //           ],
+
+  //           // Order details (line items)
+  //           order_details: orderData.items.map((item: any, idx: number) => ({
+  //             order_detail_id: idx + 1, // temporary offline ID
+  //             dish_id: item.dish_id,
+  //             dish_name: item.dish_name,
+  //             size: item.size || null,
+  //             quantity: item.quantity,
+  //             note: item.note || "",
+  //             addons: item.selectedAddons || [],
+  //             coupon_id: item.coupon_id || null,
+  //             coupon_title: item.coupon_title || null,
+  //             coupon_value: item.coupon_value || 0,
+  //             total_dish_price: item.finalPrice * item.quantity,
+  //             total_dish_price_coupon_applied:
+  //               item.finalPrice * item.quantity - (item.coupon_value || 0),
+  //           })),
+
+  //           // Order summary
+  //           order_summary: buildOrderSummary(),
+  //         },
+
+  //         // Flattened order items
+  //         order_items: orderData.items.map((item: any) => ({
+  //           addon_categories: item.addon_categories,
+  //           currency_symbol: item.currency_symbol,
+  //           dish_id: item.dish_id,
+  //           dish_name: item.dish_name,
+  //           dish_price: item.dish_price,
+  //           quantity: item.quantity,
+  //           final_price: item.finalPrice,
+  //           note: item.note || "",
+  //           addons: item.selectedAddons || [],
+  //           sizeId: item.sizeId,
+  //           size: item.size || "",
+  //           size_name: item.sizeName || "",
+  //           total_dish_price: item.dish_price,
+  //           dish_status: "pending",
+  //         })),
+
+  //         // Summary info
+  //         total_price: buildOrderSummary().total_price, // ✅ من order_summary
+  //         currency_symbol: orderData.items[0]?.currency_symbol || "ج.م",
+
+  //             // dalia start tips
+  //             // tip_amount: this.tipAmount || 0,
+  //             change_amount: orderData.change_amount || 0,
+  //             // tips_aption : this.selectedTipType ?? "tip_the_change" ,                  //'tip_the_change', 'tip_specific_amount','no_tip'
+  //             tips_aption : orderData.tips_aption ?? "tip_the_change" ,                  //'tip_the_change', 'tip_specific_amount','no_tip'
+
+  //             tip_amount:orderData.tip_amount ?? 0,
+  //             tip_specific_amount:orderData.tip_specific_amount ?? 0,
+  //             payment_amount :orderData.payment_amount ?? 0,
+  //             bill_amount :  orderData.bill_amount ?? 0,
+  //             total_with_tip: orderData.total_with_tip ?? 0,
+  //             returned_amount:orderData.returned_amount ?? 0,
+  //               // dalia end tips
+
+
+  //         // Metadata
+  //         isOffline: true,
+  //         isSynced: false,
+  //         status: "pending",
+  //         savedAt: new Date().toISOString(),
+  //         createdAt: new Date().toISOString(),
+  //       };
+
+  //       console.log("Saving to IndexedDB:", orderWithMetadata);
+
+  //       const request = store.put(orderWithMetadata);
+
+  //       // request.onsuccess = () => {
+  //       //   console.log("Successfully saved to IndexedDB with ID:", orderId);
+  //       //   resolve();
+  //       // };
+
+  //       request.onsuccess = () => {
+  //         console.log("✅ Order saved to IndexedDB with ID:", orderId);
+  //         const branchData = JSON.parse(localStorage.getItem("branchData") || "{}");
+
+
+  //         // ✅ Save Invoice (Pill) in pills store
+  //         const pillsTx = this.db.transaction("pills", "readwrite");
+  //         const pillsStore = pillsTx.objectStore("pills");
+
+
+  //         const newInvoice = {
+  //           id: `temp_${Date.now()}_${Math.random()}`,
+  //           invoice_id: orderId,
+  //           order_id: orderId,
+  //           order_number: orderId,
+  //           invoice_number: `INV-OFF-${orderId}`,
+  //           invoice_type: "invoice",
+  //           order_items_count: orderData.items.length,
+  //           invoice_print_status: "hold",
+  //           order_type: orderData.type || "dine-in",
+  //           order_status: "pending",
+  //           order_time: 30,
+  //           payment_status: orderData.payment_status || "unpaid",
+  //           currency_symbol: orderData.items[0]?.currency_symbol || "ج.م",
+  //           print_count: 0,
+  //           table_number: orderData.table_id || null,
+  //           // ✅ خليها Array زي الـ API
+  //           invoice_details: [
+  //             {
+  //               address_details: formData || null,
+  //               currency_symbol: orderData.items[0]?.currency_symbol || "ج.م",
+  //               delivery_name: null,
+
+  //               branch_details: {
+  //                 branch_id: orderData.branch_id || null,
+  //                 branch_name: branchData.branch_name || "test",
+  //                 branch_phone: branchData.branch_phone || "test",
+  //                 branch_address: branchData.branch_address || "test",
+  //                 floor_name: branchData.floor_name || "test",
+  //                 floor_partition_name: orderData.floor_partition_name || "test",
+  //                 invoice_number: `INV-OFF-${orderId}`,
+  //                 order_number: orderId,
+  //                 table_id: orderData.table_id || null,
+  //                 created_at: new Date().toISOString(),
+  //               },
+
+  //               cashier_info: {
+  //                 first_name: orderData.cashier_first_name || "test",
+  //                 last_name: orderData.cashier_last_name || "test",
+  //                 email: orderData.cashier_email || "test",
+  //                 phone_number: orderData.cashier_phone || "test",
+  //                 employee_code: orderData.cashier_code || "test",
+  //               },
+
+  //               invoice_summary: buildOrderSummary(),
+  //               is_refund: false,
+
+  //               orderDetails: orderData.items.map((item: any, idx: number) => ({
+  //                 order_detail_id: idx + 1, // temporary offline ID
+  //                 dish_id: item.dish_id,
+  //                 dish_name: item.dish_name,
+  //                 size: item.size || null,
+  //                 quantity: item.quantity,
+  //                 note: item.note || "",
+  //                 addons: item.selectedAddons || [],
+  //                 coupon_id: item.coupon_id || null,
+  //                 coupon_title: item.coupon_title || null,
+  //                 coupon_value: item.coupon_value || 0,
+  //                 total_dish_price: item.finalPrice * item.quantity,
+  //                 total_dish_price_coupon_applied:
+  //                   item.finalPrice * item.quantity - (item.coupon_value || 0),
+  //               })),
+
+  //               order_status: "pending",
+  //               order_type: orderData.type || "dine-in",
+  //               original_invoice_id: null,
+  //               original_invoice_number: null,
+  //               print_count: 0,
+  //               return_type: null,
+
+  //               transactions: [
+  //                 {
+  //                   date: new Date().toISOString().split("T")[0],
+  //                   is_refund: 0,
+  //                   paid: buildOrderSummary().total_price || 0,
+  //                   payment_method: orderData.payment_method || "cash",
+  //                   payment_status: orderData.payment_status || "unpaid",
+  //                   refund: 0,
+  //                 },
+  //               ],
+  //             },
+  //           ],
+
+  //           invoice_tips : [
+  //           {
+  //             change_amount: orderData.change_amount|| 0,
+  //             tips_aption: orderData.tips_aption ?? "tip_the_change", // 'tip_the_change', 'tip_specific_amount', 'no_tip'
+  //             tip_amount: orderData.tip_amount ?? 0,
+  //             tip_specific_amount:orderData.tip_specific_amount ?? 0,
+  //             payment_amount: orderData.payment_amount ?? 0,
+  //             bill_amount: orderData.bill_amount ?? 0,
+  //             total_with_tip: orderData.total_with_tip ?? 0,
+  //             returned_amount: orderData.returned_amount ?? 0 ,
+  //           },
+  //         ],
+
+
+  //           isOffline: true,
+  //           isSynced: false,
+  //           status: "pending",
+  //           saved_at: new Date().toISOString(),
+  //           created_at: new Date().toISOString(),
+  //         };
+
+  //         const pillRequest = pillsStore.put(newInvoice);
+
+  //         pillRequest.onsuccess = () => {
+  //           console.log("✅ Invoice saved in pills store:", newInvoice);
+  //           resolve();
+  //         };
+
+  //         pillRequest.onerror = (err) => {
+  //           console.error("❌ Error saving invoice:", err);
+  //           reject(err);
+  //         };
+  //       };
+
+
+  //       request.onerror = (e) => {
+  //         console.error("Error saving to IndexedDB:", e);
+  //         reject(e);
+  //       };
+  //     });
+  //   } catch (error) {
+  //     console.error("Error in savePendingOrder:", error);
+  //     throw error;
+  //   }
+  // }
 
   // Generic update function for any store
   async updateGeneric(storeName: string, id: number | string, updates: any): Promise<any> {

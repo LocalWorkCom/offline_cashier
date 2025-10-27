@@ -521,7 +521,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
               quantity: i.quantity,
               final_price: i.final_price,
               note: i.note,
-              addons_categories: i.addon_categories || null,
+              addon_categories: i.addon_categories || null,
               sizeId: i.sizeId || null,
               size_name: i.size_name
             })),
@@ -530,7 +530,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
             // tip_amount: this.tipAmount || 0,
             change_amount: order.change_amount || 0,
             // tips_aption : this.selectedTipType ?? "tip_the_change" ,                  //'tip_the_change', 'tip_specific_amount','no_tip'
-            tips_aption: order.tips_aption ?? "tip_the_change",                  //'tip_the_change', 'tip_specific_amount','no_tip'
+            tips_aption: order.tips_aption ?? "no_tip",                  //'tip_the_change', 'tip_specific_amount','no_tip'
 
             tip_amount: order.tip_amount ?? 0,
             tip_specific_amount: order.tip_specific_amount ?? 0,
@@ -538,6 +538,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
             bill_amount: order.bill_amount ?? 0,
             total_with_tip: order.total_with_tip ?? 0,
             returned_amount: order.returned_amount ?? 0,
+            menu_integration: order.menu_integration === 'talabat' ? true : false,
+            payment_status_menu_integration: order.payment_status_menu_integration,
+            payment_method_menu_integration: order.payment_method_menu_integration,
+
             // dalia end tips
 
 
