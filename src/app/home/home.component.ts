@@ -1,7 +1,6 @@
 import { Component, OnInit, Inject, PLATFORM_ID, OnDestroy, HostListener } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { CategoriesComponent } from "../categories/categories.component";
-import { OrdersCardComponent } from '../orders-card/orders-card.component';
+// import { CategoriesComponent } from "../categories/categories.component";
 import { SideDetailsComponent } from "../side-details/side-details.component";
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
@@ -10,6 +9,7 @@ import { ModalStateService } from '../services/modal-state.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TotalsCardComponent } from "../totals-card/totals-card.component";
+import { NewcategoriesComponent } from '../newcategories/newcategories.component';
 
 @Component({
   selector: 'app-home',
@@ -19,11 +19,11 @@ import { TotalsCardComponent } from "../totals-card/totals-card.component";
   imports: [
     CommonModule,
     FormsModule,
-    CategoriesComponent,
-    OrdersCardComponent,
+    // CategoriesComponent,
+    NewcategoriesComponent,
     SideDetailsComponent,
     TotalsCardComponent
-]
+  ]
 })
 export class HomeComponent implements OnInit, OnDestroy {
   cashInputDisabled = false;
@@ -47,7 +47,7 @@ export class HomeComponent implements OnInit, OnDestroy {
   deficitCash = 0;
   deficitVisa = 0;
   deficitMessage = '';
-visaTotal: number = 0;
+  visaTotal: number = 0;
 
   private readonly BALANCE_OPENED_KEY = 'isBalanceOpened';
   enteredVisa: number | string | null | any = null;
@@ -56,52 +56,54 @@ visaTotal: number = 0;
     private authService: AuthService,
     private router: Router,
     private balanceService: BalanceService,
-     
+
     @Inject(PLATFORM_ID) private platformId: Object
-  ) {}
+  ) { }
 
-ngOnInit() {
-  if (isPlatformBrowser(this.platformId)) {
-    this.initializeUserData();
+  ngOnInit() {
+    console.log('this.platformId', this.platformId);
+    if (isPlatformBrowser(this.platformId)) {
+      this.initializeUserData();
 
-    // First check localStorage directly
-    const isBalanceOpened = localStorage.getItem('isBalanceOpened') === 'true' || 
-                           localStorage.getItem('is_open_balance') === 'true';
+      // First check localStorage directly
+      const isBalanceOpened = localStorage.getItem('isBalanceOpened') === 'true' ||
+        localStorage.getItem('is_open_balance') === 'true';
 
-    // Then subscribe to auth service
-    this.authService.isOpenBalance$.subscribe(isOpen => {
-      console.log('Balance status from service:', isOpen);
-      console.log('Initial balance check:', {
-  localStorage: {
-    isBalanceOpened: localStorage.getItem('isBalanceOpened'),
-    is_open_balance: localStorage.getItem('is_open_balance')
-  },
-  authService: this.authService.getOpenBalanceStatus()
-});
-      if (!isOpen && !isBalanceOpened) {
+      // Then subscribe to auth service
+      this.authService.isOpenBalance$.subscribe(isOpen => {
+        console.log('Balance status from service:', isOpen);
+        console.log('Initial balance check:', {
+          localStorage: {
+            isBalanceOpened: localStorage.getItem('isBalanceOpened'),
+            is_open_balance: localStorage.getItem('is_open_balance')
+          },
+          authService: this.authService.getOpenBalanceStatus()
+        });
+        //
+        if (!isOpen && !isBalanceOpened) {
         console.log('Showing balance modal');
         this.showModal = true;
         this.modalStateService.setModalOpen(true);
-        setTimeout(() => this.showWelcomeModal(), 500);
-      } else {
-        console.log('Balance already opened, hiding modal');
-        localStorage.setItem('isBalanceOpened', 'true');
-        localStorage.setItem('is_open_balance', 'true');
-        this.hideModal(true);
-      }
-    });
+        setTimeout(() => this.showWelcomeModal(), 10);
+        } else {
+          console.log('Balance already opened, hiding modal');
+          localStorage.setItem('isBalanceOpened', 'true');
+          localStorage.setItem('is_open_balance', 'true');
+          this.hideModal(true);
+        }
+      });
 
-    // Immediate check
-    if (!isBalanceOpened) {
-      this.showModal = true;
-      this.modalStateService.setModalOpen(true);
-      setTimeout(() => this.showWelcomeModal(), 500);
+      // Immediate check
+      if (!isBalanceOpened) {
+        this.showModal = true;
+        this.modalStateService.setModalOpen(true);
+        setTimeout(() => this.showWelcomeModal(), 500);
+      }
     }
+    this.authService.visaTotal$.subscribe(total => {
+      this.visaTotal = total;
+    });
   }
-  this.authService.visaTotal$.subscribe(total => {
-  this.visaTotal = total;
-});
-}
 
   @HostListener('window:popstate', ['$event'])
   onPopState(event: any) {
@@ -137,46 +139,90 @@ ngOnInit() {
     return `${formattedHour}:${minute.toString().padStart(2, '0')} ${period}`;
   }
 
-currentBalance: {
-  cash: number;
-  visa: number;
-  total: number;
-} | null = null;
+  currentBalance: {
+    cash: number;
+    visa: number;
+    total: number;
+  } | null = null;
 
-fetchCurrentBalance(): void {
-  this.balanceService.getCurrentBalance().subscribe({
-    next: (response) => {
-       this.visaTotal = response.data[1].value
-      console.log('API Response:', response); // Debug log
-      if (response?.status && response.data) {
-        console.log('Raw balance data:', response.data); // Debug log
-        const balanceData = {
-          cash: 0,
-          visa: 0,
-          total: 0
-        };
+  // fetchCurrentBalance(): void {
+  //   this.balanceService.getCurrentBalance().subscribe({
+  //     next: (response) => {
+  //       console.log('fetchCurrentBalance response:', response);
+  //       this.visaTotal = response.data[1].value
+  //       console.log('API Response:', response); // Debug log
+  //       if (response?.status && response.data) {
+  //         console.log('Raw balance data:', response.data); // Debug log
+  //         const balanceData = {
+  //           cash: 0,
+  //           visa: 0,
+  //           total: 0
+  //         };
 
-        response.data.forEach((item: any) => {
-          if (item.name === 'cash') balanceData.cash = item.value;
-          if (item.name === 'visa') balanceData.visa = item.value;
-          if (item.name === 'total') balanceData.total = item.value;
-        });
+  //         response.data.forEach((item: any) => {
+  //           if (item.name === 'cash') balanceData.cash = item.value;
+  //           if (item.name === 'visa') balanceData.visa = item.value;
+  //           if (item.name === 'total') balanceData.total = item.value;
+  //         });
 
-        console.log('Processed balance:', balanceData); // Debug log
-        this.currentBalance = balanceData;
-      }
-    },
-   error: (err) => {
-      console.error('Failed to fetch balance:', err);
-      // Show user-friendly message
-      this.errorMessage = 'Failed to load balance information';
-    }
-  });
-}
- async showWelcomeModal() {
+  //         console.log('Processed balance:', balanceData); // Debug log
+  //         this.currentBalance = balanceData;
+  //       }
+  //     },
+  //     error: (err) => {
+  //       console.error('Failed to fetch balance:', err);
+  //       // Show user-friendly message
+  //       this.errorMessage = 'Failed to load balance information';
+  //     }
+  //   });
+  // }
+  // async showWelcomeModal() {
+  //   if (!isPlatformBrowser(this.platformId)) return;
+
+  //   console.log('Showing modal...'); // Debug log
+  //   if (!this.showModal) {
+  //     this.removeModalBackdrop();
+  //     return;
+  //   }
+
+  //   const { Modal } = await import('bootstrap');
+  //   const modalElement = document.getElementById('welcomeModal');
+  //   if (modalElement) {
+  //     console.log('Modal element found, fetching data...'); // Debug log
+  //     // this.fetchBalanceInfo();
+  //     this.fetchCurrentBalance(); // Make sure this line exists
+
+  //     const modalInstance = new Modal(modalElement, {
+  //       backdrop: 'static',
+  //       keyboard: false
+  //     });
+  //     modalInstance.show();
+
+  //     modalElement.addEventListener('hidden.bs.modal', () => {
+  //       this.onModalHidden();
+  //     });
+  //   }
+  // }
+
+  // fetchBalanceInfo() {
+  //   this.balanceService.fetchBalanceInfo().subscribe({
+  //     next: (response) => {
+  //       this.openCash = Number(response.data.open_cash || 0);
+  //       this.openVisa = Number(response.data.open_visa || 0);
+  //       this.currency_Symbol = response.data.currency_symbol || this.currency_Symbol;
+  //       this.errorMessage = null;
+  //       this.cashInputDisabled = false;
+  //     },
+  //     error: (err) => {
+  //       console.error('Error fetching balance info:', err);
+  //     }
+  //   });
+  // }
+
+  async showWelcomeModal() {
   if (!isPlatformBrowser(this.platformId)) return;
 
-  console.log('Showing modal...'); // Debug log
+  console.log('Showing modal...');
   if (!this.showModal) {
     this.removeModalBackdrop();
     return;
@@ -185,36 +231,51 @@ fetchCurrentBalance(): void {
   const { Modal } = await import('bootstrap');
   const modalElement = document.getElementById('welcomeModal');
   if (modalElement) {
-    console.log('Modal element found, fetching data...'); // Debug log
-    this.fetchBalanceInfo();
-    this.fetchCurrentBalance(); // Make sure this line exists
-    
+    console.log('Modal element found, fetching data...');
+
+    // ✅ استدعي الـ API الأول
+    await this.fetchCurrentBalance();
+
+    // بعد ما البيانات تتجاب، اعرض المودال
     const modalInstance = new Modal(modalElement, {
       backdrop: 'static',
       keyboard: false
     });
     modalInstance.show();
-    
+
     modalElement.addEventListener('hidden.bs.modal', () => {
       this.onModalHidden();
     });
   }
 }
 
-  fetchBalanceInfo() {
-    this.balanceService.fetchBalanceInfo().subscribe({
+fetchCurrentBalance(): Promise<void> {
+  return new Promise((resolve, reject) => {
+    this.balanceService.getCurrentBalance().subscribe({
       next: (response) => {
-        this.openCash = Number(response.data.open_cash || 0);
-        this.openVisa = Number(response.data.open_visa || 0);
-        this.currency_Symbol = response.data.currency_symbol || this.currency_Symbol;
-        this.errorMessage = null;
-        this.cashInputDisabled = false;
+        console.log('fetchCurrentBalance response:', response);
+        this.visaTotal = response.data[1].value;
+
+        if (response?.status && response.data) {
+          const balanceData = { cash: 0, visa: 0, total: 0 };
+          response.data.forEach((item: any) => {
+            if (item.name === 'cash') balanceData.cash = item.value;
+            if (item.name === 'visa') balanceData.visa = item.value;
+            if (item.name === 'total') balanceData.total = item.value;
+          });
+          this.currentBalance = balanceData;
+        }
+        resolve();
       },
       error: (err) => {
-        console.error('Error fetching balance info:', err);
+        console.error('Failed to fetch balance:', err);
+        this.errorMessage = 'Failed to load balance information';
+        reject(err);
       }
     });
-  }
+  });
+}
+
 
   onModalHidden(): void {
     if (!localStorage.getItem(this.BALANCE_OPENED_KEY)) {
@@ -259,7 +320,7 @@ fetchCurrentBalance(): void {
   }
 
   fetchOpenBalance(): void {
-    this.balanceService.submitOpeningBalance(0,0).subscribe({
+    this.balanceService.submitOpeningBalance(0, 0).subscribe({
       next: (response: any) => {
         this.apiFieldErrors = null;
         if (response?.status && response.data) {
@@ -330,7 +391,7 @@ fetchCurrentBalance(): void {
     const backdrops = document.querySelectorAll('.modal-backdrop.show');
     backdrops.forEach(backdrop => backdrop.remove());
   }
-// ده اللي هيرجع تاني
+  // ده اللي هيرجع تاني
 
   onCashInput(event: any): void {
     const value = event.target.value;
@@ -339,21 +400,21 @@ fetchCurrentBalance(): void {
     this.apiFieldErrors = null;
   }
 
- /*  onCashInput(event: any): void {
-    const testValue: string = "50";
-    const value = testValue;
-    console.log(' test :', value);
-    this.enteredCash = value === '' ? null : Number(value);
-    this.errorMessage = null;
-    this.apiFieldErrors = null;
-} */
+  /*  onCashInput(event: any): void {
+     const testValue: string = "50";
+     const value = testValue;
+     console.log(' test :', value);
+     this.enteredCash = value === '' ? null : Number(value);
+     this.errorMessage = null;
+     this.apiFieldErrors = null;
+ } */
 
-// onVisaInput(event: any): void {
-//   const value = event.target.value;
-//   this.enteredVisa = value === '' ? null : Number(value);
-//   this.errorMessage = null;
-//   this.apiFieldErrors = null;
-// }
+  // onVisaInput(event: any): void {
+  //   const value = event.target.value;
+  //   this.enteredVisa = value === '' ? null : Number(value);
+  //   this.errorMessage = null;
+  //   this.apiFieldErrors = null;
+  // }
 
   async validateAndSave(): Promise<void> {
     // Validate both inputs
@@ -366,7 +427,7 @@ fetchCurrentBalance(): void {
     //   this.errorMessage = "يرجى إدخال المبلغ الإلكتروني قبل الحفظ.";
     //   return;
     // }
-this.enteredVisa= this.currentBalance?.visa
+    this.enteredVisa = this.currentBalance?.visa
     const cashAmount = Number(this.enteredCash);
     const visaAmount = Number(this.enteredVisa);
 
@@ -375,14 +436,14 @@ this.enteredVisa= this.currentBalance?.visa
       return;
     }
 
-   try {
+    try {
       const response = await this.balanceService.submitOpeningBalance(cashAmount, visaAmount).toPromise();
       console.log('API Response:', response);
-/*       this.currentBalance={
-        cash:response.data.open_cash,
-        visa:response.data.open_visa,
-        total:response.data.total_opening,
-      } */
+      /*       this.currentBalance={
+              cash:response.data.open_cash,
+              visa:response.data.open_visa,
+              total:response.data.total_opening,
+            } */
 
       if (response?.status && response.data) {
         // Check for deficit amounts
@@ -420,17 +481,17 @@ this.enteredVisa= this.currentBalance?.visa
       }
     }
   }
-    private buildDeficitMessage(): void {
+  private buildDeficitMessage(): void {
     let messages = [];
-    
+
     if (this.deficitCash !== 0) {
       messages.push(`فارق نقدي بقيمة ${this.deficitCash} ${this.currency_Symbol}`);
     }
-    
+
     if (this.deficitVisa !== 0) {
       messages.push(`فارق في البطاقات بقيمة ${this.deficitVisa} ${this.currency_Symbol}`);
     }
-    
+
     this.deficitMessage = messages.join(' و ');
   }
 

@@ -8,10 +8,12 @@
   </button>
 
 </div>
-<div class="input-wrapper form-control">
+<div class="input-wrapper form-control" >
   <i class="fa-solid fa-magnifying-glass text-muted"></i>
-  <input type="text" placeholder="ابحث..." [(ngModel)]="searchOrderNumber" (ngModelChange)="filterOrders()" />
+  <input id="search" type="text" placeholder="ابحث..." [(ngModel)]="searchOrderNumber" (ngModelChange)="filterOrders()" />
+  <!-- <input type="text" placeholder="ابحث..." [(ngModel)]="searchOrderNumber" (ngModelChange)="filterOrders()" /> -->
 </div>
+
 <div class="categories py-3"  appShowLoaderUntilPageLoaded [isReady]="isAllLoading">
   <ul class="nav nav-pills mb-3 px-0 align-items-center" id="pills-tab" role="tablist">
     <!-- <li class="nav-item mb-2" role="presentation">
@@ -24,7 +26,6 @@
         </div>
       </button>
     </li> -->
-    
     @for (category of categories; track $index) {
     <li class="nav-item mb-2" role="presentation">
       <button class="nav-link" [ngClass]="{ active: selectedCategory?.id === category.id }"
@@ -40,7 +41,7 @@
     }
   </ul>
 
-
+  
   <div class="tab-content pt-4" id="pills-tabContent">
     <!-- <div class="tab-pane fade" [ngClass]="{ 'show active': !selectedCategory }" id="pills-offers" role="tabpanel"
       aria-labelledby="pills-offers-tab">

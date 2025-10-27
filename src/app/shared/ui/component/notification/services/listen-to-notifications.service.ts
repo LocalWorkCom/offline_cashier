@@ -36,7 +36,7 @@ export class ListenToNotificationsService {
     const notification = {
       ...res,
       description: this.lang === 'ar' ? res.description_ar : res.description_en,
-      title: this.lang === 'ar' ? res.title_ar : res.title_en,
+      title: this.lang === 'ar' ? res.title_ar : res.title_en, 
       date:res.date||'new'
     };
     return notification;

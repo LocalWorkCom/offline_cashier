@@ -58,16 +58,16 @@
           {{ deliveryData?.client_name }}
         </small>
       </div>
-      @if ((selectedCourier && cartId) &&  !deliveryData.delivery_name ) {
-        <small class="fw-bold text-muted">السائق المختار: </small>
-        <small class="text-muted">{{ selectedCourier.name || "لا يوجد"}}</small>        
+      @if ((selectedCourier && cartId) && !deliveryData.delivery_name ) {
+      <small class="fw-bold text-muted">السائق المختار: </small>
+      <small class="text-muted">{{ selectedCourier.name || "لا يوجد"}}</small>
       }
-         @if (deliveryData.delivery_name && !(selectedCourier && cartId)) {
-        <small class="fw-bold text-muted">السائق المختار: </small>
-        <small class="text-muted">{{ deliveryData?.delivery_name || "لا يوجد" }}</small>
-        
+      @if (deliveryData.delivery_name && !(selectedCourier && cartId)) {
+      <small class="fw-bold text-muted">السائق المختار: </small>
+      <small class="text-muted">{{ deliveryData?.delivery_name || "لا يوجد" }}</small>
+
       }
-    }
+      }
 
       @if (orderDetails?.status === "readyForPickup" ){
       <div class="mt-3">
@@ -130,23 +130,23 @@
         <h5>{{ item.quantity }} <span>X</span> {{ item.dish_name }}</h5>
         <!-- <small class="text-muted"> {{ item.size }} {{ item.addons }} </small> -->
         @if (item.size ) {
-          <small class="text-muted">
-            {{ item.size  }}
-          </small>
-          } @if (item.addons && item.addons.length > 0) {
-          <div class="mt-2">
-            <small class="text-muted">الإضافات:</small>
-            <ul class="list-unstyled p-0">
-              @for (addon of item.addons; track $index) {
-              <li class="text-muted">
-                <small>{{ addon }}</small>
-              </li>
-              }
-            </ul>
-          </div>
-          } @if (item.note) {
-          <small class="text-muted"> ملاحظات: {{ item.note }} </small>
-          }
+        <small class="text-muted">
+          {{ item.size }}
+        </small>
+        } @if (item.addons && item.addons.length > 0) {
+        <div class="mt-2">
+          <small class="text-muted">الإضافات:</small>
+          <ul class="list-unstyled p-0">
+            @for (addon of item.addons; track $index) {
+            <li class="text-muted">
+              <small>{{ addon }}</small>
+            </li>
+            }
+          </ul>
+        </div>
+        } @if (item.note) {
+        <small class="text-muted"> ملاحظات: {{ item.note }} </small>
+        }
       </div>
     </div>
     <p class="fw-bold">
@@ -159,14 +159,15 @@
     <ul class="list-unstyled p-0 m-0">
       <li class="order-list">
         <p>مجموع طلبي</p>
-        <p class="fw-bold">{{ orderSummary?.subtotal_price }}{{ currencySymbol }}</p>
+        <p class="fw-bold">{{ orderSummary?.subtotal_price_before_coupon }}{{ currencySymbol }}</p>
       </li>
 
       @if (+orderSummary?.coupon_value !== 0){
       <li class="order-list">
-        <p class="main-color">
-          كوبون خصم
-        </p>
+        <h6 class="main-color">كوبون خصم
+          <span class="btn-static-secondary p-1 text-dark rounded">{{ orderSummary.coupon_title
+            }} </span>
+        </h6>
         <p class="fw-bold main-color">
           - {{ orderSummary?.coupon_value }} {{ currencySymbol }}
         </p>
@@ -210,18 +211,19 @@
       </p>
     </div>
     <div class="d-flex justify-content-between align-items-center">
-    <div class="form-check mb-3 ">
-      <input class="form-check-input" type="radio" name="options" id="option1" value="option1" checked />
-      <label class="form-check-label" for="option3">
-        <img src="assets/images/money.svg" alt="" />
-        {{ orderDetails?.transactions[0].payment_method === 'cash' ? 'كاش' : orderDetails?.transactions[0].payment_method }}
-      </label>
- 
+      <div class="form-check mb-3 ">
+        <input class="form-check-input" type="radio" name="options" id="option1" value="option1" checked />
+        <label class="form-check-label" for="option3">
+          <img src="assets/images/money.svg" alt="" />
+          {{ orderDetails?.transactions[0].payment_method === 'cash' ? 'كاش' :
+          orderDetails?.transactions[0].payment_method }}
+        </label>
+
+      </div>
+      <div class="fw-bold">
+        {{ orderDetails.transactions[0].payment_status === 'paid' ? 'مدفوعة' :" غير مدفوعة" }}
+      </div>
     </div>
-     <div class="fw-bold">
-       {{ orderDetails.transactions[0].payment_status === 'paid' ? 'مدفوعة' :" غير مدفوعة" }}
-      </div>
-      </div>
 
   </div>
 

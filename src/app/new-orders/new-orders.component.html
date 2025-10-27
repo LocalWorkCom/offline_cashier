@@ -1,0 +1,647 @@
+<div class="requests p-3" *ngIf="(filteredOrders$ | async) && (filteredOrders$ | async)!.length > 0">
+  <!-- Order Type Tabs -->
+  <h4>الطلبات</h4>
+  <ul class="nav nav-requests mb-4 px-0" role="tablist">
+    <li class="d-flex w-100 justify-content-between">
+      <button *ngFor="let type of ORDER_TYPES; trackBy: trackByOrderType" class="nav-link sub w-100 mx-2"
+        [class.active]="selectedOrderTypeStatus === type" (click)="selectOrderType(type)">
+        {{ getOrderTypeLabel(type) }}
+        <figure class="mb-0" *ngIf="type !== 'All'">
+          <img [src]="getOrderTypeImage(type)" [alt]="type" loading="lazy" />
+        </figure>
+        <span>({{ getOrderTypeCount(type) }})</span>
+      </button>
+    </li>
+  </ul>
+
+  <!-- Status Tabs -->
+  <ul class="nav nav-requests mb-4 px-0 mini-tabs" role="tablist">
+    <li class="nav-item" *ngFor="let status of STATUSES; trackBy: trackByStatus">
+      <button class="nav-link mb-2" [class.active]="selectedStatus === status" (click)="selectStatus(status)">
+        {{ getStatusLabel(status) }}
+        <span>({{ getStatusCount(status, selectedOrderTypeStatus) }})</span>
+      </button>
+    </li>
+  </ul>
+
+  <!-- Search -->
+  <div class="input-group w-100 mx-auto my-3">
+    <input [ngModel]="searchOrderNumber" (ngModelChange)="onSearchChange($event)" placeholder="ابحث ب رقم الطلب"
+      class="form-control rounded-start" />
+    <span class="input-group-text">
+      <i class="fa-solid fa-magnifying-glass"></i>
+    </span>
+  </div>
+
+  <!-- Orders Content -->
+  <div class="tab-content">
+    <ng-container *ngIf="selectedStatus === 'static'; else dynamicOrders">
+
+      <!-- Static Orders -->
+      <div class="row m-0">
+        <div *ngFor="let order of (filteredOrders$ | async) || []; trackBy: trackByOrderId"
+          class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4">
+          <!-- Order Card -->
+          <div class="card p-2 d-flex flex-column justify-content-between h-100"
+            [class.card-updated]="order.recentlyUpdated">
+            <!-- Update Indicator -->
+            <div *ngIf="order.recentlyUpdated" class="position-absolute top-0 start-0 translate-middle">
+              <span class="badge bg-warning text-dark pulse-animation">تم التحديث</span>
+            </div>
+
+            <!-- Order Status -->
+            <div class="status d-flex flex-wrap justify-content-between mb-1">
+              <h5>
+                <span class="badge bg-main">{{ translateType(order.type) }}</span>
+              </h5>
+
+              <div class="d-flex align-items-center">
+                <span class="trash mx-2" (click)="openDeleteModal(order.orderId)">
+                  <i class="fa fa-trash" aria-hidden="true"></i>
+                </span>
+
+                <span class=" badge rounded text-dark btn-static-secondary">
+                  <i class="fa-solid fa-cart-arrow-down text-warning"></i>
+                  معلقة
+                </span>
+              </div>
+
+            </div>
+            <div *ngIf="order.type === 'dine-in'"
+              class="d-flex justify-content-between align-items-center px-2 py-1 mb-2 rounded btn-static-warning text-dark">
+              <div class="d-flex align-items-center gap-1">
+                <i class="fa-solid fa-chair fs-6 me-1"></i>
+                <small class="fw-bold">طاولة</small>
+              </div>
+              <small class="fw-bold">{{ order.tableNumber   }}</small>
+            </div>
+            <div class="date d-flex justify-content-between mb-1">
+              <h6 class="text-muted">
+                <small>{{
+                  order.created_at | date : "d MMM"
+                  }}</small>
+              </h6>
+              <h6 class="text-muted">
+                <small>{{
+                  order.created_at | date : "hh:mm a"
+                  }}</small>
+              </h6>
+            </div>
+
+            <div class="num-items d-flex justify-content-between mb-1 border-bottom">
+              <h6 class="text-muted"><small>عدد العناصر</small></h6>
+              <h6 class="text-muted">
+                <small>{{ order.order_items_count  }}</small>
+              </h6>
+            </div>
+
+            <!-- Order ID -->
+            <div class="order-number d-flex justify-content-between mb-1">
+              <h6>رقم الطلب</h6>
+              <h6 class="text-muted">{{ order.orderId }}</h6>
+            </div>
+
+            <!-- Table Info (for dine-in) -->
+
+
+            <!-- Order Items -->
+            <div class="order-items border-bottom py-1 mb-1 flex-grow-1">
+              <div *ngFor="let item of order.items" class="d-flex flex-column gap-1 px-1 mb-3">
+                <div class="d-flex flex-md-row justify-content-between align-items-start align-items-md-center">
+                  <h6 class="mb-0 fs-6 text-break">
+                    <span class="badge bg-lightgray text-dark me-1">{{ item.quantity }}</span>
+                    x {{ item.dish_name }}
+                  </h6>
+
+                  <h6 class="mb-0 fs-6 text-nowrap">
+                    {{ item.final_price }} {{ order.invoiceSummary?.currency_symbol }}
+                  </h6>
+                </div>
+
+                <!-- Addons Display -->
+                <div *ngIf="item.addon_categories?.length">
+                  <small class="text-muted d-block ms-4">
+                    إضافات:
+                    <ng-container *ngFor="let cat of item.addon_categories">
+                      <ng-container *ngFor="let addon of cat.addons; let last = last">
+                        {{ addon.name }} (+{{ addon.price }} {{ order.invoiceSummary?.currency_symbol }})<span
+                          *ngIf="!last">، </span>
+                      </ng-container>
+                    </ng-container>
+                  </small>
+                </div>
+              </div>
+            </div>
+
+            <!-- Invoice Summary -->
+            <div class="invoice-summary px-1 mb-2 small text-dark">
+              <div class="d-flex justify-content-between">
+                <span>الإجمالي :</span>
+                <span>{{ order.invoiceSummary?.subtotal_price }} {{ order.invoiceSummary?.currency_symbol }}</span>
+              </div>
+              <div class="d-flex justify-content-between" *ngIf="order.invoiceSummary?.coupon_value > 0">
+                <span>الخصم:</span>
+                <span>-{{ order.invoiceSummary?.coupon_value }} {{ order.invoiceSummary?.currency_symbol }}</span>
+              </div>
+              <div class="d-flex justify-content-between" *ngIf="order.invoiceSummary?.delivery_fees > 0">
+                <span>رسوم التوصيل:</span>
+                <span>{{ order.invoiceSummary?.delivery_fees }} {{ order.invoiceSummary?.currency_symbol }}</span>
+              </div>
+              <div class="d-flex justify-content-between" *ngIf="order.invoiceSummary?.service_fee > 0">
+                <span>رسوم الخدمة:</span>
+                <span>{{ order.invoiceSummary?.service_fee }} {{ order.invoiceSummary?.currency_symbol }}</span>
+              </div>
+              <div class="d-flex justify-content-between" *ngIf="order.invoiceSummary?.tax_value > 0">
+                <span>الضريبة ({{ order.invoiceSummary?.tax_percentage }}%)</span>
+                <span>{{ order.invoiceSummary?.tax_value.toFixed(2) }} {{ order.invoiceSummary?.currency_symbol
+                  }}</span>
+              </div>
+            </div>
+
+            <!-- Total Price -->
+            <div class="total-price row px-1 mb-1">
+              <div class="col-12 col-sm-6">
+                <h6 class="fw-bold mb-1 small d-flex flex-column flex-lg-row">
+                  <span class="text-nowrap"> المجموع</span>
+                  <span>الكلي </span>
+                </h6>
+              </div>
+              <div class="col-12 col-sm-6 text-start">
+                <h6 class="fw-bold mb-1 text-break" style="font-size: 0.95rem">
+                  {{ order.invoiceSummary?.total_price.toFixed(2) }} {{ order.invoiceSummary?.currency_symbol }}
+                </h6>
+              </div>
+            </div>
+
+            <!-- Details Button -->
+
+            <a [routerLink]="['/onhold-orders', order.orderId]"
+              class="btn btn-static-secondary text-dark fs-6 w-100 mb-2 btn-static-warning">
+              تفاصيل الطلب
+            </a>
+            <a (click)="loadOrderToCart(order.orderId)" class="btn fs-6 w-100 mt-auto bg-success">
+
+              إستكمال الطلب
+            </a>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <!-- Dynamic Orders -->
+    <ng-template #dynamicOrders>
+      <div class="row m-0">
+        <div *ngFor="let order of (filteredOrders$ | async) || []; trackBy: trackByOrderId"
+          class="col-xl-4 col-md-6 col-sm-12 mb-4">
+
+          <!-- Dynamic Order Card -->
+          <div class="card p-2 d-flex flex-column h-100 justify-content-between"
+            [class.card-updated]="order.recentlyUpdated" [id]="'order-' + order.order_details?.order_number">
+
+            <!-- New Order Indicator -->
+            <div *ngIf="order.isNewOrder" class="position-absolute top-0 end-0 translate-middle">
+              <span class="badge bg-success text-white pulse-animation">طلب جديد</span>
+            </div>
+
+            <!-- Card Header -->
+            <div class="card-header position-relative p-2 mb-2">
+              <div *ngIf="order.isNewOrder" class="position-absolute top-0 end-0 translate-middle">
+                <span class="badge bg-success text-white pulse-animation">طلب جديد</span>
+              </div>
+              <div class="status d-flex justify-content-between mb-1">
+                <h5><span class="badge bg-main">{{ getOrderTypeLabel(order.order_details.order_type) }}</span></h5>
+                <div>
+                  @if(order.order_details.status != 'cancelled' && order.order_details.payment_status == "unpaid"){
+                  <span class="badge text-dark">
+                    <button type="button" class="bg-main rounded-circle p-0 border-0 ms-1"
+                      style="width: 20px; height: 20px" (click)="continueOrder(order)">
+                      <i class="fa-solid fa-plus"></i>
+                    </button>
+                    إضافة طبق</span>
+                  }
+                  <span [ngClass]="getStatusBadgeClass(order.order_details.status)" class="badge rounded text-dark">
+                    <i [ngClass]="getStatusIcon(order.order_details.status)" class="me-1"></i>
+                    {{ getStatusText(order.order_details.status) }}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Card Body -->
+            <div class="card-body d-flex flex-column p-2">
+              <div *ngIf="order.order_details.order_type === 'dine-in'"
+                class="d-flex justify-content-between align-items-center btn-static-warning px-2 py-1  rounded text-dark">
+                <div class="d-flex align-items-center gap-1">
+                  <small class="fw-bold">طاولة</small>
+                </div>
+                <small class="fw-bold">{{ order.order_details.table_number ?? order.order_details.table_id  }}</small>
+              </div>
+              <div class="d-flex align-items-center justify-content-end my-2">
+                @if (order.order_details.payment_status == "unpaid") {
+                <span class="rounded-circle bg-main d-flex justify-content-center align-items-center text-white ms-1"
+                  style="width: 20px;height: 20px;">
+                  <i class="fa-solid fa-xmark fs-6"></i>
+                </span>
+                <span class="main-color fw-bold">غير مدفوع</span>
+                } @else {
+                <span class="rounded-circle bg-success d-flex justify-content-center align-items-center text-white ms-1"
+                  style="width: 20px;height: 20px;">
+                  <i class="fa-solid fa-check"></i>
+                </span>
+                <span class="text-success fw-bold">مدفوع</span>
+                }
+
+              </div>
+              <div class="order-number d-flex justify-content-between mb-1">
+                <h6>رقم الطلب</h6>
+                <!-- <h6 class="text-muted"
+                  [innerHTML]="highlightMatch(order.order_details?.order_number, searchOrderNumber)">
+                </h6> -->
+                <h6 class="text-muted">
+                  {{ order.order_details?.order_number }}
+                </h6>
+
+              </div>
+              <!-- Client name and address -->
+              <div *ngIf="order.order_details.order_type === 'Delivery'" class="mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>اسم العميل</div>
+                  <div class="text-muted">{{order.order_details.client_name}} </div>
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>رقم العميل</div>
+                  <div class="text-muted">{{order.order_details.client_phone || 'غير موجود'}} </div>
+                </div>
+
+              </div>
+
+              <div class="date d-flex justify-content-between mb-1">
+                <h6 class="text-muted">
+                  <small>
+                    {{order.order_details.created_at | date : "d MMM"}}
+                  </small>
+                </h6>
+                <h6 class="text-muted">
+                  <small>{{
+                    order.order_details.created_at | date : "hh:mm a"
+                    }}</small>
+                </h6>
+              </div>
+
+
+              <div class="num-items d-flex justify-content-between mb-1 border-bottom">
+                <h6 class="text-muted"><small>عدد العناصر</small></h6>
+                <h6 class="text-muted">
+                  <small>{{ order.order_details.order_items_count  }}</small>
+                </h6>
+              </div>
+
+              <div class="order-items border-bottom py-1 mb-1 flex-grow-1"
+                [ngClass]="order.order_items.length > 2 ? 'overflow-scroll' :'overflow-visible'">
+                <div class="d-flex justify-content-between align-items-center align-items-md-center gap-1 px-1 mb-2"
+                  *ngFor="let item of order.order_items">
+                  <!-- Item Name & Quantity -->
+
+                  <h6 class="mb-0 fs-6 text-break">
+                    <span class="badge  bg-lightgray text-dark me-1">{{ item.quantity }}</span>
+                    x
+                    <!-- <span [innerHTML]="highlightMatch(item.dish_name, searchOrderNumber)"></span> -->
+                    <span> {{ item.dish_name }}</span>
+                  </h6>
+                  <h6 class="mb-0 fs-6 fs-sm-6 fs-md-5 text-start text-md-end text-nowrap mb-2 mx-1">
+                    {{ item.total_dish_price }} {{ order.currency_symbol }}
+                  </h6>
+                  <!-- Price -->
+                  <div class="d-flex flex-xl-row flex-column align-items-end">
+                    <!-- <span [ngClass]="{
+                      'btn-static-success':
+                        item?.dish_status === 'completed',
+                      'btn-static-warning':
+                        item?.dish_status === 'pending',
+                        'btn-static-primary': item?.dish_status === 'on_way',
+                        'btn-static-purple': item?.dish_status === 'delivered',
+
+                      'btn-static-danger':
+                        item?.dish_status === 'cancel',
+                      'btn-static-progress':
+                        item?.dish_status === 'inprogress'
+                    }" class="badge rounded text-dark">
+                      <i [ngClass]="{
+                        'fa-solid': true,
+                        'fa fa-check-circle text-success':
+                          item?.dish_status === 'completed',
+                        'fa fa-clock text-warning':
+                          item?.dish_status === 'pending',
+                        'fa fa-times-circle text-danger':
+                          item?.dish_status === 'cancel',
+
+                        'fa-spinner text-progress ':
+                          item?.dish_status === 'inprogress'
+                      }" class="me-1"></i>
+                      {{ getStatusText() }}
+
+                    </span> -->
+
+                    <span [ngClass]="getStatusBadgeClass(item?.dish_status)" class="badge rounded text-dark">
+                      <i [ngClass]="getStatusIcon(item?.dish_status)" class="me-1"></i>
+                      {{ getStatusText(item.dish_status) }}
+                    </span>
+                    @if (order.order_details.payment_status == 'unpaid')
+                    {
+                    @if(item?.dish_status == 'pending' || item?.dish_status == 'inprogress' ){
+                    <div class="dropdown">
+                      <a class="dropdown-toggle mx-2" type="button" id="dropdownMenu2" data-bs-toggle="dropdown"
+                        aria-expanded="false" data-bs-display="static">
+                        <i class="fa-solid fa-ellipsis-vertical"></i> </a>
+                      <ul class="dropdown-menu" aria-labelledby="dropdownMenu2">
+                        <li> <button class="dropdown-item" type="button" (click)="openEditModal(item)">
+                            تعديل الطلب
+                          </button></li>
+                        <!-- <li><button class="dropdown-item" type="button" data-bs-toggle="modal"
+                            [attr.data-bs-target]="'#deleteConfirmModal' + item.order_detail_id">
+                            حذف الطلب</button></li> -->
+                        <li>
+                          <button class="dropdown-item" type="button" data-bs-toggle="modal"
+                            data-bs-target="#deleteConfirmModal" (click)="setSelectedItem(item, order)">
+                            حذف الطلب
+                          </button>
+                        </li>
+
+
+
+                      </ul>
+                    </div>
+                    }
+                    }
+                    </div>
+                </div>
+              </div>
+
+              <div class="total-price row px-1 mb-1">
+                <!-- First column: Text "المجموع الكلى" -->
+                <div class="col-12 col-sm-6">
+                  <h6 class="fw-bold mb-1 small d-flex flex-column flex-lg-row">
+                    <!-- Text "المجموع" -->
+                    <span class="text-nowrap  mx-1"> المجموع </span>
+                    <!-- Text "الكلى" -->
+                    <span> الكلى </span>
+                  </h6>
+                </div>
+
+                <!-- Second column: Price and currency -->
+                <div class="col-12 col-sm-6 text-start">
+                  <h6 class="fw-bold mb-1 text-break" style="font-size: 0.95rem; word-wrap: break-word">
+                    {{ order.total_price }} {{ order.currency_symbol }}
+                  </h6>
+                </div>
+              </div>
+              <div class="d-flex flex-column mt-3 gap-2 ">
+                <!-- <a [routerLink]="getOrderLink(order)" routerLinkActive="active"
+                  class="btn bg-lightyellow text-dark fs-6  mt-auto w-100" [ngClass]="{
+                'btn-static-secondary':
+                  order.order_details.status === 'completed',
+                'btn-static-warning': order.order_details.status === 'pending',
+                'btn-static-danger': order.order_details.status === 'cancelled',
+                'btn-static-primary': order.order_details.status === 'on_way',
+                'btn-static-purple': order.order_details.status === 'delivered',
+                'btn-static-success':
+                  order.order_details.status === 'readyForPickup',
+                'btn-static-progress':
+                  order.order_details.status === 'in_progress',
+              }">
+                  تفاصيل الطلب
+                </a> -->
+                <!-- <div class="d-flex flex-column mt-3 gap-2"> -->
+                <a [routerLink]="getOrderLink(order)" routerLinkActive="active" class="btn text-dark fs-6 mt-auto w-100"
+                  [class]="getButtonClass(order)">
+                  تفاصيل الطلب
+                </a>
+                <!-- @if (order.order_details.status !== 'cancelled'&& !(order.order_details.payment_status == 'unpaid' &&
+                order.order_details.status ===
+                'pending'))
+                {
+                <button type="button" class="btn btn-transparent w-100 py-2" data-bs-toggle="modal"
+                  [attr.data-bs-target]="'#modal-' + order.order_details.order_id">
+                  <span>فاتوره مرتجع</span>
+                </button>
+                }
+                @else if(order.order_details.payment_status == 'unpaid' && order.order_details.status === 'pending') {
+                <button type="button" class="btn btn-transparent w-100 py-2" data-bs-toggle="modal"
+                  [attr.data-bs-target]="'#modal-' + order.order_details.order_id">
+                  <span>
+                    حذف
+                    الطلب </span>
+                </button>
+                } -->
+
+                <button type="button" class="btn btn-transparent w-100 py-2"
+                      (click)="openOrderModal(order)">
+                <span *ngIf="order.order_details.payment_status == 'unpaid' && order.order_details.status === 'pending'">
+                  حذف الطلب
+                </span>
+                <span *ngIf="!(order.order_details.payment_status == 'unpaid' && order.order_details.status === 'pending')">
+                  فاتورة مرتجع
+                </span>
+              </button>
+
+                <!-- <div class="modal fade" [id]="'modal-' + order.order_details.order_id" tabindex="-1"
+                  aria-labelledby="exampleModalLabel" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered">
+                    <div class="modal-content p-3">
+                      <div class="p-3">
+                        <button type="button" class="btn text-white rounded" data-bs-dismiss="modal">
+                          <i class="fa-solid fa-xmark"></i>
+                        </button>
+                      </div>
+                      @if (order.order_details.status !== 'cancelled'&& !(order.order_details.payment_status == 'unpaid'
+                      && order.order_details.status ===
+                      'pending'))
+                      {
+                      <p class="fs-4 fw-bold text-center"> فاتورة
+                        مرتجع </p>
+                      }
+                      @else if(order.order_details.payment_status == 'unpaid' && order.order_details.status ===
+                      'pending') {
+                      <p class="fs-4 fw-bold text-center"> حذف
+                        الطلب </p>
+                      }
+
+                      <div>
+                        <div>
+                          <p-accordion value="0">
+                            <p-accordion-panel value="0">
+                              <p-accordion-header> تفاصيل الطلب </p-accordion-header>
+                              <p-accordion-content>
+                                <div class="d-flex justify-content-between align-items-center">
+                                  <p>رقم الطلب</p>
+                                  <p class="text-muted">{{order.order_details.order_number}}</p>
+                                </div>
+                                @for (item of order.order_items; track $index; let i = $index;) {
+                                <div class="my-2" *ngIf="item.dish_status !== 'cancel'">
+                                  <div class="d-flex justify-content-between align-items-center">
+                                    <div>
+                                      <span><input class="form-check-input" type="checkbox" value="" id="checkDefault"
+                                          [(ngModel)]="item.isChecked" [id]="'check-' + i"></span>
+                                      <span> x {{ item.selectedQuantity ?? item.quantity }}
+                                        <span>{{item.dish_name}} </span></span>
+                                    </div>
+                                    <div class="d-flex align-items-center justify-content-between">
+                                      <span class="px-3 fw-bold">{{ item.total_dish_price }} {{ order.currency_symbol
+                                        }}</span>
+                                      <div class="qty" *ngIf="item.isChecked">
+                                        <span class="dec minus" (click)="decreaseItem(item, i)">
+                                          <i class="fa fa-minus" aria-hidden="true"></i>
+                                        </span>
+                                        <span class="num mx-2">{{ item.selectedQuantity ?? item.quantity }}</span>
+                                        <span class="inc plus"
+                                          [class.disabled]="(item.selectedQuantity ?? item.quantity) >= item.quantity"
+                                          (click)="increaseItem(item, i)">
+                                          <i class="fa fa-plus" aria-hidden="true"></i>
+                                        </span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div
+                                    class="d-flex align-items-center justify-content-between yellow my-3 px-3 pt-2 rounded-3">
+                                    @if (order.order_details.status !== 'cancelled')
+                                    { <p>المرتجع</p>
+                                    }
+                                    @else if (order.order_details.payment_status == 'unpaid' &&
+                                    order.order_details.status
+                                    === 'pending') {
+                                    <p> حذف</p>
+                                    }
+                                    <p>{{ item.quantity - (item.selectedQuantity ?? item.quantity) }}</p>
+                                  </div>
+
+                                </div>
+                                }
+                              </p-accordion-content>
+                            </p-accordion-panel>
+                          </p-accordion>
+                        </div>
+                        @if (order.order_details.hasCoupon) {
+                        <div class="mt-3 bg-lightgray">
+                          <h6 class="fw-bold main-color">
+                            <img src="assets/images/coupon-icon.png" alt="" />
+                            كوبون خصم
+                          </h6>
+                        </div>
+                        }
+                        <div class="my-4">
+                          <label for="exampleFormControlTextarea1" class="form-label fw-bold"> اخبرنا السبب </label>
+                          <textarea class="form-control" id="exampleFormControlTextarea1" rows="3"
+                            placeholder="اخبرنا السبب" [(ngModel)]="cancelReason"></textarea>
+                        </div>
+
+                      </div>
+                      <div>
+                        <div *ngIf="cancelErrorMessage" class="alert alert-danger text-center my-2">
+                          {{ cancelErrorMessage }}
+                        </div>
+
+                        <div *ngIf="cancelSuccessMessage" class="alert alert-success text-center my-2">
+                          {{ cancelSuccessMessage }}
+                        </div>
+
+                        <button type="button" class="btn w-100 my-2 py-2" (click)="submitCancelRequest(order)"
+                          [disabled]="isSubmitting">
+                          <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+                          {{ isSubmitting ? 'جاري الإرسال...' : 'إرسال طلب المرتجع' }} </button>
+
+
+                        @if (errorMessage) {
+                        <p class="text-center alert" [ngClass]="status_order? 'alert-success' : 'alert-danger' ">
+                          {{errorMessage}}</p>
+                        }
+
+                      </div>
+                    </div>
+                  </div>
+                </div> -->
+                <!-- Small Success Modal -->
+                <div class="modal fade" id="successSmallModal" tabindex="-1" aria-hidden="true">
+                  <div class="modal-dialog modal-dialog-centered modal-sm">
+                    <div class="modal-content p-3 text-center">
+                      <p class="fw-bold">
+                        {{cancelMessage}}
+                      </p>
+
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-template>
+  </div>
+</div>
+
+<!-- Loading State -->
+<div *ngIf="loading" class="text-center p-5">
+  <div class="spinner-border text-primary" role="status">
+    <span class="visually-hidden">جاري التحميل...</span>
+  </div>
+  <p class="mt-2">جاري تحميل الطلبات...</p>
+</div>
+
+<!-- Empty State -->
+<div *ngIf="!loading && ((filteredOrders$ | async)?.length === 0 || !(filteredOrders$ | async))"
+  class="text-center p-5">
+  <p class="text-muted">لا توجد طلبات لعرضها</p>
+</div>
+
+
+<ng-template #messageModal let-modal>
+  <div class="d-flex justify-content-center align-items-center h-100">
+    <p class="alert text-center fw-bold mb-0 w-100"
+      [ngClass]="messageType === 'success' ? 'alert-success' : 'alert-danger'">
+      {{ message }}
+    </p>
+  </div>
+</ng-template>
+
+<div class="modal fade" id="successMessageModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content ">
+      <div class="modal-header border-0">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img class="success-icon" src="assets/images/donee.png" />
+        <h1 class="modal-title fs-5 text-center my-3">{{successMessage}}</h1>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- 🔥 Global reusable delete modal -->
+<div class="modal modal-sm fade" id="deleteConfirmModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content ">
+      <div class="modal-header border-0">
+        <button type="button" class="btn-close btn" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        <img class="cancel-icon" src="assets/images/ix_error-filled.png" />
+        <h1 class="modal-title fs-5 text-center my-3">
+          هل أنت متأكد أنك تريد حذف هذا الطلب؟
+        </h1>
+        <div class="alert alert-danger my-2 text-center" *ngIf="errMsg">{{ errMsg }}</div>
+        <div class="d-flex justify-content-center">
+          <button type="button" class="btn reversed main-color w-50 mx-3" data-bs-dismiss="modal">
+            لا
+          </button>
+          <button type="button" class="btn w-50 mx-3" [disabled]="removeLoading" (click)="confirmRemove()">
+            <span *ngIf="removeLoading">جاري الحذف...</span>
+            <span *ngIf="!removeLoading">نعم</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -35,7 +35,7 @@ export class NavbarComponent implements OnInit {
   imageUrl: string | null = null;
   currency_Symbol: string | null = null;
   showCloseBalanceModal: boolean = false;
-
+  
   // Deficit handling properties
   showDeficitMessage = false;
   deficitCash = 0;
@@ -112,7 +112,7 @@ export class NavbarComponent implements OnInit {
         this.closeCash = Number(balanceData.open_cash) || 0;
         this.closeVisa = Number(balanceData.open_visa) || 0;
         this.currency_Symbol = balanceData.currency_symbol || this.currency_Symbol;
-
+        
         // Check for existing deficits
         this.deficitCash = balanceData.deficit_cash || 0;
         this.deficitVisa = balanceData.deficit_visa || 0;
@@ -132,15 +132,15 @@ export class NavbarComponent implements OnInit {
 
   private buildDeficitMessage(): void {
     let messages = [];
-
+    
     if (this.deficitCash !== 0) {
       messages.push(`فارق نقدي بقيمة ${this.deficitCash} ${this.currency_Symbol}`);
     }
-
+    
     if (this.deficitVisa !== 0) {
       messages.push(`فارق في البطاقات بقيمة ${this.deficitVisa} ${this.currency_Symbol}`);
     }
-
+    
     this.deficitMessage = messages.join(' و ');
   }
 

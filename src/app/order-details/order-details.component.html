@@ -66,7 +66,7 @@
       </div>
 
     </div>
-
+    <!-- Cash - visa -->
     <div *ngIf="orderDetails.transactions.length>1">
       <div *ngFor="let inv of orderDetails.transactions">
         <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
@@ -79,6 +79,7 @@
 
       </div>
     </div>
+    <!-- Cash - visa -->
   </div>
 
   <div *ngIf="loading" class="card p-3 my-2">
@@ -114,7 +115,7 @@
                   الحجم: {{ item.size }}
                 </h6>
                 <h6 class="text-muted mx-5 fw-medium" *ngIf="item.addons.length > 0">
-                  إضافة: {{ item.addons }}
+                  إضافة: {{  item.addons   }}
                 </h6>
 
                 <h6 class="text-muted mx-5 fw-medium" *ngIf="item.note">
@@ -170,7 +171,7 @@
     <div class="d-flex justify-content-between px-2 mb-1">
       <h6>مجموع طلبى</h6>
       <h6>
-        <span>{{ orderSummary.subtotal_price }}</span> {{ currencySymbol }}
+        <span>{{ orderSummary.subtotal_price_before_coupon }}</span> {{ currencySymbol }}
       </h6>
     </div>
     <div class="d-flex justify-content-between px-2 mb-1 main-color" *ngIf="!isCouponZero">

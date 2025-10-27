@@ -25,7 +25,9 @@ import { ConfirmDialogComponent } from '../shared/ui/component/confirm-dialog/co
 import { finalize } from 'rxjs';
 import { ChangeDetectorRef } from '@angular/core';
 import { baseUrl } from '../environment';
+// start hanan
 import { IndexeddbService } from '../services/indexeddb.service';
+// end hanan
 
 @Component({
   selector: 'app-delivery-details',
@@ -65,12 +67,12 @@ export class DeliveryDetailsComponent implements OnInit {
   previousProperty: string | undefined;
   showWhatsappInput: boolean = true;
   useSameNumberForWhatsapp: boolean = true;
+  // start hanan
+  private formDataId: number | null = null;
+  // end hanan
 
   whatsappCountryCode: string = this.selectedWhatsappCountry.code;
   whatsappPhone: any;
-
-  // Add this property to track form data ID
-  private formDataId: number | null = null;
 
   selectedAddress = JSON.parse(localStorage.getItem('selected_address')!);
   userStoredAddress: { name: string; id: number; delivery_fees: string }[] =
@@ -94,7 +96,9 @@ export class DeliveryDetailsComponent implements OnInit {
     private location: Location,
     private http: HttpClient,
     private checkPhoneNum: PhoneCheckService,
+    // start hanan
     private dbService: IndexeddbService,
+    // end hanan
     private cdr: ChangeDetectorRef
   ) {
     console.log(this.selectedCountry);
@@ -133,7 +137,11 @@ export class DeliveryDetailsComponent implements OnInit {
   }
   //
   ngOnInit() {
+
+    // start hanan
     this.dbService.init();
+    // end hanan
+
     if (this.selectedAddress) {
       this.userAddNewAddress = false;
     }
@@ -144,16 +152,9 @@ export class DeliveryDetailsComponent implements OnInit {
     });
     this.getAreas();
     this.getHotels();
-
-      // Load form data from IndexedDB
-  this.loadFormDataFromIndexedDB();
-
-    //  // Listen for form changes to save to IndexedDB
-    // this.form.valueChanges.subscribe((formValue) => {
-    //   this.saveFormDataToIndexedDB();
-    // });
-
-
+    // start hanan
+    this.loadFormDataFromIndexedDB();
+    // end hanan
     // this.form.valueChanges.subscribe((formValue) => {
     //   const noteValue = localStorage.getItem('notes') || '';
     //   const formDataWithNote = { ...formValue, notes: noteValue };
@@ -195,47 +196,49 @@ export class DeliveryDetailsComponent implements OnInit {
     }
     this.updateWhatsappValidators();
     this.cdr.detectChanges();
+    this.listenToAddressChange()
   }
 
-   // New method to load form data from IndexedDB
-private loadFormDataFromIndexedDB() {
-  this.dbService.getFormData().then(formDataArray => {
-    if (formDataArray && formDataArray.length > 0) {
-      // Get the most recent form data
-      const latestFormData = formDataArray.reduce((latest, current) => {
-        return new Date(current.savedAt) > new Date(latest.savedAt) ? current : latest;
-      });
 
-      console.log('Loaded form data from IndexedDB:', latestFormData);
+  // start hanan
+  private loadFormDataFromIndexedDB() {
+    this.dbService.getFormData().then(formDataArray => {
+      if (formDataArray && formDataArray.length > 0) {
+        // Get the most recent form data
+        const latestFormData = formDataArray.reduce((latest, current) => {
+          return new Date(current.savedAt) > new Date(latest.savedAt) ? current : latest;
+        });
 
-      // Patch the form with the loaded data
-      this.form.patchValue(latestFormData);
+        console.log('Loaded form data from IndexedDB:', latestFormData);
 
-      // Restore other state if needed
-      if (latestFormData.selectedProperty) {
-        this.selectedProperty = latestFormData.selectedProperty;
+        // Patch the form with the loaded data
+        this.form.patchValue(latestFormData);
+
+        // Restore other state if needed
+        if (latestFormData.selectedProperty) {
+          this.selectedProperty = latestFormData.selectedProperty;
+        }
+
+        if (latestFormData.selectedCountry) {
+          this.selectedCountry = latestFormData.selectedCountry;
+        }
+
+        if (latestFormData.selectedWhatsappCountry) {
+          this.selectedWhatsappCountry = latestFormData.selectedWhatsappCountry;
+        }
+
+        if (latestFormData.useSameNumberForWhatsapp !== undefined) {
+          this.useSameNumberForWhatsapp = latestFormData.useSameNumberForWhatsapp;
+        }
+
+        if (latestFormData.whatsappPhone) {
+          this.whatsappPhone = latestFormData.whatsappPhone;
+        }
       }
-
-      if (latestFormData.selectedCountry) {
-        this.selectedCountry = latestFormData.selectedCountry;
-      }
-
-      if (latestFormData.selectedWhatsappCountry) {
-        this.selectedWhatsappCountry = latestFormData.selectedWhatsappCountry;
-      }
-
-      if (latestFormData.useSameNumberForWhatsapp !== undefined) {
-        this.useSameNumberForWhatsapp = latestFormData.useSameNumberForWhatsapp;
-      }
-
-      if (latestFormData.whatsappPhone) {
-        this.whatsappPhone = latestFormData.whatsappPhone;
-      }
-    }
-  }).catch(err => {
-    console.error('Error loading form data from IndexedDB:', err);
-  });
-}
+    }).catch(err => {
+      console.error('Error loading form data from IndexedDB:', err);
+    });
+  }
 
   // New method to save form data to IndexedDB
   private saveFormDataToIndexedDB() {
@@ -255,6 +258,7 @@ private loadFormDataFromIndexedDB() {
       console.error('Error saving form data to IndexedDB', err);
     });
   }
+  // end hanan
   listenPhoneNumberChange() {
     const addressId = localStorage.getItem('address_id');
     this.addressPhone?.valueChanges.subscribe((value) => {
@@ -482,7 +486,14 @@ private loadFormDataFromIndexedDB() {
           Validators.pattern(new RegExp(`^\\d{${value.phoneLength}}$`)),
         ]);
       }
-
+      // this.form.get('whatsapp_number_code')?.setValue(value)
+      // const whatsphoneControl = this.form.get('whatsapp_number');
+      // if (whatsphoneControl) {
+      //   whatsphoneControl.setValidators([
+      //     Validators.required,
+      //     Validators.pattern(new RegExp(`^\\d{${value.phoneLength}}$`)),
+      //   ]);
+      // }
     });
 
     this.form.get('whatsapp_number')?.valueChanges.subscribe((value) => {
@@ -563,6 +574,22 @@ private loadFormDataFromIndexedDB() {
     if (!this.isRestoring && type !== 'villa') {
       floorCtrl?.setValue('');
     }
+
+    // const requiredNoSpaces = [
+    //   Validators.required,
+    //   this.noOnlySpacesValidator(),
+    // ];
+
+    // Set validators based on selected property
+    // if (type === 'apartment' || type === 'office') {
+    //   aptCtrl?.setValidators(requiredNoSpaces);
+    //   floorCtrl?.setValidators(requiredNoSpaces);
+    //   buildingCtrl?.setValidators(requiredNoSpaces);
+    // } else if (type === 'villa') {
+    //   aptCtrl?.setValidators(requiredNoSpaces);
+    //   buildingCtrl?.setValidators(requiredNoSpaces);
+    // }
+
     aptCtrl?.updateValueAndValidity();
     floorCtrl?.updateValueAndValidity();
     buildingCtrl?.updateValueAndValidity();
@@ -620,190 +647,187 @@ private loadFormDataFromIndexedDB() {
     };
   }
 
-  // delivery-details.component.ts - Update the onSubmit method
-onSubmit(): void {
-  console.log('form', this.form);
+  // private resetPropertyFields(): void {
+  //   this.form.patchValue({
+  //     buildingName: '',
+  //     apartmentNumber: '',
+  //     floor_number: '',
+  //     building: '',
+  //     villaName: '',
+  //     villaNumber: '',
+  //     companyName: '',
+  //     buildingNumber: '',
+  //     landmark: '',
+  //     address: '',
+  //     notes:''
+  //   });
 
-  this.submitted = true;
-  if (this.userAddNewAddress == false) {
-    this.form.markAllAsTouched();
-    this.storeAddressinLocalStorage();
-    return;
-  }
+  //   this.form.controls['address'].markAsPristine();
+  //   this.form.controls['address'].markAsUntouched();
+  // }
 
-  if (this.form.invalid) {
-    this.form.markAllAsTouched();
-    console.warn('Form is invalid. Logging invalid fields:', this.form.status, this.form);
+  // onSubmit(): void {
+  //   this.submitted = true;
+  //   // if (this.form.invalid) {
+  //   //   this.form.markAllAsTouched(); // يجعل كل الحقول كأنها "touched" ليُظهر الرسائل
+  //   //   return;
+  //   // }
+  //   const noteValue = this.form.get('notes')?.value;
 
+  //   const formDataWithNote = { ...this.form.value, notes: noteValue };
+
+  //   this.formDataService.submitForm(formDataWithNote).subscribe({
+  //     next: (response) => {
+  //       console.log('Full form submission response:', response);
+
+  //       if (!response.status) {
+  //         console.warn('Response status is false');
+  //         this.handleBackendErrors(response.errorData);
+  //         return;
+  //       }
+
+  //       if (!response.data || !response.data.address_id) {
+  //         console.warn('Missing address_id in response data:', response.data);
+  //         return;
+  //       }
+
+  //       const noteValue = this.form.get('notes')?.value;
+
+  //       this.form.patchValue({ address_id: response.data.address_id });
+
+  //       const finalResponseData = {
+  //         ...response.data,
+  //         notes: noteValue,
+  //       };
+
+  //       // ✅ Safe logging before localStorage set
+  //       console.log('Saving address_id to localStorage:', response.data.address_id);
+
+  //       localStorage.setItem('address_id', response.data.address_id.toString());
+  //       localStorage.setItem('form_data', JSON.stringify(this.form.value));
+  //       localStorage.setItem('notes', noteValue);
+
+  //       console.log('Successfully saved to localStorage, navigating back');
+  //       this.resetForm();
+  //       this.location.back();
+  //     }
+  //     ,
+  //     error: (err) => {
+  //       console.error('❌ Error submitting form:', err);
+  //       if (err.error && err.error.errorData) {
+  //         this.handleBackendErrors(err.error.errorData);
+  //       }
+  //     },
+  //   });
+  // }
+  onSubmit(): void {
+    if (this.useSameNumberForWhatsapp) {
+      this.form
+        .get('whatsapp_number')
+        ?.setValue(this.form.get('address_phone')?.value || '');
+      this.form
+        .get('whatsapp_number_code')
+        ?.setValue(this.form.get('country_code')?.value || '');
+    }
+    this.submitted = true;
+    if (this.userAddNewAddress == false) {
+      this.form.markAllAsTouched();
+      this.storeAddressinLocalStorage();
+
+      return;
+    }
+    if (this.form.invalid) {
+      this.form.markAllAsTouched(); // Ensure errors are shown in UI
+
+      console.warn(
+        'Form is invalid. Logging invalid fields:',
+        this.form.status,
+        this.form
+      );
+      if (this.selectedProperty === 'hotel') {
+        console.log('ddddd', this.selectedHotel);
+        localStorage.setItem('hotel_id', this.selectedHotel?.id);
+
+        this.form.patchValue({
+          hotel_id: this.selectedHotel?.id,
+          address: this.selectedHotel?.address,
+        });
+      } else {
+        // احذف hotel_id من النموذج
+        if (this.form.get('hotel_id')) {
+          this.form.removeControl('hotel_id');
+        }
+      }
+      console.log(this.form.value);
+
+      /*       Object.keys(this.form.controls).forEach((key) => {
+              const control = this.form.get(key);
+              if (control && control.invalid) {
+                console.log(`❌ Invalid field: ${key}`, control.errors);
+              }
+            }); */
+
+      return;
+    }
+
+    const noteValue = this.form.get('notes')?.value;
     if (this.selectedProperty === 'hotel') {
-      console.log('ddddd', this.selectedHotel);
-      localStorage.setItem('hotel_id', this.selectedHotel?.id);
       this.form.patchValue({
         hotel_id: this.selectedHotel?.id,
         address: this.selectedHotel?.address,
       });
     } else {
+      // احذف hotel_id من النموذج
       if (this.form.get('hotel_id')) {
         this.form.removeControl('hotel_id');
       }
     }
-
-    console.log(this.form.value);
-    return;
-  }
-
-  const noteValue = this.form.get('notes')?.value;
-  if (this.selectedProperty === 'hotel') {
-    this.form.patchValue({
-      hotel_id: this.selectedHotel?.id,
-      address: this.selectedHotel?.address,
-    });
-  } else {
-    if (this.form.get('hotel_id')) {
-      this.form.removeControl('hotel_id');
+    if (this.useSameNumberForWhatsapp) {
+      this.whatsappPhone = this.form.get('address_phone')?.value || '';
+      this.form
+        .get('whatsapp_number_code')
+        ?.setValue(this.form.get('country_code')?.value || '');
     }
-  }
+    const formDataWithNote = {
+      ...this.form.value,
+      notes: noteValue,
+      whatsapp_number: this.whatsappPhone, // hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+      whatsapp_number_code: this.form.get('whatsapp_number_code')?.value, //.code
+    };
 
-  if (this.useSameNumberForWhatsapp) {
-    this.whatsappPhone = this.form.get('address_phone')?.value || '';
-    this.form
-      .get('whatsapp_number_code')
-      ?.setValue(this.form.get('country_code')?.value || '');
-  }
+    console.log('✅ Saving to localStorage:', formDataWithNote);
+    localStorage.setItem('form_data', JSON.stringify(formDataWithNote));
+    localStorage.setItem('notes', noteValue);
 
-  const formDataWithNote = {
-    ...this.form.value,
-    notes: noteValue,
-    whatsapp_number: this.whatsappPhone,
-    whatsapp_number_code: this.form.get('whatsapp_number_code')?.value,
-  };
+    // start hanan
+    // SAVE TO INDEXEDDB ON SUBMIT
+    this.dbService.saveFormData(formDataWithNote).then(id => {
+      console.log('✅ Form data saved to IndexedDB with ID:', id);
+    }).catch(err => {
+      console.error('❌ Error saving form data to IndexedDB:', err);
+    });
+    // end hanan
 
-  console.log('✅ Saving to localStorage:', formDataWithNote);
+    // localStorage.setItem('address_id', 'DUMMY_ID');
+    const selectedAreaId = this.form.get('area_id')?.value;
 
-  // Save to localStorage
-  localStorage.setItem('form_data', JSON.stringify(formDataWithNote));
-  localStorage.setItem('notes', noteValue);
-
-  // SAVE TO INDEXEDDB ON SUBMIT
-  this.dbService.saveFormData(formDataWithNote).then(id => {
-    console.log('✅ Form data saved to IndexedDB with ID:', id);
-  }).catch(err => {
-    console.error('❌ Error saving form data to IndexedDB:', err);
-  });
-
-  const selectedAreaId = this.form.get('area_id')?.value;
-  if (selectedAreaId && this.areas && Array.isArray(this.areas)) {
-    const selectedArea = this.areas.find((area) => area.id == selectedAreaId);
-    if (selectedArea) {
+    if (selectedAreaId && this.areas && Array.isArray(this.areas)) {
+      const selectedArea = this.areas.find((area) => area.id == selectedAreaId);
+      if (selectedArea) {
+        localStorage.setItem('delivery_fees', selectedArea.delivery_fees);
+        console.log('💰 Delivery fees saved:', selectedArea.delivery_fees);
+      }
+    }
+    if (this.selectedAddress) {
+      const selectedArea = this.areas.find((area) => area.id == selectedAreaId);
       localStorage.setItem('delivery_fees', selectedArea.delivery_fees);
       console.log('💰 Delivery fees saved:', selectedArea.delivery_fees);
     }
+    localStorage.setItem('deliveryForm', JSON.stringify(this.form.value));
+    console.log('🔙 Navigating back after local save');
+    // this.resetForm();
+    this.location.back();
   }
-
-  if (this.selectedAddress) {
-    const selectedArea = this.areas.find((area) => area.id == selectedAreaId);
-    localStorage.setItem('delivery_fees', selectedArea.delivery_fees);
-    console.log('💰 Delivery fees saved:', selectedArea.delivery_fees);
-  }
-
-  localStorage.setItem('deliveryForm', JSON.stringify(this.form.value));
-  console.log('🔙 Navigating back after local save');
-  this.location.back();
-}
-
-  // onSubmit(): void {
-  //   console.log('form', this.form);
-
-  //   this.submitted = true;
-  //   if (this.userAddNewAddress == false) {
-  //     this.form.markAllAsTouched();
-  //     this.storeAddressinLocalStorage();
-
-  //     return;
-  //   }
-  //   if (this.form.invalid) {
-  //     this.form.markAllAsTouched(); // Ensure errors are shown in UI
-
-  //     console.warn(
-  //       'Form is invalid. Logging invalid fields:',
-  //       this.form.status,
-  //       this.form
-  //     );
-  //     if (this.selectedProperty === 'hotel') {
-  //       console.log('ddddd', this.selectedHotel);
-  //       localStorage.setItem('hotel_id', this.selectedHotel?.id);
-
-  //       this.form.patchValue({
-  //         hotel_id: this.selectedHotel?.id,
-  //         address: this.selectedHotel?.address,
-  //       });
-  //     } else {
-  //       // احذف hotel_id من النموذج
-  //       if (this.form.get('hotel_id')) {
-  //         this.form.removeControl('hotel_id');
-  //       }
-  //     }
-  //     console.log(this.form.value);
-
-  //     /*       Object.keys(this.form.controls).forEach((key) => {
-  //             const control = this.form.get(key);
-  //             if (control && control.invalid) {
-  //               console.log(`❌ Invalid field: ${key}`, control.errors);
-  //             }
-  //           }); */
-
-  //     return;
-  //   }
-
-  //   const noteValue = this.form.get('notes')?.value;
-  //   if (this.selectedProperty === 'hotel') {
-  //     this.form.patchValue({
-  //       hotel_id: this.selectedHotel?.id,
-  //       address: this.selectedHotel?.address,
-  //     });
-  //   } else {
-  //     // احذف hotel_id من النموذج
-  //     if (this.form.get('hotel_id')) {
-  //       this.form.removeControl('hotel_id');
-  //     }
-  //   }
-  //   if (this.useSameNumberForWhatsapp) {
-  //     this.whatsappPhone = this.form.get('address_phone')?.value || '';
-  //     this.form
-  //       .get('whatsapp_number_code')
-  //       ?.setValue(this.form.get('country_code')?.value || '');
-  //   }
-  //   const formDataWithNote = {
-  //     ...this.form.value,
-  //     notes: noteValue,
-  //     whatsapp_number: this.whatsappPhone, // hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-  //     whatsapp_number_code: this.form.get('whatsapp_number_code')?.value, //.code
-  //   };
-
-  //   console.log('✅ Saving to localStorage:', formDataWithNote);
-  //   localStorage.setItem('form_data', JSON.stringify(formDataWithNote));
-  //   localStorage.setItem('notes', noteValue);
-
-  //   // localStorage.setItem('address_id', 'DUMMY_ID');
-  //   const selectedAreaId = this.form.get('area_id')?.value;
-
-  //   if (selectedAreaId && this.areas && Array.isArray(this.areas)) {
-  //     const selectedArea = this.areas.find((area) => area.id == selectedAreaId);
-  //     if (selectedArea) {
-  //       localStorage.setItem('delivery_fees', selectedArea.delivery_fees);
-  //       console.log('💰 Delivery fees saved:', selectedArea.delivery_fees);
-  //     }
-  //   }
-  //   if (this.selectedAddress) {
-  //     const selectedArea = this.areas.find((area) => area.id == selectedAreaId);
-  //     localStorage.setItem('delivery_fees', selectedArea.delivery_fees);
-  //     console.log('💰 Delivery fees saved:', selectedArea.delivery_fees);
-  //   }
-  //   localStorage.setItem('deliveryForm', JSON.stringify(this.form.value));
-  //   console.log('🔙 Navigating back after local save');
-  //   // this.resetForm();
-  //   this.location.back();
-  // }
   whatsapp: any;
   private handleBackendErrors(errors: any): void {
     if (!errors) return;
@@ -868,37 +892,14 @@ onSubmit(): void {
   areas: any[] = [];
   // const url = `https://alkoot-restaurant.com/api/areas/${branchId}`;
 
-  // getAreas() {
-  //   const branchId = localStorage.getItem('branch_id');
-
-  //   if (!branchId) {
-  //     console.error('branch_id not found in localStorage');
-  //     return;
-  //   }
-  //   const url = `${baseUrl}api/areas/${branchId}`;
-
-  //   this.http.get<any>(url).subscribe({
-  //     next: (res: { status: any; data: any }) => {
-  //       if (res.status && res.data) {
-  //         this.areas = res.data;
-  //         this.allAreas = res.data;
-  //         this.areas = [...this.allAreas];
-  //       }
-  //       console.log(this.areas, 'areas');
-  //     },
-  //     error: (err) => {
-  //       console.error('خطأ في تحميل المناطق:', err);
-  //     },
-  //   });
-  // }
-
   getAreas() {
     const branchId = localStorage.getItem('branch_id');
+
     if (!branchId) {
       console.error('branch_id not found in localStorage');
       return;
     }
-
+    // start hanan
     // First try to dbServiceget areas from IndexedDB
     this.dbService.getAll('areas').then(areas => {
       if (areas && areas.length > 0) {
@@ -944,8 +945,8 @@ onSubmit(): void {
         },
       });
     });
+    // end hanan
   }
-
   propertyLabels: any = {
     apartment: {
       building: 'اسم المبنى',
@@ -1004,9 +1005,8 @@ onSubmit(): void {
   // getHotels() {
   //   return this.formDataService.getHotelsData().subscribe({
   //     next: (res: any) => {
-  //       console.log("sssss",res.data);
+  //       console.log(res.data);
   //       this.hotels = res.data;
-  //          this.dbService.saveData('hotels', this.hotels);
 
   //       this.allHotels = res.data;
   //       this.hotels = [...this.allHotels];
@@ -1017,7 +1017,8 @@ onSubmit(): void {
   //   });
   // }
 
-  getHotels() {
+  // start hanan
+getHotels() {
     // First try to get hotels from IndexedDB
     this.dbService.getAll('hotels').then(hotels => {
       if (hotels && hotels.length > 0) {
@@ -1062,6 +1063,7 @@ onSubmit(): void {
       });
     });
   }
+// end hanan
   selectedHotel: any;
   onHotelChange(hotel: any) {
     this.selectedHotel = hotel;
@@ -1124,6 +1126,8 @@ onSubmit(): void {
             if (res.status == true) {
               if (typeof res.data === 'object' && res.data !== null) {
                 // this.allUserAddress = {...res.data,country_code:{code:res.data.country_code,flag:res.data['country_flag']||null}};
+
+                this.clientName?.setValue(res.data[0].user_name)
                 this.allUserAddress = res.data.map((item: any) => ({
                   ...item,
                   country_code: {
@@ -1131,8 +1135,6 @@ onSubmit(): void {
                     flag: item?.country_flag ?? null,
                   },
                 }));// fatma: must ask BE to return country_code as object of flag,code not code only
-
-                console.log('allllll', this.allUserAddress);
 
                 this.userStoredAddress = res.data.map((address: any) => {
                   this.userId = address.user_id;
@@ -1143,21 +1145,15 @@ onSubmit(): void {
                       'delivery_fees',
                       address.delivery_fees
                     );
-                    console.log(
-                      '📦 Delivery fees from stored address:',
-                      address.delivery_fees
-                    );
                   }
-
                   return {
                     id: address.id,
-                    name: address.address_type + ' , ' + address.address,
+                    name: address.address_type + ' , ' + (address.hotels.length > 0 ? address.hotels[0].name : address.address),
                     delivery_fees: address.delivery_fees,
-                    // name:address.address,
+                    client_name: address.user_name
+                    // name: address.address,
                   };
                 });
-                console.log('toqa', this.userStoredAddress);
-
                 this.confirmationDialog.confirm();
               } else {
                 this.phoneNotFound = res.data;
@@ -1197,8 +1193,8 @@ onSubmit(): void {
       const formData = {
         ...storedAddressData,
         client_name: this.clientName?.value || storedAddressData.user_name,
-      whatsapp_number: this.whatsappPhone, // hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-      whatsapp_number_code: this.form.get('whatsapp_number_code')?.value,
+        whatsapp_number: this.whatsappPhone, // hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+        whatsapp_number_code: this.form.get('whatsapp_number_code')?.value,
       };
 
       localStorage.setItem('form_data', JSON.stringify(formData));
@@ -1237,22 +1233,47 @@ onSubmit(): void {
     }
     // localStorage.removeItem('form_data');
   }
+  // useSameWhatsapp(useSame: boolean) {
+  //   this.useSameNumberForWhatsapp = useSame;
 
-   get whatsappNumberCode() {
+  //   if (useSame) {
+  //     const phone = this.form.get('address_phone')?.value || '';
+  //     const code = this.form.get('country_code')?.value || '';
+
+  //     this.whatsappPhone = phone;
+  //     this.whatsappCountryCode = code;
+
+  //     // Patch both into form directly
+  //     this.form.patchValue({
+  //       whatsapp_number: phone,
+  //       whatsapp_number_code: code,
+  //     });
+  //   } else {
+  //     this.whatsappPhone = this.whatsappPhone;
+  //   }
+  // }
+  get whatsappNumberCode() {
     return this.form.get('whatsapp_number_code');
   }
-  listenToChangeWhatsappCountry(){
- this.whatsappNumberCode?.valueChanges.subscribe((value) => {
+  listenToChangeWhatsappCountry() {
+    this.whatsappNumberCode?.valueChanges.subscribe((value) => {
       const whatsappNumControl = this.form.get('whatsapp_number');
       if (value) {
-        this.selectedWhatsappCountry=value;
-        whatsappNumControl?.setValidators([Validators.required,Validators.pattern(
-            new RegExp(`^\\d{${this.whatsappNumberCode?.value?.phoneLength}}$`)
-          )]);
+        this.selectedWhatsappCountry = value;
+        whatsappNumControl?.setValidators([Validators.required, Validators.pattern(
+          new RegExp(`^\\d{${this.whatsappNumberCode?.value?.phoneLength}}$`)
+        )]);
       } else {
         whatsappNumControl?.clearValidators();
       }
     });
+  }
+  listenToAddressChange() {
+    this.selectedAddressControl.valueChanges
+      .subscribe(arg => {
+        this.clientName?.setValue(arg.client_name)
+
+      });
   }
 
 }

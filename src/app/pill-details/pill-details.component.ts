@@ -1,3 +1,4 @@
+import { invoice } from './../interfaces/invoice';
 import {
   Component,
   OnInit,
@@ -11,26 +12,28 @@ import { ActivatedRoute } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { PrintedInvoiceService } from '../services/printed-invoice.service';
 import { Router } from '@angular/router';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
 import { finalize } from 'rxjs';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ButtonModule } from 'primeng/button';
-import  { ConfirmDialogComponent } from "../shared/ui/component/confirm-dialog/confirm-dialog.component";
+import { ConfirmDialogComponent } from "../shared/ui/component/confirm-dialog/confirm-dialog.component";
 import { IndexeddbService } from '../services/indexeddb.service';
 
 @Component({
   selector: 'app-pill-details',
   imports: [CommonModule, ShowLoaderUntilPageLoadedDirective, DecimalPipe, ConfirmDialogModule,
-    ButtonModule, ConfirmDialogComponent],
+    ButtonModule, ConfirmDialogComponent, RouterLink, RouterLinkActive],
   templateUrl: './pill-details.component.html',
   styleUrls: ['./pill-details.component.css'],
   providers: [DatePipe],
 })
-export class PillDetailsComponent implements OnInit {printOptions = [
-  { name: 'طباعة نهائية', id: 0 },
-  { name: 'معاينة فقط', id: 1 },
-];
- @ViewChild('confirmPrintDialog') confirmationDialog!: ConfirmDialogComponent;
+export class PillDetailsComponent implements OnInit {
+  printOptions = [
+    { name: 'طباعة نهائية', id: 0 },
+    { name: 'معاينة فقط', id: 1 },
+  ];
+  @ViewChild('confirmPrintDialog') confirmationDialog!: ConfirmDialogComponent;
 
   @ViewChild('printedPill') printedPill!: ElementRef;
   // @ViewChild('deliveredButton', { static: false }) deliveredButton!: ElementRef;
@@ -39,11 +42,16 @@ export class PillDetailsComponent implements OnInit {printOptions = [
   invoices: any;
   pillDetails: any;
   branchDetails: any;
+  // start hanan
+  isOnline: boolean = navigator.onLine;
+  offlinePillData: any = null;
+  // end hanan
   pillId!: any;
   orderDetails: any[] = [];
   date: string | null = null;
   time: string | null = null;
   invoiceSummary: any;
+  invoiceTips : any;
   addressDetails: any;
   isDeliveryOrder: boolean = false;
   paymentStatus: any = '';
@@ -58,8 +66,8 @@ export class PillDetailsComponent implements OnInit {printOptions = [
   showPrices = false;
   test: boolean | undefined;
   paymentMethod: any;
-loading:boolean=true;
-isPrinting = false;
+  loading: boolean = true;
+  isPrinting = false;
 
   constructor(
     private pillDetailsService: PillDetailsService,
@@ -67,9 +75,9 @@ isPrinting = false;
     private orderService: PillDetailsService,
     private cdr: ChangeDetectorRef,
     private datePipe: DatePipe,
-    private printedInvoiceService: PrintedInvoiceService,
     private dbService: IndexeddbService,
-    private router: Router) {}
+    private printedInvoiceService: PrintedInvoiceService,
+    private router: Router) { }
   private extractDateAndTime(branch: any): void {
     const { created_at } = branch;
     // console.log(created_at, 'test');
@@ -83,166 +91,302 @@ isPrinting = false;
     }
   }
 
-//    ngOnInit() {
+  //  start dalia
+  ngOnInit(): void {
+    this.route.paramMap.subscribe((params) => {
+      this.pillId = params.get('id');
 
-//     // Initialize IndexedDB first
-//      this.dbService.init();
+      if (this.pillId) {
 
-//     // Then try to get pill data
-//  this.dbService.getAll('pills').then((pillData) => {
-//   console.log("dalia pills", pillData);  // ✅ Here you get your 273 pills
-// });
+          if (navigator.onLine) {
+        // ✅ Online
+        this.fetchPillsDetails(this.pillId);
+      } else {
+        // ✅ Offline
+        this.fetchPillFromIndexedDB(this.pillId);
+        console.log(this.pillId);
 
-//     this.route.paramMap.subscribe((params) => {
-//       this.pillId = params.get('id');
+      }
 
-//       if (this.pillId) {
+      }
+    });
+    this.fetchTrackingStatus();
+    // this.getNoteFromLocalStorage();
+    this.cashier_machine_id = Number(
+      localStorage.getItem('cashier_machine_id')
+    );
+    const storedData: string | null =
+      localStorage.getItem('cashier_machine_id');
 
-//         this.fetchPillFromIndexedDB(this.pillId);
-//         // this.fetchPillsDetails(this.pillId);
-//       }
-//     });
-//     this.fetchTrackingStatus();
-//     // this.getNoteFromLocalStorage();
-//     this.cashier_machine_id = Number(
-//       localStorage.getItem('cashier_machine_id')
-//     );
-//     const storedData: string | null =
-//       localStorage.getItem('cashier_machine_id');
+    if (storedData !== null) {
+      // Safe to parse since storedData is guaranteed to be a string
+      const transactionDataFromLocalStorage = JSON.parse(storedData);
 
-//     if (storedData !== null) {
-//       // Safe to parse since storedData is guaranteed to be a string
-//       const transactionDataFromLocalStorage = JSON.parse(storedData);
+      // Access the cashier_machine_id
+      this.cashier_machine_id = transactionDataFromLocalStorage;
 
-//       // Access the cashier_machine_id
-//       this.cashier_machine_id = transactionDataFromLocalStorage;
-
-//       // console.log(this.cashier_machine_id,'one');  // Output: 1
-//     } else {
-//       console.log('No data found in localStorage.');
-//     }
-//   }
-
-// async fetchPillFromIndexedDB(identifier) {
-//   try {
-//     console.log('Pill id :', identifier);
-
-//     const pill = await this.dbService.getpiLLById(identifier);  // ✅ await
-
-//     if (pill) {
-//       console.log('Pill found :', pill);
-//       // this.processPillDetails(pill);
-//     } else {
-//       console.log('Pill not found in IndexedDB');
-//       this.fetchPillsDetails(identifier);
-//     }
-//   } catch (error) {
-//     console.error('Error retrieving pill from IndexedDB:', error);
-//     this.fetchPillsDetails(identifier);
-//   }
-// }
-
-async ngOnInit() {
-  // Initialize DB first
-  await this.dbService.init();
-
-  // Load all pills just to verify
-  this.dbService.getAll('pills').then((pillData) => {
-    console.log('dalia pills', pillData); // ✅ Array(273)
-  });
-
-  // Subscribe to route param
-  this.route.paramMap.subscribe((params) => {
-    this.pillId = params.get('id');
-    if (this.pillId) {
-      this.fetchPillFromIndexedDB(this.pillId);
-    }
-  });
-
-  this.fetchTrackingStatus();
-
-  this.cashier_machine_id = Number(
-    localStorage.getItem('cashier_machine_id')
-  );
-
-  const storedData: string | null = localStorage.getItem('cashier_machine_id');
-  if (storedData !== null) {
-    this.cashier_machine_id = JSON.parse(storedData);
-  } else {
-    console.log('No data found in localStorage.');
-  }
-}
-
-async fetchPillFromIndexedDB(identifier: string | number) {
-  try {
-
-    const pill = await this.dbService.getPillByInvoiceId(identifier);
-
-    if (pill) {
-      this.processPillDetails(pill);
+      // console.log(this.cashier_machine_id,'one');  // Output: 1
     } else {
-      console.log('Pill not found in IndexedDB');
-      this.processPillDetails(String(identifier));  // ✅ force string
+      console.log('No data found in localStorage.');
     }
-  } catch (error) {
-    console.error('Error retrieving pill from IndexedDB:', error);
-    this.fetchPillsDetails(String(identifier));  // ✅ force string
   }
-}
+
+  //   ngOnInit() {
+  //   // Initialize DB first
+  //    this.dbService.init();
+  //   // Subscribe to route param
+  //   this.route.paramMap.subscribe((params) => {
+  //     this.pillId = params.get('id');
+  //     if (this.pillId) {
+  //       this.fetchPillFromIndexedDB(this.pillId);
+  //     }
+  //   });
+
+  //   this.fetchTrackingStatus();
+
+  //   this.cashier_machine_id = Number(
+  //     localStorage.getItem('cashier_machine_id')
+  //   );
+
+  //   const storedData: string | null = localStorage.getItem('cashier_machine_id');
+  //   if (storedData !== null) {
+  //     const transactionDataFromLocalStorage = JSON.parse(storedData);
+
+  //   //     // Access the cashier_machine_id
+  //       this.cashier_machine_id = transactionDataFromLocalStorage;
+  //   } else {
+  //     console.log('No data found in localStorage.');
+  //   }
+  // }
+
+
+  // start hanan
+  async printInvoice(isFinal: boolean = false) {
+    console.log('جاري طباعة الفاتورة...');
+    this.isFinal = isFinal;
+    this.isPrinting = true;
+    // إغلاق الـ modal فورًا بعد بدء الطباعة
+    this.closeConfirmationDialog();
+    // التحقق من وجود البيانات
+    if (!this.invoices?.length || !this.invoiceSummary?.length) {
+      console.warn('بيانات الفاتورة غير جاهزة.');
+
+      // محاولة تحميل البيانات من التخزين المحلي
+      if (!this.isOnline) {
+        await this.fetchPillFromIndexedDB(this.pillId);
+      }
+
+      if (!this.invoices?.length) {
+        alert('بيانات الفاتورة غير متوفرة للطباعة.');
+        this.isPrinting = false;
+        return;
+      }
+    }
+
+    try {
+      // إذا كان هناك اتصال، محاولة الطباعة عبر الخدمة
+      if (this.isOnline) {
+        try {
+          const response = await this.printedInvoiceService
+            .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
+            .toPromise();
+          console.log('استجابة طباعة الفاتورة:', response);
+        } catch (onlineError) {
+          console.warn('فشل الطباعة عبر الخدمة، الانتقال للطباعة المحلية:', onlineError);
+        }
+      } else {
+        console.log('الطباعة في وضع عدم الاتصال');
+      }
+
+      // الطباعة المحلية
+      await this.performLocalPrint();
+
+    } catch (error) {
+      console.error('خطأ في طباعة الفاتورة:', error);
+      // في حالة الخطأ، حاولي الطباعة محلياً فقط
+      await this.performLocalPrint();
+    } finally {
+      this.isPrinting = false;
+
+      // التأكد من إغلاق الـ modal نهائيًا
+      this.closeConfirmationDialog();
+    }
+  }
+
+  // دورة الطباعة المحلية
+  private async performLocalPrint(): Promise<void> {
+    const printContent = document.getElementById('printSection');
+    if (!printContent) {
+      console.error('قسم الطباعة غير موجود.');
+      return;
+    }
+
+    const originalHTML = document.body.innerHTML;
+
+    const copies = this.isDeliveryOrder
+      ? [
+        { showPrices: true, test: true },
+        { showPrices: false, test: false },
+        { showPrices: true, test: true },
+      ]
+      : [
+        { showPrices: true, test: true },
+        { showPrices: false, test: false },
+      ];
+
+    for (let i = 0; i < copies.length; i++) {
+      this.showPrices = copies[i].showPrices;
+      this.test = copies[i].test;
+
+      await new Promise((resolve) => setTimeout(resolve, 300));
+
+      const singlePageHTML = `
+        <div>
+          ${printContent.innerHTML}
+          ${!this.isOnline ? '<div style="text-align: center; color: red; margin-top: 10px;">🔴 طباعة محلية - غير متصل بالإنترنت</div>' : ''}
+        </div>
+      `;
+
+      document.body.innerHTML = singlePageHTML;
+
+      await new Promise((resolve) =>
+        setTimeout(() => {
+          window.print();
+          resolve(true);
+        }, 200)
+      );
+    }
+
+    document.body.innerHTML = originalHTML;
+
+    // إعادة تحميل الصفحة فقط إذا كان هناك اتصال
+    if (this.isOnline) {
+      location.reload();
+    }
+  }
+
+
+  private closeConfirmationDialog(): void {
+    if (this.confirmationDialog) {
+      // إغلاق الـ modal يدويًا
+      const modalElement = document.querySelector('.p-dialog-mask');
+      if (modalElement) {
+        modalElement.remove();
+      }
+
+      // إزالة class الـ backdrop إذا كان موجودًا
+      const backdropElement = document.querySelector('.p-component-overlay');
+      if (backdropElement) {
+        backdropElement.remove();
+      }
+    }
+  }
+  // end hanan
+
+  async fetchPillFromIndexedDB(identifier: string | number) {
+    try {
+      console.log("offline-identifier",identifier);
+      const pill = await this.dbService.getPillByInvoiceId(identifier);
+
+      console.log("toqa_pills",pill);
+
+
+      if (pill) {
+        console.log("Loaded pill from IndexedDB ✅");
+        this.processPillDetails(pill);
+
+      } else {
+        console.log('Pill not found in IndexedDB, fallback to API');
+        this.fetchPillsDetails(String(identifier)); // ✅ fetch online
+      }
+    } catch (error) {
+      console.error('Error retrieving pill from IndexedDB:', error);
+      this.fetchPillsDetails(String(identifier));  // ✅ fetch online
+    }
+  }
+
 
 private processPillDetails(data: any): void {
-  this.order_id = data.order_id;
-  // this.invoices = data.invoices;
+  console.log("toqa offline", data);
 
-  const statusMap: { [key: string]: string } = {
-    completed: 'مكتمل',
-    pending: 'في انتظار الموافقة',
-    cancelled: 'ملغي',
-    packing: 'يتم تجهيزها',
-    readyForPickup: 'جاهز للاستلام',
-    on_way: 'في الطريق',
-    in_progress: 'يتم تحضير الطلب',
-    delivered: 'تم التوصيل',
-  };
+  try {
+    this.order_id = data.order_id;
 
-  const trackingKey = this.invoices[0]?.['tracking-status'];
-  if (trackingKey === 'completed') {
-    this.isShow = false;
-  }
-  this.trackingStatus = statusMap[trackingKey] || trackingKey;
-  this.orderNumber = data.order_id;
-  this.couponType = this.invoices[0]?.invoice_summary?.coupon_type;
+    // ✅ لو جاية Object حطها في Array عشان تبقى زي الـ Online
+    this.invoices = Array.isArray(data.invoice_details)
+      ? data.invoice_details
+      : [data.invoice_details];
 
-  this.addresDetails = this.invoices[0]?.address_details || {};
-  this.paymentMethod = this.invoices[0]?.transactions[0]?.['payment_method'];
-  this.paymentStatus = this.invoices[0]?.transactions[0]?.['payment_status'];
+    const statusMap: { [key: string]: string } = {
+      completed: 'مكتمل',
+      pending: 'في انتظار الموافقة',
+      cancelled: 'ملغي',
+      packing: 'يتم تجهيزها',
+      readyForPickup: 'جاهز للاستلام',
+      on_way: 'في الطريق',
+      in_progress: 'يتم تحضير الطلب',
+      delivered: 'تم التوصيل',
+    };
 
-  this.isDeliveryOrder = this.invoices?.some(
-    (invoice: any) => invoice.order_type === 'Delivery'
-  );
+    const trackingKey = this.invoices[0]?.['tracking-status'];
+    if (trackingKey === 'completed') {
+      this.isShow = false;
+    }
+    this.trackingStatus = statusMap[trackingKey] || trackingKey;
 
-  this.branchDetails = this.invoices?.map(
-    (e: { branch_details: any }) => e.branch_details
-  );
-  console.log(this.branchDetails, 'branchDetails');
+    this.orderNumber = data.order_id;
+    this.couponType = this.invoices[0]?.invoice_summary?.coupon_type;
 
-  this.orderDetails = this.invoices?.map((e: any) => e.orderDetails);
+    this.addresDetails = this.invoices[0]?.address_details || {};
+    this.paymentMethod =
+      this.invoices[0]?.transactions?.[0]?.['payment_method'];
+    this.paymentStatus =
+      this.invoices[0]?.transactions?.[0]?.['payment_status'];
 
-  this.invoiceSummary = this.invoices?.map((e: any) => {
-    return {
+    this.isDeliveryOrder = this.invoices.some(
+      (invoice: any) => invoice.order_type === 'Delivery'
+    );
+
+    this.branchDetails = this.invoices.map(
+      (e: { branch_details: any }) => e.branch_details
+    );
+
+    this.orderDetails = this.invoices.map((e: any) => e.orderDetails);
+
+    this.invoiceSummary = this.invoices.map((e: any) => ({
       ...e.invoice_summary,
       currency_symbol: e.currency_symbol,
-    };
-  });
+    }));
 
-  this.addressDetails = this.invoices?.map((e: any) => e.address_details);
+    this.addressDetails = this.invoices.map((e: any) => e.address_details);
 
-  if (this.branchDetails?.length) {
-    this.extractDateAndTime(this.branchDetails[0]);
+    if (this.branchDetails?.length) {
+      this.extractDateAndTime(this.branchDetails[0]);
+    }
+    this.invoiceTips = data.invoice_tips;
+
+    console.log(" this.invoiceTips ", this.invoiceTips);
+
+    console.log(
+      this.orderNumber,
+      this.couponType,
+      this.addresDetails,
+      this.paymentMethod,
+      this.paymentStatus,
+      this.isDeliveryOrder,
+      this.branchDetails,
+      this.invoiceSummary
+    );
+  } catch (error) {
+    console.error('Error processing pill details offline:', error, data);
   }
 }
 
 
+
+
+
+  //end dalia
   getNoteFromLocalStorage() {
     throw new Error('Method not implemented.');
   }
@@ -270,16 +414,17 @@ private processPillDetails(data: any): void {
   }
 
   fetchPillsDetails(pillId: string): void {
-    this.loading=false
+    this.loading = false
     this.pillDetailsService.getPillsDetailsById(pillId).pipe(
-    finalize(() => {
-      this.loading=true;
-    })
-  ).subscribe({
+      finalize(() => {
+        this.loading = true;
+      })
+    ).subscribe({
       next: (response: any) => {
         this.order_id = response.data.order_id
         this.invoices = response.data.invoices;
-        console.log( response,'response gggg' );
+        this.invoiceTips = response.data.invoice_tips || [];
+        console.log(response, 'response gggg');
 
 
         const statusMap: { [key: string]: string } = {
@@ -315,7 +460,7 @@ private processPillDetails(data: any): void {
         this.branchDetails = this.invoices?.map(
           (e: { branch_details: any }) => e.branch_details
         );
-        console.log(this.branchDetails,'branchDetails')
+        console.log(this.branchDetails, 'branchDetails')
         this.orderDetails = this.invoices?.map((e: any) => e.orderDetails);
 
         // this.invoiceSummary = this.invoices?.map((e: any) => e.invoice_summary );
@@ -425,79 +570,79 @@ private processPillDetails(data: any): void {
         },
       });
   }
-isFinal=false;
-order_id:any
-  async printInvoice(isFinal:boolean=false) {
+  isFinal = false;
+  order_id: any
+  //   async printInvoice(isFinal: boolean = false) {
 
-    this.isFinal=isFinal;
-  this.isPrinting = true;
+  //     this.isFinal = isFinal;
+  //     this.isPrinting = true;
 
-    if (!this.invoices?.length || !this.invoiceSummary?.length) {
-      console.warn('Invoice data not ready.');
-    this.isPrinting = false;
-      return;
-    }
+  //     if (!this.invoices?.length || !this.invoiceSummary?.length) {
+  //       console.warn('Invoice data not ready.');
+  //       this.isPrinting = false;
+  //       return;
+  //     }
 
-    try {
-      const response = await this.printedInvoiceService
-        .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
-        .toPromise();
-/* if(response.status==false){
-  alert(response.message);
-  return;
-}
-   */    console.log('Print invoice response:', response);
+  //     try {
+  //       const response = await this.printedInvoiceService
+  //         .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
+  //         .toPromise();
+  // /* if(response.status==false){
+  //   alert(response.message);
+  //   return;
+  // }
+  //    */    console.log('Print invoice response:', response);
 
-      const printContent = document.getElementById('printSection');
-      if (!printContent) {
-        console.error('Print section not found.');
-        return;
-      }
+  //       const printContent = document.getElementById('printSection');
+  //       if (!printContent) {
+  //         console.error('Print section not found.');
+  //         return;
+  //       }
 
-      const originalHTML = document.body.innerHTML;
+  //       const originalHTML = document.body.innerHTML;
 
-      const copies = this.isDeliveryOrder
-        ? [
-            { showPrices: true, test: true },
-            { showPrices: false, test: false },
-            { showPrices: true, test: true },
-          ]
-        : [
-            { showPrices: true, test: true },
-            { showPrices: false, test: false },
-          ];
+  //       const copies = this.isDeliveryOrder
+  //         ? [
+  //           { showPrices: true, test: true },
+  //           { showPrices: false, test: false },
+  //           { showPrices: true, test: true },
+  //         ]
+  //         : [
+  //           { showPrices: true, test: true },
+  //           { showPrices: false, test: false },
+  //         ];
 
-      for (let i = 0; i < copies.length; i++) {
-        this.showPrices = copies[i].showPrices;
-        this.test = copies[i].test;
-        await new Promise((resolve) => setTimeout(resolve, 300));
+  //       for (let i = 0; i < copies.length; i++) {
+  //         this.showPrices = copies[i].showPrices;
+  //         this.test = copies[i].test;
+  //         await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const singlePageHTML = `
-  <div>
-    ${printContent.innerHTML}
-  </div>
-`;
+  //         const singlePageHTML = `
+  //   <div>
+  //     ${printContent.innerHTML}
+  //   </div>
+  // `;
 
 
-        document.body.innerHTML = singlePageHTML;
+  //         document.body.innerHTML = singlePageHTML;
 
-        await new Promise((resolve) =>
-          setTimeout(() => {
-            window.print();
-            resolve(true);
-          }, 200)
-        );
-      }
+  //         await new Promise((resolve) =>
+  //           setTimeout(() => {
+  //             window.print();
+  //             resolve(true);
+  //           }, 200)
+  //         );
+  //       }
 
-      document.body.innerHTML = originalHTML;
-       location.reload();
-    } catch (error) {
-      console.error('Error printing invoice:', error);
-    }finally {
-    this.isPrinting = false;
-  }
+  //       document.body.innerHTML = originalHTML;
+  //       location.reload();
+  //     } catch (error) {
+  //       console.error('Error printing invoice:', error);
+  //     } finally {
+  //       this.isPrinting = false;
+  //     }
 
-  }
+  //   }
 
   getDiscountAmount(): number {
     if (
@@ -533,7 +678,7 @@ order_id:any
 
 
 
-   onPrintButtonClick() {
+  onPrintButtonClick() {
     this.confirmationDialog.confirm();
-    }
+  }
 }

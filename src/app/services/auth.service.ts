@@ -1,9 +1,23 @@
 import { Injectable } from '@angular/core';
+import { Injector } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
-import { tap, catchError } from 'rxjs/operators';
+// import { tap, catchError } from 'rxjs/operators';
 import { baseUrl } from '../environment';
-import { IndexeddbService } from '../services/indexeddb.service';
+import { OrderListService } from './order-list.service';
+import { PillsService } from './pills.service';
+import { ProductsService } from './products.service';
+import { TablesService } from './tables.service';
+import { AddAddressService } from './add-address.service';
+import { forkJoin } from 'rxjs';
+import { tap, switchMap, finalize, catchError } from 'rxjs/operators';
+// import { Observable, forkJoin, throwError } from 'rxjs';
+//
+// import { Observable, forkJoin, throwError } from 'rxjs';
+// import { tap, catchError } from 'rxjs/operators';
+import { Router } from '@angular/router';
+
+
 
 @Injectable({
   providedIn: 'root',
@@ -12,6 +26,7 @@ export class AuthService {
 
   private apiUrl = `${baseUrl}api/cashier-login`;
   private logoutUrl = `${baseUrl}api/cashier-logout`;
+  loading: boolean = true;
 
 
   //---- 🔹 Observables for user data
@@ -159,7 +174,7 @@ export class AuthService {
   getCurrentEmployee() {
     return (this.employeeData$ as BehaviorSubject<any>).value;
   }
-  constructor(private http: HttpClient,private dbService: IndexeddbService) {
+  constructor(private http: HttpClient, private injector: Injector ,  private router: Router) {
     window.addEventListener('storage', (event: StorageEvent) => {
       if (event.key === 'authToken') {
         if (event.newValue) {
@@ -210,6 +225,176 @@ export class AuthService {
     return emailPattern.test(input);
   }
   // 🔹 LOGIN METHOD
+  // login(loginData: {
+
+  //   country_code?: string;
+  //   email_or_phone: string;
+  //   password: string;
+  // }): Observable<any> {
+  //   return this.http.post(this.apiUrl, loginData).pipe(
+  //     tap((response: any) => {
+  //       this.loading = true;
+  //       console.log('🔹 Full Login Response:', response);
+  //       if (response.status && response.data) {
+  //         const employee = response.data.employee;
+  //         this.setEmployeeData(employee);
+  //         const fullName = `${employee.first_name} ${employee.last_name}`;
+  //         this.setFullName(fullName);
+  //         const branch = employee.branch;
+  //         const registeredCountryCode = employee.country_code;
+  //         const phoneNumber = employee.phone_number;
+  //         const token = response.data.access_token;
+  //         const branchId = employee.branch_id;
+  //         const scheduleId = employee.employee_schedule_id;
+  //         const userData = response.data.employee;
+  //         const imageUrl = employee.image;
+  //         this.setCashierMachineId(employee.cashier_machine_id);
+
+  //         if (response.data.visa_total !== undefined) {
+  //           this.setVisaTotal(response.data.visa_total);
+  //         }
+  //         // Only validate country code if login was with phone number
+  //         const isEmailLogin = this.isEmail(loginData.email_or_phone);
+  //         if (!isEmailLogin) {
+  //           if (!loginData.country_code) {
+  //             throw new Error('كود الدولة مطلوب لتسجيل الدخول برقم الهاتف');
+  //           }
+  //           if (loginData.country_code !== registeredCountryCode) {
+  //             throw new Error('كود الدولة غير صحيح');
+  //           }
+  //         }
+
+  //         // Set open balance status from response
+  //         if (response.data.is_open_balance !== undefined) {
+  //           console.log('Setting open balance status to:', response.data.is_open_balance);
+  //           this.setOpenBalanceStatus(response.data.is_open_balance);
+  //         }
+
+  //         console.log('Stored User Data:', userData);
+
+  //         const branchDetails = response.data.branch ?? null;
+  //         if (branchDetails) {
+  //           this.setStorageItem('branchData', branchDetails, true);
+  //           const currency_symbol = branchDetails.currency_symbol;
+  //           this.setStorageItem('currency_symbol', currency_symbol);
+
+
+  //         } else {
+  //           console.warn('⚠️ No Branch Data Found in Response');
+  //         }
+
+  //         // 🔹 Store token securely
+  //         this.setStorageItem('authToken', token);
+
+  //         this.logToken();
+  //         this.logAllStoredData();
+
+  //         // 🔹 Store user data
+  //         this.setUsername(fullName);
+  //         this.setPhoneNumber(phoneNumber);
+  //         this.setCountryCode(registeredCountryCode);
+  //         this.setBranch(branch);
+  //         this.setBranchId(branchId);
+  //         this.setScheduleId(scheduleId);
+  //         this.setImageUrl(imageUrl);
+
+  //         // 🔹 Store shift data
+  //         const shiftData = {
+  //           scheduleId: scheduleId,
+  //           shift_start: employee.shift_start,
+  //           shift_end: employee.shift_end,
+  //           shift_type: employee.shift_type,
+  //           day: response.data.day,
+  //           time: response.data.time,
+  //         };
+  //         this.setShiftData(shiftData);
+
+  //         this.markModalAsNotShown();
+
+  //         // 🔹 Sync authentication state across tabs
+  //         window.dispatchEvent(
+  //           new StorageEvent('storage', { key: 'authToken', newValue: token })
+  //         );
+  //         console.log('✅ Login successful, session synced across tabs.');
+  //       }
+
+
+  //       //start dalia
+
+  //       this.loading = false;
+  //       // fetch and save categories after login
+  //       const productService = this.injector.get(ProductsService);
+  //       productService.fetchAndSave().subscribe({
+  //         next: (res) => {
+  //           console.log('✅ Categories fetched and saved after login.');
+  //         },
+  //         error: (err) => {
+  //           console.error('❌ Error fetching categories after login:', err);
+  //         },
+  //       });
+
+  //       // fetch and save tables after login
+  //       const tablesService = this.injector.get(TablesService);
+  //       tablesService.fetchAndSave().subscribe({
+  //         next: (res) => {
+  //           console.log('✅ Tables fetched and saved after login.');
+  //         },
+  //         error: (err) => {
+  //           console.error('❌ Error fetching tables after login:', err);
+  //         },
+  //       });
+
+  //       // fetch and save hotels after login
+  //       const addAddressService = this.injector.get(AddAddressService);
+  //       addAddressService.fetchAndSave().subscribe({
+  //         next: (res) => {
+  //           console.log('✅ Hotels fetched and saved after login.');
+  //         },
+  //         error: (err) => {
+  //           console.error('❌ Error fetching hotels after login:', err);
+  //         },
+  //       });
+
+  //       // fetch and save areas after login
+  //       addAddressService.fetchAndSaveAreas();
+
+  //       // Fetch and save orders after successful login
+  //      const orderListService = this.injector.get(OrderListService);
+
+  //       orderListService.fetchAndSaveOrders().subscribe({
+  //         next: (res) => {
+  //           console.log('✅ Orders fetched and saved after login.');
+  //         },
+  //         error: (err) => {
+  //           console.error('❌ Error fetching orders after login:', err);
+  //         },
+  //       });
+
+  //       // fetch and save pills after login
+  //       const pillService = this.injector.get(PillsService);
+  //       pillService.fetchAndSave().subscribe({
+  //         next: (res) => {
+  //           console.log('✅ Pills fetched and saved after login.');
+  //         },
+  //         error: (err) => {
+  //           console.error('❌ Error fetching pills after login:', err);
+  //         },
+  //       });
+
+
+
+  //       //end dalia
+
+  //     }),
+  //     catchError((error) => {
+  //       console.error('❌ Login Error:', error);
+  //       return throwError(() => error);
+  //     })
+  //   );
+  // }
+
+
+
   login(loginData: {
     country_code?: string;
     email_or_phone: string;
@@ -217,12 +402,16 @@ export class AuthService {
   }): Observable<any> {
     return this.http.post(this.apiUrl, loginData).pipe(
       tap((response: any) => {
+        this.loading = true;
         console.log('🔹 Full Login Response:', response);
+
         if (response.status && response.data) {
           const employee = response.data.employee;
           this.setEmployeeData(employee);
+
           const fullName = `${employee.first_name} ${employee.last_name}`;
           this.setFullName(fullName);
+
           const branch = employee.branch;
           const registeredCountryCode = employee.country_code;
           const phoneNumber = employee.phone_number;
@@ -231,27 +420,14 @@ export class AuthService {
           const scheduleId = employee.employee_schedule_id;
           const userData = response.data.employee;
           const imageUrl = employee.image;
+
           this.setCashierMachineId(employee.cashier_machine_id);
-
-            // ✅ Store branch_id in IndexedDB
-        try {
-          // Store branch_id with a specific key in the branch_id store
-           this.dbService.saveData('branch_id', {
-            id: 'current_branch_id',
-            value: branchId,
-            timestamp: new Date().toISOString()
-          });
-
-          console.log('✅ branch_id stored in IndexedDB:', branchId);
-        } catch (error) {
-          console.error('❌ Failed to store branch_id in IndexedDB:', error);
-        }
-
 
           if (response.data.visa_total !== undefined) {
             this.setVisaTotal(response.data.visa_total);
           }
-          // Only validate country code if login was with phone number
+
+          // ✅ Validate country code only if login by phone
           const isEmailLogin = this.isEmail(loginData.email_or_phone);
           if (!isEmailLogin) {
             if (!loginData.country_code) {
@@ -262,7 +438,7 @@ export class AuthService {
             }
           }
 
-          // Set open balance status from response
+          // ✅ Set open balance status
           if (response.data.is_open_balance !== undefined) {
             console.log('Setting open balance status to:', response.data.is_open_balance);
             this.setOpenBalanceStatus(response.data.is_open_balance);
@@ -270,34 +446,20 @@ export class AuthService {
 
           console.log('Stored User Data:', userData);
 
+          // ✅ Save branch data
           const branchDetails = response.data.branch ?? null;
-
-
           if (branchDetails) {
             this.setStorageItem('branchData', branchDetails, true);
             const currency_symbol = branchDetails.currency_symbol;
             this.setStorageItem('currency_symbol', currency_symbol);
-
-                try {
-              // Store branch_id with a specific key in the branch_id store
-              this.dbService.saveData('branchData', branchDetails);
-
-              console.log('✅ branchData stored in IndexedDB:', branchId);
-            } catch (error) {
-              console.error('❌ Failed to store branchData in IndexedDB:', error);
-            }
-
           } else {
             console.warn('⚠️ No Branch Data Found in Response');
           }
 
-          // 🔹 Store token securely
+          // ✅ Store token & user details
           this.setStorageItem('authToken', token);
-
           this.logToken();
           this.logAllStoredData();
-
-          // 🔹 Store user data
           this.setUsername(fullName);
           this.setPhoneNumber(phoneNumber);
           this.setCountryCode(registeredCountryCode);
@@ -306,7 +468,7 @@ export class AuthService {
           this.setScheduleId(scheduleId);
           this.setImageUrl(imageUrl);
 
-          // 🔹 Store shift data
+          // ✅ Save shift data
           const shiftData = {
             scheduleId: scheduleId,
             shift_start: employee.shift_start,
@@ -319,12 +481,54 @@ export class AuthService {
 
           this.markModalAsNotShown();
 
-          // 🔹 Sync authentication state across tabs
-          window.dispatchEvent(
-            new StorageEvent('storage', { key: 'authToken', newValue: token })
-          );
+          // ✅ Sync auth state across tabs
+          window.dispatchEvent(new StorageEvent('storage', { key: 'authToken', newValue: token }));
           console.log('✅ Login successful, session synced across tabs.');
         }
+
+        // ==========================
+        // 🚀 START DALIA - after login logic
+        // ==========================
+        this.loading = false;
+
+        // ✅ Navigate immediately to home
+        this.router.navigate(['/home']);
+
+        // ✅ Load categories first
+        const productService = this.injector.get(ProductsService);
+        productService.fetchAndSave().subscribe({
+          next: () => {
+            console.log('✅ Categories fetched and saved after login.');
+
+            // ✅ After categories → load all other data in background
+            const tablesService = this.injector.get(TablesService);
+            const addAddressService = this.injector.get(AddAddressService);
+            const orderListService = this.injector.get(OrderListService);
+            const pillService = this.injector.get(PillsService);
+
+            forkJoin({
+              tables: tablesService.fetchAndSave(),
+              hotels: addAddressService.fetchAndSave(),
+              areas: addAddressService.fetchAndSaveAreas(),
+              orders: orderListService.fetchAndSaveOrders(),
+              pills: pillService.fetchAndSave(),
+            }).subscribe({
+              next: () => {
+                console.log('✅ All background data fetched successfully.');
+              },
+              error: (err) => {
+                console.error('❌ Error fetching background data:', err);
+              },
+            });
+          },
+          error: (err) => {
+            console.error('❌ Error fetching categories after login:', err);
+          },
+        });
+        // ==========================
+        // 🚀 END DALIA
+        // ==========================
+
       }),
       catchError((error) => {
         console.error('❌ Login Error:', error);
@@ -332,6 +536,11 @@ export class AuthService {
       })
     );
   }
+
+
+
+
+
 
   setImageUrl(imageUrl: string): void {
     this.imageUrlSubject.next(imageUrl);
@@ -602,6 +811,8 @@ export class AuthService {
   getCountries(): Observable<any> {
     return this.http.get<any>(`${baseUrl}api/country`);
   }
+
+
 
   // 🔹 LOG STORED TOKEN
   logToken(): void {
