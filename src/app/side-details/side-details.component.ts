@@ -541,6 +541,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
             menu_integration: order.menu_integration === 'talabat' ? true : false,
             payment_status_menu_integration: order.payment_status_menu_integration,
             payment_method_menu_integration: order.payment_method_menu_integration,
+            edit_invoice :order.edit_invoice,
 
 
             // dalia end tips

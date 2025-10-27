@@ -52,19 +52,6 @@ export class NewOrdersComponent implements OnInit, OnDestroy {
   messageType: 'success' | 'error' = 'success';
   usingOfflineData: boolean = false;
 
-  // Memoization caches for performance
-  private _orderTypeCountCache = new Map<string, number>();
-  private _statusCountCache = new Map<string, number>();
-  private _lastFilterParams = { status: '', orderType: '', search: '' };
-  private _cachedFilteredOrders: any[] = [];
-
-  // Performance optimization: initial render limit
-  displayedOrders$ = new BehaviorSubject<any[]>([]);
-  private readonly INITIAL_DISPLAY_LIMIT = 20;
-  private readonly SCROLL_LOAD_INCREMENT = 20;
-  private currentDisplayLimit = this.INITIAL_DISPLAY_LIMIT;
-  private allFilteredOrders: any[] = [];
-
   // UI State
   loading = false;
   selectedStatus = 'all';
@@ -254,45 +241,11 @@ async syncAllorders(): Promise<void> {
     ]).pipe(takeUntil(this.destroy$))
       .subscribe(([orders, staticOrders, status, orderType, search]) => {
         this.ngZone.runOutsideAngular(() => {
-          // Clear cache when filters change
-          this.clearCountCache();
           const filtered = this.applyFilters(orders, staticOrders, status, orderType, search);
-          this.allFilteredOrders = filtered;
           this.filteredOrders$.next(filtered);
-
-          // Update displayed orders with initial limit for fast rendering
-          this.updateDisplayedOrders();
-
-          this.ngZone.run(() => {
-            this.cdr.markForCheck();
-          });
+          this.cdr.markForCheck();
         });
       });
-  }
-
-  // Update displayed orders for pagination/performance
-  private updateDisplayedOrders() {
-    const limited = this.allFilteredOrders.slice(0, this.currentDisplayLimit);
-    this.displayedOrders$.next(limited);
-  }
-
-  // Load more orders on scroll
-  loadMoreOrders() {
-    if (this.currentDisplayLimit < this.allFilteredOrders.length) {
-      this.currentDisplayLimit += this.SCROLL_LOAD_INCREMENT;
-      this.updateDisplayedOrders();
-      this.cdr.markForCheck();
-    }
-  }
-
-  // Check if more orders available
-  hasMoreOrders(): boolean {
-    return this.currentDisplayLimit < this.allFilteredOrders.length;
-  }
-
-  // Reset pagination
-  resetPagination() {
-    this.currentDisplayLimit = this.INITIAL_DISPLAY_LIMIT;
   }
 
   // Load initial data
@@ -404,35 +357,20 @@ async syncAllorders(): Promise<void> {
       }));
   }
 
-  // Cache invalidation method
-  private clearCountCache(): void {
-    this._orderTypeCountCache.clear();
-    this._statusCountCache.clear();
-  }
-
   // Event Handlers
   selectOrderType(orderType: string): void {
     this.orderType$.next(orderType);
     this.selectedOrderTypeStatus = orderType;
-    this.resetPagination(); // Reset pagination on filter change
-    this.clearCountCache(); // Invalidate cache when filter changes
-    this.cdr.markForCheck();
   }
 
   selectStatus(status: string): void {
     this.status$.next(status);
     this.selectedStatus = status;
-    this.resetPagination(); // Reset pagination on filter change
-    this.clearCountCache(); // Invalidate cache when filter changes
-    this.cdr.markForCheck();
   }
 
   onSearchChange(search: string): void {
     this.search$.next(search);
     this.searchOrderNumber = search;
-    this.resetPagination(); // Reset pagination on search change
-    this.clearCountCache(); // Invalidate cache when search changes
-    this.cdr.markForCheck();
   }
 
   // Background sync
@@ -498,31 +436,17 @@ async syncAllorders(): Promise<void> {
   }
 
   getOrderTypeCount(type: string): number {
-    // Generate cache key
-    const cacheKey = `${this.selectedStatus}-${type}`;
-
-    // Check cache first
-    if (this._orderTypeCountCache.has(cacheKey)) {
-      return this._orderTypeCountCache.get(cacheKey)!;
-    }
-
-    let count: number;
-
     if (this.selectedStatus === 'static') {
       const staticOrders = this.staticOrders$.getValue();
-      count = type === 'All'
+      return type === 'All'
         ? staticOrders.length
         : staticOrders.filter(order => order.type === type).length;
     } else {
       const orders = this.orders$.getValue();
-      count = type === 'All'
+      return type === 'All'
         ? orders.length
         : orders.filter(order => order.order_details?.order_type === type).length;
     }
-
-    // Cache the result
-    this._orderTypeCountCache.set(cacheKey, count);
-    return count;
   }
 
   getStatusLabel(status: string): string {
@@ -541,39 +465,25 @@ async syncAllorders(): Promise<void> {
   }
 
   getStatusCount(status: string, orderType: string): number {
-    // Generate cache key
-    const cacheKey = `${status}-${orderType}`;
-
-    // Check cache first
-    if (this._statusCountCache.has(cacheKey)) {
-      return this._statusCountCache.get(cacheKey)!;
-    }
-
-    let count: number;
-
     if (status === 'static') {
       const staticOrders = this.staticOrders$.getValue();
-      count = orderType === 'All'
+      return orderType === 'All'
         ? staticOrders.length
         : staticOrders.filter(order => order.type === orderType).length;
-    } else {
-      const orders = this.orders$.getValue();
-
-      if (status === 'all') {
-        count = orderType === 'All'
-          ? orders.length
-          : orders.filter(order => order.order_details?.order_type === orderType).length;
-      } else {
-        count = orders.filter(order =>
-          order.order_details?.status === status &&
-          (orderType === 'All' || order.order_details?.order_type === orderType)
-        ).length;
-      }
     }
 
-    // Cache the result
-    this._statusCountCache.set(cacheKey, count);
-    return count;
+    const orders = this.orders$.getValue();
+
+    if (status === 'all') {
+      return orderType === 'All'
+        ? orders.length
+        : orders.filter(order => order.order_details?.order_type === orderType).length;
+    }
+
+    return orders.filter(order =>
+      order.order_details?.status === status &&
+      (orderType === 'All' || order.order_details?.order_type === orderType)
+    ).length;
   }
 
   translateType(type: string): string {
@@ -654,9 +564,6 @@ async syncAllorders(): Promise<void> {
   ngOnDestroy() {
     this.destroy$.next();
     this.destroy$.complete();
-    // Clear all caches to free memory
-    this.clearCountCache();
-    this._cachedFilteredOrders = [];
   }
 
   continueOrder(order: any): void {
