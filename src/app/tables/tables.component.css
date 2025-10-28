@@ -33,4 +33,39 @@
  border-top-left-radius:0px !important;
     border-bottom-left-radius:0px !important;
     border-left: 0px;
-} 
+}
+
+/* Skeleton styles */
+.skeleton-card {
+  position: relative;
+  overflow: hidden;
+}
+.skeleton-line {
+  height: 14px;
+  background: #eee;
+  border-radius: 6px;
+}
+.skeleton-pill {
+  height: 32px;
+  width: 120px;
+  background: #eee;
+  border-radius: 16px;
+}
+.skeleton-badge {
+  display: inline-block;
+  height: 28px;
+  width: 90px;
+  background: #eee;
+  border-radius: 14px;
+}
+.skeleton-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.6) 50%, rgba(255,255,255,0) 100%);
+  transform: translateX(-100%);
+  animation: shimmer 1.2s infinite;
+}
+@keyframes shimmer {
+  100% { transform: translateX(100%); }
+}

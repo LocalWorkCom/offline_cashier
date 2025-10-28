@@ -96,7 +96,7 @@
           <!-- <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4" *ngFor="let pill of statusGroup.pills; let i = index"
             [attr.id]="'pill-' + pill.order_number"> -->
           <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4"
-            *ngFor="let pill of getPillsForStatus(statusGroup);">
+            *ngFor="let pill of getPillsForStatus(statusGroup); trackBy: trackByPillId">
 
             <div class="card pill-card p-3 d-flex flex-column h-100"
               [id]="'pill-' + pill.order_number"
