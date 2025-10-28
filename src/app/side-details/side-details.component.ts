@@ -3448,7 +3448,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   // }
 
   // start hanan
-  selectOrderType(type: string) {
+  async selectOrderType(type: string) {
     // حفظ العربة الحالية مؤقتاً
     const currentCart = [...this.cartItems];
     this.clearOrderTypeData();
@@ -3465,33 +3465,37 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       this.saveCart();
     }
 
-    let i: any;
-    for (i = 0; i < this.cartItems.length; i++) {
-      this.findCategoryByDishId(this.cartItems[i]);
-    }
-
-    this.selectedOrderType = typeMapping[type] || type
+    this.selectedOrderType = typeMapping[type] || type;
     localStorage.setItem('selectedOrderType', this.selectedOrderType);
     this.isOrderTypeSelected = true; // ✅ تم اختيار نوع الطلب
+
+    // ✅ تحديث الأسعار عند التبديل إلى talabat أو إلى نوع آخر
+    let i: any;
+    for (i = 0; i < this.cartItems.length; i++) {
+      await this.findCategoryByDishId(this.cartItems[i]);
+    }
+
+    // إعادة حساب الإجماليات بعد تحديث الأسعار
+    this.updateTotalPrices();
+
     // ✅ الشرط الجديد: إذا كان الطلب من طلبات وغير مدفوع، اختيار آجل تلقائياً
     if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
       this.selectedPaymentMethod = 'deferred';
     }
+
     // Store in IndexedDB instead of localStorage
     try {
-
-      // this.dbService.saveData('selectedOrderType', { value: this.selectedOrderType });
       this.dbService.saveData('selectedOrderType', {
         id: new Date().getTime(), // or use UUID
         value: this.selectedOrderType,
         timestamp: new Date().toISOString()
-      })
+      });
+
+      this.cdr.markForCheck(); // تحديث العرض
     } catch (error) {
       console.error('❌ Failed to save order type to IndexedDB:', error);
       // Fallback to localStorage if IndexedDB fails
       localStorage.setItem('selectedOrderType', this.selectedOrderType);
-
-
     }
   }
   // end hanan
