@@ -751,10 +751,38 @@ export class PillEditComponent {
               order.returned_amount = this.finalTipSummary?.changeToReturn ?? 0;
 
               await this.dbService.updateOrderById(this.pillId, order);
-              console.log("ee",order.order_details.table_id);
+              console.log("ee", order.order_details.table_id);
 
-              await  this.dbService.updateTableStatus(order.order_details.table_id, 1);
+              // ✅ تحديث حالة الطاولة فقط إذا كان table_id موجود
+              // ✅ الكود النهائي المحسن
+              if (order.order_details.order_type === 'dine-in') {
+                let tableIdToUpdate = order.order_details.table_id;
 
+                // إذا لم يكن هناك table_id، جرب البحث باستخدام table_number
+                if (!tableIdToUpdate && order.order_details.table_number) {
+                  console.log("🔍 Searching for table_id using table_number:", order.order_details.table_number);
+                  tableIdToUpdate = await this.findTableIdByNumber(order.order_details.table_number);
+
+                  if (tableIdToUpdate) {
+                    console.log("✅ Found table_id:", tableIdToUpdate);
+                    order.order_details.table_id = tableIdToUpdate; // تحديث الـ order بالـ table_id الجديد
+                  }
+                }
+
+                if (tableIdToUpdate) {
+                  console.log("🔄 Updating table status for table_id:", tableIdToUpdate);
+                  try {
+                    await this.dbService.updateTableStatus(tableIdToUpdate, 1);
+                    console.log("✅ Table status updated successfully");
+                  } catch (error) {
+                    console.error("❌ Error updating table status:", error);
+                  }
+                } else {
+                  console.log("🍽️ Dine-in order but no table identifier found");
+                }
+              } else {
+                console.log("📦 Order type:", order.order_details.order_type, "- Skipping table update");
+              }
 
 
               console.log("💾 Order updated offline only:", order);
@@ -813,11 +841,17 @@ export class PillEditComponent {
     }
   }
 
-
-
-
-
-
+  // ✅ دالة مساعدة للبحث عن table_id باستخدام table_number
+  private async findTableIdByNumber(tableNumber: string): Promise<number | null> {
+    try {
+      const tables = await this.dbService.getAll('tables');
+      const table = tables.find((t: any) => t.table_number === tableNumber);
+      return table ? table.id : null;
+    } catch (error) {
+      console.error("Error finding table by number:", error);
+      return null;
+    }
+  }
   //end dalia
   isFinal: boolean = false;
   async printInvoice(isfinal: boolean) {
@@ -833,7 +867,7 @@ export class PillEditComponent {
       if (!this.isOnline) {
 
         await this.fetchPillFromIndexedDB(this.pillId);
-      await  this.dbService.updateTableStatus(this.invoices.branch_details.table_number, 1);
+        await this.dbService.updateTableStatus(this.invoices.branch_details.table_number, 1);
       }
       if (!this.invoices?.length) {
         alert('بيانات الفاتورة غير متوفرة للطباعة.');
@@ -854,9 +888,9 @@ export class PillEditComponent {
         }
       } else {
         console.log('الطباعة في وضع عدم الاتصال');
-         console.log('ss1',this.invoices);
-        console.log('ss',this.invoices[0].branch_details.table_number);
-        await  this.dbService.updateTableStatus(this.invoices[0].branch_details.table_number, 1);
+        console.log('ss1', this.invoices);
+        console.log('ss', this.invoices[0].branch_details.table_number);
+        await this.dbService.updateTableStatus(this.invoices[0].branch_details.table_number, 1);
       }
       // الطباعة المحلية
       await this.performLocalPrint();
