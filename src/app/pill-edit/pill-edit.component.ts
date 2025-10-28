@@ -726,17 +726,23 @@ export class PillEditComponent {
             const order: any = await this.dbService.getOrderById(this.pillId);
 
             if (order) {
+
               console.log("Offline order found:", order);
+
+
+
               order.order_details.payment_method = cashAmount > 0 ? "cash" : "credit";
               order.order_details.payment_status = this.paymentStatus;
+              // order.order_details.payment_status = "unpaid";
               order.order_details.cash_amount = cashAmount || 0;
               order.order_details.credit_amount = creditAmount || 0;
+              order.edit_invoice = order.order_details.order_type == "dine-in" ? true : false;
 
               order.isUpdatedOffline = true;
               order.isSynced = false;
               order.bill_amount = this.finalTipSummary?.billAmount ?? 0;
               order.change_amount = this.tempChangeAmount ?? 0;
-              order.tips_aption = this.tip_aption ?? "tip_the_change";
+              order.tips_aption = this.tip_aption ?? "no_tip"; //'tip_the_change', 'tip_specific_amount','no_tip'
               order.tip_amount = this.finalTipSummary?.tipAmount ?? 0;
               order.tip_specific_amount = this.specificTipAmount ? this.finalTipSummary?.tipAmount : 0;
               order.payment_amount = this.finalTipSummary?.paymentAmount ?? 0;
@@ -745,6 +751,9 @@ export class PillEditComponent {
               order.returned_amount = this.finalTipSummary?.changeToReturn ?? 0;
 
               await this.dbService.updateOrderById(this.pillId, order);
+              console.log("ee",order.order_details.table_id);
+
+              await  this.dbService.updateTableStatus(order.order_details.table_id, 1);
 
 
 
@@ -819,9 +828,12 @@ export class PillEditComponent {
     this.closeConfirmationDialog();
     if (!this.invoices?.length || !this.invoiceSummary?.length) {
       console.warn('بيانات الفاتورة غير جاهزة.');
+
       // محاولة تحميل البيانات من التخزين المحلي
       if (!this.isOnline) {
+
         await this.fetchPillFromIndexedDB(this.pillId);
+      await  this.dbService.updateTableStatus(this.invoices.branch_details.table_number, 1);
       }
       if (!this.invoices?.length) {
         alert('بيانات الفاتورة غير متوفرة للطباعة.');
@@ -842,6 +854,9 @@ export class PillEditComponent {
         }
       } else {
         console.log('الطباعة في وضع عدم الاتصال');
+         console.log('ss1',this.invoices);
+        console.log('ss',this.invoices[0].branch_details.table_number);
+        await  this.dbService.updateTableStatus(this.invoices[0].branch_details.table_number, 1);
       }
       // الطباعة المحلية
       await this.performLocalPrint();
@@ -1031,6 +1046,7 @@ export class PillEditComponent {
 
   onPrintButtonClick() {
     this.confirmationDialog.confirm();
+
   }
 
 

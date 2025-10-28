@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, PLATFORM_ID, OnDestroy, HostListener } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID, OnDestroy, HostListener, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 // import { CategoriesComponent } from "../categories/categories.component";
 import { SideDetailsComponent } from "../side-details/side-details.component";
@@ -23,7 +23,8 @@ import { NewcategoriesComponent } from '../newcategories/newcategories.component
     NewcategoriesComponent,
     SideDetailsComponent,
     TotalsCardComponent
-  ]
+  ],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class HomeComponent implements OnInit, OnDestroy {
   cashInputDisabled = false;
@@ -56,7 +57,7 @@ export class HomeComponent implements OnInit, OnDestroy {
     private authService: AuthService,
     private router: Router,
     private balanceService: BalanceService,
-
+    private cdr: ChangeDetectorRef,
     @Inject(PLATFORM_ID) private platformId: Object
   ) { }
 
