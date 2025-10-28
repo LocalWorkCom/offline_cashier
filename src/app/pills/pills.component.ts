@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { PillsService } from '../services/pills.service';
 import { CommonModule } from '@angular/common';
@@ -20,6 +20,7 @@ import { InfiniteScrollModule } from 'ngx-infinite-scroll';
   imports: [RouterLink, ShowLoaderUntilPageLoadedDirective, RouterLinkActive, CommonModule, FormsModule, InfiniteScrollModule],
   templateUrl: './pills.component.html',
   styleUrl: './pills.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PillsComponent implements OnInit, OnDestroy {
   isOnline: boolean = navigator.onLine;
@@ -43,6 +44,9 @@ export class PillsComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
   loading: boolean = true;
+
+  // Incremental rendering controls
+  visibleCount = 24;
 
   // dalia enchance
   displayedPills: any[] = [];
@@ -929,10 +933,11 @@ export class PillsComponent implements OnInit, OnDestroy {
   // }
 
   getPillsForStatus(statusGroup: any) {
-    // console.log('Filtering pills for status:', statusGroup.status, 'with orderTypeFilter:', this.orderTypeFilter);
-    return this.displayedPills.filter(
+    // Slice to visibleCount for incremental render
+    const filtered = this.displayedPills.filter(
       pill => pill.invoice_print_status === statusGroup.status && pill.order_type === this.orderTypeFilter
     );
+    return filtered.slice(0, this.visibleCount);
   }
 
   //  dalia infinite scroll end
@@ -946,8 +951,34 @@ export class PillsComponent implements OnInit, OnDestroy {
           order_time: this.calculateOrderTime(pill)
         }));
         this.updatePillsByStatus();
-        this.cdr.detectChanges();
+        this.cdr.markForCheck();
       }, 60000); // كل دقيقة
     }
+  }
+
+  // Gradually increase visible items during idle time
+  private scheduleIncrementalReveal(): void {
+    const step = 24;
+    const bump = () => {
+      const total = this.displayedPills.length;
+      if (this.visibleCount < total) {
+        this.visibleCount = Math.min(this.visibleCount + step, total);
+        this.cdr.markForCheck();
+      }
+    };
+    const schedule = (cb: () => void) => {
+      if (typeof (window as any).requestIdleCallback === 'function') {
+        (window as any).requestIdleCallback(cb, { timeout: 500 });
+      } else {
+        setTimeout(cb, 150);
+      }
+    };
+    schedule(bump);
+    schedule(bump);
+    schedule(bump);
+  }
+
+  trackByPillId(index: number, pill: any) {
+    return pill.invoice_id || pill.invoice_number || index;
   }
 }

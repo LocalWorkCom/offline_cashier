@@ -1,4 +1,4 @@
-<div class="requests p-3" *ngIf="(filteredOrders$ | async) && (filteredOrders$ | async)!.length > 0">
+<div class="requests p-3" *ngIf="(filteredOrders$ | async) as orders">
   <!-- Order Type Tabs -->
   <h4>الطلبات</h4>
   <ul class="nav nav-requests mb-4 px-0" role="tablist">
@@ -38,8 +38,8 @@
     <ng-container *ngIf="selectedStatus === 'static'; else dynamicOrders">
 
       <!-- Static Orders -->
-      <div class="row m-0">
-        <div *ngFor="let order of (filteredOrders$ | async) || []; trackBy: trackByOrderId"
+      <div class="row m-0" *ngIf="(orders?.length || 0) > 0">
+        <div *ngFor="let order of (orders | slice:0:visibleCountStatic) || []; trackBy: trackByOrderId"
           class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4">
           <!-- Order Card -->
           <div class="card p-2 d-flex flex-column justify-content-between h-100"
@@ -190,8 +190,8 @@
 
     <!-- Dynamic Orders -->
     <ng-template #dynamicOrders>
-      <div class="row m-0">
-        <div *ngFor="let order of (filteredOrders$ | async) || []; trackBy: trackByOrderId"
+      <div class="row m-0" *ngIf="(orders?.length || 0) > 0">
+        <div *ngFor="let order of (orders | slice:0:visibleCountDynamic) || []; trackBy: trackByOrderId"
           class="col-xl-4 col-md-6 col-sm-12 mb-4">
 
           <!-- Dynamic Order Card -->
@@ -299,7 +299,7 @@
               <div class="order-items border-bottom py-1 mb-1 flex-grow-1"
                 [ngClass]="order.order_items.length > 2 ? 'overflow-scroll' :'overflow-visible'">
                 <div class="d-flex justify-content-between align-items-center align-items-md-center gap-1 px-1 mb-2"
-                  *ngFor="let item of order.order_items">
+                  *ngFor="let item of order.order_items; trackBy: trackByItemId">
                   <!-- Item Name & Quantity -->
 
                   <h6 class="mb-0 fs-6 text-break">

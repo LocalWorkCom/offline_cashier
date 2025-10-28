@@ -11,7 +11,7 @@ import {
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
-import { Subject, BehaviorSubject, combineLatest, from } from 'rxjs';
+import { Subject, BehaviorSubject, combineLatest, from, firstValueFrom } from 'rxjs';
 import { takeUntil, debounceTime, distinctUntilChanged, switchMap, finalize } from 'rxjs/operators';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { EditOrderModalComponent } from '../edit-order-modal/edit-order-modal.component';
@@ -65,12 +65,23 @@ export class NewOrdersComponent implements OnInit, OnDestroy {
   selectedOrder: any = null;
   isSubmitting = false;
   page = 1;
-  perPage = 50;
+  perPage = 30; // smaller first page for faster initial render
   hasMore = true;
+  private syncing = false;
+
+  // Cached counts to avoid recalculation each CD cycle
+  private dynamicOrderTypeCounts: Record<string, number> = {};
+  private dynamicStatusTypeCounts: Record<string, Record<string, number>> = {};
+  private staticOrderTypeCounts: Record<string, number> = {};
+  private staticStatusTypeCounts: Record<string, Record<string, number>> = {};
 
   // Constants for performance
   readonly ORDER_TYPES = ['All', 'dine-in', 'Takeaway', 'Delivery', 'talabat'];
   readonly STATUSES = ['all', 'pending', 'in_progress', 'readyForPickup', 'completed', 'cancelled', 'static'];
+
+  // Incremental rendering: show first N immediately, then increase gradually
+  visibleCountStatic = 12;
+  visibleCountDynamic = 12;
 
   // TrackBy Functions
   trackByOrderId: TrackByFunction<any> = (index, order) =>
@@ -109,13 +120,16 @@ async ngOnInit() {
 
   this.loading = false;
 
-  // 2️⃣ بعد العرض، انتظر 1 ثوانٍ ثم ابدأ المزامنة
+  // 2️⃣ بعد العرض، انتظر 0.3 ثانية ثم ابدأ المزامنة
   if (navigator.onLine) {
     setTimeout(() => {
-      console.log('⏳ Waiting 1 seconds... then syncing');
+      console.log('⏳ Waiting 0.3 seconds... then syncing');
       this.syncAllorders();
-    }, 1000);
+    }, 300);
   }
+
+  // Schedule incremental reveal in idle time without breaking offline/online/sync
+  this.scheduleIncrementalReveal();
 }
 
 // 🟢 تحميل الطلبات من IndexedDB
@@ -165,49 +179,46 @@ private async loadOrdersFromIndexedDB(): Promise<void> {
 // }
 
 async syncOrdersInBackground(sync: boolean = false): Promise<void> {
-  if (this.loading || (!this.hasMore && !sync)) return;
+  if (this.loading || this.syncing || (!this.hasMore && !sync)) return;
 
   this.loading = true;
+  this.syncing = true;
   console.log(`📥 Fetching page ${this.page}...`);
 
   try {
-    this.ordersListService.getOrdersListE(this.page, this.perPage).subscribe({
-      next: async (response) => {
-        if (response.status && response.data?.orders?.length) {
-          const pagination = response.data.pagination;
-          console.log('🔄 Sync complete. Updating cache...');
+    const response: any = await firstValueFrom(
+      this.ordersListService.getOrdersListE(this.page, this.perPage)
+    );
 
-          // تشغيل عمليات التخزين والمعالجة خارج Angular لتحسين الأداء
-          this.ngZone.runOutsideAngular(async () => {
-            await this.batchSaveOrders(response.data.orders);
-            const updatedOrders = await this.dbService.getOrders();
+    if (response?.status && response.data?.orders?.length) {
+      const pagination = response.data.pagination;
+      console.log('🔄 Sync complete. Updating cache...');
 
-            this.ngZone.run(() => {
-              const processed = this.processOrders(updatedOrders);
-              this.orders$.next(processed);
-              this.filteredOrders$.next(processed);
-              this.cdr.markForCheck();
-            });
-          });
+      await this.ngZone.runOutsideAngular(async () => {
+        await this.batchSaveOrders(response.data.orders);
+        const updatedOrders = await this.dbService.getOrders();
 
-          this.hasMore = pagination.current_page < pagination.last_page;
-          this.page++;
-          console.log(`✅ Synced & displayed page ${pagination.current_page} / ${pagination.last_page}`);
-        }
+        this.ngZone.run(() => {
+          const processed = this.processOrders(updatedOrders);
+          this.orders$.next(processed);
+          this.filteredOrders$.next(processed);
+          // Recompute cached counts when the base data changes
+          this.recomputeCounts(processed, this.staticOrders$.getValue());
+          this.cdr.markForCheck();
+        });
+      });
 
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('⚠️ Server fetch failed, fallback to offline data:', err);
-        this.loading = false;
-        this.usingOfflineData = true;
-
-        if (sync) this.loadOrdersFromIndexedDB();
-      }
-    });
+      this.hasMore = pagination.current_page < pagination.last_page;
+      this.page++;
+      console.log(`✅ Synced & displayed page ${pagination.current_page} / ${pagination.last_page}`);
+    }
   } catch (err) {
-    console.error('❌ Error in syncOrdersInBackground:', err);
+    console.error('⚠️ Server fetch failed, fallback to offline data:', err);
+    this.usingOfflineData = true;
+    if (sync) await this.loadOrdersFromIndexedDB();
+  } finally {
     this.loading = false;
+    this.syncing = false;
   }
 }
 
@@ -243,6 +254,8 @@ async syncAllorders(): Promise<void> {
         this.ngZone.runOutsideAngular(() => {
           const filtered = this.applyFilters(orders, staticOrders, status, orderType, search);
           this.filteredOrders$.next(filtered);
+          // Update cached counts based on latest base data
+          this.recomputeCounts(orders, staticOrders);
           this.cdr.markForCheck();
         });
       });
@@ -357,6 +370,68 @@ async syncAllorders(): Promise<void> {
       }));
   }
 
+  private scheduleIncrementalReveal(): void {
+    const step = 12;
+    const bump = () => {
+      // increase visible counts gradually; capped by available items
+      const dynLen = this.orders$.getValue().length;
+      const stLen = this.staticOrders$.getValue().length;
+      if (this.visibleCountDynamic < dynLen) {
+        this.visibleCountDynamic = Math.min(this.visibleCountDynamic + step, dynLen);
+      }
+      if (this.visibleCountStatic < stLen) {
+        this.visibleCountStatic = Math.min(this.visibleCountStatic + step, stLen);
+      }
+      this.cdr.markForCheck();
+    };
+
+    const schedule = (cb: () => void) => {
+      if (typeof (window as any).requestIdleCallback === 'function') {
+        (window as any).requestIdleCallback(cb, { timeout: 500 });
+      } else {
+        setTimeout(cb, 150);
+      }
+    };
+
+    // Run a few bumps after first render
+    schedule(() => bump());
+    schedule(() => bump());
+    schedule(() => bump());
+  }
+
+  // Recompute memoized counts for dynamic and static orders
+  private recomputeCounts(dynamicOrders: any[], staticOrders: any[]): void {
+    const dynTypeCounts: Record<string, number> = { ['All']: dynamicOrders.length };
+    const dynStatusTypeCounts: Record<string, Record<string, number>> = {};
+
+    for (const ord of dynamicOrders) {
+      const type = ord.order_details?.order_type ?? 'Unknown';
+      const status = ord.order_details?.status ?? 'unknown';
+      dynTypeCounts[type] = (dynTypeCounts[type] ?? 0) + 1;
+
+      if (!dynStatusTypeCounts[status]) dynStatusTypeCounts[status] = { ['All']: 0 };
+      dynStatusTypeCounts[status]['All'] = (dynStatusTypeCounts[status]['All'] ?? 0) + 1;
+      dynStatusTypeCounts[status][type] = (dynStatusTypeCounts[status][type] ?? 0) + 1;
+    }
+
+    const stTypeCounts: Record<string, number> = { ['All']: staticOrders.length };
+    const stStatusTypeCounts: Record<string, Record<string, number>> = {};
+    for (const ord of staticOrders) {
+      const type = ord.type ?? 'Unknown';
+      stTypeCounts[type] = (stTypeCounts[type] ?? 0) + 1;
+      // Static orders currently treated as one status bucket "static"
+      const status = 'static';
+      if (!stStatusTypeCounts[status]) stStatusTypeCounts[status] = { ['All']: 0 };
+      stStatusTypeCounts[status]['All'] = (stStatusTypeCounts[status]['All'] ?? 0) + 1;
+      stStatusTypeCounts[status][type] = (stStatusTypeCounts[status][type] ?? 0) + 1;
+    }
+
+    this.dynamicOrderTypeCounts = dynTypeCounts;
+    this.dynamicStatusTypeCounts = dynStatusTypeCounts;
+    this.staticOrderTypeCounts = stTypeCounts;
+    this.staticStatusTypeCounts = stStatusTypeCounts;
+  }
+
   // Event Handlers
   selectOrderType(orderType: string): void {
     this.orderType$.next(orderType);
@@ -437,16 +512,9 @@ async syncAllorders(): Promise<void> {
 
   getOrderTypeCount(type: string): number {
     if (this.selectedStatus === 'static') {
-      const staticOrders = this.staticOrders$.getValue();
-      return type === 'All'
-        ? staticOrders.length
-        : staticOrders.filter(order => order.type === type).length;
-    } else {
-      const orders = this.orders$.getValue();
-      return type === 'All'
-        ? orders.length
-        : orders.filter(order => order.order_details?.order_type === type).length;
+      return this.staticOrderTypeCounts[type] ?? (type === 'All' ? this.staticOrders$.getValue().length : 0);
     }
+    return this.dynamicOrderTypeCounts[type] ?? (type === 'All' ? this.orders$.getValue().length : 0);
   }
 
   getStatusLabel(status: string): string {
@@ -466,24 +534,18 @@ async syncAllorders(): Promise<void> {
 
   getStatusCount(status: string, orderType: string): number {
     if (status === 'static') {
-      const staticOrders = this.staticOrders$.getValue();
-      return orderType === 'All'
-        ? staticOrders.length
-        : staticOrders.filter(order => order.type === orderType).length;
+      if (orderType === 'All') return this.staticOrderTypeCounts['All'] ?? this.staticOrders$.getValue().length;
+      return this.staticStatusTypeCounts['static']?.[orderType] ?? 0;
     }
-
-    const orders = this.orders$.getValue();
 
     if (status === 'all') {
-      return orderType === 'All'
-        ? orders.length
-        : orders.filter(order => order.order_details?.order_type === orderType).length;
+      if (orderType === 'All') return this.dynamicOrderTypeCounts['All'] ?? this.orders$.getValue().length;
+      return this.dynamicOrderTypeCounts[orderType] ?? 0;
     }
 
-    return orders.filter(order =>
-      order.order_details?.status === status &&
-      (orderType === 'All' || order.order_details?.order_type === orderType)
-    ).length;
+    const byType = this.dynamicStatusTypeCounts[status];
+    if (!byType) return 0;
+    return (orderType === 'All' ? byType['All'] : byType[orderType]) ?? 0;
   }
 
   translateType(type: string): string {
