@@ -903,6 +903,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       this.cartItems[index].quantity--;
     } else {
       this.cartItems.splice(index, 1);
+      console.log("ewrrewewe", index);
+      this.dbService.removeFromCart(index);
+      localStorage.setItem('cart', JSON.stringify(this.cartItems));
       // If the cart is empty, clear coupon, note, and messages
       if (this.cartItems.length === 0) {
         this.appliedCoupon = null;
