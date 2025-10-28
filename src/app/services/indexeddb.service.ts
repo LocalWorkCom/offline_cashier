@@ -901,7 +901,7 @@ export class IndexeddbService {
           // const total_price =
           //   subtotal_price + service_fees + tax_value + Number(delivery_fees);
 
-        const total_price = orderData.total_with_tip;
+          const total_price = orderData.total_with_tip;
           return {
             coupon_code: orderData.coupon_code || null,
             coupon_id: orderData.coupon_id || null,
@@ -925,8 +925,16 @@ export class IndexeddbService {
 
         const summary = buildOrderSummary();
         const currency_symbol = orderData.items[0]?.currency_symbol || "ج.م";
-        const branchData = JSON.parse(localStorage.getItem("branchData") || "{}");
 
+        // جلب وتنسيق بيانات الفرع
+        const rawBranchData = JSON.parse(localStorage.getItem("branchData") || "{}");
+        const branchData = {
+          branch_name: rawBranchData.name_ar || rawBranchData.name || "الفرع الرئيسي",
+          branch_phone: "01242542154", // أو من مصدر آخر
+          branch_address: rawBranchData.address_ar || rawBranchData.address || "العنوان الرئيسي",
+          floor_name: "الطابق الأرضي"
+        };
+     
         // 🟢 Order object
         const orderWithMetadata: any = {
           formdata_delivery: formData,
@@ -979,8 +987,8 @@ export class IndexeddbService {
               quantity: item.quantity,
               note: item.note || "",
               addons: item.selectedAddons
-              ? item.selectedAddons.map((addon: any) => addon.name)
-              : [],
+                ? item.selectedAddons.map((addon: any) => addon.name)
+                : [],
               coupon_id: item.coupon_id || null,
               coupon_title: item.coupon_title || null,
               coupon_value: item.coupon_value || 0,
@@ -1064,10 +1072,10 @@ export class IndexeddbService {
 
                 branch_details: {
                   branch_id: orderData.branch_id || null,
-                  branch_name: branchData.branch_name || "test",
-                  branch_phone: branchData.branch_phone || "test",
-                  branch_address: branchData.branch_address || "test",
-                  floor_name: branchData.floor_name || "test",
+                  branch_name: branchData.branch_name,
+                  branch_phone: branchData.branch_phone,
+                  branch_address: branchData.branch_address,
+                  floor_name: branchData.floor_name,
                   floor_partition_name:
                     orderData.floor_partition_name || "test",
                   invoice_number: `INV-OFF-${orderId}`,
@@ -1698,30 +1706,30 @@ export class IndexeddbService {
       console.error(`Error opening DB "${dbName}"`);
     };
   }
-//   async updatePill(updatedPill: any): Promise<void> {
-//   await this.ensureInit();
-//   return new Promise(async (resolve, reject) => {
-//     try {
-//       const tx = this.db!.transaction("pills", "readwrite");
-//       const store = tx.objectStore("pills");
+  //   async updatePill(updatedPill: any): Promise<void> {
+  //   await this.ensureInit();
+  //   return new Promise(async (resolve, reject) => {
+  //     try {
+  //       const tx = this.db!.transaction("pills", "readwrite");
+  //       const store = tx.objectStore("pills");
 
-//       // ✅ put يضيف جديد أو يحدث الموجود تلقائي
-//       const request = store.put(updatedPill);
+  //       // ✅ put يضيف جديد أو يحدث الموجود تلقائي
+  //       const request = store.put(updatedPill);
 
-//       request.onsuccess = () => {
-//         // console.log("✅ Pill added/updated in IndexedDB:", updatedPill);
-//         resolve();
-//       };
+  //       request.onsuccess = () => {
+  //         // console.log("✅ Pill added/updated in IndexedDB:", updatedPill);
+  //         resolve();
+  //       };
 
-//       request.onerror = (err) => {
-//         console.error("❌ Error updating/adding pill:", err);
-//         reject(err);
-//       };
-//     } catch (error) {
-//       reject(error);
-//     }
-//   });
-// }
+  //       request.onerror = (err) => {
+  //         console.error("❌ Error updating/adding pill:", err);
+  //         reject(err);
+  //       };
+  //     } catch (error) {
+  //       reject(error);
+  //     }
+  //   });
+  // }
 
 
 
@@ -1768,52 +1776,52 @@ export class IndexeddbService {
 
 
   async updatePill(updatedPill: any): Promise<void> {
-  await this.ensureInit();
-  return new Promise((resolve, reject) => {
-    try {
-      const tx = this.db!.transaction("pills", "readwrite");
-      const store = tx.objectStore("pills");
+    await this.ensureInit();
+    return new Promise((resolve, reject) => {
+      try {
+        const tx = this.db!.transaction("pills", "readwrite");
+        const store = tx.objectStore("pills");
 
-      // ✅ put: يضيف أو يحدث بناءً على المفتاح الأساسي (id أو invoice_number)
-      const request = store.put(updatedPill);
+        // ✅ put: يضيف أو يحدث بناءً على المفتاح الأساسي (id أو invoice_number)
+        const request = store.put(updatedPill);
+
+        request.onsuccess = () => {
+          // console.log("✅ Pill added/updated in IndexedDB:", updatedPill.invoice_number);
+          resolve();
+        };
+
+        request.onerror = (err) => {
+          console.error("❌ Error updating/adding pill:", err);
+          reject(err);
+        };
+      } catch (error) {
+        console.error("❌ Exception while updating pill:", error);
+        reject(error);
+      }
+    });
+  }
+
+  async updateOrderById(orderId: number, updatedOrder: any): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction("orders", "readwrite");
+      const store = tx.objectStore("orders");
+
+      // لازم الـ orderId يكون هو الـ key بتاع الـ object
+      updatedOrder.id = orderId;
+
+      const request = store.put(updatedOrder);
 
       request.onsuccess = () => {
-        // console.log("✅ Pill added/updated in IndexedDB:", updatedPill.invoice_number);
+        console.log("✅ Order updated in IndexedDB:", updatedOrder);
         resolve();
       };
 
-      request.onerror = (err) => {
-        console.error("❌ Error updating/adding pill:", err);
-        reject(err);
+      request.onerror = (event) => {
+        console.error("❌ Error updating order:", (event.target as any).error);
+        reject((event.target as any).error);
       };
-    } catch (error) {
-      console.error("❌ Exception while updating pill:", error);
-      reject(error);
-    }
-  });
-}
-
-async updateOrderById(orderId: number, updatedOrder: any): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const tx = this.db.transaction("orders", "readwrite");
-    const store = tx.objectStore("orders");
-
-    // لازم الـ orderId يكون هو الـ key بتاع الـ object
-    updatedOrder.id = orderId;
-
-    const request = store.put(updatedOrder);
-
-    request.onsuccess = () => {
-      console.log("✅ Order updated in IndexedDB:", updatedOrder);
-      resolve();
-    };
-
-    request.onerror = (event) => {
-      console.error("❌ Error updating order:", (event.target as any).error);
-      reject((event.target as any).error);
-    };
-  });
-}
+    });
+  }
 
 
 
