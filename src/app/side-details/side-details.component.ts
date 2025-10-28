@@ -2,6 +2,7 @@ import {
   Component,
   Input,
   OnInit,
+  ChangeDetectionStrategy,
   ChangeDetectorRef,
   DoCheck,
   AfterViewInit,
@@ -53,6 +54,7 @@ interface Country {
 
   templateUrl: './side-details.component.html',
   styleUrl: './side-details.component.css',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('printedPill') printedPill!: ElementRef;
@@ -173,6 +175,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   tip_aption: any;
 
   Math = Math;
+
+  // Memoized total to avoid recalculation each CD cycle
+  private _cachedTotal: number | null = null;
+  private _cachedCartItemsHash: string | null = null;
+
   finalTipSummary: {
     total: number; // المجموع قبل رسوم الخدمة
     serviceFee: number; // رسوم الخدمة
@@ -644,6 +651,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   currentOrderData: any;
   // toqa
   selectedCountryCode: any;
+  trackByCartItem(index: number, item: any): any {
+    return item.dish?.id || index;
+  }
+
+  trackByOrderDetail(index: number, item: any): any {
+    return item.order_detail_id || item.dish_name + index || index;
+  }
+
   ngOnDestroy(): void {
     console.log('yt;lytrew');
 
@@ -661,28 +676,44 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   //start hanan
 
-  loadTableNumber(): void {
-    this.dbService.getAll('selectedTable').then((tables) => {
-      console.log('All saved tables:', tables);
-
+  async loadTableNumber(): Promise<void> {
+    try {
+      // Try IndexedDB first for instant local loading
+      const tables = await this.dbService.getAll('selectedTable');
       if (tables.length > 0) {
-        const lastTable = tables[tables.length - 1]; // get last inserted
+        const lastTable = tables[tables.length - 1];
         const tableNumber = lastTable.table_number;
         const table_id = lastTable.id;
         console.log('👉 Selected table number:', tableNumber);
 
         if (tableNumber) {
-          this.tableNumber = tableNumber; // assign directly (no JSON.parse needed)
+          this.tableNumber = tableNumber;
           this.table_id = table_id;
-
-          // force order type to dine-in if table is selected
-          localStorage.setItem('selectedOrderType', 'dine-in');
           this.selectedOrderType = 'dine-in';
+          localStorage.setItem('selectedOrderType', 'dine-in');
+          this.cdr.markForCheck(); // Trigger immediate UI update
+
+          // If online, also mark table as busy on server
+          if (navigator.onLine && table_id) {
+            this.dbService.updateTableStatus(table_id, 2).catch(e =>
+              console.warn('Failed to mark table busy on server:', e)
+            );
+          }
         }
       }
-    }).catch(error => {
+
+      // Also check localStorage for fallback (supports immediate online-only scenario)
+      const fallbackTableNumber = localStorage.getItem('table_number');
+      const fallbackTableId = localStorage.getItem('table_id');
+      if (fallbackTableNumber && !this.tableNumber) {
+        this.tableNumber = fallbackTableNumber;
+        this.table_id = fallbackTableId ? Number(fallbackTableId) : null;
+        this.selectedOrderType = 'dine-in';
+        this.cdr.markForCheck();
+      }
+    } catch (error) {
       console.error('❌ Error loading table from IndexedDB:', error);
-    });
+    }
   }
   // end hanan
   loadAdditionalNote(): void {
@@ -1561,10 +1592,16 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     localStorage.removeItem('appliedCoupon');
   }
   getTotal(): number {
-    return this.cartItems.reduce(
+    const itemsHash = JSON.stringify(this.cartItems);
+    if (this._cachedTotal !== null && this._cachedCartItemsHash === itemsHash) {
+      return this._cachedTotal;
+    }
+    this._cachedTotal = this.cartItems.reduce(
       (sum, item) => sum + this.getItemTotal(item),
       0
     );
+    this._cachedCartItemsHash = itemsHash;
+    return this._cachedTotal || 0;
   }
   getItemTotal(item: any): number {
     //   console.log(item?.dish.id, 'itemttttttttttt');
@@ -2472,7 +2509,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
           sizeName: item.selectedSize?.name || '',
           sizeDescription: item.selectedSize?.description || '',
           note: item.note || '',
-          finalPrice: item.final_Price || 0,
+          finalPrice: item.finalPrice || 0,
           selectedAddons: item.selectedAddons || [],
           addon_categories: item.addon_categories
             ?.map((category: { id: any; addons: { id: any }[] }) => {
@@ -2515,6 +2552,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   private resetLocalStorage(): void {
     localStorage.removeItem('table_number');
     localStorage.removeItem('table_id');
+    localStorage.removeItem('selectedOrderType');
     localStorage.removeItem('address_id');
     localStorage.removeItem('form_data');
     localStorage.removeItem('notes');
@@ -2547,8 +2585,28 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.dbService.deleteFromIndexedDB('selectedTable');
     this.dbService.deleteFromIndexedDB('form_delivery');
 
-    // ✅ Update only this table in IndexedDB (مش الكل)
-    this.dbService.updateTableStatus(this.table_id, 2);
+    // ✅ Release table locally (mark available) if exists
+    if (this.table_id) {
+      this.dbService.updateTableStatus(this.table_id, 1);
+    }
+  }
+
+  private async releaseTableAndOrderType(): Promise<void> {
+    try {
+      const tableId = this.table_id || Number(localStorage.getItem('table_id')) || null;
+      if (tableId) {
+        await this.dbService.updateTableStatus(tableId, 1);
+      }
+    } catch (e) {
+      console.warn('Failed to update table status to available:', e);
+    }
+    // Clear selection in-memory and storage
+    this.table_id = null;
+    this.tableNumber = null;
+    this.selectedOrderType = null;
+    localStorage.removeItem('table_id');
+    localStorage.removeItem('table_number');
+    localStorage.removeItem('selectedOrderType');
   }
 
   async submitOrder() {
@@ -2768,6 +2826,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
         const orderId = await this.dbService.savePendingOrder(orderData);
         console.log("Order saved to IndexedDB with ID:", orderId);
 
+        // Release table and clear order type immediately (offline)
+        await this.releaseTableAndOrderType();
+
         // Show success message
         this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
 
@@ -2848,6 +2909,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
         return;
       }
 
+      // Immediately release table and clear order type after successful submit (online)
+      await this.releaseTableAndOrderType();
+
       if (this.selectedOrderType === 'Takeaway') {
         const dataOrderId = (response as any).data.order_id;
         this.createdOrderId = dataOrderId;
@@ -2885,23 +2949,24 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
 
       this.clearCart();
-      localStorage.removeItem('table_number');
-      localStorage.removeItem('table_id');
-      localStorage.removeItem('address_id');
-      localStorage.removeItem('form_data');
-      localStorage.removeItem('notes');
-      localStorage.removeItem('deliveryForm');
-      localStorage.removeItem('additionalNote');
-      localStorage.removeItem('selectedHotel');
-      localStorage.removeItem('hotel_id');
-      localStorage.removeItem('selectedPaymentStatus');
-      localStorage.removeItem('cash_amountt');
-      localStorage.removeItem('delivery_fees');
-      localStorage.removeItem('credit_amountt');
-      localStorage.removeItem('selected_address');
-      localStorage.removeItem('finalOrderId');
-      localStorage.removeItem('client');
-      localStorage.removeItem('clientPhone');
+      this.resetLocalStorage();
+      // localStorage.removeItem('table_number');
+      // localStorage.removeItem('table_id');
+      // localStorage.removeItem('address_id');
+      // localStorage.removeItem('form_data');
+      // localStorage.removeItem('notes');
+      // localStorage.removeItem('deliveryForm');
+      // localStorage.removeItem('additionalNote');
+      // localStorage.removeItem('selectedHotel');
+      // localStorage.removeItem('hotel_id');
+      // localStorage.removeItem('selectedPaymentStatus');
+      // localStorage.removeItem('cash_amountt');
+      // localStorage.removeItem('delivery_fees');
+      // localStorage.removeItem('credit_amountt');
+      // localStorage.removeItem('selected_address');
+      // localStorage.removeItem('finalOrderId');
+      // localStorage.removeItem('client');
+      // localStorage.removeItem('clientPhone');
 
       this.client = " ";
       this.clientPhone = " ";

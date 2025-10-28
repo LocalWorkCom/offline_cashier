@@ -337,7 +337,7 @@ selectedOrderType === 'talabat') {
     <p>{{ getTotalItemCount() }} عناصر</p>
   </div>}
 
-  @for (item of cartItems; track i; let i = $index) {
+  @for (item of cartItems; track trackByCartItem($index, item); let i = $index) {
   <!-- @if(item.dish.id === this.appliedCoupon.discount_details
 [0].dish_id){} -->
   <div class="sideCart-plate p-3 mb-3">
@@ -1082,7 +1082,7 @@ selectedOrderType === 'talabat') {
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of orderDetails[0]">
+        <tr *ngFor="let item of orderDetails[0]; trackBy: trackByOrderDetail">
           <td>
             <div>
               <div>
@@ -1117,7 +1117,7 @@ selectedOrderType === 'talabat') {
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of orderDetails[0]">
+        <tr *ngFor="let item of orderDetails[0]; trackBy: trackByOrderDetail">
           <td class="addons">
             <small>{{ item.addons.length > 0 ? item.addons.join(', ') : 'لا توجد اضافات' }}</small>
           </td>
