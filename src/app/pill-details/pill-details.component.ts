@@ -339,6 +339,26 @@ export class PillDetailsComponent implements OnInit {
         ? data.invoice_details
         : [data.invoice_details];
 
+      // ✅ إصلاح بيانات الكاشير للطباعة - مباشرة بدون method
+      const cashierFullName = localStorage.getItem('fullName') || 'الكاشير';
+
+      this.invoices.forEach((invoice: any) => {
+        if (!invoice.cashier_info) {
+          invoice.cashier_info = {
+            first_name: cashierFullName,
+            last_name: ''
+          };
+        } else {
+          // ✅ إذا كانت البيانات موجودة ولكنها غير مكتملة
+          if (!invoice.cashier_info.first_name || invoice.cashier_info.first_name === 'test') {
+            invoice.cashier_info.first_name = cashierFullName;
+          }
+          if (!invoice.cashier_info.last_name) {
+            invoice.cashier_info.last_name = '';
+          }
+        }
+      });
+
       const statusMap: { [key: string]: string } = {
         completed: 'مكتمل',
         pending: 'في انتظار الموافقة',
