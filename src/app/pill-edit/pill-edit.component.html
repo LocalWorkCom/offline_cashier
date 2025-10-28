@@ -454,7 +454,7 @@
             }} ج.م</span>
         </div> -->
 
-      <hr class="my-2">
+      <!-- <hr class="my-2">
 
       <div class="summary-line sub-total">
         <span>المجموع الفرعي (المستحق):</span>
@@ -493,7 +493,7 @@
         <span>المتبقي للرد:</span>
         <span class="fw-bolder">{{ finalTipSummary.changeToReturn |
           number:'1.2-2' }} ج.م</span>
-      </div>
+      </div> -->
     </div>
 
     <!-- dalia start -->
@@ -578,8 +578,9 @@
       </h6>
       <h6>
         <small> اسم الكاشير:
-          <span>{{ invoices[0].cashier_info.first_name }} &nbsp; {{
-            invoices[0].cashier_info.last_name }}</span>
+          <span>{{ invoices[0].cashier_info.first_name }} &nbsp;
+            <!-- {{ invoices[0].cashier_info.last_name }} -->
+          </span>
         </small>
       </h6>
       <hr />

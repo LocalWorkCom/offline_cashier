@@ -207,6 +207,25 @@ export class PillEditComponent {
       this.invoices = Array.isArray(data.invoice_details)
         ? data.invoice_details
         : [data.invoice_details];
+      // ✅ إصلاح بيانات الكاشير للطباعة - مباشرة بدون method
+      const cashierFullName = localStorage.getItem('fullName') || 'الكاشير';
+
+      this.invoices.forEach((invoice: any) => {
+        if (!invoice.cashier_info) {
+          invoice.cashier_info = {
+            first_name: cashierFullName,
+            last_name: ''
+          };
+        } else {
+          // ✅ إذا كانت البيانات موجودة ولكنها غير مكتملة
+          if (!invoice.cashier_info.first_name || invoice.cashier_info.first_name === 'test') {
+            invoice.cashier_info.first_name = cashierFullName;
+          }
+          if (!invoice.cashier_info.last_name) {
+            invoice.cashier_info.last_name = '';
+          }
+        }
+      });
 
       const statusMap: { [key: string]: string } = {
         completed: 'مكتمل',
@@ -826,10 +845,9 @@ export class PillEditComponent {
             existingPill.isUpdatedOffline = false;
           }
           await this.dbService.updatePill(existingPill);
-          if(existingPill.isUpdatedOffline == true)
-          {
-            console.log("dsfre",existingPill.table_number);
-            await  this.dbService.updateTableStatus(existingPill.table_number, 1);
+          if (existingPill.isUpdatedOffline == true) {
+            console.log("dsfre", existingPill.table_number);
+            await this.dbService.updateTableStatus(existingPill.table_number, 1);
           }
 
 
