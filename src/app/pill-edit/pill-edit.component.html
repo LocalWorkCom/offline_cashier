@@ -507,7 +507,7 @@
           </h5>
           <h6 class="fw-bold mb-0">
             <span>{{ tip.payment_amount | number: '1.2-2' }} {{
-              item.currency_symbol || 'ج.م' }}</span>
+              invoiceSummary[0]?.currency_symbol || 'ج.م' }}</span>
           </h6>
         </div>
 
@@ -517,7 +517,7 @@
           </h5>
           <h6 class="fw-bold mb-0">
             <span>{{ tip.returned_amount | number: '1.2-2' }} {{
-              item.currency_symbol || 'ج.م' }}</span>
+              invoiceSummary[0]?.currency_symbol || 'ج.م' }}</span>
           </h6>
         </div>
 
@@ -526,8 +526,8 @@
             الاكرامية
           </h5>
           <h6 class="fw-bold mb-0">
-            <span>{{ tip.tip_amount | number: '1.2-2' }} {{ item.currency_symbol
-              || 'ج.م' }}</span>
+            <span>{{ tip.tip_amount | number: '1.2-2' }} {{
+              invoiceSummary[0]?.currency_symbol || 'ج.م' }}</span>
           </h6>
         </div>
         <div class="d-flex justify-content-between px-2 mb-1">
@@ -536,7 +536,7 @@
           </h5>
           <h6 class="fw-bold mb-0">
             <span>{{ tip.total_with_tip | number: '1.2-2' }} {{
-              item.currency_symbol || 'ج.م' }}</span>
+              invoiceSummary[0]?.currency_symbol || 'ج.م' }}</span>
           </h6>
         </div>
       </div>
