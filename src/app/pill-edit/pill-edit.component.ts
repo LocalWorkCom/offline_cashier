@@ -826,6 +826,12 @@ export class PillEditComponent {
             existingPill.isUpdatedOffline = false;
           }
           await this.dbService.updatePill(existingPill);
+          if(existingPill.isUpdatedOffline == true)
+          {
+            console.log("dsfre",existingPill.table_number);
+            await  this.dbService.updateTableStatus(existingPill.table_number, 1);
+          }
+
 
           console.log("💾 Invoice updated offline in IndexedDB:", existingPill);
           alert("تم تحديث الفاتورة Offline وسيتم رفعها عند الاتصال بالإنترنت ✅");
