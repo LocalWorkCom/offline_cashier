@@ -123,7 +123,7 @@ private async loadOrdersFromIndexedDB(): Promise<void> {
   try {
     await this.dbService.init();
     const cachedOrders = await this.dbService.getOrders();
-    
+
 
     if (cachedOrders?.length > 0) {
       this.orders$.next(this.processOrders(cachedOrders));

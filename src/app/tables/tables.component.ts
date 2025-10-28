@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { TablesService } from '../services/tables.service';
 import { CommonModule, Location } from '@angular/common';
 import { Router } from '@angular/router';
@@ -17,6 +17,7 @@ import { map, tap } from 'rxjs/operators';
   imports: [CommonModule, FormsModule, ShowLoaderUntilPageLoadedDirective],
   templateUrl: './tables.component.html',
   styleUrls: ['./tables.component.css'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TablesComponent implements OnInit, OnDestroy {
   tables: any[] = [];
@@ -41,7 +42,7 @@ export class TablesComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.fetchTablesData(); 
+    this.fetchTablesData();
     this.loadClickedTable();
     this.listenToNewTable();
     this.listenOnTableChangeStatus();

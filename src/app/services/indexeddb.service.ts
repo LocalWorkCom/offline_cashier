@@ -55,7 +55,9 @@ export class IndexeddbService {
         }
 
         if (!this.db.objectStoreNames.contains('tables')) {
-          this.db.createObjectStore('tables', { keyPath: 'id' });
+          // this.db.createObjectStore('tables', { keyPath: 'id' });
+            const tableStore = this.db.createObjectStore('tables', { keyPath: 'id', autoIncrement: true });
+           tableStore.createIndex('table_number', 'table_number', { unique: false });
         }
 
         if (!this.db.objectStoreNames.contains('selectedTable')) {
@@ -923,6 +925,7 @@ export class IndexeddbService {
 
         const summary = buildOrderSummary();
         const currency_symbol = orderData.items[0]?.currency_symbol || "ج.م";
+
         // جلب وتنسيق بيانات الفرع
         const rawBranchData = JSON.parse(localStorage.getItem("branchData") || "{}");
         const branchData = {
@@ -937,6 +940,7 @@ export class IndexeddbService {
           formdata_delivery: formData,
           formdata_delivery_area_id: formData ? formData.area_id : null,
           delivery_fees_amount: delivery_fees,
+          edit_invoice:false,
 
           order_details: {
             order_id: orderId,
@@ -1601,30 +1605,76 @@ export class IndexeddbService {
 
 
   // Update a single table by id
-  async updateTableStatus(tableId: number, newStatus: number): Promise<void> {
-    await this.ensureInit();
+  // async updateTableStatus(tableId: number, newStatus: number): Promise<void> {
+  //   await this.ensureInit();
 
-    return new Promise((resolve, reject) => {
-      const tx = this.db.transaction('tables', 'readwrite');
-      const store = tx.objectStore('tables');
+  //   return new Promise((resolve, reject) => {
+  //     const tx = this.db.transaction('tables', 'readwrite');
+  //     const store = tx.objectStore('tables');
 
-      const getReq = store.get(tableId);
-      getReq.onsuccess = () => {
-        const table = getReq.result;
-        if (!table) {
-          reject(`Table ${tableId} not found`);
-          return;
-        }
+  //     const getReq = store.get(tableId);
+  //     getReq.onsuccess = () => {
+  //       const table = getReq.result;
+  //       if (!table) {
+  //         reject(`Table ${tableId} not found`);
+  //         return;
+  //       }
 
+  //       table.status = newStatus;
+  //       const putReq = store.put(table);
+
+  //       putReq.onsuccess = () => resolve();
+  //       putReq.onerror = (e) => reject(e);
+  //     };
+  //     getReq.onerror = (e) => reject(e);
+  //   });
+  // }
+
+  async updateTableStatus(identifier: number, newStatus: number): Promise<void> {
+  await this.ensureInit();
+
+  return new Promise((resolve, reject) => {
+    const tx = this.db.transaction('tables', 'readwrite');
+    const store = tx.objectStore('tables');
+
+    // حاول الأول بالـ id
+    const getById = store.get(identifier);
+
+    getById.onsuccess = () => {
+      let table = getById.result;
+
+      if (table) {
+        // ✅ لو لقاها بالـ id
         table.status = newStatus;
         const putReq = store.put(table);
-
         putReq.onsuccess = () => resolve();
         putReq.onerror = (e) => reject(e);
-      };
-      getReq.onerror = (e) => reject(e);
-    });
-  }
+      } else {
+        // ❌ مش لقاها بالـ id → نجرب بالـ table_number
+        const index = store.index('table_number');
+        const getByTableNumber = index.get(identifier);
+
+        getByTableNumber.onsuccess = () => {
+          const tableByNumber = getByTableNumber.result;
+          if (!tableByNumber) {
+            reject(`Table with ID or table_number ${identifier} not found`);
+            return;
+          }
+
+          tableByNumber.status = newStatus;
+          const putReq = store.put(tableByNumber);
+          putReq.onsuccess = () => resolve();
+          putReq.onerror = (e) => reject(e);
+        };
+
+        getByTableNumber.onerror = (e) => reject(e);
+      }
+    };
+
+    getById.onerror = (e) => reject(e);
+  });
+}
+
 
 
 
