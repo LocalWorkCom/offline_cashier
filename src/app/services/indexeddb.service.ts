@@ -901,7 +901,7 @@ export class IndexeddbService {
           // const total_price =
           //   subtotal_price + service_fees + tax_value + Number(delivery_fees);
 
-          const total_price = orderData.total_with_tip;
+          const total_price = orderData.bill_amount;
           return {
             coupon_code: orderData.coupon_code || null,
             coupon_id: orderData.coupon_id || null,
@@ -934,7 +934,7 @@ export class IndexeddbService {
           branch_address: rawBranchData.address_ar || rawBranchData.address || "العنوان الرئيسي",
           floor_name: "الطابق الأرضي"
         };
-     
+
         // 🟢 Order object
         const orderWithMetadata: any = {
           formdata_delivery: formData,
@@ -1012,7 +1012,7 @@ export class IndexeddbService {
             sizeId: item.sizeId,
             size: item.sizeName || "",
             size_name: item.sizeName || "",
-            total_dish_price: item.finalPrice,
+            total_dish_price: item.finalPrice == 0 ? item.dish_price*item.quantity:  item.finalPrice,
             dish_status: "pending",
           })),
 
