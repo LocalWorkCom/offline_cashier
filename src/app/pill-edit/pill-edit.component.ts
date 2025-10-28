@@ -238,11 +238,26 @@ export class PillEditComponent {
         (invoice: any) => invoice.order_type === 'Delivery'
       );
 
-      this.branchDetails = this.invoices.map(
-        (e: { branch_details: any }) => e.branch_details
-      );
+      // ✅ إصلاح: دمج table_number من البيانات الرئيسية مع branch_details
+      this.branchDetails = this.invoices.map((e: any) => {
+        const branchDetails = e.branch_details || {};
 
-      this.orderDetails = this.invoices.map((e: any) => e.orderDetails);
+        return {
+          ...branchDetails,
+          // ✅ استخدم table_number من البيانات الرئيسية إذا لم يكن موجوداً في branch_details
+          table_number: branchDetails.table_number || data.table_number || branchDetails.table_id
+        };
+      });
+      this.orderDetails = this.invoices.map((e: any) => {
+        if (e.orderDetails && Array.isArray(e.orderDetails)) {
+          return e.orderDetails.map((item: any) => ({
+            ...item,
+            // ✅ تطبيع هيكل الإضافات - هذا هو الجزء المهم!
+            addons: this.normalizeAddons(item.addons)
+          }));
+        }
+        return e.orderDetails || [];
+      });
 
       this.invoiceSummary = this.invoices.map((e: any) => ({
         ...e.invoice_summary,
@@ -271,7 +286,29 @@ export class PillEditComponent {
       console.error('Error processing pill details offline:', error, data);
     }
   }
+  private normalizeAddons(addons: any[]): any[] {
+    if (!addons || !Array.isArray(addons)) return [];
 
+    return addons.map(addon => {
+      // إذا كانت الإضافة object تحتوي على name بدلاً من addon_name
+      if (addon && typeof addon === 'object') {
+        return {
+          addon_name: addon.addon_name || addon.name || 'Unknown Addon',
+          addon_price: addon.addon_price || addon.price || 0,
+          // احتفظي بالبيانات الأصلية أيضاً
+          ...addon
+        };
+      }
+      // إذا كانت string
+      else if (typeof addon === 'string') {
+        return {
+          addon_name: addon,
+          addon_price: 0
+        };
+      }
+      return addon;
+    });
+  }
   // end dalia
   getNoteFromLocalStorage() {
     throw new Error('Method not implemented.');
