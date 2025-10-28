@@ -300,6 +300,23 @@ export class IndexeddbService {
       });
     });
   }
+  // Update cart item (for quantity changes)
+  updateCartItem(cartItem: any): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('cart', 'readwrite');
+        const store = tx.objectStore('cart');
+
+        // Update lastUpdated timestamp
+        cartItem.lastUpdated = new Date().toISOString();
+
+        const request = store.put(cartItem);
+
+        request.onsuccess = () => resolve();
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
 
   // Remove item from cart
   removeFromCart(cartItemId: number): Promise<void> {
