@@ -510,13 +510,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
           const payload = {
+            order_id: order.order_id || null,
+            table_id: order.table_number || null,
             type: order.order_details.order_type,
             client_name: order.order_details.client_name || null,
             client_phone: order.order_details.client_phone || null,
             address_id: addressId || order.order_details.address_id,
             cashier_machine_id: order.order_details.cashier_machine_id || localStorage.getItem('cashier_machine_id'),
             branch_id: order.order_details.branch_id,
-            table_id: order.order_details.table_id || null,
+            // table_id: order.order_details.table_id || null,
             payment_method:  order.order_details.payment_method == "deferred" ? "credit" : order.order_details.payment_method,
             payment_status: order.order_details.payment_status,
             cash_amount: order.order_details.cash_amount,
@@ -2485,11 +2487,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
     // continued order from orders list
     let continuedOrderId: number | null = null;
+    let table_number : any;
     try {
       const currentOrderDataRaw = localStorage.getItem('currentOrderData');
       if (currentOrderDataRaw) {
         const parsed = JSON.parse(currentOrderDataRaw);
         continuedOrderId = parsed?.order_details?.order_id ?? null;
+        table_number = parsed?.order_details?.table_number ?? null;
       }
     } catch (_) {
       continuedOrderId = null;
@@ -2510,6 +2514,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       isOnline: navigator.onLine,
       orderId: this.finalOrderId || Date.now(),
       ...(continuedOrderId ? { order_id: continuedOrderId } : {}),
+      order_id : continuedOrderId ?? null,
+      table_number :table_number ?? null,
       type: this.selectedOrderType,
       branch_id: branchId,
       payment_method: this.selectedPaymentMethod ?? 'cash',

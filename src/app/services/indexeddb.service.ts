@@ -963,7 +963,8 @@ export class IndexeddbService {
           edit_invoice:false,
 
           order_details: {
-            order_id: orderId,
+            order_id: orderData.order_id,
+            table_id: orderData.table_number || null,
             order_type: orderData.type || "dine-in",
             hasCoupon: !!orderData.coupon_code,
             client_name: orderData.client_name || "",
@@ -973,7 +974,7 @@ export class IndexeddbService {
             cashier_machine_id: orderData.cashier_machine_id,
             order_number: orderId,
             branch_id: orderData.branch_id || null,
-            table_id: orderData.table_id || null,
+
             address_id: orderData.address_id || null,
             payment_method: orderData.payment_method || "cash",
             payment_status: orderData.payment_status || "unpaid",

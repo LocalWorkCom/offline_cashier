@@ -909,6 +909,62 @@ openOrderModal(order: any): void {
       return;
     }
 
+    // 📴 Offline handling: apply changes locally, persist, close modal, refresh
+    if (!navigator.onLine) {
+      try {
+        for (const sel of selectedItems) {
+          const target = order.order_items.find((it: any) => it.order_detail_id === sel.item_id);
+          if (!target) continue;
+          const newSelectedQty = Math.max(0, (target.selectedQuantity ?? target.quantity));
+          target.quantity = newSelectedQty;
+          if (!target.unitPrice && target.quantity) {
+            target.unitPrice = target.total_dish_price / target.quantity;
+          }
+          if (newSelectedQty === 0) {
+            target.dish_status = 'cancel';
+          }
+          if (target.unitPrice !== undefined) {
+            target.total_dish_price = target.unitPrice * newSelectedQty;
+          }
+        }
+
+        // Remove items with zero quantity from list
+        order.order_items = order.order_items.filter((it: any) => (it.quantity ?? 0) > 0);
+        order.order_details.order_items_count = order.order_items.length;
+
+        // Queue pending action for later sync
+        order.pendingActions = order.pendingActions || [];
+        order.pendingActions.push({
+          type: isDeleteAction ? 'delete_order_items' : 'return_invoice_items',
+          payload: {
+            order_id: order.order_details.order_id,
+            items: selectedItems,
+            reason: this.cancelReason || ''
+          },
+          createdAt: new Date().toISOString()
+        });
+
+        this.recomputeOrderTotals(order);
+        this.dbService.saveOrder(order);
+
+        this.isSubmitting = false;
+        this.cancelSuccessMessage = isDeleteAction ? 'تم حذف العناصر محليًا (أوفلاين)' : 'تم تطبيق المرتجع محليًا (أوفلاين)';
+        this.cancelErrorMessage = '';
+
+        const orderModal = document.getElementById('orderModal');
+        if (orderModal) {
+          const instance = bootstrap.Modal.getInstance(orderModal) || new bootstrap.Modal(orderModal);
+          instance.hide();
+        }
+        setTimeout(() => window.location.reload(), 300);
+      } catch (e) {
+        this.isSubmitting = false;
+        this.cancelErrorMessage = 'تعذر تطبيق العملية في وضع عدم الاتصال';
+        setTimeout(() => (this.cancelErrorMessage = ''), 3000);
+      }
+      return;
+    }
+
     if (!isDeleteAction && order.order_details.status !== 'cancelled') {
       this.cancelMessage = `تم ارسال المرتجع الي مدير الفرع
 وبانتظار الموافقة`;
@@ -1089,6 +1145,27 @@ openOrderModal(order: any): void {
 
     if (item.unitPrice) {
       item.total_dish_price = item.unitPrice * item.selectedQuantity;
+    }
+  }
+
+  private recomputeOrderTotals(order: any): void {
+    try {
+      const subtotal = (order.order_items || []).reduce((sum: number, it: any) => sum + (Number(it.total_dish_price) || 0), 0);
+      if (order.invoiceSummary) {
+        order.invoiceSummary.subtotal_price = subtotal;
+        const coupon = Number(order.invoiceSummary.coupon_value || 0);
+        const service = Number(order.invoiceSummary.service_fee || 0);
+        const tax = Number(order.invoiceSummary.tax_value || 0);
+        const delivery = Number(order.invoiceSummary.delivery_fees || 0);
+        const total = Math.max(0, subtotal - coupon + service + tax + delivery);
+        order.invoiceSummary.total_price = total;
+      }
+      if (typeof order.total_price !== 'undefined') {
+        const coupon = Number(order.coupon_value || 0);
+        order.total_price = Math.max(0, subtotal - coupon);
+      }
+    } catch (e) {
+      console.warn('Failed to recompute order totals offline', e);
     }
   }
 
