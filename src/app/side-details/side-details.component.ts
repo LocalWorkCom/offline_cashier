@@ -516,7 +516,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
             cashier_machine_id: order.order_details.cashier_machine_id || localStorage.getItem('cashier_machine_id'),
             branch_id: order.order_details.branch_id,
             table_id: order.order_details.table_id || null,
-            payment_method: order.order_details.payment_method,
+            payment_method:  order.order_details.payment_method == "deferred" ? "credit" : order.order_details.payment_method,
             payment_status: order.order_details.payment_status,
             cash_amount: order.order_details.cash_amount,
             credit_amount: order.order_details.credit_amount,
