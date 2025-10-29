@@ -1626,7 +1626,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Case 2: older/test item structure (with final_price or dish_price)
     const fallbackPrice = Number(item.final_price ?? item.dish_price ?? 0);
+    console.log('روبيان مشوي - بيانات العنصر:', {
+      dish: item.dish,
+      selectedSize: item.selectedSize,
+      selectedAddons: item.selectedAddons,
+      quantity: item.quantity,
+      calculatedPrice: this.getItemTotal(item)
+    });
     return fallbackPrice * (Number(item.quantity) || 1);
+
   }
 
   clearMessage() {
@@ -4844,7 +4852,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
   handleManualPaymentBlur(billAmount: number, modalContent: any): void {
     // تقريب القيمة إلى رقمين عشريين
-   this.roundCashPayment();
+    this.roundCashPayment();
     this.selectedPaymentSuggestion = null; // إعادة تعيين عند الإدخال اليدوي
     // إعادة تعيين رسالة الخطأ
     this.paymentError = '';
