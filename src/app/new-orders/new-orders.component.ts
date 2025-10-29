@@ -629,14 +629,32 @@ async syncAllorders(): Promise<void> {
   }
 
   continueOrder(order: any): void {
-    console.log('tet');
-    this.productsService.destroyCart(); // 🔥 destroy stream
-
+    console.log('continueOrder', order);
+    this.productsService.destroyCart();
     localStorage.removeItem('cart');
     localStorage.setItem('currentOrderId', order.order_details.order_id);
     localStorage.setItem('currentOrderData', JSON.stringify(order));
+    // Ensure side panel logic picks correct order type immediately
+    localStorage.setItem('selectedOrderType', order.order_details?.order_type || '');
 
-    this.router.navigate(['/home']);
+    const type = order.order_details?.order_type;
+    const status = order.order_details?.status;
+    const orderId = order.order_details?.order_id;
+
+    const navigateAndRefresh = (commands: any[]) => {
+      this.router.navigate(commands).then(() => {
+        setTimeout(() => window.location.reload(), 0);
+      });
+    };
+
+    if (
+      type === 'Delivery' &&
+      (status === 'pending' || status === 'in_progress' || status === 'readyForPickup')
+    ) {
+      navigateAndRefresh(['/cart', orderId]);
+    } else {
+      navigateAndRefresh(['/home']);
+    }
   }
   highlightMatch(text: string, search: string): SafeHtml {
     if (!search) return text;
@@ -645,7 +663,7 @@ async syncAllorders(): Promise<void> {
     return this.sanitizer.bypassSecurityTrustHtml(result);
   }
   openEditModal(item: any) {
-    const hasExtraData = item.size || item.dish_addons[0];
+    const hasExtraData = item?.size || item?.dish_addons?.[0];
 
     const modalSize = hasExtraData ? 'lg' : 'md';
 
