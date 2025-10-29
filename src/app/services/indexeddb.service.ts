@@ -892,10 +892,13 @@ export class IndexeddbService {
 
         // 🧾 Build order summary once and reuse it
         const buildOrderSummary = () => {
-          const subtotal_price_before_coupon = orderData.items.reduce(
+          const subtotal_price_before_coupon = orderData.type !="talabat" ? orderData.items.reduce(
             (sum: number, item: any) => sum + item.finalPrice * item.quantity,
             0
-          );
+          ) : orderData.items.reduce(
+            (sum: number, item: any) => sum + item.finalPrice ,
+            0
+          )  ;
 
           const coupon_value = orderData.coupon_value || 0;
           const subtotal_price = subtotal_price_before_coupon - coupon_value;
