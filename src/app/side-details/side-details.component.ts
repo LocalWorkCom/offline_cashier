@@ -159,6 +159,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // hanan front
   isOrderTypeSelected: boolean = false;
+  paymentError: string = '';
 
   selectedPaymentSuggestion: number | null = null;
 
@@ -548,7 +549,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
             menu_integration: order.menu_integration === 'talabat' ? true : false,
             payment_status_menu_integration: order.payment_status_menu_integration,
             payment_method_menu_integration: order.payment_method_menu_integration,
-            edit_invoice :order.edit_invoice,
+            edit_invoice: order.edit_invoice,
 
 
             // dalia end tips
@@ -875,12 +876,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   // end hanan
   updateTotalPrices() {
     this.cartItems.forEach((item) => {
-    // const price = parseFloat(item.dish.price) || 0;
-    // const quantity = parseFloat(item.quantity) || 0;
+      // const price = parseFloat(item.dish.price) || 0;
+      // const quantity = parseFloat(item.quantity) || 0;
 
-    item.totalPrice = this.getItemTotal(item);
-    item.final_Price = this.getItemTotal(item);
-    item.finalPrice = this.getItemTotal(item);
+      item.totalPrice = this.getItemTotal(item);
+      item.final_Price = this.getItemTotal(item);
+      item.finalPrice = this.getItemTotal(item);
     });
     this.totalPrice = this.cartItems.reduce(
       (total, item) => total + item.totalPrice,
@@ -2613,6 +2614,30 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async submitOrder() {
+
+    // ✅ التحقق من أن المبلغ المدفوع كافي (لطرق الدفع النقدي)
+    if (this.selectedPaymentStatus === 'paid' &&
+      (this.selectedPaymentMethod === 'cash' || this.selectedPaymentMethod === 'credit')) {
+
+      const billAmount = this.getCartTotal();
+
+      // إذا كان هناك مبلغ مدخل يدوياً وتحقق من كفايته
+      if (this.cashPaymentInput > 0 && this.cashPaymentInput < billAmount) {
+        this.paymentError = 'المبلغ المدخل أقل من المبلغ المطلوب. يرجى إدخال مبلغ يساوي أو أكبر من ' + billAmount + ' ج.م';
+        this.isLoading = false;
+        this.loading = false;
+        return;
+      }
+
+      // إذا كان هناك finalTipSummary وتحقق من كفاية الدفع
+      if (this.finalTipSummary && this.finalTipSummary.paymentAmount < billAmount) {
+        this.paymentError = 'المبلغ المدفوع غير كافي. يرجى التأكد من إدخال مبلغ كافٍ';
+        this.isLoading = false;
+        this.loading = false;
+        return;
+      }
+    }
+
     if (this.isLoading) {
       console.warn("🚫 Request already in progress, ignoring duplicate submit.");
       return;
@@ -2630,7 +2655,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
 
-    console.log("this cartItems " ,this.cartItems);
+    console.log("this cartItems ", this.cartItems);
 
     if (!this.selectedOrderType) {
       this.isLoading = false;
@@ -4785,19 +4810,19 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     this.specificTipAmount = 0;
   }
   showAdditionalPaymentConfirmation(additionalAmount: number, modal: any) {
-  const confirmed = confirm(
-    `لتحقيق الإكرامية المطلوبة (${this.specificTipAmount} ج.م)، تحتاج لدفع ${additionalAmount} ج.م إضافية.\n\nهل تريد المتابعة؟`
-  );
+    const confirmed = confirm(
+      `لتحقيق الإكرامية المطلوبة (${this.specificTipAmount} ج.م)، تحتاج لدفع ${additionalAmount} ج.م إضافية.\n\nهل تريد المتابعة؟`
+    );
 
-  if (confirmed) {
-    modal.close(this.finalTipSummary);
-  } else {
-    // إلغاء وتراجع عن الحسابات
-    this.tempPaymentAmount = this.finalTipSummary!.originalPaymentAmount!;
-    this.finalTipSummary = null;
-    this.specificTipAmount = 0;
+    if (confirmed) {
+      modal.close(this.finalTipSummary);
+    } else {
+      // إلغاء وتراجع عن الحسابات
+      this.tempPaymentAmount = this.finalTipSummary!.originalPaymentAmount!;
+      this.finalTipSummary = null;
+      this.specificTipAmount = 0;
+    }
   }
-}
 
   getChangeToReturn(changeAmount: number, tipAmount: number): number {
     return Math.max(0, changeAmount - tipAmount);
@@ -4815,7 +4840,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   handleManualPaymentBlur(billAmount: number, modalContent: any): void {
     this.selectedPaymentSuggestion = null; // إعادة تعيين عند الإدخال اليدوي
+    // إعادة تعيين رسالة الخطأ
+    this.paymentError = '';
 
+    // التحقق إذا كانت القيمة أقل من قيمة الفاتورة
+    if (this.cashPaymentInput < billAmount) {
+      this.paymentError = 'المبلغ المدخل أقل من المبلغ المطلوب. يرجى إدخال مبلغ يساوي أو أكبر من ' + billAmount + ' ج.م';
+      return;
+    }
     console.log('Bill Amount:', billAmount, 'Entered:', this.cashPaymentInput);
     const currentPaymentInput = this.cashPaymentInput;
     if (currentPaymentInput > 0 && currentPaymentInput >= billAmount) {

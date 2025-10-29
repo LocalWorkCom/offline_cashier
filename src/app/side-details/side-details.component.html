@@ -337,7 +337,8 @@ selectedOrderType === 'talabat') {
     <p>{{ getTotalItemCount() }} عناصر</p>
   </div>}
 
-  @for (item of cartItems; track trackByCartItem($index, item); let i = $index) {
+  @for (item of cartItems; track trackByCartItem($index, item); let i = $index)
+  {
   <!-- @if(item.dish.id === this.appliedCoupon.discount_details
 [0].dish_id){} -->
   <div class="sideCart-plate p-3 mb-3">
@@ -700,7 +701,8 @@ selectedOrderType === 'talabat') {
         <ng-container
           *ngIf="selectedOrderType !== 'talabat' && selectedPaymentStatus === 'paid'">
           <!-- إدخال الدفع عند اختيار كاش أو كاش + فيزا -->
-          <div *ngIf="(selectedPaymentMethod === 'cash' || selectedPaymentMethod === 'credit') && selectedOrderType !== 'talabat'">
+          <div
+            *ngIf="(selectedPaymentMethod === 'cash' || selectedPaymentMethod === 'credit') && selectedOrderType !== 'talabat'">
             <div class="card p-3 mt-3">
 
               <ng-container *ngIf="getCartTotal() as billAmount">
@@ -744,6 +746,14 @@ selectedOrderType === 'talabat') {
                     [ngModelOptions]="{standalone: true}"
                     placeholder="المبلغ المدفوع"
                     (change)="handleManualPaymentBlur(billAmount, tipModalContent)">
+
+                  <!-- عرض رسالة الخطأ -->
+                  @if (paymentError) {
+                  <div class="invalid-feedback d-block">
+                    <i class="fas fa-exclamation-circle me-1"></i>
+                    {{ paymentError }}
+                  </div>
+                  }
                 </div>
               </ng-container>
             </div>
