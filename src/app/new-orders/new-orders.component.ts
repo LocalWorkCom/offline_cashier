@@ -629,14 +629,32 @@ async syncAllorders(): Promise<void> {
   }
 
   continueOrder(order: any): void {
-    console.log('tet');
-    this.productsService.destroyCart(); // 🔥 destroy stream
-
+    console.log('continueOrder', order);
+    this.productsService.destroyCart();
     localStorage.removeItem('cart');
     localStorage.setItem('currentOrderId', order.order_details.order_id);
     localStorage.setItem('currentOrderData', JSON.stringify(order));
+    // Ensure side panel logic picks correct order type immediately
+    localStorage.setItem('selectedOrderType', order.order_details?.order_type || '');
 
-    this.router.navigate(['/home']);
+    const type = order.order_details?.order_type;
+    const status = order.order_details?.status;
+    const orderId = order.order_details?.order_id;
+
+    const navigateAndRefresh = (commands: any[]) => {
+      this.router.navigate(commands).then(() => {
+        setTimeout(() => window.location.reload(), 0);
+      });
+    };
+
+    if (
+      type === 'Delivery' &&
+      (status === 'pending' || status === 'in_progress' || status === 'readyForPickup')
+    ) {
+      navigateAndRefresh(['/cart', orderId]);
+    } else {
+      navigateAndRefresh(['/home']);
+    }
   }
   highlightMatch(text: string, search: string): SafeHtml {
     if (!search) return text;
@@ -645,7 +663,7 @@ async syncAllorders(): Promise<void> {
     return this.sanitizer.bypassSecurityTrustHtml(result);
   }
   openEditModal(item: any) {
-    const hasExtraData = item.size || item.dish_addons[0];
+    const hasExtraData = item?.size || item?.dish_addons?.[0];
 
     const modalSize = hasExtraData ? 'lg' : 'md';
 
@@ -824,6 +842,22 @@ openOrderModal(order: any): void {
   this.selectedOrder = order;
   this.cancelReason = '';
 
+  // Initialize modal item states for a clean UX
+  if (this.selectedOrder?.order_items?.length) {
+    for (const item of this.selectedOrder.order_items) {
+      // Default selected quantity equals original quantity
+      if (item.selectedQuantity === undefined || item.selectedQuantity === null) {
+        item.selectedQuantity = item.quantity;
+      }
+      // Ensure unitPrice is available for +/- operations
+      if (!item.unitPrice && item.quantity) {
+        item.unitPrice = item.total_dish_price / item.quantity;
+      }
+      // Uncheck by default when opening
+      item.isChecked = false;
+    }
+  }
+
   const modalElement = document.getElementById('orderModal');
   if (modalElement) {
     const modal = new bootstrap.Modal(modalElement);
@@ -833,6 +867,21 @@ openOrderModal(order: any): void {
   submitCancelRequest(order: any): void {
     if (this.isSubmitting) return; // منع تكرار الضغط لو لسه الطلب شغال
     this.isSubmitting = true; // ⏳ بداية الطلب
+
+    const isDeleteAction =
+      order?.order_details?.payment_status == 'unpaid' &&
+      order?.order_details?.status === 'pending';
+
+    // Require reason for both actions (delete or return invoice)
+    if (!this.cancelReason || !this.cancelReason.trim()) {
+      this.isSubmitting = false;
+      this.cancelErrorMessage = isDeleteAction ? 'السبب مطلوب لحذف الطلب' : 'السبب مطلوب لطلب المرتجع';
+      this.cancelSuccessMessage = '';
+      setTimeout(() => {
+        this.cancelErrorMessage = '';
+      }, 3000);
+      return;
+    }
 
     const selectedItems = order.order_items
       .filter((item: any) => item.isChecked)
@@ -860,19 +909,10 @@ openOrderModal(order: any): void {
       return;
     }
 
-    if (
-      order.order_details.status !== 'cancelled' &&
-      !(
-        order.order_details.payment_status == 'unpaid' &&
-        order.order_details.status === 'pending'
-      )
-    ) {
+    if (!isDeleteAction && order.order_details.status !== 'cancelled') {
       this.cancelMessage = `تم ارسال المرتجع الي مدير الفرع
 وبانتظار الموافقة`;
-    } else if (
-      order.order_details.payment_status == 'unpaid' &&
-      order.order_details.status === 'pending'
-    ) {
+    } else if (isDeleteAction) {
       this.cancelMessage = 'تم بنجاح';
     }
 
@@ -936,53 +976,34 @@ openOrderModal(order: any): void {
             this.cancelSuccessMessage = 'تم إرسال طلب المرتجع بنجاح';
             this.cancelErrorMessage = '';
             this.cancelReason = '';
-            const modal_id = `modal-${order.order_details.order_id}`;
-            const currentModal = document.getElementById(modal_id);
-            console.log(currentModal);
-
-            if (currentModal) {
-              const modalInstance = bootstrap.Modal.getInstance(currentModal);
-              modalInstance?.hide();
-
-              currentModal.addEventListener(
-                'hidden.bs.modal',
-                () => {
-                  order.order_items.forEach((item: any) => {
-                    item.isChecked = false;
-                    item.selectedQuantity = item.quantity;
-                  });
-                  this.cancelReason = '';
-                },
-                { once: true }
-              );
+            // Hide the unified modal and refresh page after a brief delay
+            const orderModal = document.getElementById('orderModal');
+            if (orderModal) {
+              const instance = bootstrap.Modal.getInstance(orderModal) || new bootstrap.Modal(orderModal);
+              instance.hide();
             }
 
-            const modalId = `modal-${order.order_details.order_id}`;
-            const currentModalEl = document.getElementById(modalId);
-            if (currentModalEl) {
-              const modalInstance = bootstrap.Modal.getInstance(currentModalEl);
-              modalInstance?.hide();
+            // Cleanup checked state
+            order.order_items.forEach((item: any) => {
+              item.isChecked = false;
+              item.selectedQuantity = item.quantity;
+            });
+
+            // Optional small success modal, then full refresh
+            const successModalEl = document.getElementById('successSmallModal');
+            if (successModalEl) {
+              const successModal = new bootstrap.Modal(successModalEl, { backdrop: 'static' });
+              successModal.show();
+              setTimeout(() => {
+                successModal.hide();
+                document.querySelectorAll('.modal-backdrop').forEach((el) => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                window.location.reload();
+              }, 900);
+            } else {
+              setTimeout(() => window.location.reload(), 300);
             }
-
-            setTimeout(() => {
-              const successModalEl =
-                document.getElementById('successSmallModal');
-              if (successModalEl) {
-                const successModal = new bootstrap.Modal(successModalEl, {
-                  backdrop: 'static',
-                });
-                successModal.show();
-
-                setTimeout(() => {
-                  successModal.hide();
-                  document
-                    .querySelectorAll('.modal-backdrop')
-                    .forEach((el) => el.remove());
-                  document.body.classList.remove('modal-open');
-                  document.body.style.overflow = '';
-                }, 1000);
-              }
-            }, 300);
           }
         },
 
@@ -1045,6 +1066,28 @@ openOrderModal(order: any): void {
 
     if (item.selectedQuantity > 0) {
       item.selectedQuantity -= 1;
+      item.total_dish_price = item.unitPrice * item.selectedQuantity;
+    }
+  }
+
+  onItemCheckToggle(item: any, checked: boolean): void {
+    item.isChecked = checked;
+    if (item.selectedQuantity === undefined || item.selectedQuantity === null) {
+      item.selectedQuantity = item.quantity;
+    }
+    if (!item.unitPrice && item.quantity) {
+      item.unitPrice = item.total_dish_price / item.quantity;
+    }
+
+    if (checked) {
+      // Default to full return when checked
+      item.selectedQuantity = 0;
+    } else {
+      // Reset to original when unchecked
+      item.selectedQuantity = item.quantity;
+    }
+
+    if (item.unitPrice) {
       item.total_dish_price = item.unitPrice * item.selectedQuantity;
     }
   }

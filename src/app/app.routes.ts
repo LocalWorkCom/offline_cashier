@@ -26,6 +26,7 @@ export const routes: Routes = [
       {
         path: 'orders',
         loadComponent: () => import('./new-orders/new-orders.component').then(m => m.NewOrdersComponent)
+        // loadComponent: () => import('./orders/orders.component').then(m => m.OrdersComponent)
       },
       {
         path: 'tables',
