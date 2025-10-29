@@ -4837,8 +4837,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       this.openTipModal(modalContent, billAmount, paymentAmount);
     }
   }
-
+  roundCashPayment() {
+    if (this.cashPaymentInput) {
+      this.cashPaymentInput = Math.round(this.cashPaymentInput * 100) / 100;
+    }
+  }
   handleManualPaymentBlur(billAmount: number, modalContent: any): void {
+    // تقريب القيمة إلى رقمين عشريين
+   this.roundCashPayment();
     this.selectedPaymentSuggestion = null; // إعادة تعيين عند الإدخال اليدوي
     // إعادة تعيين رسالة الخطأ
     this.paymentError = '';
