@@ -12,9 +12,10 @@ declare var bootstrap: any;
 
 @Component({
   selector: 'app-edit-order-modal',
+  standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './edit-order-modal.component.html',
-  styleUrl: './edit-order-modal.component.css',
+  styleUrls: ['./edit-order-modal.component.css'],
 })
 export class EditOrderModalComponent implements OnInit {
   @Input() itemId!: number;
