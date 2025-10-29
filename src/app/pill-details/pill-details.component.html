@@ -321,7 +321,7 @@
         <h6>
           تضاف ضريبة القيمة المضافة
           <span class="main-color"> بنسبة {{ item.tax_percentage }}% </span>
-          بمعنى اخر {{ item.tax_value }} {{ item.currency_symbol }}
+          بمعنى اخر {{ item.tax_value | number:'1.2-2' }} {{ item.currency_symbol }}
         </h6>
       </div>
       <div class="d-flex flex-column">
@@ -337,7 +337,7 @@
             المجموع الكلى
           </h4>
           <h6 class="fw-bold mb-0">
-            <span>{{ item.total_price }} {{ item.currency_symbol }}</span>
+            <span>{{ item.total_price | number:'1.2-2'}} {{ item.currency_symbol }}</span>
           </h6>
         </div>
 
@@ -394,9 +394,6 @@
       </div>
     </div>
   </div>
-
-
-
 
   <!-- Hidden Printable Section -->
   <div id="printSection" class="d-none printSection p-0">
@@ -695,7 +692,7 @@
           <!-- dalia end -->
         </div>
         <!-- dalia end -->
-         
+
       </ng-container>
 
       <h6 class="text-center my-3">شكرا لثقتكم بخدمتنا</h6>
