@@ -149,6 +149,14 @@ selectedOrderType === 'talabat') {
         </div>
         <i class="fas fa-chevron-left"></i>
       </a>
+      <!-- عرض رسالة تحذير إذا لم يتم إدخال معلومات التوصيل -->
+      @if (selectedOrderType === 'Delivery' && !hasDeliveryInfo()) {
+      <div class="alert alert-warning mt-2">
+        <small><i class="fas fa-exclamation-triangle me-1"></i>
+          يرجى إضافة معلومات التوصيل قبل تنفيذ الطلب
+        </small>
+      </div>
+      }
       <!-- <pre>{{FormDataDetails }}</pre> -->
       <!-- @if (FormDataDetails ) {
       <div>
