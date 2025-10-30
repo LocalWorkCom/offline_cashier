@@ -146,6 +146,19 @@ export class DeliveryDetailsComponent implements OnInit {
       this.userAddNewAddress = false;
     }
     this.initializeForm();
+
+    // ✅ التأكد من تعيين القيم الافتراضية بعد تهيئة الفورم
+    setTimeout(() => {
+      if (!this.form.get('country_code')?.value) {
+        this.form.get('country_code')?.setValue(this.selectedCountry);
+      }
+      if (!this.form.get('whatsapp_number_code')?.value) {
+        this.form.get('whatsapp_number_code')?.setValue(this.selectedWhatsappCountry);
+      }
+      if (!this.form.get('address_type')?.value) {
+        this.form.get('address_type')?.setValue(this.selectedProperty);
+      }
+    }, 100);
     this.restoreFormData();
     this.fetchCountries(() => {
       this.restoreFormData(); // only restore after countries are loaded,case problem fatema
@@ -301,13 +314,27 @@ export class DeliveryDetailsComponent implements OnInit {
   // Update selectWhatsappCountry method
   selectWhatsappCountry(country: Country) {
     this.selectedWhatsappCountry = country;
+
+    // ✅ تعيين القيمة في الفورم بشكل صحيح
     this.form.get('whatsapp_number_code')?.setValue(country);
+    this.form.get('whatsapp_number_code')?.markAsTouched();
+
     this.dropdownOpen = false;
     this.filteredWhatsappCountries = [...this.countryList];
 
-    // Update validators after country change
-    this.updateWhatsappValidators();
+    // ✅ تحديث validators رقم الواتساب
+    if (!this.useSameNumberForWhatsapp) {
+      const whatsappControl = this.form.get('whatsapp_number');
+      if (whatsappControl) {
+        whatsappControl.setValidators([
+          Validators.required,
+          Validators.pattern(new RegExp(`^\\d{${country.phoneLength}}$`)),
+        ]);
+        whatsappControl.updateValueAndValidity();
+      }
+    }
   }
+
 
   // Update useSameWhatsapp method
   useSameWhatsapp(useSame: boolean) {
@@ -428,88 +455,219 @@ export class DeliveryDetailsComponent implements OnInit {
       hotel_id: '',
       client_name: [
         '',
-        [Validators.required, Validators.pattern(/^(?!\s*$).+/)],
+        [
+          Validators.required,
+          Validators.minLength(2),
+          Validators.maxLength(100),
+          Validators.pattern(/^[\u0600-\u06FFa-zA-Z\s]+$/), // فقط أحرف عربية وإنجليزية ومسافات
+          this.noLeadingSpaceValidator(),
+          this.noOnlySpacesValidator()
+        ]
       ],
       address_phone: [
         '',
         [
           Validators.required,
           this.noLeadingSpaceValidator(),
-          Validators.pattern(
-            new RegExp(`^\\d{${this.selectedWhatsappCountry.phoneLength}}$`)
-          ),
-        ],
+          Validators.pattern(/^\d+$/), // فقط أرقام
+          this.phoneLengthValidator()
+        ]
       ],
-      whatsapp_number_code: [this.selectedWhatsappCountry],
+      whatsapp_number_code: [this.selectedWhatsappCountry, Validators.required],
       whatsapp_number: [
         '',
         [
           Validators.required,
-          this.noLeadingSpaceValidator(), // only numbers, exactly 11 digits
-          Validators.pattern(
-            new RegExp(`^\\d{${this.selectedCountry.phoneLength}}$`)
-          ),
-        ],
+          this.noLeadingSpaceValidator(),
+          Validators.pattern(/^\d+$/), // فقط أرقام
+          this.whatsappLengthValidator()
+        ]
       ],
-      country_code: [this.selectedCountry || '', [Validators.required]],
-      apartment_number: [''], //       [Validators.required, Validators.pattern(/^(?!\s*$).+/)],
-      building: [''], // , [Validators.required, Validators.pattern(/^(?!\s*$).+/)]
-      address_type: ['apartment', Validators.required],
-      address: ['', [Validators.required, Validators.pattern(/^(?!\s*$).+/)]],
-      // propertyType: ['', Validators.required],
-      buildingName: [''],
-      notes: [''],
-      floor_number: [''], //[Validators.required, Validators.pattern(/^(?!\s*$).+/)],
-      landmark: [''],
-      villaName: [''],
-      villaNumber: [''],
-      companyName: [''],
-      // buildingNumber: [
-      //   '',
-      //   [Validators.required, Validators.pattern(/^(?!\s*$).+/)],
-      // ],
+      country_code: [this.selectedCountry, [Validators.required]], // ✅ تعيين قيمة افتراضية
+      apartment_number: [
+        '',
+        [
+          Validators.required,
+          Validators.minLength(1),
+          Validators.maxLength(10),
+          Validators.pattern(/^[a-zA-Z0-9\u0600-\u06FF\s\-]+$/) // أحرف وأرقام وشرطات
+        ]
+      ],
+      building: [
+        '',
+        [
+          Validators.required,
+          Validators.minLength(2),
+          Validators.maxLength(100),
+          Validators.pattern(/^[\u0600-\u06FFa-zA-Z0-9\s\-\.]+$/) // أحرف عربية وإنجليزية وأرقام
+        ]
+      ],
+      address_type: [this.selectedProperty, Validators.required], // ✅ تعيين قيمة افتراضية
+      address: [
+        '',
+        [
+          Validators.required,
+          Validators.minLength(5),
+          Validators.maxLength(255),
+          Validators.pattern(/^[\u0600-\u06FFa-zA-Z0-9\s\-\.،,]+$/), // أحرف عربية وإنجليزية وأرقام وعلامات ترقيم
+          this.noLeadingSpaceValidator()
+        ]
+      ],
+      buildingName: [
+        '',
+        [
+          Validators.minLength(2),
+          Validators.maxLength(100),
+          Validators.pattern(/^[\u0600-\u06FFa-zA-Z0-9\s\-\.]*$/)
+        ]
+      ],
+      notes: [
+        '',
+        [
+          Validators.maxLength(500),
+          Validators.pattern(/^[\u0600-\u06FFa-zA-Z0-9\s\-\.،,!@#$%^&*()]*$/)
+        ]
+      ],
+      floor_number: [
+        '',
+        [
+          Validators.required,
+          Validators.min(0),
+          Validators.max(100),
+          Validators.pattern(/^\d+$/) // فقط أرقام
+        ]
+      ],
+      landmark: [
+        '',
+        [
+          Validators.maxLength(100),
+          Validators.pattern(/^[\u0600-\u06FFa-zA-Z0-9\s\-\.]*$/)
+        ]
+      ],
+      villaName: [
+        '',
+        [
+          Validators.minLength(2),
+          Validators.maxLength(100),
+          Validators.pattern(/^[\u0600-\u06FFa-zA-Z0-9\s\-\.]*$/)
+        ]
+      ],
+      villaNumber: [
+        '',
+        [
+          Validators.minLength(1),
+          Validators.maxLength(10),
+          Validators.pattern(/^[a-zA-Z0-9\u0600-\u06FF\s\-]*$/)
+        ]
+      ],
+      companyName: [
+        '',
+        [
+          Validators.minLength(2),
+          Validators.maxLength(100),
+          Validators.pattern(/^[\u0600-\u06FFa-zA-Z0-9\s\-\.]*$/)
+        ]
+      ],
       area_id: ['', Validators.required],
     });
-    // Watch for changes in whatsapp_number
 
-    this.form
-      .get('whatsapp_number_code')
-      ?.setValue(this.countryCode?.value || this.selectedWhatsappCountry);
+    // تحديث الـ validators الديناميكية
+    this.updateDynamicValidators();
+  }
+  // Custom Validators
+  phoneLengthValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      if (!control.value) return null;
 
+      const value = control.value.toString();
+      const expectedLength = this.selectedCountry?.phoneLength || 11;
 
-    this.form.get('country_code')?.valueChanges.subscribe((value) => {
-      this.selectedCountry = value;
-      const phoneControl = this.form.get('address_phone');
-      if (phoneControl) {
-        phoneControl.setValidators([
-          Validators.required,
-          Validators.pattern(new RegExp(`^\\d{${value.phoneLength}}$`)),
-        ]);
-      }
-      // this.form.get('whatsapp_number_code')?.setValue(value)
-      // const whatsphoneControl = this.form.get('whatsapp_number');
-      // if (whatsphoneControl) {
-      //   whatsphoneControl.setValidators([
-      //     Validators.required,
-      //     Validators.pattern(new RegExp(`^\\d{${value.phoneLength}}$`)),
-      //   ]);
-      // }
-    });
-
-    this.form.get('whatsapp_number')?.valueChanges.subscribe((value) => {
-      const codeControl = this.form.get('whatsapp_number_code');
-
-      if (value && value.trim() !== '') {
-        codeControl?.setValidators([Validators.required]);
-      } else {
-        codeControl?.clearValidators();
-      }
-
-      // codeControl?.updateValueAndValidity({ emitEvent: false });
-    });
-    this.listenToChangeWhatsappCountry()
+      return value.length === expectedLength ? null : {
+        phoneLength: {
+          requiredLength: expectedLength,
+          actualLength: value.length
+        }
+      };
+    };
   }
 
+  whatsappLengthValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      if (!control.value || this.useSameNumberForWhatsapp) return null;
+
+      const value = control.value.toString();
+      const expectedLength = this.selectedWhatsappCountry?.phoneLength || 11;
+
+      return value.length === expectedLength ? null : {
+        whatsappLength: {
+          requiredLength: expectedLength,
+          actualLength: value.length
+        }
+      };
+    };
+  }
+
+  noOnlySpacesValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value = control.value;
+      if (value && value.trim().length === 0) {
+        return { onlySpaces: true };
+      }
+      return null;
+    };
+  }
+
+  noLeadingSpaceValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      const value = control?.value as string;
+      if (value && value.trimStart().length !== value.length) {
+        return { leadingSpace: true };
+      }
+      return null;
+    };
+  }
+
+  emailValidator(): ValidatorFn {
+    return (control: AbstractControl): ValidationErrors | null => {
+      if (!control.value) return null;
+
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      return emailRegex.test(control.value) ? null : { invalidEmail: true };
+    };
+  }
+
+  // دالة لتحديث الـ validators الديناميكية
+  private updateDynamicValidators(): void {
+    // تحديث validators رقم الهاتف بناءً على الدولة المختارة
+    this.form.get('country_code')?.valueChanges.subscribe((country: Country) => {
+      if (country) {
+        const phoneControl = this.form.get('address_phone');
+        phoneControl?.setValidators([
+          Validators.required,
+          this.noLeadingSpaceValidator(),
+          Validators.pattern(/^\d+$/),
+          Validators.minLength(country.phoneLength),
+          Validators.maxLength(country.phoneLength)
+        ]);
+        phoneControl?.updateValueAndValidity();
+      }
+    });
+
+    // تحديث validators الواتساب بناءً على حالة الاستخدام
+    this.form.get('whatsapp_number_code')?.valueChanges.subscribe((country: Country) => {
+      if (country && !this.useSameNumberForWhatsapp) {
+        const whatsappControl = this.form.get('whatsapp_number');
+        whatsappControl?.setValidators([
+          Validators.required,
+          this.noLeadingSpaceValidator(),
+          Validators.pattern(/^\d+$/),
+          Validators.minLength(country.phoneLength),
+          Validators.maxLength(country.phoneLength)
+        ]);
+        whatsappControl?.updateValueAndValidity();
+      }
+    });
+  }
   toggleDropdown() {
     this.dropdownOpen = !this.dropdownOpen;
   }
@@ -521,16 +679,18 @@ export class DeliveryDetailsComponent implements OnInit {
     );
   }
   selectCountry(country: Country) {
-    this.selectedCountry = country;      //assign user phone country
-    this.selectedWhatsappCountry = country;  //assign whatsapp countrry
-    console.log(this.selectedCountry, country, 'selectedCountry');
-    this.dropdownOpen = false;
+    this.selectedCountry = country;
+    console.log('Selected country:', country);
+
+    // ✅ تعيين القيمة في الفورم بشكل صحيح
     this.form.get('country_code')?.setValue(country);
     this.form.get('country_code')?.markAsTouched();
+
+    this.dropdownOpen = false;
     this.form.get('searchTerm')?.setValue('');
     this.filteredCountries = [...this.countryList];
 
-    // Update phone number validators dynamically based on selected country
+    // ✅ تحديث validators رقم الهاتف
     const phoneControl = this.form.get('address_phone');
     if (phoneControl) {
       phoneControl.setValidators([
@@ -540,81 +700,90 @@ export class DeliveryDetailsComponent implements OnInit {
       phoneControl.updateValueAndValidity();
     }
   }
+
   propertyFormValues: { [key in PropertyType]?: any } = {};
 
-  selectPropertyType(type: 'apartment' | 'villa' | 'office' | 'hotel'): void {
-    //  Save current values before switching (unless restoring from localStorage)
-    if (!this.isRestoring && this.selectedProperty) {
-      this.propertyFormValues[this.selectedProperty as PropertyType] = {
-        building: this.form.get('building')?.value,
-        apartment_number: this.form.get('apartment_number')?.value,
-        floor_number: this.form.get('floor_number')?.value,
-        address: this.form.get('address')?.value,
-        notes: this.form.get('notes')?.value,
-      };
+  // Update the existing selectPropertyType function
+  selectPropertyType(property: PropertyType) {
+    this.selectedProperty = property;
+    this.form.get('address_type')?.setValue(property);
+    this.clearPropertyValidators(); // Clear old validators first
+
+    const addressControl = this.form.get('address');
+    const buildingControl = this.form.get('building');
+    const apartmentNumberControl = this.form.get('apartment_number');
+    const floorNumberControl = this.form.get('floor_number');
+
+    switch (property) {
+      case 'apartment':
+        // Required fields for 'apartment': building, apartment_number, floor_number, address
+        buildingControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
+        apartmentNumberControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
+        floorNumberControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
+        addressControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
+        break;
+
+      case 'villa':
+        // Required fields for 'villa': building (villa name), apartment_number (villa number), address
+        buildingControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
+        apartmentNumberControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
+        addressControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
+        break;
+
+      case 'office':
+        // Required fields for 'office': building (office name), apartment_number (office number), floor_number, address
+        buildingControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
+        apartmentNumberControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
+        floorNumberControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
+        addressControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
+        break;
+
+      case 'hotel':
+        // Required fields for 'hotel': address (hotel selection is handled separately by selectedHotel)
+        // The address field is still required for the street address (assuming hotel selection doesn't fill the full address)
+        // If hotel selection is enough, you can clear this.
+        addressControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
+        // Note: Hotel selection logic (`selectedHotel`) usually needs to be checked in `onSubmit` too.
+        break;
+
+      default:
+        // Clear validators if no property is selected (shouldn't happen here)
+        this.clearPropertyValidators();
+        break;
     }
-    this.selectedProperty = type;
-    console.log('gg', localStorage.getItem('form_data'));
 
-    this.form.patchValue({ address_type: type });
-    if (this.selectedProperty === 'hotel') {
-      console.log('hoteeeeeeeel', this.form);
-    }
+    // Manually trigger validation on updated controls
+    buildingControl?.updateValueAndValidity();
+    apartmentNumberControl?.updateValueAndValidity();
+    floorNumberControl?.updateValueAndValidity();
+    addressControl?.updateValueAndValidity();
 
-    const aptCtrl = this.form.get('apartment_number');
-    const floorCtrl = this.form.get('floor_number');
-    const buildingCtrl = this.form.get('building');
-
-    // Clear all validators
-    aptCtrl?.clearValidators();
-    floorCtrl?.clearValidators();
-    buildingCtrl?.clearValidators();
-
-    // ✅ Only reset floor number if user changes property (not restoring)
-    if (!this.isRestoring && type !== 'villa') {
-      floorCtrl?.setValue('');
-    }
-
-    // const requiredNoSpaces = [
-    //   Validators.required,
-    //   this.noOnlySpacesValidator(),
-    // ];
-
-    // Set validators based on selected property
-    // if (type === 'apartment' || type === 'office') {
-    //   aptCtrl?.setValidators(requiredNoSpaces);
-    //   floorCtrl?.setValidators(requiredNoSpaces);
-    //   buildingCtrl?.setValidators(requiredNoSpaces);
-    // } else if (type === 'villa') {
-    //   aptCtrl?.setValidators(requiredNoSpaces);
-    //   buildingCtrl?.setValidators(requiredNoSpaces);
-    // }
-
-    aptCtrl?.updateValueAndValidity();
-    floorCtrl?.updateValueAndValidity();
-    buildingCtrl?.updateValueAndValidity();
-
-    //  Restore saved values if available, or reset fields
-    const savedValues = this.propertyFormValues[type];
-    if (savedValues) {
-      console.log('saved previous value ', this.propertyFormValues);
-
-      this.form.patchValue(savedValues);
-    } else if (!this.isRestoring) {
-      this.resetPropertyFields();
-    }
-    // if (!this.isRestoring) {
-    //   this.resetPropertyFields();
-    // }
+    // The 'area_id' is required for all new addresses, so its validators remain
   }
+  // Add a function to clear all property-specific validators
+  private clearPropertyValidators() {
+    const controlsToClear = [
+      'building',
+      'apartment_number',
+      'floor_number',
+      'address', // Address field is common but required only when adding new address
+      // 'notes' is optional, no need to clear its validators
+    ];
 
-  noOnlySpacesValidator(): ValidatorFn {
-    return (control: AbstractControl): ValidationErrors | null => {
-      const value = control.value || '';
-      return value.trim().length === 0 ? { pattern: true } : null;
-    };
+    controlsToClear.forEach(controlName => {
+      const control = this.form.get(controlName);
+      if (control) {
+        control.clearValidators();
+        control.updateValueAndValidity();
+        // Optional: Reset control state to hide error messages immediately
+        // control.markAsUntouched();
+        // control.markAsPristine();
+      }
+    });
+
+    // Specifically for hotel selection, you might have a separate logic outside the form
+    this.selectedHotel = null;
   }
-
   private resetPropertyFields(): void {
     const fieldsToReset = [
       'buildingName',
@@ -634,17 +803,6 @@ export class DeliveryDetailsComponent implements OnInit {
     });
 
     this.form.get('address')?.reset('');
-  }
-
-  noLeadingSpaceValidator(): ValidatorFn {
-    return (control: AbstractControl): ValidationErrors | null => {
-      const value = control?.value as string;
-
-      if (value && value.trimStart().length !== value.length) {
-        return { leadingSpace: true };
-      }
-      return null;
-    };
   }
 
   // private resetPropertyFields(): void {
@@ -721,112 +879,188 @@ export class DeliveryDetailsComponent implements OnInit {
   //   });
   // }
   onSubmit(): void {
-    if (this.useSameNumberForWhatsapp) {
-      this.form
-        .get('whatsapp_number')
-        ?.setValue(this.form.get('address_phone')?.value || '');
-      this.form
-        .get('whatsapp_number_code')
-        ?.setValue(this.form.get('country_code')?.value || '');
-    }
     this.submitted = true;
+    // ✅ Skip validation for hotel-specific fields when in hotel tab
+    if (this.selectedProperty !== 'hotel') {
+      this.form.get('building')?.updateValueAndValidity();
+      this.form.get('apartment_number')?.updateValueAndValidity();
+      this.form.get('floor_number')?.updateValueAndValidity();
+    }
+    this.form.get('address')?.updateValueAndValidity();
+
+    // Manually check hotel if the tab is selected
+    const isHotelValid = this.selectedProperty !== 'hotel' || this.selectedHotel;
+
+    if (this.form.invalid || !isHotelValid) {
+      console.log('Form is invalid. Stopping submission.');
+      this.logInvalidFields();
+      return;
+    }
+
+    // ✅ التأكد من تعيين القيم المطلوبة قبل الإرسال
+    if (this.useSameNumberForWhatsapp) {
+      this.form.patchValue({
+        whatsapp_number: this.form.get('address_phone')?.value || '',
+        whatsapp_number_code: this.form.get('country_code')?.value || this.selectedWhatsappCountry
+      });
+    }
+
+    // ✅ التأكد من تعيين address_type
+    if (!this.form.get('address_type')?.value) {
+      this.form.patchValue({
+        address_type: this.selectedProperty
+      });
+    }
+
+    // ✅ التأكد من أن country_code له قيمة
+    if (!this.form.get('country_code')?.value) {
+      this.form.patchValue({
+        country_code: this.selectedCountry
+      });
+    }
+
+    // ✅ التأكد من أن whatsapp_number_code له قيمة
+    if (!this.form.get('whatsapp_number_code')?.value && !this.useSameNumberForWhatsapp) {
+      this.form.patchValue({
+        whatsapp_number_code: this.selectedWhatsappCountry
+      });
+    }
+
     if (this.userAddNewAddress == false) {
       this.form.markAllAsTouched();
       this.storeAddressinLocalStorage();
-
       return;
     }
+
     if (this.form.invalid) {
-      this.form.markAllAsTouched(); // Ensure errors are shown in UI
+      this.form.markAllAsTouched();
+      console.log('Form validation errors:', this.form.errors);
+      Object.keys(this.form.controls).forEach(key => {
+        const control = this.form.get(key);
+        if (control?.invalid) {
+          console.log(`❌ ${key}:`, control.errors, 'Value:', control.value);
+        }
+      });
 
-      console.warn(
-        'Form is invalid. Logging invalid fields:',
-        this.form.status,
-        this.form
-      );
       if (this.selectedProperty === 'hotel') {
-        console.log('ddddd', this.selectedHotel);
+        console.log('Selected Hotel:', this.selectedHotel);
         localStorage.setItem('hotel_id', this.selectedHotel?.id);
-
         this.form.patchValue({
           hotel_id: this.selectedHotel?.id,
           address: this.selectedHotel?.address,
         });
       } else {
-        // احذف hotel_id من النموذج
         if (this.form.get('hotel_id')) {
           this.form.removeControl('hotel_id');
         }
       }
-      console.log(this.form.value);
 
-      /*       Object.keys(this.form.controls).forEach((key) => {
-              const control = this.form.get(key);
-              if (control && control.invalid) {
-                console.log(`❌ Invalid field: ${key}`, control.errors);
-              }
-            }); */
-
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
+    // ✅ إعداد البيانات النهائية للإرسال
     const noteValue = this.form.get('notes')?.value;
+
     if (this.selectedProperty === 'hotel') {
       this.form.patchValue({
         hotel_id: this.selectedHotel?.id,
         address: this.selectedHotel?.address,
       });
     } else {
-      // احذف hotel_id من النموذج
       if (this.form.get('hotel_id')) {
         this.form.removeControl('hotel_id');
       }
     }
-    if (this.useSameNumberForWhatsapp) {
-      this.whatsappPhone = this.form.get('address_phone')?.value || '';
-      this.form
-        .get('whatsapp_number_code')
-        ?.setValue(this.form.get('country_code')?.value || '');
-    }
-    const formDataWithNote = {
+
+    // ✅ التأكد النهائي من جميع الحقول المطلوبة - بس مرة واحدة!
+    const finalFormData = {
       ...this.form.value,
       notes: noteValue,
-      whatsapp_number: this.whatsappPhone, // hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-      whatsapp_number_code: this.form.get('whatsapp_number_code')?.value, //.code
+      address_type: this.form.get('address_type')?.value || this.selectedProperty,
+      country_code: this.form.get('country_code')?.value?.code || this.selectedCountry.code,
+      whatsapp_number_code: this.form.get('whatsapp_number_code')?.value?.code || this.selectedWhatsappCountry.code
     };
 
-    console.log('✅ Saving to localStorage:', formDataWithNote);
-    localStorage.setItem('form_data', JSON.stringify(formDataWithNote));
-    localStorage.setItem('notes', noteValue);
+    console.log('✅ Final data to be saved:', finalFormData);
+    console.log('✅ country_code value:', finalFormData.country_code);
 
-    // start hanan
-    // SAVE TO INDEXEDDB ON SUBMIT
-    this.dbService.saveFormData(formDataWithNote).then(id => {
-      console.log('✅ Form data saved to IndexedDB with ID:', id);
-    }).catch(err => {
-      console.error('❌ Error saving form data to IndexedDB:', err);
-    });
-    // end hanan
+    // ✅ إرسال للـ Backend
+    this.formDataService.submitForm(finalFormData).subscribe({
+      next: (response) => {
+        console.log('🔵 Backend Response:', response);
 
-    // localStorage.setItem('address_id', 'DUMMY_ID');
-    const selectedAreaId = this.form.get('area_id')?.value;
+        if (response.status) {
+          // نجح الإرسال
+          localStorage.setItem('form_data', JSON.stringify(finalFormData));
+          localStorage.setItem('address_id', response.data.address_id);
+          localStorage.setItem('notes', noteValue);
 
-    if (selectedAreaId && this.areas && Array.isArray(this.areas)) {
-      const selectedArea = this.areas.find((area) => area.id == selectedAreaId);
-      if (selectedArea) {
-        localStorage.setItem('delivery_fees', selectedArea.delivery_fees);
-        console.log('💰 Delivery fees saved:', selectedArea.delivery_fees);
+          // ✅ حفظ في IndexedDB
+          this.dbService.saveFormData(finalFormData).then(id => {
+            console.log('✅ Form data saved to IndexedDB with ID:', id);
+          }).catch(err => {
+            console.error('❌ Error saving form data to IndexedDB:', err);
+          });
+
+          // ✅ حفظ رسوم التوصيل
+          const selectedAreaId = this.form.get('area_id')?.value;
+          if (selectedAreaId && this.areas && Array.isArray(this.areas)) {
+            const selectedArea = this.areas.find((area) => area.id == selectedAreaId);
+            if (selectedArea) {
+              localStorage.setItem('delivery_fees', selectedArea.delivery_fees);
+              console.log('💰 Delivery fees saved:', selectedArea.delivery_fees);
+            }
+          }
+
+          localStorage.setItem('deliveryForm', JSON.stringify(this.form.value));
+          console.log('🔙 Navigating back after API success');
+          this.location.back();
+        } else {
+          // فشل الإرسال - عرض الأخطاء
+          console.error('🔴 Backend Validation Errors:', response.errorData);
+          this.handleBackendErrors(response.errorData);
+        }
+      },
+      error: (error) => {
+        console.error('🔴 HTTP Error:', error);
       }
+    });
+  }
+
+  // دالة للتحقق من اكتمال جميع البيانات المطلوبة
+  validateFormBeforeSubmit(): boolean {
+    const requiredFields = [
+      'client_name',
+      'address_phone',
+      'country_code',
+      'area_id',
+      // 'address_type',
+      'address'
+    ];
+
+    let isValid = true;
+
+    requiredFields.forEach(field => {
+      const control = this.form.get(field);
+      if (!control || !control.value) {
+        console.error(`❌ Missing required field: ${field}`);
+        isValid = false;
+      }
+    });
+
+    // تحقق خاص من country_code و whatsapp_number_code
+    if (!this.form.get('country_code')?.value) {
+      console.error('❌ country_code is required');
+      isValid = false;
     }
-    if (this.selectedAddress) {
-      const selectedArea = this.areas.find((area) => area.id == selectedAreaId);
-      localStorage.setItem('delivery_fees', selectedArea.delivery_fees);
-      console.log('💰 Delivery fees saved:', selectedArea.delivery_fees);
+
+    if (!this.useSameNumberForWhatsapp && !this.form.get('whatsapp_number_code')?.value) {
+      console.error('❌ whatsapp_number_code is required when using different number');
+      isValid = false;
     }
-    localStorage.setItem('deliveryForm', JSON.stringify(this.form.value));
-    console.log('🔙 Navigating back after local save');
-    // this.resetForm();
-    this.location.back();
+
+    return isValid;
   }
   whatsapp: any;
   private handleBackendErrors(errors: any): void {
@@ -1018,7 +1252,7 @@ export class DeliveryDetailsComponent implements OnInit {
   // }
 
   // start hanan
-getHotels() {
+  getHotels() {
     // First try to get hotels from IndexedDB
     this.dbService.getAll('hotels').then(hotels => {
       if (hotels && hotels.length > 0) {
@@ -1063,7 +1297,7 @@ getHotels() {
       });
     });
   }
-// end hanan
+  // end hanan
   selectedHotel: any;
   onHotelChange(hotel: any) {
     this.selectedHotel = hotel;
@@ -1275,6 +1509,48 @@ getHotels() {
 
       });
   }
+  // دالة للحصول على رسائل الخطأ
+  getErrorMessage(controlName: string): string {
+    const control = this.form.get(controlName);
+    if (!control || !control.errors || !control.touched) return '';
 
+    const errors = control.errors;
+
+    if (errors['required']) return 'هذا الحقل مطلوب';
+    if (errors['minlength']) return `الحد الأدنى ${errors['minlength'].requiredLength} أحرف`;
+    if (errors['maxlength']) return `الحد الأقصى ${errors['maxlength'].requiredLength} أحرف`;
+    if (errors['min']) return `القيمة يجب أن تكون ${errors['min'].min} أو أكثر`;
+    if (errors['max']) return `القيمة يجب أن تكون ${errors['max'].max} أو أقل`;
+    if (errors['pattern']) return 'التنسيق غير صحيح';
+    if (errors['onlySpaces']) return 'لا يمكن أن يحتوي على مسافات فقط';
+    if (errors['leadingSpace']) return 'لا يمكن أن يبدأ بمسافة';
+    if (errors['phoneLength']) return `يجب أن يكون ${errors['phoneLength'].requiredLength} رقم`;
+    if (errors['whatsappLength']) return `يجب أن يكون ${errors['whatsappLength'].requiredLength} رقم`;
+    if (errors['invalidEmail']) return 'البريد الإلكتروني غير صحيح';
+    if (errors['serverError']) return errors['serverError'];
+
+    return 'قيمة غير صالحة';
+  }
+
+  // دالة للتحقق إذا كان الحقل صالحاً للعرض
+  isFieldValid(controlName: string): boolean {
+    const control = this.form.get(controlName);
+    return (
+      !!control &&
+      control.invalid &&
+      (control.dirty || control.touched || this.submitted)
+    );
+  }
+
+  // دالة للحصول على class الـ CSS المناسب
+  getFieldClass(controlName: string): string {
+    const control = this.form.get(controlName);
+    if (!control) return '';
+
+    if (control.touched || this.submitted) {
+      return control.valid ? 'is-valid' : 'is-invalid';
+    }
+    return '';
+  }
 }
 // aml

@@ -15,9 +15,9 @@
     <!-- <app-select   [options]="printOptions"></app-select> -->
     <!-- Confirm Dialog -->
 
-
     <!-- Print Button -->
-    <button pButton type="button" label="طباعة الفاتورة" icon="pi pi-print" (click)="onPrintButtonClick()"
+    <button pButton type="button" label="طباعة الفاتورة" icon="pi pi-print"
+      (click)="onPrintButtonClick()"
       [disabled]="isPrinting" class="fs-6 rounded-4"></button>
 
     <!-- <button
@@ -44,7 +44,8 @@
     <ng-container>
       <div class="card px-4 py-2 my-2" *ngFor="let item of branchDetails">
         <div class="card-img">
-          <img src="assets/images/logo-with-white-bg.png" alt="Placeholder Logo" />
+          <img src="assets/images/logo-with-white-bg.png"
+            alt="Placeholder Logo" />
         </div>
         <h5>
           <i class="fas fa-file-alt main-color fs-4 ps-2"></i>معلومات الفرع
@@ -95,14 +96,17 @@
         <p>
           <span class="fw-bold">رقم المرتجع :</span> {{ item.invoice_number }}
         </p>
-        <a class="text-decoration-underline mb-3" [routerLink]="'/pill-details/' + invoices[0].original_invoice_id"
+        <a class="text-decoration-underline mb-3"
+          [routerLink]="'/pill-details/' + invoices[0].original_invoice_id"
           routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
 
-          <span class="fw-bold">رقم الإيصال :</span> {{ invoices[0].original_invoice_number }}
+          <span class="fw-bold">رقم الإيصال :</span> {{
+          invoices[0].original_invoice_number }}
         </a>
         <p>
           <span class="fw-bold">نوع المرتجع :</span>
-          {{ invoices[0].return_type === 'partial' ? 'جزئي' : invoices[0].return_type === 'full' ? 'كلي' :
+          {{ invoices[0].return_type === 'partial' ? 'جزئي' :
+          invoices[0].return_type === 'full' ? 'كلي' :
           invoices[0].return_type }}
         </p>
 
@@ -137,12 +141,11 @@
         <span class="fw-bold">الاسم :</span>
         {{ addresDetails.client_name }}
       </p>
-      <p v-if="addresDetails.client_address || addresDetails.branch_name">
+      <p *ngIf="addresDetails?.address || addresDetails?.branch_name">
         <span class="fw-bold">العنوان :</span>
-        {{ addresDetails.client_address ?? "غير متوفر" }}
-        @if(addresDetails.branch_name){
-        , {{ addresDetails.branch_name}}
-        }
+        {{ addresDetails?.address || 'غير متوفر' }}
+        <span *ngIf="addresDetails?.branch_name">, {{ addresDetails?.branch_name
+          }}</span>
       </p>
 
       <p v-if="addresDetails.address_phone">
@@ -150,7 +153,8 @@
         {{ addresDetails.address_phone}}
       </p>
       <p>
-        <span class="fw-bold" *ngIf="invoices[0].delivery_name">اسم الطيار :</span>
+        <span class="fw-bold" *ngIf="invoices[0].delivery_name">اسم الطيار
+          :</span>
         {{ invoices[0].delivery_name }}
       </p>
     </div>
@@ -159,15 +163,18 @@
       <div class="accordion accordion-flush" id="accordionFlushExample">
         <div class="accordion-item">
           <h2 class="accordion-header" id="flush-headingOne">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-              data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
+            <button class="accordion-button collapsed" type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#flush-collapseOne" aria-expanded="false"
+              aria-controls="flush-collapseOne">
               <h5>
                 <i class="fas fa-file-alt main-color fs-4 ps-2"></i> تفاصيل
                 الطلب
               </h5>
             </button>
           </h2>
-          <div id="flush-collapseOne" class="accordion-collapse collapse show" aria-labelledby="flush-headingOne"
+          <div id="flush-collapseOne" class="accordion-collapse collapse show"
+            aria-labelledby="flush-headingOne"
             data-bs-parent="#accordionFlushExample">
             <div class="accordion-body">
               <div *ngFor="let item of orderDetails[0]"
@@ -183,9 +190,11 @@
                   <h6 class="text-muted mx-5 fw-medium" *ngIf="item.size">
                     الحجم: {{ item.size }}
                   </h6>
-                  <h6 class="text-muted mx-5 fw-medium" *ngIf="item.addons.length>0"> الاضافات :
+                  <h6 class="text-muted mx-5 fw-medium"
+                    *ngIf="item.addons.length>0"> الاضافات :
                     <span *ngFor="let addon of item.addons; let last = last">
-                      <span>{{ addon.addon_name }}<span *ngIf="!last">، </span></span>
+                      <span>{{ addon.addon_name }}<span *ngIf="!last">،
+                        </span></span>
                     </span>
 
                   </h6>
@@ -233,7 +242,8 @@
         <!-- Show selected status -->
       </div>
 
-      <div class="d-flex justify-content-between align-items-center py-3" *ngIf="invoices && invoices.length > 0">
+      <div class="d-flex justify-content-between align-items-center py-3"
+        *ngIf="invoices && invoices.length > 0">
         <h5 class="mb-0" *ngIf="invoices[0].transactions.length == 1">
           <span class="badge bg-success text-white">
             الدفع :
@@ -252,9 +262,11 @@
         </div>
       </div>
       <!-- Cash - visa -->
-      <div *ngIf="invoices && invoices.length > 0 && invoices[0]?.transactions?.length > 1">
+      <div
+        *ngIf="invoices && invoices.length > 0 && invoices[0]?.transactions?.length > 1">
         <div *ngFor="let inv of invoices[0]?.transactions">
-          <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
+          <div
+            class="d-flex justify-content-between align-items-center my-1 fw-bold"
             *ngIf="invoices[0]?.transactions[0]?.payment_status == 'paid'">
             <div>
               {{ inv.payment_method === "cash" ? " الكاش" : " الفيزا" }}
@@ -282,7 +294,8 @@
           item.coupon_value !== 0
         ">
         <h6>كوبون خصم
-          <span class="btn-static-secondary p-1 rounded">{{ invoices[0].invoice_summary.coupon_title
+          <span class="btn-static-secondary p-1 rounded">{{
+            invoices[0].invoice_summary.coupon_title
             }} </span>
         </h6>
         <h6>
@@ -295,7 +308,8 @@
           </span>
         </h6>
       </div>
-      <div class="d-flex justify-content-between px-2 mb-1" *ngIf="item.service_percentage">
+      <div class="d-flex justify-content-between px-2 mb-1"
+        *ngIf="item.service_percentage">
         <h6>
           رسوم الخدمة
           <span class="main-color">
@@ -307,7 +321,8 @@
         </h6>
       </div>
 
-      <div class="d-flex justify-content-between px-2 mb-1" *ngIf="item.delivery_fees">
+      <div class="d-flex justify-content-between px-2 mb-1"
+        *ngIf="item.delivery_fees">
         <h6>رسوم التوصيل</h6>
         <h6>
           <span>{{ item.delivery_fees }} {{ item.currency_symbol }}</span>
@@ -321,7 +336,8 @@
         <h6>
           تضاف ضريبة القيمة المضافة
           <span class="main-color"> بنسبة {{ item.tax_percentage }}% </span>
-          بمعنى اخر {{ item.tax_value | number:'1.2-2' }} {{ item.currency_symbol }}
+          بمعنى اخر {{ item.tax_value | number:'1.2-2' }} {{
+          item.currency_symbol }}
         </h6>
       </div>
       <div class="d-flex flex-column">
@@ -331,13 +347,13 @@
 
         <hr />
 
-
         <div class="d-flex justify-content-between px-2 mb-1">
           <h4 class="mb-0" style="font-weight: bold !important">
             المجموع الكلى
           </h4>
           <h6 class="fw-bold mb-0">
-            <span>{{ item.total_price | number:'1.2-2'}} {{ item.currency_symbol }}</span>
+            <span>{{ item.total_price | number:'1.2-2'}} {{ item.currency_symbol
+              }}</span>
           </h6>
         </div>
 
@@ -351,7 +367,8 @@
                 الدفع - {{ tip.payment_method === 'cash' ? 'كاش' : 'فيزا' }}
               </h5>
               <h6 class="fw-bold mb-0">
-                <span>{{ tip.payment_amount | number: '1.2-2' }} {{ item.currency_symbol || 'ج.م' }}</span>
+                <span>{{ tip.payment_amount | number: '1.2-2' }} {{
+                  item.currency_symbol || 'ج.م' }}</span>
               </h6>
             </div>
 
@@ -360,7 +377,8 @@
                 المبلغ الباقى للعميل
               </h5>
               <h6 class="fw-bold mb-0">
-                <span>{{ tip.returned_amount | number: '1.2-2' }} {{ item.currency_symbol || 'ج.م' }}</span>
+                <span>{{ tip.returned_amount | number: '1.2-2' }} {{
+                  item.currency_symbol || 'ج.م' }}</span>
               </h6>
             </div>
 
@@ -369,7 +387,8 @@
                 الاكرامية
               </h5>
               <h6 class="fw-bold mb-0">
-                <span>{{ tip.tip_amount | number: '1.2-2' }} {{ item.currency_symbol || 'ج.م' }}</span>
+                <span>{{ tip.tip_amount | number: '1.2-2' }} {{
+                  item.currency_symbol || 'ج.م' }}</span>
               </h6>
             </div>
             <div class="d-flex justify-content-between px-2 mb-1">
@@ -377,7 +396,8 @@
                 المجموع مع الاكرامية
               </h5>
               <h6 class="fw-bold mb-0">
-                <span>{{ tip.total_with_tip | number: '1.2-2' }} {{ item.currency_symbol || 'ج.م' }}</span>
+                <span>{{ tip.total_with_tip | number: '1.2-2' }} {{
+                  item.currency_symbol || 'ج.م' }}</span>
               </h6>
             </div>
           </div>
@@ -385,8 +405,6 @@
           <!-- dalia end -->
         </div>
         <!-- dalia end -->
-
-
 
         <div class="text-center mb-1">
           <h5>شكرا لك علي وقتك وثقتك بنا</h5>
@@ -400,7 +418,8 @@
     <div class="px-4 py-2 my-2" *ngFor="let item of branchDetails">
       <div class="text-center border-bottom-dotted mb-4">
         <div class="card-img">
-          <img src="assets/images/logo-with-white-bg.png" alt="مطعم الكوت" class="img-fluid" />
+          <img src="assets/images/logo-with-white-bg.png" alt="مطعم الكوت"
+            class="img-fluid" />
           @if (isFinal) {
           <p class="final mt-1">نهائي</p>
           }
@@ -461,7 +480,9 @@
           </h6>
           <h6>
             اسم الطيار:
-            <span>{{ invoices?.[0]?.delivery_name && invoices[0].delivery_name.trim() !== '' ? invoices[0].delivery_name
+            <span>{{ invoices?.[0]?.delivery_name &&
+              invoices[0].delivery_name.trim() !== '' ?
+              invoices[0].delivery_name
               :
               'لا يوجد' }}</span>
           </h6>
@@ -482,7 +503,8 @@
           <tr>
             <th scope="col">الصنف</th>
             <th scope="col">الكمية</th>
-            <th scope="col" *ngIf="test && (!showPrices || showPrices)">السعر</th>
+            <th scope="col"
+              *ngIf="test && (!showPrices || showPrices)">السعر</th>
             <th scope="col" *ngIf="test && (!showPrices || showPrices)">
               الاجمالي
             </th>
@@ -497,7 +519,8 @@
                 </div>
                 <div class="pe-2">{{ item.size }}</div>
                 <div class="pe-2" *ngFor="let addon of item.addons">
-                  <small class="text-muted fst-italic fw-semibold">- {{ addon.addon_name }}</small>
+                  <small class="text-muted fst-italic fw-semibold">- {{
+                    addon.addon_name }}</small>
                 </div>
 
               </div>
@@ -541,11 +564,13 @@
       </tbody>
     </table> -->
       <ng-container>
-        <div class="total-data border-bottom-dotted mb-3" *ngFor="let item of invoiceSummary">
+        <div class="total-data border-bottom-dotted mb-3"
+          *ngFor="let item of invoiceSummary">
           <div *ngIf="showPrices && test">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <h6 class="fw-bold">الاجمالي:</h6>
-              <span class="fw-bold">{{ item.subtotal_price_before_coupon }} {{ item.currency_symbol }}</span>
+              <span class="fw-bold">{{ item.subtotal_price_before_coupon }} {{
+                item.currency_symbol }}</span>
             </div>
             <div class="d-flex justify-content-between mb-1 fw-bold" *ngIf="
               item.tax_application !== 0 &&
@@ -553,12 +578,14 @@
               item.coupon_value !== 0
             ">
               <h6>تخفيض:
-                <span class="btn-static-secondary p-1 rounded">{{ invoices[0].invoice_summary.coupon_title
+                <span class="btn-static-secondary p-1 rounded">{{
+                  invoices[0].invoice_summary.coupon_title
                   }} </span>
               </h6>
               <span>-{{ item.coupon_value }} {{ item.currency_symbol }}</span>
             </div>
-            <div class="d-flex justify-content-between fw-bold mb-1" *ngIf="item.service_percentage">
+            <div class="d-flex justify-content-between fw-bold mb-1"
+              *ngIf="item.service_percentage">
               <h6>
                 رسوم الخدمة
                 <span class="main-color">
@@ -569,7 +596,8 @@
             </div>
           </div>
           <ng-container *ngIf="test && (!showPrices || showPrices)">
-            <div *ngIf="hasDeliveryOrDineIn()" class="d-flex justify-content-between fw-bold">
+            <div *ngIf="hasDeliveryOrDineIn()"
+              class="d-flex justify-content-between fw-bold">
               <h6>التوصيل:</h6>
               <span>{{ item.delivery_fees }} {{ item.currency_symbol }}</span>
             </div>
@@ -577,7 +605,8 @@
 
           <!-- Payment Method -->
           <ng-container *ngIf="test && (!showPrices || showPrices)">
-            <div class="d-flex justify-content-between align-items-center fw-bold py-2">
+            <div
+              class="d-flex justify-content-between align-items-center fw-bold py-2">
               <h6 class="mb-0">طريقة الدفع:</h6>
               <p class="mb-0">
                 {{
@@ -603,7 +632,8 @@
           <!-- Cash - visa -->
           <div *ngIf="invoices[0].transactions.length > 1">
             <div *ngFor="let inv of invoices[0].transactions">
-              <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
+              <div
+                class="d-flex justify-content-between align-items-center my-1 fw-bold"
                 *ngIf="invoices[0].transactions[0].payment_status == 'paid'">
                 <div>
                   {{ inv.payment_method === "cash" ? " الكاش" : " الفيزا" }}
@@ -624,7 +654,8 @@
             <div class="px-2 mb-1" *ngIf="!item.tax_application">
               <h6>
                 تضاف ضريبة القيمة المضافة
-                <span class="main-color">بنسبة {{ item.tax_percentage }}% </span>
+                <span class="main-color">بنسبة {{ item.tax_percentage }}%
+                </span>
                 بمعني اخر
                 {{ item.tax_value }} {{ item.currency_symbol }}
               </h6>
@@ -634,7 +665,8 @@
           <!-- Total price -->
           <ng-container *ngIf="test && (!showPrices || showPrices)">
             <div class="total-price my-2" *ngFor="let item of invoiceSummary">
-              <div class="d-flex justify-content-between align-items-center fw-bold">
+              <div
+                class="d-flex justify-content-between align-items-center fw-bold">
                 <h6 class="fw-bold">المجموع الكلي:</h6>
                 <span>{{ item.total_price }} {{ item.currency_symbol }}</span>
               </div>
@@ -643,7 +675,8 @@
 
           <!-- Payment Status -->
 
-          <div *ngIf="item.tax_application" class="include-tax d-flex justify-content-between fw-bold">
+          <div *ngIf="item.tax_application"
+            class="include-tax d-flex justify-content-between fw-bold">
             <small> سعر الوجبات يشتمل على ضريبة القيمة المضافة </small>
           </div>
         </div>
@@ -658,7 +691,8 @@
                 الدفع - {{ tip.payment_method === 'cash' ? 'كاش' : 'فيزا' }}
               </h5>
               <h6 class="fw-bold mb-0">
-                <span>{{ tip.payment_amount | number: '1.2-2' }} {{ item.currency_symbol || 'ج.م' }}</span>
+                <span>{{ tip.payment_amount | number: '1.2-2' }} {{
+                  item.currency_symbol || 'ج.م' }}</span>
               </h6>
             </div>
 
@@ -667,7 +701,8 @@
                 المبلغ الباقى للعميل
               </h5>
               <h6 class="fw-bold mb-0">
-                <span>{{ tip.returned_amount | number: '1.2-2' }} {{ item.currency_symbol || 'ج.م' }}</span>
+                <span>{{ tip.returned_amount | number: '1.2-2' }} {{
+                  item.currency_symbol || 'ج.م' }}</span>
               </h6>
             </div>
 
@@ -676,7 +711,8 @@
                 الاكرامية
               </h5>
               <h6 class="fw-bold mb-0">
-                <span>{{ tip.tip_amount | number: '1.2-2' }} {{ item.currency_symbol || 'ج.م' }}</span>
+                <span>{{ tip.tip_amount | number: '1.2-2' }} {{
+                  item.currency_symbol || 'ج.م' }}</span>
               </h6>
             </div>
             <div class="d-flex justify-content-between px-2 mb-1">
@@ -684,7 +720,8 @@
                 المجموع مع الاكرامية
               </h5>
               <h6 class="fw-bold mb-0">
-                <span>{{ tip.total_with_tip | number: '1.2-2' }} {{ item.currency_symbol || 'ج.م' }}</span>
+                <span>{{ tip.total_with_tip | number: '1.2-2' }} {{
+                  item.currency_symbol || 'ج.م' }}</span>
               </h6>
             </div>
           </div>
@@ -697,8 +734,10 @@
 
       <h6 class="text-center my-3">شكرا لثقتكم بخدمتنا</h6>
 
-      <div class="card-img-qr d-flex justify-content-center align-items-center mb-3">
-        <img src="assets/images/qrcode.png" alt="مطعم الكوت" class="img-fluid" />
+      <div
+        class="card-img-qr d-flex justify-content-center align-items-center mb-3">
+        <img src="assets/images/qrcode.png" alt="مطعم الكوت"
+          class="img-fluid" />
       </div>
 
       <div class="tax-num text-start">
@@ -711,5 +750,7 @@
       icon="pi pi-exclamation-triangle"
     ></p-confirmDialog> -->
 
-  <app-confirm-dialog #confirmPrintDialog (actionResult)="printInvoice($event)" [header]="'تأكيد'"
-    message='هل هذه الطباعة النهائية؟' [acceptLabel]="'نعم'" [rejectLabel]="'لا'"></app-confirm-dialog>
+  <app-confirm-dialog #confirmPrintDialog (actionResult)="printInvoice($event)"
+    [header]="'تأكيد'"
+    message='هل هذه الطباعة النهائية؟' [acceptLabel]="'نعم'"
+    [rejectLabel]="'لا'"></app-confirm-dialog>
