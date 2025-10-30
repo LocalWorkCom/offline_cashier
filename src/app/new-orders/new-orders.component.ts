@@ -709,7 +709,66 @@ async syncAllorders(): Promise<void> {
      );
      if (!dish) {
        console.warn('❌ Dish not found in this order');
+       this.removeLoading = false;
        return;
+     }
+
+     // 📴 Offline handling
+     if (!navigator.onLine) {
+       try {
+         // Remove item from local order
+         order.order_items = order.order_items.filter(
+           (d: any) => d.order_detail_id !== orderDetailId
+         );
+         order.order_details.order_items_count = order.order_items.length;
+
+         // Queue offline action
+         order.pendingActions = order.pendingActions || [];
+         order.pendingActions.push({
+           type: 'delete_order_item',
+           payload: {
+             order_id: order.order_details.order_id,
+             item_id: orderDetailId,
+             reason: 'cashier reason'
+           },
+           createdAt: new Date().toISOString()
+         });
+
+         // Recompute totals and save
+         this.recomputeOrderTotals(order);
+
+         if (!order.order_details || !order.order_details.order_id) {
+           console.error('Missing order_details.order_id - cannot save to IndexedDB');
+           this.errMsg = 'خطأ في بيانات الطلب';
+           this.removeLoading = false;
+           return;
+         }
+
+         this.dbService.saveOrder(order).then(() => {
+           console.log('✅ Order saved offline');
+         }).catch(err => {
+           console.error('❌ Failed to save offline:', err);
+           this.errMsg = 'تعذر حفظ البيانات محليًا';
+         });
+
+         // Close modal and show success
+         const modalElement = document.getElementById('deleteConfirmModal');
+         if (modalElement) {
+           const modalInstance = bootstrap.Modal.getInstance(modalElement) || new bootstrap.Modal(modalElement);
+           modalInstance.hide();
+         }
+
+         this.showMessageModal('تم حذف الطلب (وضع عدم الاتصال)', 'success');
+         this.removeLoading = false;
+
+         setTimeout(() => window.location.reload(), 500);
+         return;
+       } catch (e) {
+         this.removeLoading = false;
+         this.errMsg = 'تعذر حذف الطلب في وضع عدم الاتصال';
+         setTimeout(() => (this.errMsg = null), 3000);
+         return;
+       }
      }
 
      // 2️⃣ Build request body
@@ -718,7 +777,7 @@ async syncAllorders(): Promise<void> {
        items: [
          {
            item_id: orderDetailId, // API expects this
-           quantity: order.quantity ?? 1, // cancel this qty
+           quantity: dish.quantity ?? 1, // cancel this qty
          },
        ],
        type: 'partial',
@@ -945,7 +1004,21 @@ openOrderModal(order: any): void {
         });
 
         this.recomputeOrderTotals(order);
-        this.dbService.saveOrder(order);
+
+        // Ensure order_details.order_id exists for IndexedDB keyPath
+        if (!order.order_details || !order.order_details.order_id) {
+          console.error('Missing order_details.order_id - cannot save to IndexedDB');
+          this.isSubmitting = false;
+          this.cancelErrorMessage = 'خطأ في بيانات الطلب';
+          return;
+        }
+
+        this.dbService.saveOrder(order).then(() => {
+          console.log('✅ Order saved to IndexedDB successfully');
+        }).catch(err => {
+          console.error('❌ Failed to save order to IndexedDB:', err);
+          this.cancelErrorMessage = 'تعذر حفظ البيانات محليًا';
+        });
 
         this.isSubmitting = false;
         this.cancelSuccessMessage = isDeleteAction ? 'تم حذف العناصر محليًا (أوفلاين)' : 'تم تطبيق المرتجع محليًا (أوفلاين)';

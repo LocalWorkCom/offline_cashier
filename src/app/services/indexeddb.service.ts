@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { table } from 'console';
 
 @Injectable({
   providedIn: 'root'
@@ -870,14 +871,20 @@ export class IndexeddbService {
       let delivery_fees = 0;
 
       // 🟢 Get delivery fees from area if available
+
       if (formData) {
+    //  console.log("dd");
         const area = await this.getAreaById(Number(formData.area_id));
         delivery_fees = area ? parseFloat(area.delivery_fees) : 0;
       }
 
+
       return new Promise((resolve, reject) => {
+
         const tx = this.db.transaction(["orders", "pills"], "readwrite");
+
         const ordersStore = tx.objectStore("orders");
+
         const pillsStore = tx.objectStore("pills");
 
         // 🆔 Generate unique order ID
@@ -890,6 +897,7 @@ export class IndexeddbService {
             0
           ) ?? 0;
 
+
         // 🧾 Build order summary once and reuse it
         const buildOrderSummary = () => {
           const subtotal_price_before_coupon = orderData.type !="talabat" ? orderData.items.reduce(
@@ -898,7 +906,8 @@ export class IndexeddbService {
           ) : orderData.items.reduce(
             (sum: number, item: any) => sum + item.finalPrice ,
             0
-          )  ;
+          );
+
 
           const coupon_value = orderData.coupon_value || 0;
           const subtotal_price = subtotal_price_before_coupon - coupon_value;
@@ -943,6 +952,9 @@ export class IndexeddbService {
           };
         };
 
+
+
+
         const summary = buildOrderSummary();
         const currency_symbol = orderData.items[0]?.currency_symbol || "ج.م";
 
@@ -955,6 +967,8 @@ export class IndexeddbService {
           floor_name: "الطابق الأرضي"
         };
 
+
+
         // 🟢 Order object
         const orderWithMetadata: any = {
           formdata_delivery: formData,
@@ -963,8 +977,9 @@ export class IndexeddbService {
           edit_invoice:false,
 
           order_details: {
-            order_id: orderData.order_id,
-            table_id: orderData.table_number || null,
+            order_id: orderData.order_id ?? orderId, // ⚠️ REQUIRED for IndexedDB keyPath
+            order_number: orderId,
+            table_id: orderData.table_number || orderData.table_id || 1,
             order_type: orderData.type || "dine-in",
             hasCoupon: !!orderData.coupon_code,
             client_name: orderData.client_name || "",
@@ -972,9 +987,7 @@ export class IndexeddbService {
             status: "pending",
             order_items_count: count_item,
             cashier_machine_id: orderData.cashier_machine_id,
-            order_number: orderId,
             branch_id: orderData.branch_id || null,
-
             address_id: orderData.address_id || null,
             payment_method: orderData.payment_method || "cash",
             payment_status: orderData.payment_status || "unpaid",
@@ -1060,7 +1073,7 @@ export class IndexeddbService {
           savedAt: new Date().toISOString(),
           createdAt: new Date().toISOString(),
         };
-
+        console.log("orderWithMetadata",orderWithMetadata);
         // 🧾 Save to IndexedDB (orders)
         const orderRequest = ordersStore.put(orderWithMetadata);
 
