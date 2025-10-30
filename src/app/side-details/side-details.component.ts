@@ -509,15 +509,16 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
           const payload = {
-            order_id: order.order_id || null,
-            table_id: order.table_number || null,
+            isOnline : false,
+            order_id: order.order_id == order.order_number ? null : order.order_id,
+            // table_id: order.table_number || null,
             type: order.order_details.order_type,
             client_name: order.order_details.client_name || null,
             client_phone: order.order_details.client_phone || null,
             address_id: addressId || order.order_details.address_id,
             cashier_machine_id: order.order_details.cashier_machine_id || localStorage.getItem('cashier_machine_id'),
             branch_id: order.order_details.branch_id,
-            // table_id: order.order_details.table_id || null,
+            table_id: order.order_details.table_id || null,
             payment_method:  order.order_details.payment_method == "deferred" ? "credit" : order.order_details.payment_method,
             payment_status: order.order_details.payment_status,
             cash_amount: order.order_details.cash_amount,
@@ -2903,6 +2904,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
       console.log('Submitting order online:', orderData);
 
+    }
+    if(this.currentOrderData && this.isOnline == false)
+    {
+      console.log("ff");
+      const orderId = await this.dbService.savePendingOrder(orderData);
     }
 
     console.log("current order data");
