@@ -5002,5 +5002,75 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   isPaymentSufficient(billAmount: number): boolean {
     return this.getRemainingAmount(billAmount) <= 0;
   }
+  // دالة للتحقق من وجود معلومات التوصيل
+  hasDeliveryInfo(): boolean {
+    if (this.selectedOrderType !== 'Delivery') {
+      return true; // ليس طلب توصيل، لا داعي للتحقق
+    }
+    // ✅ في حالة عدم وجود اتصال، نعتبر المعلومات متوفرة
+    if (!this.isOnline) {
+      console.log('📴 Offline mode - delivery info considered available');
+      return true;
+    }
+    // التحقق من وجود البيانات الأساسية للتوصيل
+    const hasBasicInfo = this.clientName && this.address && this.addressPhone;
+    const hasFormData = this.FormDataDetails &&
+      this.FormDataDetails.client_name &&
+      this.FormDataDetails.address &&
+      this.FormDataDetails.address_phone;
 
+    return hasBasicInfo || hasFormData;
+  }
+
+  // دالة للتحقق من اكتمال معلومات العميل للتوصيل
+  isDeliveryInfoComplete(): boolean {
+    if (this.selectedOrderType !== 'Delivery') {
+      return true;
+    }
+
+    return this.hasDeliveryInfo();
+  }
+  // دالة للتحقق من صحة رقم الهاتف
+  isValidPhoneNumber(phone: string): boolean {
+    const phoneRegex = /^[0-9]{10,15}$/;
+    return phoneRegex.test(phone.replace(/\D/g, ''));
+  }
+
+  // دالة شاملة للتحقق من بيانات التوصيل
+  validateDeliveryInfo(): { isValid: boolean; message: string } {
+    if (this.selectedOrderType !== 'Delivery') {
+      return { isValid: true, message: '' };
+    }
+
+    // ✅ في حالة عدم وجود اتصال، لا نطلب معلومات التوصيل
+    if (!this.isOnline) {
+      console.log('📴 Offline mode - delivery info considered available');
+      return { isValid: true, message: '' };
+    }
+
+    // التحقق من وجود البيانات الأساسية للتوصيل
+    const hasBasicInfo = this.clientName && this.address && this.addressPhone;
+    const hasFormData = this.FormDataDetails &&
+      this.FormDataDetails.client_name &&
+      this.FormDataDetails.address &&
+      this.FormDataDetails.address_phone;
+
+    if (!hasBasicInfo && !hasFormData) {
+      return { isValid: false, message: 'يرجى إدخال معلومات التوصيل' };
+    }
+
+    if (!this.clientName || this.clientName.trim().length < 2) {
+      return { isValid: false, message: 'يرجى إدخال اسم العميل' };
+    }
+
+    if (!this.address || this.address.trim().length < 5) {
+      return { isValid: false, message: 'يرجى إدخال العنوان بالكامل' };
+    }
+
+    if (!this.addressPhone || !this.isValidPhoneNumber(this.addressPhone)) {
+      return { isValid: false, message: 'يرجى إدخال رقم هاتف صحيح' };
+    }
+
+    return { isValid: true, message: '' };
+  }
 }
