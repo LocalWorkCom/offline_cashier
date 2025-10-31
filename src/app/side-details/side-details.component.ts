@@ -543,7 +543,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
           const payload = {
-            isOnline : false,
+            isOnline: false,
             order_id: order.order_id == order.order_number ? null : order.order_id,
             // table_id: order.table_number || null,
             type: order.order_details.order_type,
@@ -553,7 +553,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
             cashier_machine_id: order.order_details.cashier_machine_id || localStorage.getItem('cashier_machine_id'),
             branch_id: order.order_details.branch_id,
             table_id: order.order_details.table_id || null,
-            payment_method:  order.order_details.payment_method == "deferred" ? "credit" : order.order_details.payment_method,
+            payment_method: order.order_details.payment_method == "deferred" ? "credit" : order.order_details.payment_method,
             payment_status: order.order_details.payment_status,
             cash_amount: order.order_details.cash_amount,
             credit_amount: order.order_details.credit_amount,
@@ -1403,171 +1403,144 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   //     })
   //   ).subscribe(() => this.isLoading = false);
   // }
-  applyCoupon() {
-
+  async applyCoupon() {
     const token = localStorage.getItem('authToken');
     if (!token) {
       this.errorMessage = 'يجب تسجيل الدخول لتطبيق الكوبون.';
       return;
     }
     if (!this.couponCode.trim()) {
-
       this.errorMessage = 'يرجى إدخال الكوبون.';
       return;
     }
+
+    // ✅ Track start time for minimum 1 second duration
+    const startTime = Date.now();
+    const minDuration = 1000; // 1 second
+
+    // Clear previous messages and show loading
     this.errorMessage = '';
     this.successMessage = '';
     this.isLoading = true;
-    // Prepare HTTP headers and API endpoint.
-    const headers = new HttpHeaders({
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    });
-    const branchId = localStorage.getItem('branch_id');
-    const apiUrl = `${baseUrl}api/coupons/check-coupon`;
-    // Ensure branchData exists; otherwise, default values.
-    const taxEnabled: boolean = this.branchData?.tax_application ?? false;
-    const couponOnTotalAfterTax: boolean =
-      this.branchData?.coupon_application ?? false;
-    const taxPercentage: number =
-      parseFloat(this.branchData?.tax_percentage) || 0;
-    let baseAmount = 0;
-    // Log settings for debugging
-    // console.log('Applying coupon with settings:', {
-    //   taxEnabled,
-    //   couponOnTotalAfterTax,
-    //   taxPercentage,
-    // });
+    this.cdr.markForCheck(); // Trigger change detection immediately
 
-    // CASE 1: Tax enabled and coupon applies before tax
-    if (taxEnabled && !couponOnTotalAfterTax) {
-      baseAmount = this.cartItems.reduce((total, item) => {
-        const priceBeforeTax =
-          this.getItemTotal(item) / (1 + taxPercentage / 100);
-        return total + priceBeforeTax;
-      }, 0);
-      // console.log("copon", baseAmount);
-    }
-    // CASE 2: Tax disabled but coupon applies after tax
-    else if (!taxEnabled && couponOnTotalAfterTax) {
-      // Using getTotal() plus getTax() ensures correct total with tax included.
-      baseAmount = this.getTotal() + this.getTax();
-      console.log(baseAmount, 'cashier3');
-    }
-    // CASE 3: Tax enabled and coupon applies after tax
-    else if (taxEnabled && couponOnTotalAfterTax) {
-      // Apply coupon on cart total calculated by getTotal()
-      baseAmount = this.getTotal();
-    }
-    // CASE 4: Tax disabled and coupon applies on cart total (default)
-    else {
-      baseAmount = this.getTotal();
-      // console.log(baseAmount, 'coupon');
-    }
-    // Log computed base amount for debugging.
-    // console.log('Computed baseAmount:', baseAmount);
-    // Validate computed baseAmount.
-    if (!baseAmount || isNaN(baseAmount)) {
-      this.errorMessage = 'فشل حساب إجمالي الطلب. تحقق من الأسعار والكميات.';
-      this.isLoading = false;
-      return;
-    }
+    try {
+      // ✅ Optimize: Cache branch data values
+      const taxEnabled: boolean = this.branchData?.tax_application ?? false;
+      const couponOnTotalAfterTax: boolean = this.branchData?.coupon_application ?? false;
+      const taxPercentage: number = parseFloat(this.branchData?.tax_percentage) || 0;
 
-    const requestData = {
-      code: this.couponCode,
-      amount: baseAmount,
-      branch_id: branchId,
-      dishes: this.cartItems.map(item => {
-        const dishData: any = {
+      // ✅ Optimize: Calculate baseAmount efficiently
+      let baseAmount = 0;
+      if (taxEnabled && !couponOnTotalAfterTax) {
+        baseAmount = this.cartItems.reduce((total, item) => {
+          const priceBeforeTax = this.getItemTotal(item) / (1 + taxPercentage / 100);
+          return total + priceBeforeTax;
+        }, 0);
+      } else if (!taxEnabled && couponOnTotalAfterTax) {
+        baseAmount = this.getTotal() + this.getTax();
+      } else {
+        baseAmount = this.getTotal();
+      }
+
+      // ✅ Validate baseAmount early
+      if (!baseAmount || isNaN(baseAmount)) {
+        this.errorMessage = 'فشل حساب إجمالي الطلب. تحقق من الأسعار والكميات.';
+        this.isLoading = false;
+        this.cdr.markForCheck();
+        return;
+      }
+
+      // ✅ Prepare request data efficiently
+      const branchId = localStorage.getItem('branch_id');
+      const requestData = {
+        code: this.couponCode.trim(),
+        amount: baseAmount,
+        branch_id: branchId,
+        dishes: this.cartItems.map(item => ({
           dish_id: item.dish.id,
-          quantity: item.quantity
-        };
+          quantity: item.quantity,
+          ...(item.selectedSize?.id && { size_id: item.selectedSize.id })
+        }))
+      };
 
-        if (item.selectedSize?.id) {
-          dishData.size_id = item.selectedSize.id;
+      // ✅ Make API call using firstValueFrom for better performance
+      const headers = new HttpHeaders({
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      });
+
+      const response: any = await firstValueFrom(
+        this.http.post(`${baseUrl}api/coupons/check-coupon`, requestData, { headers }).pipe(
+          catchError((error) => {
+            if (error.error?.errorData?.error) {
+              this.errorMessage = error.error.errorData.error;
+            } else {
+              this.errorMessage = 'حدث خطأ أثناء التحقق من الكوبون.';
+            }
+            return of(null);
+          })
+        )
+      );
+
+      // ✅ Handle response
+      if (response?.status) {
+        this.validCoupon = true;
+        this.appliedCoupon = response.data;
+        this.couponTitle = response.data.coupon_title;
+        this.discountAmount = response.data.total_discount;
+        this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount.toFixed(2)} ${response.data.currency_symbol} من الإجمالي.`;
+
+        // ✅ Batch localStorage operations
+        localStorage.setItem('appliedCoupon', JSON.stringify(response.data));
+        localStorage.setItem('discountAmount', this.discountAmount.toString());
+        localStorage.setItem('couponCode', this.couponCode);
+        localStorage.setItem('couponTitle', this.couponTitle);
+
+        this.updateTotalPrice();
+
+        // ✅ Close modal efficiently
+        const modalEl = document.getElementById('couponModal');
+        if (modalEl) {
+          const bsModal = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+          bsModal.hide();
+
+          // Clean up backdrop
+          const backdrops = document.querySelectorAll('.modal-backdrop');
+          backdrops.forEach((el) => el.remove());
+          document.body.classList.remove('modal-open');
+          document.body.style.removeProperty('padding-right');
         }
+      } else {
+        this.validCoupon = false;
+        this.removeCouponFromLocalStorage();
+        this.couponCode = '';
+        if (response?.errorData?.error) {
+          this.errorMessage = response.errorData.error;
+        }
+        this.getTax();
+      }
 
-        return dishData;
-      })
-    };
+      // ✅ Ensure minimum 1 second duration
+      const elapsedTime = Date.now() - startTime;
+      const remainingTime = Math.max(0, minDuration - elapsedTime);
 
-    this.http
-      .post(apiUrl, requestData, { headers })
-      .pipe(
-        tap((response: any) => {
-          if (response.status) {
-            this.validCoupon = true
-            this.appliedCoupon = response.data;
-            this.couponTitle = response.data.coupon_title
-            // if(response.data.value_type == "percentage" && response.data.coupon_value == "100.00"){
-            //   localStorage.setItem("delivery_fees" , "0")
-            //   this.deliveryFeesWithFullCoupon = 0
-            //   console.log(this.delivery_fees ,"88")
-            // }
-            // if (response.data.value_type === 'percentage') {
-            //   this.discountAmount =
-            //     (baseAmount * parseFloat(response.data.coupon_value)) / 100;
-            //   console.log(this.discountAmount, 'coupon');
-            // } else if (response.data.value_type === 'fixed') {
-            //   this.discountAmount = parseFloat(response.data.coupon_value);
-            //   console.log(this.discountAmount, 'fixed');
-            // }
-            // this.discountAmount = Math.min(this.discountAmount, baseAmount);
-            this.discountAmount = response.data.total_discount
-            this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount.toFixed(
-              2
-            )} ${response.data.currency_symbol} من الإجمالي.`;
+      if (remainingTime > 0) {
+        await new Promise(resolve => setTimeout(resolve, remainingTime));
+      }
 
-            localStorage.setItem(
-              'appliedCoupon',
-              JSON.stringify(response.data)
-            );
-            localStorage.setItem(
-              'discountAmount',
-              this.discountAmount.toString()
-            );
-
-            localStorage.setItem('couponCode', this.couponCode);
-            localStorage.setItem('couponTitle', this.couponTitle);
-
-            this.updateTotalPrice();
-
-            const modalEl = document.getElementById('couponModal');
-            if (modalEl) {
-              let bsModal = bootstrap.Modal.getInstance(modalEl);
-              if (!bsModal) {
-                bsModal = new bootstrap.Modal(modalEl);
-              }
-              bsModal.hide();
-
-              const backdrops = document.querySelectorAll('.modal-backdrop');
-              backdrops.forEach((el) => el.remove());
-
-              document.body.classList.remove('modal-open');
-              document.body.style.removeProperty('padding-right');
-            }
-          } else {
-
-            baseAmount = baseAmount
-            this.validCoupon = false;
-            this.removeCouponFromLocalStorage()
-            this.couponCode = null;
-            if (response.errorData?.error) {
-              this.errorMessage = response.errorData.error;
-            }
-
-            this.getTax();
-          }
-        }),
-        catchError((error) => {
-          if (error.error?.errorData?.error) {
-            this.errorMessage = error.error?.errorData.error;
-          }
-
-          return of(null);
-        })
-      )
-      .subscribe(() => (this.isLoading = false));
+    } catch (error: any) {
+      console.error('Error applying coupon:', error);
+      if (error?.error?.errorData?.error) {
+        this.errorMessage = error.error.errorData.error;
+      } else {
+        this.errorMessage = 'حدث خطأ أثناء التحقق من الكوبون.';
+      }
+    } finally {
+      // ✅ Always hide loader after minimum duration
+      this.isLoading = false;
+      this.cdr.markForCheck();
+    }
   }
   restoreCoupon() {
     const storedCoupon = localStorage.getItem('appliedCoupon');
@@ -2572,7 +2545,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
     // continued order from orders list
     let continuedOrderId: number | null = null;
-    let table_number : any;
+    let table_number: any;
     try {
       const currentOrderDataRaw = localStorage.getItem('currentOrderData');
       if (currentOrderDataRaw) {
@@ -2599,8 +2572,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       isOnline: navigator.onLine,
       orderId: this.finalOrderId || Date.now(),
       ...(continuedOrderId ? { order_id: continuedOrderId } : {}),
-      order_id : continuedOrderId ?? null,
-      table_number :table_number ?? null,
+      order_id: continuedOrderId ?? null,
+      table_number: table_number ?? null,
       type: this.selectedOrderType,
       branch_id: branchId,
       payment_method: this.selectedPaymentMethod ?? 'cash',
@@ -2998,8 +2971,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       console.log('Submitting order online:', orderData);
 
     }
-    if(this.currentOrderData && this.isOnline == false)
-    {
+    if (this.currentOrderData && this.isOnline == false) {
       console.log("ff");
       const orderId = await this.dbService.savePendingOrder(orderData);
     }
