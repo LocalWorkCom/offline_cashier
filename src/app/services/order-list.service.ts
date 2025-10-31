@@ -26,10 +26,6 @@ export class OrderListService {
 
     return this.http.get(`${this.apiUrl}/orders/list`, { headers });
   }
- 
- getOrdersListE(page: number = 1, perPage: number = 10) {
-  return this.http.get<any>(`${this.apiUrl}/orders/listE?page=${page}&per_page=${perPage}`);
-}
 //start dalia
    fetchAndSaveOrders(): Observable<any> {
     return new Observable(observer => {

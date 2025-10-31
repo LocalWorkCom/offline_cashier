@@ -25,9 +25,6 @@ import { ConfirmDialogComponent } from '../shared/ui/component/confirm-dialog/co
 import { finalize } from 'rxjs';
 import { ChangeDetectorRef } from '@angular/core';
 import { baseUrl } from '../environment';
-// start hanan
-import { IndexeddbService } from '../services/indexeddb.service';
-// end hanan
 
 @Component({
   selector: 'app-delivery-details',
@@ -67,9 +64,6 @@ export class DeliveryDetailsComponent implements OnInit {
   previousProperty: string | undefined;
   showWhatsappInput: boolean = true;
   useSameNumberForWhatsapp: boolean = true;
-  // start hanan
-  private formDataId: number | null = null;
-  // end hanan
 
   whatsappCountryCode: string = this.selectedWhatsappCountry.code;
   whatsappPhone: any;
@@ -96,9 +90,6 @@ export class DeliveryDetailsComponent implements OnInit {
     private location: Location,
     private http: HttpClient,
     private checkPhoneNum: PhoneCheckService,
-    // start hanan
-    private dbService: IndexeddbService,
-    // end hanan
     private cdr: ChangeDetectorRef
   ) {
     console.log(this.selectedCountry);
@@ -137,11 +128,7 @@ export class DeliveryDetailsComponent implements OnInit {
   }
   //
   ngOnInit() {
-
-    // start hanan
-    this.dbService.init();
-    // end hanan
-
+    
     if (this.selectedAddress) {
       this.userAddNewAddress = false;
     }
@@ -152,9 +139,6 @@ export class DeliveryDetailsComponent implements OnInit {
     });
     this.getAreas();
     this.getHotels();
-    // start hanan
-    this.loadFormDataFromIndexedDB();
-    // end hanan
     // this.form.valueChanges.subscribe((formValue) => {
     //   const noteValue = localStorage.getItem('notes') || '';
     //   const formDataWithNote = { ...formValue, notes: noteValue };
@@ -198,67 +182,6 @@ export class DeliveryDetailsComponent implements OnInit {
     this.cdr.detectChanges();
     this.listenToAddressChange()
   }
-
-
-  // start hanan
-  private loadFormDataFromIndexedDB() {
-    this.dbService.getFormData().then(formDataArray => {
-      if (formDataArray && formDataArray.length > 0) {
-        // Get the most recent form data
-        const latestFormData = formDataArray.reduce((latest, current) => {
-          return new Date(current.savedAt) > new Date(latest.savedAt) ? current : latest;
-        });
-
-        console.log('Loaded form data from IndexedDB:', latestFormData);
-
-        // Patch the form with the loaded data
-        this.form.patchValue(latestFormData);
-
-        // Restore other state if needed
-        if (latestFormData.selectedProperty) {
-          this.selectedProperty = latestFormData.selectedProperty;
-        }
-
-        if (latestFormData.selectedCountry) {
-          this.selectedCountry = latestFormData.selectedCountry;
-        }
-
-        if (latestFormData.selectedWhatsappCountry) {
-          this.selectedWhatsappCountry = latestFormData.selectedWhatsappCountry;
-        }
-
-        if (latestFormData.useSameNumberForWhatsapp !== undefined) {
-          this.useSameNumberForWhatsapp = latestFormData.useSameNumberForWhatsapp;
-        }
-
-        if (latestFormData.whatsappPhone) {
-          this.whatsappPhone = latestFormData.whatsappPhone;
-        }
-      }
-    }).catch(err => {
-      console.error('Error loading form data from IndexedDB:', err);
-    });
-  }
-
-  // New method to save form data to IndexedDB
-  private saveFormDataToIndexedDB() {
-    const formData = {
-      ...this.form.value,
-      selectedProperty: this.selectedProperty,
-      selectedCountry: this.selectedCountry,
-      selectedWhatsappCountry: this.selectedWhatsappCountry,
-      useSameNumberForWhatsapp: this.useSameNumberForWhatsapp,
-      whatsappPhone: this.whatsappPhone
-    };
-
-    this.dbService.saveFormData(formData).then(id => {
-      this.formDataId = id;
-      console.log('Form data saved to IndexedDB with ID:', id);
-    }).catch(err => {
-      console.error('Error saving form data to IndexedDB', err);
-    });
-  }
-  // end hanan
   listenPhoneNumberChange() {
     const addressId = localStorage.getItem('address_id');
     this.addressPhone?.valueChanges.subscribe((value) => {
@@ -475,9 +398,9 @@ export class DeliveryDetailsComponent implements OnInit {
     this.form
       .get('whatsapp_number_code')
       ?.setValue(this.countryCode?.value || this.selectedWhatsappCountry);
-
-
-    this.form.get('country_code')?.valueChanges.subscribe((value) => {
+ 
+ 
+    this.form.get('country_code')?.valueChanges.subscribe((value) => { 
       this.selectedCountry = value;
       const phoneControl = this.form.get('address_phone');
       if (phoneControl) {
@@ -495,11 +418,11 @@ export class DeliveryDetailsComponent implements OnInit {
       //   ]);
       // }
     });
-
+ 
     this.form.get('whatsapp_number')?.valueChanges.subscribe((value) => {
-      const codeControl = this.form.get('whatsapp_number_code');
-
-      if (value && value.trim() !== '') {
+      const codeControl = this.form.get('whatsapp_number_code');  
+       
+      if (value && value.trim() !== '') { 
         codeControl?.setValidators([Validators.required]);
       } else {
         codeControl?.clearValidators();
@@ -721,7 +644,7 @@ export class DeliveryDetailsComponent implements OnInit {
   //   });
   // }
   onSubmit(): void {
-    if (this.useSameNumberForWhatsapp) {
+ if (this.useSameNumberForWhatsapp) {
       this.form
         .get('whatsapp_number')
         ?.setValue(this.form.get('address_phone')?.value || '');
@@ -798,15 +721,6 @@ export class DeliveryDetailsComponent implements OnInit {
     console.log('✅ Saving to localStorage:', formDataWithNote);
     localStorage.setItem('form_data', JSON.stringify(formDataWithNote));
     localStorage.setItem('notes', noteValue);
-
-    // start hanan
-    // SAVE TO INDEXEDDB ON SUBMIT
-    this.dbService.saveFormData(formDataWithNote).then(id => {
-      console.log('✅ Form data saved to IndexedDB with ID:', id);
-    }).catch(err => {
-      console.error('❌ Error saving form data to IndexedDB:', err);
-    });
-    // end hanan
 
     // localStorage.setItem('address_id', 'DUMMY_ID');
     const selectedAreaId = this.form.get('area_id')?.value;
@@ -899,53 +813,21 @@ export class DeliveryDetailsComponent implements OnInit {
       console.error('branch_id not found in localStorage');
       return;
     }
-    // start hanan
-    // First try to dbServiceget areas from IndexedDB
-    this.dbService.getAll('areas').then(areas => {
-      if (areas && areas.length > 0) {
-        this.areas = areas;
-        this.allAreas = areas;
-        console.log('Areas loaded from IndexedDB', this.areas);
-      }
+    const url = `${baseUrl}api/areas/${branchId}`;
 
-      // Then try to get from API
-      const url = `${baseUrl}api/areas/${branchId}`;
-      this.http.get<any>(url).subscribe({
-        next: (res: { status: any; data: any }) => {
-          if (res.status && res.data) {
-            this.areas = res.data;
-            this.allAreas = res.data;
-
-            // Save to IndexedDB
-            this.dbService.saveData('areas', res.data);
-
-
-            console.log('Areas loaded from API and saved to IndexedDB', this.areas);
-          }
-        },
-        error: (err) => {
-          console.error('Error loading areas from API, using cached data:', err);
-        },
-      });
-    }).catch(err => {
-      console.error('Error loading areas from IndexedDB:', err);
-
-      // Fallback to API if IndexedDB fails
-      const url = `${baseUrl}api/areas/${branchId}`;
-      this.http.get<any>(url).subscribe({
-        next: (res: { status: any; data: any }) => {
-          if (res.status && res.data) {
-            this.areas = res.data;
-            this.allAreas = res.data;
-            console.log('Areas loaded from API (fallback)', this.areas);
-          }
-        },
-        error: (err) => {
-          console.error('Error loading areas from API (fallback):', err);
-        },
-      });
+    this.http.get<any>(url).subscribe({
+      next: (res: { status: any; data: any }) => {
+        if (res.status && res.data) {
+          this.areas = res.data;
+          this.allAreas = res.data;
+          this.areas = [...this.allAreas];
+        }
+        console.log(this.areas, 'areas');
+      },
+      error: (err) => {
+        console.error('خطأ في تحميل المناطق:', err);
+      },
     });
-    // end hanan
   }
   propertyLabels: any = {
     apartment: {
@@ -1002,68 +884,20 @@ export class DeliveryDetailsComponent implements OnInit {
     return null;
   }
   hotels: any;
-  // getHotels() {
-  //   return this.formDataService.getHotelsData().subscribe({
-  //     next: (res: any) => {
-  //       console.log(res.data);
-  //       this.hotels = res.data;
+  getHotels() {
+    return this.formDataService.getHotelsData().subscribe({
+      next: (res: any) => {
+        console.log(res.data);
+        this.hotels = res.data;
 
-  //       this.allHotels = res.data;
-  //       this.hotels = [...this.allHotels];
-  //     },
-  //     error: (err) => {
-  //       console.log(err);
-  //     },
-  //   });
-  // }
-
-  // start hanan
-getHotels() {
-    // First try to get hotels from IndexedDB
-    this.dbService.getAll('hotels').then(hotels => {
-      if (hotels && hotels.length > 0) {
-        this.hotels = hotels;
-        this.allHotels = hotels;
-        console.log('Hotels loaded from IndexedDB', this.hotels);
-      }
-
-      // Then try to get from API
-      this.formDataService.getHotelsData().subscribe({
-        next: (res: any) => {
-          if (res.data) {
-            this.hotels = res.data;
-            this.allHotels = res.data;
-
-            // Save to IndexedDB
-            this.dbService.saveData('hotels', res.data);
-            // this.dbService.lastSync('hotels');
-
-            console.log('Hotels loaded from API and saved to IndexedDB', this.hotels);
-          }
-        },
-        error: (err) => {
-          console.error('Error loading hotels from API, using cached data:', err);
-        },
-      });
-    }).catch(err => {
-      console.error('Error loading hotels from IndexedDB:', err);
-
-      // Fallback to API if IndexedDB fails
-      this.formDataService.getHotelsData().subscribe({
-        next: (res: any) => {
-          if (res.data) {
-            this.hotels = res.data;
-            this.allHotels = res.data;
-            console.log('Hotels loaded from API (fallback)', this.hotels);
-          }
-        },
-        error: (err) => {
-          console.log('Error loading hotels from API (fallback):', err);
-        },
-      });
+        this.allHotels = res.data;
+        this.hotels = [...this.allHotels];
+      },
+      error: (err) => {
+        console.log(err);
+      },
     });
   }
-// end hanan
   selectedHotel: any;
   onHotelChange(hotel: any) {
     this.selectedHotel = hotel;
@@ -1126,15 +960,15 @@ getHotels() {
             if (res.status == true) {
               if (typeof res.data === 'object' && res.data !== null) {
                 // this.allUserAddress = {...res.data,country_code:{code:res.data.country_code,flag:res.data['country_flag']||null}};
-
-                this.clientName?.setValue(res.data[0].user_name)
+                
+                    this.clientName?.setValue(res.data[0].user_name)
                 this.allUserAddress = res.data.map((item: any) => ({
                   ...item,
                   country_code: {
                     code: item?.country_code ?? null,
                     flag: item?.country_flag ?? null,
                   },
-                }));// fatma: must ask BE to return country_code as object of flag,code not code only
+                }));// fatma: must ask BE to return country_code as object of flag,code not code only 
 
                 this.userStoredAddress = res.data.map((address: any) => {
                   this.userId = address.user_id;
@@ -1146,13 +980,13 @@ getHotels() {
                       address.delivery_fees
                     );
                   }
-                  return {
-                    id: address.id,
-                    name: address.address_type + ' , ' + (address.hotels.length > 0 ? address.hotels[0].name : address.address),
-                    delivery_fees: address.delivery_fees,
-                    client_name: address.user_name
-                    // name: address.address,
-                  };
+                 return {
+    id: address.id,
+    name: address.address_type + ' , ' + (address.hotels.length > 0 ? address.hotels[0].name : address.address),
+    delivery_fees: address.delivery_fees,
+    client_name: address.user_name
+    // name: address.address,
+};
                 });
                 this.confirmationDialog.confirm();
               } else {
@@ -1193,8 +1027,8 @@ getHotels() {
       const formData = {
         ...storedAddressData,
         client_name: this.clientName?.value || storedAddressData.user_name,
-        whatsapp_number: this.whatsappPhone, // hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-        whatsapp_number_code: this.form.get('whatsapp_number_code')?.value,
+      whatsapp_number: this.whatsappPhone, // hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+      whatsapp_number_code: this.form.get('whatsapp_number_code')?.value, 
       };
 
       localStorage.setItem('form_data', JSON.stringify(formData));
@@ -1252,29 +1086,29 @@ getHotels() {
   //     this.whatsappPhone = this.whatsappPhone;
   //   }
   // }
-  get whatsappNumberCode() {
+   get whatsappNumberCode() {
     return this.form.get('whatsapp_number_code');
   }
-  listenToChangeWhatsappCountry() {
-    this.whatsappNumberCode?.valueChanges.subscribe((value) => {
-      const whatsappNumControl = this.form.get('whatsapp_number');
-      if (value) {
-        this.selectedWhatsappCountry = value;
-        whatsappNumControl?.setValidators([Validators.required, Validators.pattern(
-          new RegExp(`^\\d{${this.whatsappNumberCode?.value?.phoneLength}}$`)
-        )]);
+  listenToChangeWhatsappCountry(){
+ this.whatsappNumberCode?.valueChanges.subscribe((value) => {
+      const whatsappNumControl = this.form.get('whatsapp_number');  
+      if (value) { 
+        this.selectedWhatsappCountry=value;
+        whatsappNumControl?.setValidators([Validators.required,Validators.pattern(
+            new RegExp(`^\\d{${this.whatsappNumberCode?.value?.phoneLength}}$`)
+          )]); 
       } else {
-        whatsappNumControl?.clearValidators();
-      }
+        whatsappNumControl?.clearValidators(); 
+      }  
     });
   }
-  listenToAddressChange() {
-    this.selectedAddressControl.valueChanges
-      .subscribe(arg => {
-        this.clientName?.setValue(arg.client_name)
-
-      });
-  }
+ listenToAddressChange() {
+  this.selectedAddressControl.valueChanges
+    .subscribe(arg => {
+      this.clientName?.setValue(arg.client_name)
+      
+    });
+}
 
 }
 // aml

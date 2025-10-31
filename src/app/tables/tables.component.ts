@@ -22,7 +22,8 @@ export class TablesComponent implements OnInit, OnDestroy {
   tables: any[] = [];
   tabless: any[] = [];
   tablesByStatus: { status: number; label: string; tables: any[] }[] = [];
-  filteredTablesByStatus: { status: number; label: string; tables: any[] }[] = [];
+  filteredTablesByStatus: { status: number; label: string; tables: any[] }[] =
+    [];
   selectedStatus: number = -1;
   clickedTableId: number | null = null;
   searchText: string = '';
@@ -41,7 +42,14 @@ export class TablesComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
-    this.fetchTablesData(); 
+
+     this.setupOnlineStatusMonitoring();
+    this.initDatabase().then(() => {
+      this.fetchTablesData();
+      this.loadSelectedTable();
+    });
+
+    // this.fetchTablesData();
     this.loadClickedTable();
     this.listenToNewTable();
     this.listenOnTableChangeStatus();
@@ -107,103 +115,52 @@ export class TablesComponent implements OnInit, OnDestroy {
     }
   }
   /** Fetch tables from API */
-  // private fetchFromAPI(): void {
-  //   this.tablesRequestService.getTables().pipe(
-  //     finalize(() => {
-  //       this.loading = true;
-  //     })
-  //   ).subscribe({
-  //     next: (response) => {
-  //       if (response.status) {
-  //         this.tables = response.data.map((table: any) => ({
-  //           ...table,
-  //           status: Number(table.status),
-  //         }));
-
-  //         this.updateTableData();
-  //         this.saveTablesToIndexedDB();
-  //       }
-  //     },
-  //     error: (err) => {
-  //       console.error('Error fetching tables from API:', err);
-  //       this.offlineMode = true;
-  //       this.loadFromIndexedDB();
-  //     },
-  //   });
-  // }
   private fetchFromAPI(): void {
-  this.tablesRequestService.getTables().pipe(
-    finalize(() => {
-      this.loading = true; // stop loading
-    })
-  ).subscribe({
-    next: (response) => {
-      if (response.status) {
-        this.tables = response.data.map((table: any) => ({
-          ...table,
-          status: Number(table.status),
-        }));
+    this.tablesRequestService.getTables().pipe(
+      finalize(() => {
+        this.loading = true;
+      })
+    ).subscribe({
+      next: (response) => {
+        if (response.status) {
+          this.tables = response.data.map((table: any) => ({
+            ...table,
+            status: Number(table.status),
+          }));
 
-        this.tabless = [...this.tables]; // ✅ keep tabless updated
-
-        this.updateTableData();
-        this.saveTablesToIndexedDB();
-      }
-    },
-    error: (err) => {
-      console.error('Error fetching tables from API:', err);
-      this.offlineMode = true;
-      this.loadFromIndexedDB();
-    },
-  });
-}
-  /** Load tables from IndexedDB */
-  // private async loadFromIndexedDB(): Promise<void> {
-  //   try {
-  //     const offlineTables = await this.dbService.getAll('tables');
-
-  //     if (offlineTables && offlineTables.length) {
-  //       this.tables = offlineTables;
-  //       this.updateTableData();
-  //       console.log('Tables loaded from IndexedDB');
-  //     } else {
-  //       console.warn('No tables found in IndexedDB');
-  //       this.tables = [];
-  //       this.updateTableData();
-  //     }
-  //   } catch (error) {
-  //     console.error('Error loading tables from IndexedDB:', error);
-  //     this.tables = [];
-  //     this.updateTableData();
-  //   } finally {
-  //     this.loading = true;
-  //   }
-  // }
-  private async loadFromIndexedDB(): Promise<void> {
-  try {
-    const offlineTables = await this.dbService.getAll('tables');
-
-    if (offlineTables && offlineTables.length) {
-      this.tables = offlineTables;
-      this.tabless = [...this.tables]; // ✅
-      this.updateTableData();
-      console.log('Tables loaded from IndexedDB');
-    } else {
-      console.warn('No tables found in IndexedDB');
-      this.tables = [];
-      this.tabless = [];
-      this.updateTableData();
-    }
-  } catch (error) {
-    console.error('Error loading tables from IndexedDB:', error);
-    this.tables = [];
-    this.tabless = [];
-    this.updateTableData();
-  } finally {
-    this.loading = true; // ✅ stop loading here too
+          this.updateTableData();
+          this.saveTablesToIndexedDB();
+        }
+      },
+      error: (err) => {
+        console.error('Error fetching tables from API:', err);
+        this.offlineMode = true;
+        this.loadFromIndexedDB();
+      },
+    });
   }
-}
+  /** Load tables from IndexedDB */
+  private async loadFromIndexedDB(): Promise<void> {
+    try {
+      const offlineTables = await this.dbService.getAll('tables');
 
+      if (offlineTables && offlineTables.length) {
+        this.tables = offlineTables;
+        this.updateTableData();
+        console.log('Tables loaded from IndexedDB');
+      } else {
+        console.warn('No tables found in IndexedDB');
+        this.tables = [];
+        this.updateTableData();
+      }
+    } catch (error) {
+      console.error('Error loading tables from IndexedDB:', error);
+      this.tables = [];
+      this.updateTableData();
+    } finally {
+      this.loading = true;
+    }
+  }
   /** Save tables to IndexedDB */
   private async saveTablesToIndexedDB(): Promise<void> {
     try {
@@ -445,13 +402,11 @@ export class TablesComponent implements OnInit, OnDestroy {
       localStorage.removeItem('cameFromSideDetails');
     }
   } else {
-     this.router.navigate(['/home']);
     // 🚫 Offline → update IndexedDB status
-    // this.updateTableStatusOffline(selectedTable, 2); // mark as busy
+    this.updateTableStatusOffline(selectedTable, 2); // mark as busy
   }
 }
-// dalia
-// comment because  i am not need now this function update status of table at run time
+
 /** Update table status in IndexedDB when offline */
 private async updateTableStatusOffline(table: any, newStatus: number): Promise<void> {
   try {
@@ -462,9 +417,7 @@ private async updateTableStatusOffline(table: any, newStatus: number): Promise<v
       this.tables[index] = { ...table };
     }
     // Save to IndexedDB
-    // await this.dbService.saveData('tables', this.tables);
-    // ✅ Update only this table in IndexedDB (مش الكل)
-    // await this.dbService.updateTableStatus(table.id, newStatus);
+    await this.dbService.saveData('tables', this.tables);
     // Recompute lists & UI
     this.updateTableStatusLists();
     this.cdr.markForCheck();
