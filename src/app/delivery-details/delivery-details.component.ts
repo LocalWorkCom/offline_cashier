@@ -705,10 +705,19 @@ export class DeliveryDetailsComponent implements OnInit {
 
   // Update the existing selectPropertyType function
   selectPropertyType(property: PropertyType) {
+    console.log('🏨 اختيار نوع العقار:', property);
+
     this.selectedProperty = property;
     this.form.get('address_type')?.setValue(property);
-    this.clearPropertyValidators(); // Clear old validators first
 
+    // ✅ تحميل الفنادق فوراً عند اختيار نوع الفندق
+    if (property === 'hotel') {
+      this.ensureHotelsLoaded();
+    }
+
+    this.clearPropertyValidators();
+
+    // ✅ تحديث الـ validators بناءً على نوع العقار
     const addressControl = this.form.get('address');
     const buildingControl = this.form.get('building');
     const apartmentNumberControl = this.form.get('apartment_number');
@@ -716,7 +725,6 @@ export class DeliveryDetailsComponent implements OnInit {
 
     switch (property) {
       case 'apartment':
-        // Required fields for 'apartment': building, apartment_number, floor_number, address
         buildingControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
         apartmentNumberControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
         floorNumberControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
@@ -724,14 +732,12 @@ export class DeliveryDetailsComponent implements OnInit {
         break;
 
       case 'villa':
-        // Required fields for 'villa': building (villa name), apartment_number (villa number), address
         buildingControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
         apartmentNumberControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
         addressControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
         break;
 
       case 'office':
-        // Required fields for 'office': building (office name), apartment_number (office number), floor_number, address
         buildingControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
         apartmentNumberControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
         floorNumberControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
@@ -739,26 +745,24 @@ export class DeliveryDetailsComponent implements OnInit {
         break;
 
       case 'hotel':
-        // Required fields for 'hotel': address (hotel selection is handled separately by selectedHotel)
-        // The address field is still required for the street address (assuming hotel selection doesn't fill the full address)
-        // If hotel selection is enough, you can clear this.
+        // ✅ للفندق، نزيل الـ required من الحقول الأخرى
+        buildingControl?.clearValidators();
+        apartmentNumberControl?.clearValidators();
+        floorNumberControl?.clearValidators();
+
+        // ✅ العنوان يكون مطلوباً
         addressControl?.setValidators([Validators.required, Validators.pattern(/^(?!\s+$).+/)]);
-        // Note: Hotel selection logic (`selectedHotel`) usually needs to be checked in `onSubmit` too.
         break;
 
       default:
-        // Clear validators if no property is selected (shouldn't happen here)
         this.clearPropertyValidators();
         break;
     }
 
-    // Manually trigger validation on updated controls
     buildingControl?.updateValueAndValidity();
     apartmentNumberControl?.updateValueAndValidity();
     floorNumberControl?.updateValueAndValidity();
     addressControl?.updateValueAndValidity();
-
-    // The 'area_id' is required for all new addresses, so its validators remain
   }
   // Add a function to clear all property-specific validators
   private clearPropertyValidators() {
@@ -881,6 +885,27 @@ export class DeliveryDetailsComponent implements OnInit {
   onSubmit(): void {
     this.submitted = true;
     // ✅ Skip validation for hotel-specific fields when in hotel tab
+    // ✅ تحقق خاص من الفندق
+    if (this.selectedProperty === 'hotel') {
+      if (!this.selectedHotel) {
+        console.error('❌ يجب اختيار فندق قبل الإرسال');
+        this.form.get('address')?.setErrors({ hotelRequired: true });
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        return;
+      } else {
+        console.log('✅ فندق مختار:', this.selectedHotel.name);
+
+        // ✅ استخدام اسم الفندق إذا كان العنوان غير متوفر
+        const hotelAddress = this.selectedHotel.address || this.selectedHotel.name;
+
+        // ✅ تعيين بيانات الفندق في الفورم
+        this.form.patchValue({
+          hotel_id: this.selectedHotel.id,
+          address: hotelAddress,
+        });
+        console.log('📍 العنوان النهائي:', hotelAddress);
+      }
+    }
     if (this.selectedProperty !== 'hotel') {
       this.form.get('building')?.updateValueAndValidity();
       this.form.get('apartment_number')?.updateValueAndValidity();
@@ -942,18 +967,18 @@ export class DeliveryDetailsComponent implements OnInit {
         }
       });
 
-      if (this.selectedProperty === 'hotel') {
-        console.log('Selected Hotel:', this.selectedHotel);
-        localStorage.setItem('hotel_id', this.selectedHotel?.id);
-        this.form.patchValue({
-          hotel_id: this.selectedHotel?.id,
-          address: this.selectedHotel?.address,
-        });
-      } else {
-        if (this.form.get('hotel_id')) {
-          this.form.removeControl('hotel_id');
-        }
-      }
+      // if (this.selectedProperty === 'hotel') {
+      //   console.log('Selected Hotel:', this.selectedHotel);
+      //   localStorage.setItem('hotel_id', this.selectedHotel?.id);
+      //   this.form.patchValue({
+      //     hotel_id: this.selectedHotel?.id,
+      //     address: this.selectedHotel?.address,
+      //   });
+      // } else {
+      //   if (this.form.get('hotel_id')) {
+      //     this.form.removeControl('hotel_id');
+      //   }
+      // }
 
       window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
@@ -963,9 +988,10 @@ export class DeliveryDetailsComponent implements OnInit {
     const noteValue = this.form.get('notes')?.value;
 
     if (this.selectedProperty === 'hotel') {
+      const hotelAddress = this.selectedHotel.address || this.selectedHotel.name;
       this.form.patchValue({
-        hotel_id: this.selectedHotel?.id,
-        address: this.selectedHotel?.address,
+        hotel_id: this.selectedHotel.id,
+        address: hotelAddress,
       });
     } else {
       if (this.form.get('hotel_id')) {
@@ -984,7 +1010,18 @@ export class DeliveryDetailsComponent implements OnInit {
 
     console.log('✅ Final data to be saved:', finalFormData);
     console.log('✅ country_code value:', finalFormData.country_code);
-
+    // ✅ أضف هنا - قبل الإرسال مباشرة
+    console.log('📤 البيانات المرسلة للـ Backend:', {
+      hotel_id: this.selectedHotel?.id,
+      address: this.form.get('address')?.value,
+      address_type: this.selectedProperty,
+      country_code: this.form.get('country_code')?.value?.code,
+      area_id: this.form.get('area_id')?.value,
+      client_name: this.form.get('client_name')?.value,
+      address_phone: this.form.get('address_phone')?.value,
+      whatsapp_number: this.form.get('whatsapp_number')?.value,
+      whatsapp_number_code: this.form.get('whatsapp_number_code')?.value?.code
+    });
     // ✅ إرسال للـ Backend
     this.formDataService.submitForm(finalFormData).subscribe({
       next: (response) => {
@@ -995,7 +1032,11 @@ export class DeliveryDetailsComponent implements OnInit {
           localStorage.setItem('form_data', JSON.stringify(finalFormData));
           localStorage.setItem('address_id', response.data.address_id);
           localStorage.setItem('notes', noteValue);
-
+          // ✅ حفظ اسم الفندق إذا كان نوع العنوان فندق
+          if (this.selectedProperty === 'hotel' && this.selectedHotel?.name) {
+            localStorage.setItem('hotel_name', this.selectedHotel.name);
+            localStorage.setItem('hotel_id', this.selectedHotel.id);
+          }
           // ✅ حفظ في IndexedDB
           this.dbService.saveFormData(finalFormData).then(id => {
             console.log('✅ Form data saved to IndexedDB with ID:', id);
@@ -1027,7 +1068,14 @@ export class DeliveryDetailsComponent implements OnInit {
       }
     });
   }
-
+  ensureHotelsLoaded(): void {
+    if (!this.hotels || this.hotels.length === 0) {
+      console.log('📡 تحميل قائمة الفنادق...');
+      this.getHotels();
+    } else {
+      console.log('✅ الفنادق محملة مسبقاً:', this.hotels.length);
+    }
+  }
   // دالة للتحقق من اكتمال جميع البيانات المطلوبة
   validateFormBeforeSubmit(): boolean {
     const requiredFields = [
@@ -1301,22 +1349,33 @@ export class DeliveryDetailsComponent implements OnInit {
   selectedHotel: any;
   onHotelChange(hotel: any) {
     this.selectedHotel = hotel;
-    console.log(hotel, 'lllllll');
+    console.log('🏨 تم اختيار الفندق:', hotel);
     localStorage.setItem('selectedHotel', JSON.stringify(this.selectedHotel));
+
     const addressControl = this.form.get('address');
 
     if (hotel === 'another') {
-      // المستخدم هيكتب العنوان بنفسه → مطلوب
+      // المستخدم سيكتب العنوان بنفسه → مطلوب
       addressControl?.setValidators([
         Validators.required,
         this.noOnlySpacesValidator(),
       ]);
       addressControl?.setValue('');
     } else {
-      addressControl?.setValue(hotel.address);
+      // ✅ استخدام اسم الفندق إذا كان العنوان غير متوفر
+      const hotelAddress = hotel.address || hotel.name;
+      addressControl?.setValue(hotelAddress);
+      console.log('📍 العنوان المعين:', hotelAddress);
     }
 
+    // ✅ تعيين hotel_id دائماً
+    this.form.get('hotel_id')?.setValue(hotel.id);
+
     addressControl?.updateValueAndValidity();
+
+    // ✅ إغلاق القائمة المنسدلة وإعادة تعيين البحث
+    this.form.get('searchTermhotel')?.setValue('');
+    this.hotels = [...this.allHotels];
   }
 
   allHotels: any[] = [];

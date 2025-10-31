@@ -110,7 +110,7 @@ export class PillDetailsComponent implements OnInit {
 
       }
     });
-    
+
     this.fetchTrackingStatus();
     // this.getNoteFromLocalStorage();
     this.cashier_machine_id = Number(
@@ -131,12 +131,12 @@ export class PillDetailsComponent implements OnInit {
       console.log('No data found in localStorage.');
     }
   }
-// أضف دالة للتأكد من البيانات
-private checkAddressData(): void {
-  console.log('🔍 Address Details:', this.addresDetails);
-  console.log('🔍 Invoices:', this.invoices);
-  console.log('🔍 First Invoice Address:', this.invoices?.[0]?.address_details);
-}
+  // أضف دالة للتأكد من البيانات
+  private checkAddressData(): void {
+    console.log('🔍 Address Details:', this.addresDetails);
+    console.log('🔍 Invoices:', this.invoices);
+    console.log('🔍 First Invoice Address:', this.invoices?.[0]?.address_details);
+  }
   //   ngOnInit() {
   //   // Initialize DB first
   //    this.dbService.init();
@@ -487,19 +487,18 @@ private checkAddressData(): void {
     ).subscribe({
       next: (response: any) => {
         console.log('📦 Full Address Details:', response.data.invoices[0]?.address_details);
-      console.log('🔍 All keys in address_details:', Object.keys(response.data.invoices[0]?.address_details || {}));
-      
-      this.addresDetails = this.invoices[0]?.address_details || {};
-      
-      // اطبع كل القيم
-      Object.keys(this.addresDetails).forEach(key => {
-        console.log(`📍 ${key}:`, this.addresDetails[key]);
-      });
+        console.log('🔍 All keys in address_details:', Object.keys(response.data.invoices[0]?.address_details || {}));
+
+
+        // // اطبع كل القيم
+        // Object.keys(this.addresDetails).forEach(key => {
+        //   console.log(`📍 ${key}:`, this.addresDetails[key]);
+        // });
         this.order_id = response.data.order_id
         this.invoices = response.data.invoices;
         this.invoiceTips = response.data.invoice_tips || [];
         console.log(response, 'response gggg');
-
+        this.addresDetails = this.invoices[0]?.address_details || {};
 
         const statusMap: { [key: string]: string } = {
           completed: 'مكتمل',

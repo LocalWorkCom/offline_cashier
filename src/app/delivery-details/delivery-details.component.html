@@ -5,8 +5,7 @@
       <nav style="--bs-breadcrumb-divider: '>'" aria-label="breadcrumb">
         <ol class="breadcrumb">
           <li class="breadcrumb-item">
-            <a [routerLink]="['/home']" routerLinkActive="active"
-              class="text-decoration-none">
+            <a [routerLink]="['/home']" routerLinkActive="active" class="text-decoration-none">
               القائمة
             </a>
           </li>
@@ -20,15 +19,12 @@
     <!-- اسم العميل -->
     <div class="mb-3">
       <div class="mb-3 input-group">
-        <span class="input-group-text" id="basic-addon1"
-          *ngIf="form.get('client_name')?.value">
+        <span class="input-group-text" id="basic-addon1" *ngIf="form.get('client_name')?.value">
           ادخل اسم العميل
         </span>
-        <input type="text" class="form-control"
-          [class.is-invalid]="isFieldValid('client_name')"
+        <input type="text" class="form-control" [class.is-invalid]="isFieldValid('client_name')"
           [class.is-valid]="form.get('client_name')?.valid && (form.get('client_name')?.touched || submitted)"
-          placeholder="اسم العميل"
-          formControlName="client_name"
+          placeholder="اسم العميل" formControlName="client_name"
           [ngClass]="{'has-value': form.get('client_name')?.value}" />
       </div>
 
@@ -43,15 +39,12 @@
     <div class="d-flex gap-2 align-items-start">
       <div class="w-50">
         <div class="mb-3 input-group">
-          <span class="input-group-text" id="basic-addon1"
-            *ngIf="form.get('address_phone')?.value">
+          <span class="input-group-text" id="basic-addon1" *ngIf="form.get('address_phone')?.value">
             ادخل رقم العميل
           </span>
-          <input type="text" class="form-control text-end"
-            [class.is-invalid]="isFieldValid('address_phone')"
+          <input type="text" class="form-control text-end" [class.is-invalid]="isFieldValid('address_phone')"
             [class.is-valid]="form.get('address_phone')?.valid && (form.get('address_phone')?.touched || submitted)"
-            placeholder="ادخل رقم الهاتف"
-            formControlName="address_phone" />
+            placeholder="ادخل رقم الهاتف" formControlName="address_phone" />
         </div>
 
         @if (isFieldValid('address_phone')) {
@@ -72,22 +65,18 @@
             <span class="px-1">{{ form.controls['country_code'].value?.code ||
               'اختر الدولة' }}</span>
             <img *ngIf="form.controls['country_code'].value"
-              [src]="form.controls['country_code'].value?.flag||selectedCountry.flag"
-              class="flag-icon" />
+              [src]="form.controls['country_code'].value?.flag||selectedCountry.flag" class="flag-icon" />
           </div>
 
           <ul ngbDropdownMenu class="dropdown-list dropdown-menu w-100">
             <li class="p-2">
-              <input type="text" formControlName="searchTerm"
-                (input)="filterCountries()"
-                class="form-control" placeholder="ابحث" />
+              <input type="text" formControlName="searchTerm" (input)="filterCountries()" class="form-control"
+                placeholder="ابحث" />
             </li>
-            <li *ngFor="let country of filteredCountries"
-              (click)="selectCountry(country)"
+            <li *ngFor="let country of filteredCountries" (click)="selectCountry(country)"
               class="dropdown-item d-flex justify-content-between text-muted p-2">
               {{ country.code }}
-              <img *ngIf="country.flag" [src]="country.flag"
-                class="flag-icon" />
+              <img *ngIf="country.flag" [src]="country.flag" class="flag-icon" />
             </li>
           </ul>
         </div>
@@ -100,8 +89,7 @@
       </div>
 
       <div class="search w-25">
-        <button type="button" class="w-100" (click)="searchPhoneNumber()"
-          [disabled]="!searchPhoneLoading">
+        <button type="button" class="w-100" (click)="searchPhoneNumber()" [disabled]="!searchPhoneLoading">
           <span class="btn form-control" *ngIf="searchPhoneLoading">ابحث برقم
             الهاتف</span>
           <span *ngIf="!searchPhoneLoading" class="loading-indicator">
@@ -117,10 +105,8 @@
       <div class="mb-3">
         <div class="d-flex align-items-center mb-1">
           <h6 class="mb-0">هل هذا رقم واتساب ؟</h6>
-          <a class="text-success fw-bold p-1 mx-2 text-decoration-underline"
-            (click)="useSameWhatsapp(true)">نعم</a>
-          <a class="text-danger fw-bold p-1 mx-2 text-decoration-underline"
-            (click)="useSameWhatsapp(false)">لا</a>
+          <a class="text-success fw-bold p-1 mx-2 text-decoration-underline" (click)="useSameWhatsapp(true)">نعم</a>
+          <a class="text-danger fw-bold p-1 mx-2 text-decoration-underline" (click)="useSameWhatsapp(false)">لا</a>
         </div>
 
         @if (submitted && form.controls['whatsapp_number'].invalid &&
@@ -134,12 +120,9 @@
       @if (!useSameNumberForWhatsapp) {
       <div class="mb-3 d-flex gap-2 align-items-start">
         <div class="w-75">
-          <input type="text" class="form-control"
-            [class.is-invalid]="isFieldValid('whatsapp_number')"
+          <input type="text" class="form-control" [class.is-invalid]="isFieldValid('whatsapp_number')"
             [class.is-valid]="form.get('whatsapp_number')?.valid && (form.get('whatsapp_number')?.touched || submitted)"
-            formControlName="whatsapp_number"
-            [(ngModel)]="whatsappPhone"
-            placeholder="رقم الواتساب" />
+            formControlName="whatsapp_number" [(ngModel)]="whatsappPhone" placeholder="رقم الواتساب" />
 
           @if (isFieldValid('whatsapp_number')) {
           <div class="invalid-feedback d-block text-danger small">
@@ -165,15 +148,12 @@
 
             <ul ngbDropdownMenu class="dropdown-list dropdown-menu w-100">
               <li class="p-2">
-                <input type="text" (input)="filterWhatsappCountries($event)"
-                  class="form-control" placeholder="ابحث" />
+                <input type="text" (input)="filterWhatsappCountries($event)" class="form-control" placeholder="ابحث" />
               </li>
-              <li *ngFor="let country of filteredWhatsappCountries"
-                (click)="selectWhatsappCountry(country)"
+              <li *ngFor="let country of filteredWhatsappCountries" (click)="selectWhatsappCountry(country)"
                 class="dropdown-item d-flex justify-content-between text-muted p-2">
                 {{ country.code }}
-                <img *ngIf="country.flag" [src]="country.flag"
-                  class="flag-icon" />
+                <img *ngIf="country.flag" [src]="country.flag" class="flag-icon" />
               </li>
             </ul>
           </div>
@@ -189,11 +169,10 @@
     </div>
 
     <!-- عناوين المستخدم المخزنة -->
-    @if(searchPhoneLoading==true){
+    @if(searchPhoneLoading){
     @if((selectedAddress||userStoredAddress) && userAddNewAddress==false){
     <div class="mb-3">
-      <app-select width="100%" [options]="userStoredAddress"
-        [control]="selectedAddressControl"
+      <app-select width="100%" [options]="userStoredAddress" [control]="selectedAddressControl"
         placeholder="يرجى اختيار عنوان التوصيل"></app-select>
     </div>
     }
@@ -204,8 +183,7 @@
     <!-- المنطقة -->
     <div class="mb-3">
       <label for="area" class="form-label fw-bold">اختر المنطقة</label>
-      <select class="form-select styled-select"
-        [class.is-invalid]="isFieldValid('area_id')"
+      <select class="form-select styled-select" [class.is-invalid]="isFieldValid('area_id')"
         [class.is-valid]="form.get('area_id')?.valid && (form.get('area_id')?.touched || submitted)"
         formControlName="area_id">
         <option value>اختر المنطقة</option>
@@ -229,32 +207,27 @@
     </div>
     }
 
-    <ul class="delivery-places nav nav-pills px-0 mb-3" id="pills-tab"
-      role="tablist">
+    <ul class="delivery-places nav nav-pills px-0 mb-3" id="pills-tab" role="tablist">
       <li class="nav-item" role="presentation">
-        <button class="nav-link rounded-pill active" type="button"
-          [class.active]="selectedProperty === 'apartment'"
+        <button class="nav-link rounded-pill active" type="button" [class.active]="selectedProperty === 'apartment'"
           (click)="selectPropertyType('apartment')">
           <i class="fas fa-city"></i> شقة
         </button>
       </li>
       <li class="nav-item" role="presentation">
-        <button class="nav-link rounded-pill" type="button"
-          [class.active]="selectedProperty === 'villa'"
+        <button class="nav-link rounded-pill" type="button" [class.active]="selectedProperty === 'villa'"
           (click)="selectPropertyType('villa')">
           <i class="fas fa-home"></i> فيلا
         </button>
       </li>
       <li class="nav-item" role="presentation">
-        <button class="nav-link rounded-pill" type="button"
-          [class.active]="selectedProperty === 'office'"
+        <button class="nav-link rounded-pill" type="button" [class.active]="selectedProperty === 'office'"
           (click)="selectPropertyType('office')">
           <i class="fas fa-building"></i> مكتب
         </button>
       </li>
       <li class="nav-item" role="presentation">
-        <button class="nav-link rounded-pill" type="button"
-          [class.active]="selectedProperty === 'hotel'"
+        <button class="nav-link rounded-pill" type="button" [class.active]="selectedProperty === 'hotel'"
           (click)="selectPropertyType('hotel')">
           <i class="fa-solid fa-hotel px-1"></i> فندق
         </button>
@@ -269,15 +242,12 @@
         <!-- المبنى -->
         <div class="mb-3">
           <div class="mb-3 input-group">
-            <span class="input-group-text text-muted"
-              *ngIf="form.get('building')?.value">
+            <span class="input-group-text text-muted" *ngIf="form.get('building')?.value">
               ادخل المبني
             </span>
-            <input type="text" class="form-control"
-              [class.is-invalid]="isFieldValid('building')"
+            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('building')"
               [class.is-valid]="form.get('building')?.valid && (form.get('building')?.touched || submitted)"
-              placeholder="ادخل المبني"
-              formControlName="building" />
+              placeholder="ادخل المبني" formControlName="building" />
           </div>
 
           @if (isFieldValid('building')) {
@@ -291,15 +261,12 @@
         <div class="mb-3 d-flex gap-2">
           <div class="flex-grow-1">
             <div class="mb-3 input-group">
-              <span class="input-group-text text-muted"
-                *ngIf="form.get('apartment_number')?.value">
+              <span class="input-group-text text-muted" *ngIf="form.get('apartment_number')?.value">
                 ادخل رقم الشقة
               </span>
-              <input type="text" class="form-control"
-                [class.is-invalid]="isFieldValid('apartment_number')"
+              <input type="text" class="form-control" [class.is-invalid]="isFieldValid('apartment_number')"
                 [class.is-valid]="form.get('apartment_number')?.valid && (form.get('apartment_number')?.touched || submitted)"
-                placeholder="ادخل رقم الشقة"
-                formControlName="apartment_number" />
+                placeholder="ادخل رقم الشقة" formControlName="apartment_number" />
             </div>
 
             @if (isFieldValid('apartment_number')) {
@@ -311,15 +278,12 @@
 
           <div class="me-2">
             <div class="mb-3 input-group">
-              <span class="input-group-text text-muted"
-                *ngIf="form.get('floor_number')?.value">
+              <span class="input-group-text text-muted" *ngIf="form.get('floor_number')?.value">
                 ادخل الدور
               </span>
-              <input type="text" class="form-control"
-                [class.is-invalid]="isFieldValid('floor_number')"
+              <input type="text" class="form-control" [class.is-invalid]="isFieldValid('floor_number')"
                 [class.is-valid]="form.get('floor_number')?.valid && (form.get('floor_number')?.touched || submitted)"
-                placeholder="ادخل الدور"
-                formControlName="floor_number" />
+                placeholder="ادخل الدور" formControlName="floor_number" />
             </div>
 
             @if (isFieldValid('floor_number')) {
@@ -336,11 +300,9 @@
             <span class="input-group-text" *ngIf="form.get('address')?.value">
               ادخل العنوان
             </span>
-            <input type="text" class="form-control"
-              [class.is-invalid]="isFieldValid('address')"
+            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('address')"
               [class.is-valid]="form.get('address')?.valid && (form.get('address')?.touched || submitted)"
-              placeholder="ادخل العنوان"
-              formControlName="address" />
+              placeholder="ادخل العنوان" formControlName="address" />
           </div>
 
           @if (isFieldValid('address')) {
@@ -353,15 +315,12 @@
         <!-- الملاحظات -->
         <div class="my-5">
           <div class="mb-3 input-group">
-            <span class="input-group-text text-muted"
-              *ngIf="form.get('notes')?.value">
+            <span class="input-group-text text-muted" *ngIf="form.get('notes')?.value">
               علامة مميزة (اختياري)
             </span>
-            <input type="text" class="form-control"
-              [class.is-invalid]="isFieldValid('notes')"
+            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('notes')"
               [class.is-valid]="form.get('notes')?.valid && (form.get('notes')?.touched || submitted)"
-              placeholder="علامة مميزة (اختياري)"
-              formControlName="notes" />
+              placeholder="علامة مميزة (اختياري)" formControlName="notes" />
           </div>
 
           @if (isFieldValid('notes')) {
@@ -377,15 +336,12 @@
         <!-- اسم الفيلا -->
         <div class="mb-3">
           <div class="mb-3 input-group">
-            <span class="input-group-text text-muted"
-              *ngIf="form.get('building')?.value">
+            <span class="input-group-text text-muted" *ngIf="form.get('building')?.value">
               ادخل اسم الفيلا
             </span>
-            <input type="text" class="form-control"
-              [class.is-invalid]="isFieldValid('building')"
+            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('building')"
               [class.is-valid]="form.get('building')?.valid && (form.get('building')?.touched || submitted)"
-              placeholder="ادخل اسم الفيلا"
-              formControlName="building" />
+              placeholder="ادخل اسم الفيلا" formControlName="building" />
           </div>
 
           @if (isFieldValid('building')) {
@@ -398,15 +354,12 @@
         <!-- رقم الفيلا -->
         <div class="mb-3">
           <div class="mb-3 input-group">
-            <span class="input-group-text text-muted"
-              *ngIf="form.get('apartment_number')?.value">
+            <span class="input-group-text text-muted" *ngIf="form.get('apartment_number')?.value">
               ادخل رقم الفيلا
             </span>
-            <input type="text" class="form-control"
-              [class.is-invalid]="isFieldValid('apartment_number')"
+            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('apartment_number')"
               [class.is-valid]="form.get('apartment_number')?.valid && (form.get('apartment_number')?.touched || submitted)"
-              placeholder="ادخل رقم الفيلا"
-              formControlName="apartment_number" />
+              placeholder="ادخل رقم الفيلا" formControlName="apartment_number" />
           </div>
 
           @if (isFieldValid('apartment_number')) {
@@ -422,11 +375,9 @@
             <span class="input-group-text" *ngIf="form.get('address')?.value">
               ادخل العنوان
             </span>
-            <input type="text" class="form-control"
-              [class.is-invalid]="isFieldValid('address')"
+            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('address')"
               [class.is-valid]="form.get('address')?.valid && (form.get('address')?.touched || submitted)"
-              placeholder="ادخل العنوان"
-              formControlName="address" />
+              placeholder="ادخل العنوان" formControlName="address" />
           </div>
 
           @if (isFieldValid('address')) {
@@ -439,15 +390,12 @@
         <!-- الملاحظات -->
         <div class="my-5">
           <div class="mb-3 input-group">
-            <span class="input-group-text text-muted"
-              *ngIf="form.get('notes')?.value">
+            <span class="input-group-text text-muted" *ngIf="form.get('notes')?.value">
               علامة مميزة (اختياري)
             </span>
-            <input type="text" class="form-control"
-              [class.is-invalid]="isFieldValid('notes')"
+            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('notes')"
               [class.is-valid]="form.get('notes')?.valid && (form.get('notes')?.touched || submitted)"
-              placeholder="علامة مميزة (اختياري)"
-              formControlName="notes" />
+              placeholder="علامة مميزة (اختياري)" formControlName="notes" />
           </div>
 
           @if (isFieldValid('notes')) {
@@ -463,15 +411,12 @@
         <!-- اسم المكتب -->
         <div class="mb-3">
           <div class="mb-3 input-group">
-            <span class="input-group-text text-muted"
-              *ngIf="form.get('building')?.value">
+            <span class="input-group-text text-muted" *ngIf="form.get('building')?.value">
               ادخل اسم المكتب
             </span>
-            <input type="text" class="form-control"
-              [class.is-invalid]="isFieldValid('building')"
+            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('building')"
               [class.is-valid]="form.get('building')?.valid && (form.get('building')?.touched || submitted)"
-              placeholder="ادخل اسم المكتب"
-              formControlName="building" />
+              placeholder="ادخل اسم المكتب" formControlName="building" />
           </div>
 
           @if (isFieldValid('building')) {
@@ -485,15 +430,12 @@
         <div class="mb-3 d-flex gap-2">
           <div class="flex-grow-1">
             <div class="mb-3 input-group">
-              <span class="input-group-text text-muted"
-                *ngIf="form.get('apartment_number')?.value">
+              <span class="input-group-text text-muted" *ngIf="form.get('apartment_number')?.value">
                 ادخل رقم المكتب
               </span>
-              <input type="text" class="form-control"
-                [class.is-invalid]="isFieldValid('apartment_number')"
+              <input type="text" class="form-control" [class.is-invalid]="isFieldValid('apartment_number')"
                 [class.is-valid]="form.get('apartment_number')?.valid && (form.get('apartment_number')?.touched || submitted)"
-                placeholder="ادخل رقم المكتب"
-                formControlName="apartment_number" />
+                placeholder="ادخل رقم المكتب" formControlName="apartment_number" />
             </div>
 
             @if (isFieldValid('apartment_number')) {
@@ -505,15 +447,12 @@
 
           <div class="me-2">
             <div class="mb-3 input-group">
-              <span class="input-group-text text-muted"
-                *ngIf="form.get('floor_number')?.value">
+              <span class="input-group-text text-muted" *ngIf="form.get('floor_number')?.value">
                 ادخل الدور
               </span>
-              <input type="text" class="form-control"
-                [class.is-invalid]="isFieldValid('floor_number')"
+              <input type="text" class="form-control" [class.is-invalid]="isFieldValid('floor_number')"
                 [class.is-valid]="form.get('floor_number')?.valid && (form.get('floor_number')?.touched || submitted)"
-                placeholder="ادخل الدور"
-                formControlName="floor_number" />
+                placeholder="ادخل الدور" formControlName="floor_number" />
             </div>
 
             @if (isFieldValid('floor_number')) {
@@ -527,15 +466,12 @@
         <!-- العنوان -->
         <div class="mb-3">
           <div class="mb-3 input-group">
-            <span class="input-group-text" id="basic-addon1"
-              *ngIf="form.get('address')?.value">
+            <span class="input-group-text" id="basic-addon1" *ngIf="form.get('address')?.value">
               ادخل العنوان
             </span>
-            <input type="text" class="form-control"
-              [class.is-invalid]="isFieldValid('address')"
+            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('address')"
               [class.is-valid]="form.get('address')?.valid && (form.get('address')?.touched || submitted)"
-              placeholder="ادخل العنوان"
-              formControlName="address" />
+              placeholder="ادخل العنوان" formControlName="address" />
           </div>
 
           @if (isFieldValid('address')) {
@@ -548,15 +484,12 @@
         <!-- الملاحظات -->
         <div class="my-5">
           <div class="mb-3 input-group">
-            <span class="input-group-text text-muted"
-              *ngIf="form.get('notes')?.value">
+            <span class="input-group-text text-muted" *ngIf="form.get('notes')?.value">
               علامة مميزة (اختياري)
             </span>
-            <input type="text" class="form-control"
-              [class.is-invalid]="isFieldValid('notes')"
+            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('notes')"
               [class.is-valid]="form.get('notes')?.valid && (form.get('notes')?.touched || submitted)"
-              placeholder="علامة مميزة (اختياري)"
-              formControlName="notes" />
+              placeholder="علامة مميزة (اختياري)" formControlName="notes" />
           </div>
 
           @if (isFieldValid('notes')) {
@@ -571,26 +504,20 @@
       <div *ngIf="selectedProperty === 'hotel'">
         <div class="mb-3">
           <div ngbDropdown class="dropdown w-100 custom-dropdown">
-            <button ngbDropdownToggle
-              class="w-100 bg-transparent dropdown-toggle border-0 selected-option"
-              [class.is-invalid]="!selectedHotel && (submitted)"
-              [class.is-valid]="selectedHotel && (submitted)"
-              type="button"
-              data-bs-toggle="dropdown" aria-expanded="false">
-              <span *ngIf="!selectedHotel && !selectedAddress"
-                class="text-muted">
+            <button ngbDropdownToggle class="w-100 bg-transparent dropdown-toggle border-0 selected-option"
+              [class.is-invalid]="!selectedHotel && (submitted)" [class.is-valid]="selectedHotel && (submitted)"
+              type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span *ngIf="!selectedHotel && !selectedAddress" class="text-muted">
                 اختر الفندق
               </span>
               <span *ngIf="selectedHotel">{{ selectedHotel.name }}</span>
             </button>
             <ul ngbDropdownMenu class="dropdown-menu dropdown-list">
               <li>
-                <input type="text" formControlName="searchTermhotel"
-                  (input)="searchHotel()" class="w-100 form-control"
+                <input type="text" formControlName="searchTermhotel" (input)="searchHotel()" class="w-100 form-control"
                   placeholder="ابحث ... " />
               </li>
-              <li ngbDropdownItem class="dropdown-item"
-                *ngFor="let hotel of hotels" (click)="onHotelChange(hotel)">
+              <li ngbDropdownItem class="dropdown-item" *ngFor="let hotel of hotels" (click)="onHotelChange(hotel)">
                 {{ hotel.name }}
               </li>
             </ul>
@@ -614,7 +541,5 @@
   </form>
 </section>
 
-<app-confirm-dialog #confirmDialog (actionResult)="addNewAddress($event)"
-  [header]="'تأكيد'"
-  [message]="'هل تريد إضافة عنوان جديد'" [acceptLabel]="'نعم'"
-  [rejectLabel]="'لا'"></app-confirm-dialog>
+<app-confirm-dialog #confirmDialog (actionResult)="addNewAddress($event)" [header]="'تأكيد'"
+  [message]="'هل تريد إضافة عنوان جديد'" [acceptLabel]="'نعم'" [rejectLabel]="'لا'"></app-confirm-dialog>
