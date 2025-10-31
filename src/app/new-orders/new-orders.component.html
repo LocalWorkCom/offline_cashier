@@ -33,6 +33,14 @@
     </span>
   </div>
 
+  <!-- Syncing State -->
+  <div *ngIf="syncing" class="alert alert-info d-flex align-items-center justify-content-center mb-3" role="alert">
+    <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+      <span class="visually-hidden">جاري المزامنة...</span>
+    </div>
+    <span class="fw-bold">جارى مراجعة البيانات...</span>
+  </div>
+
   <!-- Orders Content -->
   <div class="tab-content">
     <ng-container *ngIf="selectedStatus === 'static'; else dynamicOrders">
@@ -741,6 +749,57 @@
             </ng-template>
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteOrderModal" tabindex="-1"
+  aria-labelledby="deleteOrderModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <button type="button" class="btn-close" data-bs-dismiss="modal"
+          aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        <img class="cancel-icon" src="assets/images/ix_error-filled.png" />
+        <h1 class="modal-title fs-5 text-center my-3">هل أنت متأكد من حذف هذا
+          الطلب</h1>
+        <div class="d-flex justify-content-center">
+          <button type="button" class="btn reversed main-color w-50 mx-3"
+            data-bs-dismiss="modal">إلغاء</button>
+          <button type="button" class="btn w-50 mx-3"
+            (click)="confirmDelete()">تأكيد الحذف</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<!-- <ng-template #messageModal let-modal>
+    <p class="alert text-center fw-bold mb-0" [ngClass]="messageType === 'success' ? 'alert-success' : 'alert-danger'">{{ message }}</p>
+</ng-template> -->
+<ng-template #messageModal let-modal>
+  <div class="d-flex justify-content-center align-items-center h-100">
+    <p class="alert text-center fw-bold mb-0 w-100"
+      [ngClass]="messageType === 'success' ? 'alert-success' : 'alert-danger'">
+      {{ message }}
+    </p>
+  </div>
+</ng-template>
+
+<div class="modal fade" id="successMessageModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content ">
+      <div class="modal-header border-0">
+        <button type="button" class="btn-close" data-bs-dismiss="modal"
+          aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        <img class="success-icon" src="assets/images/donee.png" />
+        <h1 class="modal-title fs-5 text-center my-3">{{successMessage}}</h1>
       </div>
     </div>
   </div>
