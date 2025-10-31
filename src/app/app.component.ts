@@ -8,10 +8,9 @@ import { SidebarComponent } from './sidebar/sidebar.component';
 import { RouterModule } from '@angular/router';
 import { MainLayoutComponent } from './main-layout/main-layout.component';
 import { AuthLayoutComponent } from './auth-layout/auth-layout.component';
-import { PusherService } from './services/pusher/pusher.service';
+import { PusherService } from './services/pusher/pusher.service'; 
 import { TranslationService } from './core/i18n';
 import { ConfirmDialog } from "primeng/confirmdialog";
-import { SyncService } from './services/sync.service';
 
 // import {LoginComponent} from "./login/login.component";
 
@@ -28,19 +27,11 @@ export class AppComponent implements OnInit {
 
   private pusher = inject(PusherService);
   private translate = inject(TranslationService);
-    constructor(private syncService: SyncService) {}
 
   ngOnInit(): void {
     this.dir = this.translate.getHtmlDirection();
     document.body.dir = this.dir;
 
     this.pusher.connect();
-
-
-     // ✅ دايماً اسمع على رجوع الإنترنت
-    window.addEventListener('online', () => {
-      console.log("🌐 Back online globally, syncing all data...");
-      this.syncService.runAllSyncFunctions();
-    });
   }
 }

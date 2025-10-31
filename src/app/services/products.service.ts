@@ -260,12 +260,7 @@ loadCart(): void {
   }
 destroyCart() {
   console.warn('🚨 destroyCart CALLED');
-  if(this.cartSubject)
-  this.cartSubject.unsubscribe();
-}
-destroy(){
-    this.cartSubject.next([]);
-
+  this.cartSubject.next([]);
 }
 
 

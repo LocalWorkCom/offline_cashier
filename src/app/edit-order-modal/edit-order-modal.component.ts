@@ -37,7 +37,7 @@ export class EditOrderModalComponent implements OnInit {
     private http: HttpClient,
     public actvModal: NgbActiveModal,
     authService: AuthService
-  ) { }
+  ) {}
 
   ngOnInit(): void {
     if (this.itemId) this.loadItem();
@@ -90,7 +90,7 @@ export class EditOrderModalComponent implements OnInit {
       .get(url)
       .pipe(
         finalize(() => {
-          this.loading = false;
+          this.loading = false; 
         })
       )
       .subscribe({
@@ -176,8 +176,8 @@ export class EditOrderModalComponent implements OnInit {
     // base (size price if selected, else dish price)
     const sizePrice = this.selectedItem.selected_size
       ? this.selectedItem.sizes?.find(
-        (s: any) => s.id === this.selectedItem.selected_size
-      )?.price ?? dish.price
+          (s: any) => s.id === this.selectedItem.selected_size
+        )?.price ?? dish.price
       : this.selectedSize?.price ?? dish.price;
 
     // addons total (use checked)
@@ -239,7 +239,6 @@ export class EditOrderModalComponent implements OnInit {
       (errors: any) => !errors.minError && !errors.maxError
     );
   }
-  editLoading: boolean = false;
 
   toggleAddon(
     addon: any,
@@ -278,8 +277,6 @@ export class EditOrderModalComponent implements OnInit {
   }
 
   editItem(): void {
-    this.editLoading = true;
-
     if (!this.selectedItem?.dish) return;
 
     const url = `${this.apiUrl}api/orders/cashier/order-edit-item/api`;
@@ -337,8 +334,6 @@ export class EditOrderModalComponent implements OnInit {
         // 🔑 auto-hide after 3 seconds
         setTimeout(() => {
           this.error = null;
-          this.editLoading = false; // ✅ يشتغل بعد الـ next أو error
-
         }, 3000);
       },
     });
