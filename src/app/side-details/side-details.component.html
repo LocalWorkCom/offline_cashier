@@ -692,11 +692,11 @@ selectedOrderType === 'talabat') {
                     الدفع</label>
                   <input type="number" class="form-control" [(ngModel)]="cashPaymentInput"
                     [ngModelOptions]="{standalone: true}" placeholder="المبلغ المدفوع" (input)="roundCashPayment()"
-                    (change)="handleManualPaymentBlur(billAmount, tipModalContent)">
+                    (change)="handleManualPaymentBlur(billAmount, tipModalContent)" [class.is-invalid]="paymentError">
 
                   <!-- عرض رسالة الخطأ -->
                   @if (paymentError) {
-                  <div class="invalid-feedback d-block">
+                  <div class="alert alert-warning mt-2 py-2">
                     <i class="fas fa-exclamation-circle me-1"></i>
                     {{ paymentError }}
                   </div>
