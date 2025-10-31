@@ -589,9 +589,9 @@ export class PillEditComponent {
 
     //  const cashAmount= this.cash_value != null ? this.cash_value : 0;
     // const creditAmount = this.credit_value != null ? this.credit_value : 0;
-
-    const cashAmount = this.selectedPaymentMethod === "cash" ? this.finalTipSummary?.billAmount ?? 0 : 0;
-    const creditAmount = this.selectedPaymentMethod === "credit" ? this.finalTipSummary?.billAmount ?? 0 : 0;
+    const paymentMethodForDB = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
+    const cashAmount = paymentMethodForDB === "cash" ? this.finalTipSummary?.billAmount ?? 0 : 0;
+    const creditAmount = paymentMethodForDB === "credit" ? this.finalTipSummary?.billAmount ?? 0 : 0;
     this.DeliveredOrNot = this.orderType == 'Delivery';
     console.log("DD");
 
@@ -1206,14 +1206,15 @@ export class PillEditComponent {
     }
 
     const changeToReturn = Math.max(0, this.tempChangeAmount - finalTipAmount);
-
+    // ✅ التعديل: كاش + فيزا تتحول لـ cash
+    const paymentMethodForDB = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
     // حساب المبالغ النهائية بناءً على طريقة الدفع
     let cashFinal = 0;
     let creditFinal = 0;
 
-    if (this.selectedPaymentMethod === 'cash') {
+    if (paymentMethodForDB === 'cash') {
       cashFinal = this.tempPaymentAmount;
-    } else if (this.selectedPaymentMethod === 'credit') {
+    } else if (paymentMethodForDB === 'credit') {
       creditFinal = this.tempPaymentAmount;
     } else if (this.selectedPaymentMethod === 'cash + credit') {
       // توزيع المبلغ على الكاش والفيزا مع احتساب الإكرامية
@@ -1289,7 +1290,8 @@ export class PillEditComponent {
 
     if (paymentAmount >= billAmount) {
       this.cashPaymentInput = paymentAmount;
-      this.openTipModal(modalContent, billAmount, paymentAmount);
+      const paymentMethodForModal = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
+    this.openTipModal(modalContent, billAmount, paymentAmount, paymentMethodForModal);
     }
   }
 
@@ -1299,7 +1301,8 @@ export class PillEditComponent {
     console.log('Bill Amount:', billAmount, 'Entered:', this.cashPaymentInput);
     const currentPaymentInput = this.cashPaymentInput;
     if (currentPaymentInput > 0 && currentPaymentInput >= billAmount) {
-      this.openTipModal(modalContent, billAmount, currentPaymentInput);
+      const paymentMethodForModal = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
+    this.openTipModal(modalContent, billAmount, currentPaymentInput, paymentMethodForModal);
     }
   }
 
@@ -1329,8 +1332,9 @@ export class PillEditComponent {
       this.tempBillAmount = billAmount;
       this.tempPaymentAmount = totalPaid;
       this.tempChangeAmount = totalPaid - billAmount;
-
-      this.openTipModal(modalContent, billAmount, totalPaid);
+ // ✅ التعديل: تمرير القيمة المعدلة
+    const paymentMethodForModal = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
+      this.openTipModal(modalContent, billAmount, totalPaid, paymentMethodForModal);
     } else {
       // يمكن إضافة رسالة تنبيه هنا إذا أردت
       console.warn('المبلغ المدفوع غير كافي لفتح مودال الإكرامية');
