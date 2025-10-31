@@ -1107,8 +1107,14 @@ async syncAllorders(): Promise<void> {
     }
   }
 
-  loadOrderToCart(orderId: number) {
+  async loadOrderToCart(orderId: number) {
+    // مسح السلة السابقة (في localStorage و IndexedDB)
     localStorage.setItem('holdCart', JSON.stringify([]));
+    try {
+      await this.dbService.clearCart();
+    } catch (error) {
+      console.warn('⚠️ Error clearing cart from IndexedDB:', error);
+    }
 
     const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
     const selectedOrder = savedOrders.find((o: any) => o.orderId === orderId);
@@ -1191,7 +1197,26 @@ async syncAllorders(): Promise<void> {
       });
 
     const updatedCart = [...existingCart, ...newItems];
+
+    // حفظ في localStorage (holdCart)
     localStorage.setItem('holdCart', JSON.stringify(updatedCart));
+
+    // حفظ في localStorage (cart) أيضاً للتوافق
+    localStorage.setItem('cart', JSON.stringify(updatedCart));
+
+    // حفظ في IndexedDB
+    try {
+      await this.dbService.init();
+      // مسح السلة أولاً
+      await this.dbService.clearCart();
+      // إضافة كل عنصر في IndexedDB
+      for (const item of updatedCart) {
+        await this.dbService.addToCart(item);
+      }
+      console.log('✅ Cart items saved to IndexedDB:', updatedCart.length);
+    } catch (error) {
+      console.error('❌ Error saving cart to IndexedDB:', error);
+    }
 
     // Set order data
     if (selectedOrder.FormDataDetails) {
@@ -1199,11 +1224,20 @@ async syncAllorders(): Promise<void> {
         'FormDataDetails',
         JSON.stringify(selectedOrder.FormDataDetails)
       );
+      // حفظ FormDataDetails في IndexedDB أيضاً
+      try {
+        await this.dbService.saveFormData(selectedOrder.FormDataDetails);
+      } catch (error) {
+        console.warn('⚠️ Error saving FormDataDetails to IndexedDB:', error);
+      }
     }
     if (selectedOrder.type) {
       localStorage.setItem('selectedOrderType', selectedOrder.type);
     }
     localStorage.setItem('finalOrderId', orderId.toString());
+
+    // حفظ currentOrderId للتوافق مع side-details
+    localStorage.setItem('currentOrderId', orderId.toString());
 
     this.router.navigate(['/home']);
   }
