@@ -267,8 +267,6 @@ export class IndexeddbService {
         const request = store.add(itemWithMetadata);
 
         request.onsuccess = () => resolve(request.result as number);
-        // Reload the page
-        window.location.reload();
         request.onerror = (e) => reject(e);
       });
     });

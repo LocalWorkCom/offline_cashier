@@ -117,6 +117,16 @@ loadCart(): void {
     return this.cartSubject.getValue(); // Fix: Return the current cart array
   }
 
+  // ✅ Set cart without triggering multiple updates
+  setCart(cartItems: any[]): void {
+    // ✅ Only update if cart actually changed
+    const currentCart = this.cartSubject.getValue();
+    if (JSON.stringify(currentCart) !== JSON.stringify(cartItems)) {
+      this.cart = cartItems;
+      this.cartSubject.next(cartItems);
+    }
+  }
+
 
   // addToCart(product: any): void {
   //   let cart = JSON.parse(localStorage.getItem('cart') || '[]');
