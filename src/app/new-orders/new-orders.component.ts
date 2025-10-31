@@ -1108,8 +1108,8 @@ async syncAllorders(): Promise<void> {
   }
 
   loadOrderToCart(orderId: number) {
-    // localStorage.setItem('holdCart', JSON.stringify([]));
-    console.log(localStorage.getItem('savedOrders'));
+    localStorage.setItem('holdCart', JSON.stringify([]));
+
     const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
     const selectedOrder = savedOrders.find((o: any) => o.orderId === orderId);
 
@@ -1121,9 +1121,7 @@ async syncAllorders(): Promise<void> {
     const existingCart: any[] = JSON.parse(
       localStorage.getItem('holdCart') || '[]'
     );
-    console.log('existingCart', savedOrders);
     const orderItems: any[] = selectedOrder.items || [];
-    console.log('orderItems', orderItems);
 
     // Normalize function to compare uniqueness
     const normalize = (item: any) => ({
@@ -1166,23 +1164,9 @@ async syncAllorders(): Promise<void> {
 
         const addon_categories = item.addon_categories || [];
 
-        // ✅ استخراج selectedAddons من addon_categories مع التأكد من وجود جميع الخصائص
         const selectedAddons = addon_categories.flatMap(
-          (cat: any) => (cat.addons || []).map((addon: any) => ({
-            id: addon.id,
-            name: addon.name,
-            price: addon.price ?? 0,
-            currency_symbol: addon.currency_symbol || 'د.ك'
-          }))
+          (cat: any) => cat.addons || []
         );
-
-        // ✅ التأكد من أن selectedSize يحتوي على جميع الخصائص المطلوبة
-        const selectedSizeObj = sizeId ? {
-          id: sizeId,
-          name: sizeName || '',
-          price: sizePrice ?? 0,
-          currency_symbol: 'د.ك'
-        } : null;
 
         return {
           dish: {
@@ -1190,129 +1174,38 @@ async syncAllorders(): Promise<void> {
             name: dishName,
             image: dishImage,
             description: dishDesc,
-            price: dishPrice ?? 0,
-            currency_symbol: 'د.ك'
+            price: dishPrice,
           },
           dish_order: item.dish_order?.toString() || '-1',
-          finalPrice: finalPrice || 0,
-          quantity: quantity || 1,
-          selectedSize: selectedSizeObj,
-          note: note || '',
-          selectedAddons: selectedAddons || [],
-          addon_categories: addon_categories || [],
+          finalPrice: finalPrice,
+          quantity: quantity,
+          selectedSize: {
+            id: sizeId,
+            name: sizeName,
+            price: sizePrice,
+          },
+          note: note,
+          selectedAddons: selectedAddons,
+          addon_categories: addon_categories,
         };
       });
 
     const updatedCart = [...existingCart, ...newItems];
     localStorage.setItem('holdCart', JSON.stringify(updatedCart));
 
-    // Set order type
+    // Set order data
+    if (selectedOrder.FormDataDetails) {
+      localStorage.setItem(
+        'FormDataDetails',
+        JSON.stringify(selectedOrder.FormDataDetails)
+      );
+    }
     if (selectedOrder.type) {
       localStorage.setItem('selectedOrderType', selectedOrder.type);
     }
-
-    // Set final order ID
     localStorage.setItem('finalOrderId', orderId.toString());
 
-    // Restore delivery address data if order type is Delivery
-    if (selectedOrder.type && (selectedOrder.type.toLowerCase() === 'delivery' || selectedOrder.type === 'توصيل')) {
-      if (selectedOrder.addresses) {
-        const formData = {
-          client_name: selectedOrder.addresses.client_name || '',
-          address_phone: selectedOrder.addresses.address_phone || '',
-          country_code: selectedOrder.addresses.country_code ? { code: selectedOrder.addresses.country_code } : null,
-          apartment_number: selectedOrder.addresses.apartment_number || '',
-          building: selectedOrder.addresses.building || '',
-          address_type: selectedOrder.addresses.address_type || '',
-          address: selectedOrder.addresses.address || '',
-          propertyType: selectedOrder.addresses.propertyType || '',
-          buildingName: selectedOrder.addresses.buildingName || '',
-          note: selectedOrder.addresses.note || '',
-          floor_number: selectedOrder.addresses.floor_number || '',
-          landmark: selectedOrder.addresses.landmark || '',
-          villaName: selectedOrder.addresses.villaName || '',
-          villaNumber: selectedOrder.addresses.villaNumber || '',
-          companyName: selectedOrder.addresses.companyName || '',
-          buildingNumber: selectedOrder.addresses.buildingNumber || '',
-        };
-        localStorage.setItem('form_data', JSON.stringify(formData));
-        localStorage.setItem('FormDataDetails', JSON.stringify(formData));
-      }
-    }
-
-    // Restore dine-in table data if order type is dine-in
-    if (selectedOrder.type && (selectedOrder.type === 'dine-in' || selectedOrder.type === 'في المطعم' || selectedOrder.type === 'فى المطعم')) {
-      if (selectedOrder.tableNumber) {
-        localStorage.setItem('table_number', selectedOrder.tableNumber.toString());
-      }
-      if (selectedOrder.table_id) {
-        localStorage.setItem('table_id', selectedOrder.table_id.toString());
-      }
-    }
-
-    // Restore client phone and country code
-    if (selectedOrder.client_phone) {
-      localStorage.setItem('clientPhone', selectedOrder.client_phone);
-    }
-    if (selectedOrder.client_country_code) {
-      localStorage.setItem('selectedCountryCode', selectedOrder.client_country_code);
-    }
-
-    // Restore payment data
-    if (selectedOrder.payment_method) {
-      localStorage.setItem('selectedPaymentMethod', selectedOrder.payment_method);
-    }
-    if (selectedOrder.payment_status) {
-      localStorage.setItem('selectedPaymentStatus', selectedOrder.payment_status);
-    }
-    if (selectedOrder.cash_amount !== null && selectedOrder.cash_amount !== undefined) {
-      localStorage.setItem('cash_amountt', selectedOrder.cash_amount.toString());
-    }
-    if (selectedOrder.credit_amount !== null && selectedOrder.credit_amount !== undefined) {
-      localStorage.setItem('credit_amountt', selectedOrder.credit_amount.toString());
-    }
-
-    // Restore coupon data
-    if (selectedOrder.coupon_code) {
-      localStorage.setItem('couponCode', selectedOrder.coupon_code);
-      // Try to restore applied coupon from invoice summary
-      if (selectedOrder.invoiceSummary && selectedOrder.invoiceSummary.coupon_value) {
-        const appliedCoupon = {
-          coupon_code: selectedOrder.coupon_code,
-          total_discount: selectedOrder.invoiceSummary.coupon_value,
-          amount_after_coupon: parseFloat(selectedOrder.invoiceSummary.subtotal_price) - parseFloat(selectedOrder.invoiceSummary.coupon_value),
-          currency_symbol: selectedOrder.invoiceSummary.currency_symbol || 'د.ك'
-        };
-        localStorage.setItem('appliedCoupon', JSON.stringify(appliedCoupon));
-        localStorage.setItem('discountAmount', selectedOrder.invoiceSummary.coupon_value);
-      }
-    }
-
-    // Restore note
-    if (selectedOrder.note) {
-      localStorage.setItem('notes', selectedOrder.note);
-      localStorage.setItem('additionalNote', selectedOrder.note);
-      localStorage.setItem('onholdOrdernote', selectedOrder.note);
-    }
-
-    console.log('✅ Order data restored to localStorage:', {
-      orderType: selectedOrder.type,
-      tableNumber: selectedOrder.tableNumber,
-      clientPhone: selectedOrder.client_phone,
-      paymentMethod: selectedOrder.payment_method,
-      couponCode: selectedOrder.coupon_code
-    });
-
-    // ✅ الانتقال إلى home بعد حفظ جميع البيانات
-    // Use setTimeout to ensure localStorage is updated before navigation
-    setTimeout(() => {
-      this.router.navigate(['/home']).then(() => {
-        // Force reload to ensure side-details component reloads with new data
-        setTimeout(() => {
-          window.location.reload();
-        }, 100);
-      });
-    }, 50);
+    this.router.navigate(['/home']);
   }
 
 
