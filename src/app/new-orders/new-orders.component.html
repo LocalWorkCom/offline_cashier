@@ -33,6 +33,14 @@
     </span>
   </div>
 
+  <!-- Syncing State -->
+  <div *ngIf="syncing" class="alert alert-info d-flex align-items-center justify-content-center mb-3" role="alert">
+    <div class="spinner-border spinner-border-sm text-primary me-2" role="status">
+      <span class="visually-hidden">جاري المزامنة...</span>
+    </div>
+    <span class="fw-bold">جارى مراجعة البيانات...</span>
+  </div>
+
   <!-- Orders Content -->
   <div class="tab-content">
     <ng-container *ngIf="selectedStatus === 'static'; else dynamicOrders">

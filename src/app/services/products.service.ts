@@ -221,8 +221,19 @@ loadCart(): void {
 
   clearCart(): void {
     this.cart = [];
-    // localStorage.removeItem('cart');
-    this.saveCart();
+    try {
+      // Clear both localStorage carts
+      localStorage.removeItem('cart');
+      localStorage.removeItem('holdCart');
+    } catch (_) {}
+
+    // Emit empty cart to subscribers immediately
+    this.cartSubject.next([]);
+
+    // Clear IndexedDB cart (fire-and-forget)
+    try {
+      this.db.clearCart().catch(() => {});
+    } catch (_) {}
   }
 
   private isMatchingItem(item: any, productId: number, sizeId?: number): boolean {
