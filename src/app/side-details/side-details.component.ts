@@ -2645,21 +2645,21 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   async submitOrder() {
 
     // ✅ التحقق من معلومات التوصيل لطلبات Delivery
-  if (this.selectedOrderType === 'Delivery') {
-    const validation = this.validateDeliveryInfo();
-    if (!validation.isValid) {
-      this.falseMessage = `⚠️ ${validation.message}`;
-      this.isLoading = false;
-      this.loading = false;
-      
-      // التنقل لصفحة معلومات التوصيل
-      setTimeout(() => {
-        this.router.navigate(['/delivery-details']);
-      }, 1000);
-      
-      return;
+    if (this.selectedOrderType === 'Delivery' && this.isOnline) {
+      const validation = this.validateDeliveryInfo();
+      if (!validation.isValid) {
+        this.falseMessage = `⚠️ ${validation.message}`;
+        this.isLoading = false;
+        this.loading = false;
+
+        // التنقل لصفحة معلومات التوصيل
+        setTimeout(() => {
+          this.router.navigate(['/delivery-details']);
+        }, 1000);
+
+        return;
+      }
     }
-  }
     // ✅ التحقق من أن المبلغ المدفوع كافي (لطرق الدفع النقدي)
     if (this.selectedPaymentStatus === 'paid' &&
       (this.selectedPaymentMethod === 'cash' || this.selectedPaymentMethod === 'credit')) {
@@ -2723,7 +2723,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     let addressId = null;
-    if (navigator.onLine) {
+    if (this.isOnline) {
       if (this.selectedOrderType === 'Delivery') {
         addressId = localStorage.getItem('address_id');
 
@@ -2878,7 +2878,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         orderData.table_id = tableId;
       }
-      if (navigator.onLine) {
+      if (this.isOnline) {
         if (
           this.selectedOrderType === 'Delivery' ||
           this.selectedOrderType === 'توصيل'
@@ -2901,7 +2901,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
 
-      const isOnline = navigator.onLine;
+      const isOnline = this.isOnline;
 
       console.log("dd", orderData);
 
@@ -4978,7 +4978,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.selectedOrderType !== 'Delivery') {
       return true; // ليس طلب توصيل، لا داعي للتحقق
     }
-
+    // ✅ في حالة عدم وجود اتصال، نعتبر المعلومات متوفرة
+    if (!this.isOnline) {
+      console.log('📴 Offline mode - delivery info considered available');
+      return true;
+    }
     // التحقق من وجود البيانات الأساسية للتوصيل
     const hasBasicInfo = this.clientName && this.address && this.addressPhone;
     const hasFormData = this.FormDataDetails &&
@@ -4997,31 +5001,38 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
     return this.hasDeliveryInfo();
   }
-// دالة للتحقق من صحة رقم الهاتف
-isValidPhoneNumber(phone: string): boolean {
-  const phoneRegex = /^[0-9]{10,15}$/;
-  return phoneRegex.test(phone.replace(/\D/g, ''));
-}
+  // دالة للتحقق من صحة رقم الهاتف
+  isValidPhoneNumber(phone: string): boolean {
+    const phoneRegex = /^[0-9]{10,15}$/;
+    return phoneRegex.test(phone.replace(/\D/g, ''));
+  }
 
-// دالة شاملة للتحقق من بيانات التوصيل
-validateDeliveryInfo(): { isValid: boolean; message: string } {
-  if (this.selectedOrderType !== 'Delivery') {
+  // دالة شاملة للتحقق من بيانات التوصيل
+  validateDeliveryInfo(): { isValid: boolean; message: string } {
+    if (this.selectedOrderType !== 'Delivery') {
+      return { isValid: true, message: '' };
+    }
+    // ✅ في حالة عدم وجود اتصال، لا نطلب معلومات التوصيل
+    if (!this.isOnline) {
+      console.log('📴 Offline mode - delivery info considered available');
+      return true;
+    }) {
+      console.log('📴 Offline mode - delivery info not required');
+      return { isValid: true, message: '' };
+    }
+    if (!this.clientName || this.clientName.trim().length < 2) {
+      return { isValid: false, message: 'يرجى إدخال اسم العميل' };
+    }
+
+    if (!this.address || this.address.trim().length < 5) {
+      return { isValid: false, message: 'يرجى إدخال العنوان بالكامل' };
+    }
+
+    if (!this.addressPhone || !this.isValidPhoneNumber(this.addressPhone)) {
+      return { isValid: false, message: 'يرجى إدخال رقم هاتف صحيح' };
+    }
+
     return { isValid: true, message: '' };
   }
-
-  if (!this.clientName || this.clientName.trim().length < 2) {
-    return { isValid: false, message: 'يرجى إدخال اسم العميل' };
-  }
-
-  if (!this.address || this.address.trim().length < 5) {
-    return { isValid: false, message: 'يرجى إدخال العنوان بالكامل' };
-  }
-
-  if (!this.addressPhone || !this.isValidPhoneNumber(this.addressPhone)) {
-    return { isValid: false, message: 'يرجى إدخال رقم هاتف صحيح' };
-  }
-
-  return { isValid: true, message: '' };
-}
 
 }
