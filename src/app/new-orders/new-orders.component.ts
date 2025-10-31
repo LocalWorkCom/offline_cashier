@@ -1546,11 +1546,15 @@ openOrderModal(order: any): void {
   // Initialize modal item states for a clean UX
   if (this.selectedOrder?.order_items?.length) {
     for (const item of this.selectedOrder.order_items) {
-      // Default selected quantity equals original quantity
+      // Preserve original price for display and avoid accidental mutation during selection
+      if (item.originalTotalDishPrice === undefined) {
+        item.originalTotalDishPrice = item.total_dish_price;
+      }
+      // Default selected quantity equals original quantity (returned starts at 0)
       if (item.selectedQuantity === undefined || item.selectedQuantity === null) {
         item.selectedQuantity = item.quantity;
       }
-      // Ensure unitPrice is available for +/- operations
+      // Pre-calc unit price for later computations; do NOT change total_dish_price during selection
       if (!item.unitPrice && item.quantity) {
         item.unitPrice = item.total_dish_price / item.quantity;
       }
@@ -1821,7 +1825,7 @@ openOrderModal(order: any): void {
 
     if (item.selectedQuantity < item.quantity) {
       item.selectedQuantity += 1;
-      item.total_dish_price = item.unitPrice * item.selectedQuantity;
+      // Keep displayed price unchanged during selection
     }
   }
 
@@ -1837,7 +1841,7 @@ openOrderModal(order: any): void {
 
     if (item.selectedQuantity > 0) {
       item.selectedQuantity -= 1;
-      item.total_dish_price = item.unitPrice * item.selectedQuantity;
+      // Keep displayed price unchanged during selection
     }
   }
 
@@ -1850,17 +1854,11 @@ openOrderModal(order: any): void {
       item.unitPrice = item.total_dish_price / item.quantity;
     }
 
-    if (checked) {
-      // Default to full return when checked
-      item.selectedQuantity = 0;
-    } else {
-      // Reset to original when unchecked
-      item.selectedQuantity = item.quantity;
-    }
+    // When checking, start with returned = 0 -> selectedQuantity = full quantity
+    // When unchecking, also reset to original
+    item.selectedQuantity = item.quantity;
 
-    if (item.unitPrice) {
-      item.total_dish_price = item.unitPrice * item.selectedQuantity;
-    }
+    // Do not mutate item.total_dish_price during selection; keep original price visible
   }
 
   private recomputeOrderTotals(order: any): void {
