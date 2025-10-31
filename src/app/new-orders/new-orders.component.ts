@@ -51,7 +51,9 @@ export class NewOrdersComponent implements OnInit, OnDestroy {
   message: string = '';
   messageType: 'success' | 'error' = 'success';
   usingOfflineData: boolean = false;
-
+  cartItems: any;
+  storedValueLocalStorage: any;
+  filteredCartItems: any;
   // UI State
   loading = false;
   selectedStatus = 'all';
@@ -113,14 +115,41 @@ export class NewOrdersComponent implements OnInit, OnDestroy {
 async ngOnInit() {
   this.loading = true;
 
+  // 0️⃣ التأكد من أن القيم الافتراضية هي "الكل" -> "الكل"
+  // this.selectedStatus = 'all';
+  // this.selectedOrderTypeStatus = 'All';
+  // this.status$.next('all');
+  // this.orderType$.next('All');
+  // this.search$.next('');
+
   // 1️⃣ عرض البيانات من IndexedDB أولًا
   await this.loadOrdersFromIndexedDB();
 
+  // 2️⃣ تحميل الطلبات المعلقة من localStorage
+  this.loadStaticOrders();
+
+  // 3️⃣ حساب العدادات بعد تحميل البيانات
+  this.recomputeCounts(this.orders$.getValue(), this.staticOrders$.getValue());
+
+  // 4️⃣ إعداد الفلاتر التفاعلية
   this.setupReactiveFilters();
+
+  // 5️⃣ تطبيق الفلترة الأولية لتأكيد عرض الطلبات الديناميكية (الكل -> الكل)
+  // this.ngZone.run(() => {
+  //   const filtered = this.applyFilters(
+  //     this.orders$.getValue(),
+  //     this.staticOrders$.getValue(),
+  //     'all', // Always start with 'all' status
+  //     'All', // Always start with 'All' order type
+  //     '' // Empty search
+  //   );
+  //   this.filteredOrders$.next(filtered);
+  //   this.cdr.markForCheck();
+  // });
 
   this.loading = false;
 
-  // 2️⃣ بعد العرض، انتظر 0.3 ثانية ثم ابدأ المزامنة
+  // 6️⃣ بعد العرض، انتظر 0.3 ثانية ثم ابدأ المزامنة
   if (navigator.onLine) {
     setTimeout(() => {
       console.log('⏳ Waiting 0.3 seconds... then syncing');
@@ -240,6 +269,10 @@ async syncAllorders(): Promise<void> {
 
   // Setup reactive filters with debouncing
   private setupReactiveFilters() {
+    // Track previous orders and staticOrders to only recompute counts when they change
+    let previousOrdersLength = 0;
+    let previousStaticOrdersLength = 0;
+
     combineLatest([
       this.orders$,
       this.staticOrders$,
@@ -254,11 +287,51 @@ async syncAllorders(): Promise<void> {
         this.ngZone.runOutsideAngular(() => {
           const filtered = this.applyFilters(orders, staticOrders, status, orderType, search);
           this.filteredOrders$.next(filtered);
-          // Update cached counts based on latest base data
-          this.recomputeCounts(orders, staticOrders);
+
+          // Only recompute counts when orders or staticOrders actually change
+          // This ensures counts remain stable when switching between filters
+          const ordersChanged = orders.length !== previousOrdersLength;
+          const staticOrdersChanged = staticOrders.length !== previousStaticOrdersLength;
+
+          if (ordersChanged || staticOrdersChanged) {
+            this.recomputeCounts(orders, staticOrders);
+            previousOrdersLength = orders.length;
+            previousStaticOrdersLength = staticOrders.length;
+          }
+
           this.cdr.markForCheck();
         });
       });
+
+    // Listen to orders$ changes to recompute counts when orders change
+    this.orders$.pipe(
+      distinctUntilChanged((prev, curr) => prev.length === curr.length && JSON.stringify(prev) === JSON.stringify(curr)),
+      takeUntil(this.destroy$)
+    ).subscribe((orders) => {
+      this.recomputeCounts(orders, this.staticOrders$.getValue());
+      this.cdr.markForCheck();
+    });
+
+    // Also listen to staticOrders$ changes to recompute counts when saved orders are updated
+    this.staticOrders$.pipe(
+      distinctUntilChanged((prev, curr) => prev.length === curr.length && JSON.stringify(prev) === JSON.stringify(curr)),
+      takeUntil(this.destroy$)
+    ).subscribe((staticOrders) => {
+      this.recomputeCounts(this.orders$.getValue(), staticOrders);
+
+      // Trigger filter recalculation when static orders change
+      this.ngZone.run(() => {
+        const filtered = this.applyFilters(
+          this.orders$.getValue(),
+          staticOrders,
+          this.status$.getValue(),
+          this.orderType$.getValue(),
+          this.search$.getValue()
+        );
+        this.filteredOrders$.next(filtered);
+        this.cdr.markForCheck();
+      });
+    });
   }
 
   // Load initial data
@@ -287,12 +360,30 @@ async syncAllorders(): Promise<void> {
   //   }
   // }
 
-  // // Load static orders from localStorage
-  // private loadStaticOrders() {
-  //   const stored = localStorage.getItem('savedOrders');
-  //   const staticOrders = stored ? JSON.parse(stored) : [];
-  //   this.staticOrders$.next(staticOrders);
-  // }
+  // Load static orders from localStorage
+  private loadStaticOrders(): void {
+    try {
+      const stored = localStorage.getItem('savedOrders');
+      const staticOrders = stored ? JSON.parse(stored) : [];
+      if (!Array.isArray(staticOrders)) {
+        console.warn('⚠️ savedOrders is not an array, setting to empty array');
+        this.staticOrders$.next([]);
+        this.cdr.markForCheck();
+        return;
+      }
+
+      console.log(`📦 Loading ${staticOrders.length} static orders from localStorage`);
+      this.staticOrders$.next(staticOrders);
+
+      // Note: recomputeCounts will be called in ngOnInit after loadStaticOrders
+      // and in setupReactiveFilters when staticOrders$ changes
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('❌ Error loading static orders:', error);
+      this.staticOrders$.next([]);
+      this.cdr.markForCheck();
+    }
+  }
 
   // Apply filters efficiently
   private applyFilters(orders: any[], staticOrders: any[], status: string, orderType: string, search: string): any[] {
@@ -302,6 +393,9 @@ async syncAllorders(): Promise<void> {
 
     if (status === 'static') {
       result = this.filterStaticOrders(staticOrders, orderType, search);
+
+      // ===== TESTING: Verify filtering =====
+      // this.testHoldOrderFilter(status, orderType, search, staticOrders.length, result.length);
     } else {
       result = this.filterDynamicOrders(orders, status, orderType, search);
     }
@@ -310,19 +404,61 @@ async syncAllorders(): Promise<void> {
     return result;
   }
 
+  // Normalize order type to handle variations
+  private normalizeOrderType(type: string): string {
+    const typeLower = (type || '').toString().trim().toLowerCase();
+
+    // Map all possible variations to standard values
+    const typeMappings: { [key: string]: string } = {
+      'takeaway': 'Takeaway',
+      'استلام': 'Takeaway',
+      'إستلام': 'Takeaway',
+      'خارج المطعم': 'Takeaway',
+      'delivery': 'Delivery',
+      'توصيل': 'Delivery',
+      'dine-in': 'dine-in',
+      'dinein': 'dine-in',
+      'dine_in': 'dine-in',
+      'في المطعم': 'dine-in',
+      'فى المطعم': 'dine-in',
+      'talabat': 'talabat',
+      'طلبات': 'talabat'
+    };
+
+    return typeMappings[typeLower] || type;
+  }
+
   // Filter static orders
   private filterStaticOrders(orders: any[], orderType: string, search: string): any[] {
     let filtered = orders;
 
+    // Filter by order type if not 'All'
     if (orderType !== 'All') {
-      filtered = filtered.filter(order => order.type === orderType);
+      const normalizedSelectedType = this.normalizeOrderType(orderType);
+      console.log(`🔍 Filtering by orderType: selected="${orderType}" normalized="${normalizedSelectedType}"`);
+
+      filtered = filtered.filter(order => {
+        const normalizedOrderType = this.normalizeOrderType(order.type || '');
+        const matches = normalizedOrderType === normalizedSelectedType;
+
+        if (!matches) {
+          console.log(`❌ Order ${order.orderId} type mismatch: stored="${order.type}" normalized="${normalizedOrderType}" vs selected="${orderType}" normalized="${normalizedSelectedType}"`);
+        }
+
+        // Compare normalized types
+        return matches;
+      });
+
+      console.log(`✅ After orderType filter: ${filtered.length} out of ${orders.length} orders match`);
     }
 
+    // Filter by search text
     if (search) {
       const searchLower = search.toLowerCase();
-      filtered = filtered.filter(order =>
-        order.orderId.toLowerCase().includes(searchLower)
-      );
+      filtered = filtered.filter(order => {
+        const orderId = (order.orderId || '').toString();
+        return orderId.toLowerCase().includes(searchLower);
+      });
     }
 
     return filtered;
@@ -436,11 +572,91 @@ async syncAllorders(): Promise<void> {
   selectOrderType(orderType: string): void {
     this.orderType$.next(orderType);
     this.selectedOrderTypeStatus = orderType;
+
+    // If selecting "All" and currently on "static" status, switch to "all" status automatically
+    // This ensures that when user clicks "All" in order type filter, they see dynamic orders
+    if (orderType === 'All' && this.selectedStatus === 'static') {
+      // Switch to "all" status to show dynamic orders
+      this.selectStatus('all');
+      return; // selectStatus will handle the filter update
+    }
+
+    // Force filter update when switching order types
+    // The reactive filter will automatically update via combineLatest
+
+    // If currently showing static orders, reload them to apply new filter
+    if (this.selectedStatus === 'static') {
+      this.loadStaticOrders();
+
+      // Force filter recalculation when switching order type while on static status
+      this.ngZone.run(() => {
+        const filtered = this.applyFilters(
+          this.orders$.getValue(),
+          this.staticOrders$.getValue(),
+          this.selectedStatus,
+          orderType,
+          this.search$.getValue()
+        );
+        this.filteredOrders$.next(filtered);
+        this.cdr.markForCheck();
+      });
+    } else {
+      // When switching to non-static status, ensure dynamic orders are properly filtered
+      this.ngZone.run(() => {
+        const filtered = this.applyFilters(
+          this.orders$.getValue(),
+          this.staticOrders$.getValue(),
+          this.selectedStatus,
+          orderType,
+          this.search$.getValue()
+        );
+        this.filteredOrders$.next(filtered);
+        this.cdr.markForCheck();
+      });
+    }
   }
 
   selectStatus(status: string): void {
     this.status$.next(status);
     this.selectedStatus = status;
+
+    // Force filter update when switching status
+    // The reactive filter will automatically update via combineLatest
+
+    // If switching to static, ensure static orders are loaded first
+    if (status === 'static') {
+      this.loadStaticOrders();
+
+      // Wait for staticOrders$ to be updated, then apply filters
+      // Use setTimeout to ensure staticOrders$ is updated before filtering
+      setTimeout(() => {
+        this.ngZone.run(() => {
+          const staticOrders = this.staticOrders$.getValue();
+          const filtered = this.applyFilters(
+            this.orders$.getValue(),
+            staticOrders,
+            status,
+            this.selectedOrderTypeStatus,
+            this.search$.getValue()
+          );
+          this.filteredOrders$.next(filtered);
+          this.cdr.markForCheck();
+        });
+      }, 0);
+    } else {
+      // For non-static status, apply filters immediately
+      this.ngZone.run(() => {
+        const filtered = this.applyFilters(
+          this.orders$.getValue(),
+          this.staticOrders$.getValue(),
+          status,
+          this.selectedOrderTypeStatus,
+          this.search$.getValue()
+        );
+        this.filteredOrders$.next(filtered);
+        this.cdr.markForCheck();
+      });
+    }
   }
 
   onSearchChange(search: string): void {
@@ -511,9 +727,8 @@ async syncAllorders(): Promise<void> {
   }
 
   getOrderTypeCount(type: string): number {
-    if (this.selectedStatus === 'static') {
-      return this.staticOrderTypeCounts[type] ?? (type === 'All' ? this.staticOrders$.getValue().length : 0);
-    }
+    // Always return counts from dynamic orders for the order type filter tabs
+    // These tabs should show the total count of dynamic orders regardless of selected status
     return this.dynamicOrderTypeCounts[type] ?? (type === 'All' ? this.orders$.getValue().length : 0);
   }
 
@@ -533,16 +748,24 @@ async syncAllorders(): Promise<void> {
   }
 
   getStatusCount(status: string, orderType: string): number {
+    // For static status, return counts from static orders
     if (status === 'static') {
-      if (orderType === 'All') return this.staticOrderTypeCounts['All'] ?? this.staticOrders$.getValue().length;
+      if (orderType === 'All') {
+        return this.staticOrderTypeCounts['All'] ?? this.staticOrders$.getValue().length;
+      }
       return this.staticStatusTypeCounts['static']?.[orderType] ?? 0;
     }
 
+    // For all other statuses (including 'all'), return counts from dynamic orders only
+    // This ensures status counts are always based on dynamic orders, not static orders
     if (status === 'all') {
-      if (orderType === 'All') return this.dynamicOrderTypeCounts['All'] ?? this.orders$.getValue().length;
+      if (orderType === 'All') {
+        return this.dynamicOrderTypeCounts['All'] ?? this.orders$.getValue().length;
+      }
       return this.dynamicOrderTypeCounts[orderType] ?? 0;
     }
 
+    // For specific statuses, return counts from dynamic orders
     const byType = this.dynamicStatusTypeCounts[status];
     if (!byType) return 0;
     return (orderType === 'All' ? byType['All'] : byType[orderType]) ?? 0;
@@ -597,6 +820,216 @@ async syncAllorders(): Promise<void> {
     return icons[status] || 'fa fa-clock text-warning';
   }
 
+
+  ngDoCheck() {
+    const newStoredValue = localStorage.getItem('savedOrders');
+
+    if (newStoredValue) {
+      try {
+        const parsedValue = JSON.parse(newStoredValue);
+
+        // Update cartItems for compatibility
+        if (JSON.stringify(parsedValue) !== JSON.stringify(this.cartItems)) {
+          this.cartItems = parsedValue;
+        }
+
+        // Update staticOrders$ if different
+        const currentStatic = this.staticOrders$.getValue();
+        if (JSON.stringify(parsedValue) !== JSON.stringify(currentStatic)) {
+          const staticOrders = Array.isArray(parsedValue) ? parsedValue : [];
+          this.staticOrders$.next(staticOrders);
+          this.recomputeCounts(this.orders$.getValue(), staticOrders);
+          this.cdr.markForCheck();
+        }
+      } catch (error) {
+        console.error('Error parsing savedOrders in ngDoCheck:', error);
+      }
+    }
+  }
+
+  fetchOrderDetails(): void {
+    this.storedValueLocalStorage = localStorage.getItem('savedOrder');
+    if (this.storedValueLocalStorage) {
+      this.storedValueLocalStorage = JSON.parse(this.storedValueLocalStorage);
+      this.cartItems = this.storedValueLocalStorage.cartItems;
+    } else {
+      this.storedValueLocalStorage = [];
+    }
+  }
+  filterCartItems(): void {
+    const stored = localStorage.getItem('savedOrders');
+    const parsed = stored ? JSON.parse(stored) : [];
+
+    if (this.selectedOrderTypeStatus !== 'all') {
+      this.filteredCartItems = parsed.filter(
+        (item: { type: string }) => item.type === this.selectedOrderTypeStatus
+      );
+    } else {
+      this.filteredCartItems = parsed;
+    }
+  }
+  // loadOrderToCart(orderId: number) {
+  //   localStorage.setItem('holdCart', JSON.stringify([]));
+
+  //   const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
+  //   const selectedOrder = savedOrders.find((o: any) => o.orderId === orderId);
+
+  //   if (!selectedOrder) {
+  //     console.error('Order not found');
+  //     return;
+  //   }
+
+  //   const existingCart: any[] = JSON.parse(
+  //     localStorage.getItem('holdCart') || '[]'
+  //   );
+  //   const orderItems: any[] = selectedOrder.items || [];
+
+  //   // Normalize function to compare uniqueness
+  //   const normalize = (item: any) => ({
+  //     dishId: item.dish?.id || item.dish_id,
+  //     sizeId: item.selectedSize?.id || item.sizeId,
+  //     addons: (item.selectedAddons || item.addon_categories || [])
+  //       .flatMap((cat: any) => cat.addons || [])
+  //       .map((addon: any) => addon.id)
+  //       .sort()
+  //       .join(','),
+  //     note: item.note?.trim() || '',
+  //   });
+
+  //   const existingKeys = new Set(
+  //     existingCart.map((item) => {
+  //       const norm = normalize(item);
+  //       return `${norm.dishId}-${norm.sizeId}-${norm.addons}-${norm.note}`;
+  //     })
+  //   );
+
+  //   // Re-map new items into the expected cart structure
+  //   const newItems = orderItems
+  //     .filter((item) => {
+  //       const norm = normalize(item);
+  //       const key = `${norm.dishId}-${norm.sizeId}-${norm.addons}-${norm.note}`;
+  //       return !existingKeys.has(key);
+  //     })
+  //     .map((item: any) => {
+  //       const dishId = item.dish?.id || item.dish_id;
+  //       const dishName = item.dish?.name || item.dish_name;
+  //       const dishImage = item.dish?.image || item.dish_image;
+  //       const dishDesc = item.dish?.description || item.dish_desc;
+  //       const dishPrice = item.dish?.price || item.dish_price;
+  //       const sizeName = item.selectedSize?.name || item.size_name;
+  //       const sizeId = item.selectedSize?.id || item.sizeId;
+  //       const sizePrice = item.selectedSize?.price || item.size_price;
+  //       const finalPrice = item.finalPrice || item.final_price;
+  //       const quantity = item.quantity || 1;
+  //       const note = item.note || '';
+
+  //       const addon_categories = item.addon_categories || [];
+
+  //       const selectedAddons = addon_categories.flatMap(
+  //         (cat: any) => cat.addons || []
+  //       );
+
+  //       return {
+  //         dish: {
+  //           id: dishId,
+  //           name: dishName,
+  //           image: dishImage,
+  //           description: dishDesc,
+  //           price: dishPrice,
+  //         },
+  //         dish_order: item.dish_order?.toString() || '-1',
+  //         finalPrice: finalPrice,
+  //         quantity: quantity,
+  //         selectedSize: {
+  //           id: sizeId,
+  //           name: sizeName,
+  //           price: sizePrice,
+  //         },
+  //         note: note,
+  //         selectedAddons: selectedAddons,
+  //         addon_categories: addon_categories,
+  //       };
+  //     });
+
+  //   const updatedCart = [...existingCart, ...newItems];
+  //   localStorage.setItem('holdCart', JSON.stringify(updatedCart));
+
+  //   // Set order data
+  //   if (selectedOrder.FormDataDetails) {
+  //     localStorage.setItem(
+  //       'FormDataDetails',
+  //       JSON.stringify(selectedOrder.FormDataDetails)
+  //     );
+  //   }
+  //   if (selectedOrder.type) {
+  //     localStorage.setItem('selectedOrderType', selectedOrder.type);
+  //   }
+  //   localStorage.setItem('finalOrderId', orderId.toString());
+
+  //   this.router.navigate(['/home']);
+  // }
+  loadCartItems(): void {
+    const storedCart = localStorage.getItem('savedOrders');
+    if (storedCart) {
+      this.cartItems = JSON.parse(storedCart);
+      // console.log('Loaded cart items:', this.cartItems);
+    } else {
+      this.cartItems = [];
+    }
+  }
+
+
+
+  // startFiltering(): void {
+  //   let filtered = this.orders;
+
+  //   // filter by order type (skip if "All")
+  //   if (this.selectedOrderTypeStatus !== 'All') {
+  //     filtered = filtered.filter(
+  //       (order) =>
+  //         order.order_details?.order_type === this.selectedOrderTypeStatus
+  //     );
+  //   }
+
+  //   // filter by status
+  //   if (this.selectedStatus === 'completed') {
+  //     // completed includes delivered
+  //     filtered = filtered.filter((order) =>
+  //       ['completed', 'delivered'].includes(order.order_details?.status)
+  //     );
+  //   } else if (this.selectedStatus === 'static') {
+  //     const stored = localStorage.getItem('savedOrders');
+  //     const parsed = stored ? JSON.parse(stored) : [];
+
+  //     if (this.selectedOrderTypeStatus === 'All') {
+  //       filtered = parsed; //  take all saved orders
+  //     } else {
+  //       ``;
+  //       filtered = parsed.filter(
+  //         (item: any) => item.type === this.selectedOrderTypeStatus
+  //       );
+  //     }
+  //   } else if (this.selectedStatus !== 'all') {
+  //     filtered = filtered.filter(
+  //       (order) => order.order_details?.status === this.selectedStatus
+  //     );
+  //   }
+
+  //   // filter by search text
+  //   if (this.searchText) {
+  //     const search = this.searchText.toLowerCase();
+  //     filtered = filtered.filter((order) =>
+  //       order.order_details?.order_number
+  //         ?.toString()
+  //         .toLowerCase()
+  //         .includes(search)
+  //     );
+  //   }
+
+  //   this.filteredOrders = filtered;
+  // }
+
+
   getOrderLink(order: any): string {
     const type = order.order_details.order_type;
     const status = order.order_details.status;
@@ -612,16 +1045,277 @@ async syncAllorders(): Promise<void> {
     return '/order-details/' + orderId;
   }
 
-  // Method stubs for template functionality
+  // Static orders management
+  selectedOrderIdToDelete: string | null = null;
+
   openDeleteModal(orderId: string): void {
-    // Implementation from your original code
-    console.log('Open delete modal for:', orderId);
+    this.selectedOrderIdToDelete = orderId;
+
+    // Show modal (Bootstrap)
+    const modalElement = document.getElementById('deleteOrderModal');
+    if (modalElement) {
+      const modal = new bootstrap.Modal(modalElement);
+      modal.show();
+    }
   }
 
-  loadOrderToCart(orderId: number): void {
-    // Implementation from your original code
-    console.log('Load order to cart:', orderId);
+  confirmDelete(): void {
+    if (!this.selectedOrderIdToDelete) return;
+
+    try {
+      const saved = localStorage.getItem('savedOrders');
+      if (!saved) return;
+
+      const orders = JSON.parse(saved);
+      if (!Array.isArray(orders)) return;
+
+      const orderToDelete = orders.find((o: any) => o.orderId === this.selectedOrderIdToDelete);
+      const initialCount = orders.length;
+
+      const updatedOrders = orders.filter(
+        (order: any) => order.orderId !== this.selectedOrderIdToDelete
+      );
+
+      localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
+
+      // ===== TESTING: Verify delete operation =====
+      // this.testHoldOrderDelete(this.selectedOrderIdToDelete, orderToDelete, initialCount, updatedOrders.length);
+
+      // Update staticOrders$ and recompute counts
+      this.staticOrders$.next(updatedOrders);
+      this.recomputeCounts(this.orders$.getValue(), updatedOrders);
+
+      // Reload cart items
+      this.loadCartItems();
+
+      // Refresh filtered orders if showing static status
+      if (this.selectedStatus === 'static') {
+        this.selectStatus('static'); // This will trigger filtering
+      }
+
+      // Close modal
+      const modalEl = document.getElementById('deleteOrderModal');
+      if (modalEl) {
+        const modalInstance = bootstrap.Modal.getInstance(modalEl);
+        modalInstance?.hide();
+      }
+
+      this.selectedOrderIdToDelete = null;
+      this.cdr.markForCheck();
+    } catch (error) {
+      console.error('Error deleting static order:', error);
+    }
   }
+
+  loadOrderToCart(orderId: number) {
+    // localStorage.setItem('holdCart', JSON.stringify([]));
+    console.log(localStorage.getItem('savedOrders'));
+    const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
+    const selectedOrder = savedOrders.find((o: any) => o.orderId === orderId);
+
+    if (!selectedOrder) {
+      console.error('Order not found');
+      return;
+    }
+
+    const existingCart: any[] = JSON.parse(
+      localStorage.getItem('holdCart') || '[]'
+    );
+    console.log('existingCart', savedOrders);
+    const orderItems: any[] = selectedOrder.items || [];
+    console.log('orderItems', orderItems);
+
+    // Normalize function to compare uniqueness
+    const normalize = (item: any) => ({
+      dishId: item.dish?.id || item.dish_id,
+      sizeId: item.selectedSize?.id || item.sizeId,
+      addons: (item.selectedAddons || item.addon_categories || [])
+        .flatMap((cat: any) => cat.addons || [])
+        .map((addon: any) => addon.id)
+        .sort()
+        .join(','),
+      note: item.note?.trim() || '',
+    });
+
+    const existingKeys = new Set(
+      existingCart.map((item) => {
+        const norm = normalize(item);
+        return `${norm.dishId}-${norm.sizeId}-${norm.addons}-${norm.note}`;
+      })
+    );
+
+    // Re-map new items into the expected cart structure
+    const newItems = orderItems
+      .filter((item) => {
+        const norm = normalize(item);
+        const key = `${norm.dishId}-${norm.sizeId}-${norm.addons}-${norm.note}`;
+        return !existingKeys.has(key);
+      })
+      .map((item: any) => {
+        const dishId = item.dish?.id || item.dish_id;
+        const dishName = item.dish?.name || item.dish_name;
+        const dishImage = item.dish?.image || item.dish_image;
+        const dishDesc = item.dish?.description || item.dish_desc;
+        const dishPrice = item.dish?.price || item.dish_price;
+        const sizeName = item.selectedSize?.name || item.size_name;
+        const sizeId = item.selectedSize?.id || item.sizeId;
+        const sizePrice = item.selectedSize?.price || item.size_price;
+        const finalPrice = item.finalPrice || item.final_price;
+        const quantity = item.quantity || 1;
+        const note = item.note || '';
+
+        const addon_categories = item.addon_categories || [];
+
+        // ✅ استخراج selectedAddons من addon_categories مع التأكد من وجود جميع الخصائص
+        const selectedAddons = addon_categories.flatMap(
+          (cat: any) => (cat.addons || []).map((addon: any) => ({
+            id: addon.id,
+            name: addon.name,
+            price: addon.price ?? 0,
+            currency_symbol: addon.currency_symbol || 'د.ك'
+          }))
+        );
+
+        // ✅ التأكد من أن selectedSize يحتوي على جميع الخصائص المطلوبة
+        const selectedSizeObj = sizeId ? {
+          id: sizeId,
+          name: sizeName || '',
+          price: sizePrice ?? 0,
+          currency_symbol: 'د.ك'
+        } : null;
+
+        return {
+          dish: {
+            id: dishId,
+            name: dishName,
+            image: dishImage,
+            description: dishDesc,
+            price: dishPrice ?? 0,
+            currency_symbol: 'د.ك'
+          },
+          dish_order: item.dish_order?.toString() || '-1',
+          finalPrice: finalPrice || 0,
+          quantity: quantity || 1,
+          selectedSize: selectedSizeObj,
+          note: note || '',
+          selectedAddons: selectedAddons || [],
+          addon_categories: addon_categories || [],
+        };
+      });
+
+    const updatedCart = [...existingCart, ...newItems];
+    localStorage.setItem('holdCart', JSON.stringify(updatedCart));
+
+    // Set order type
+    if (selectedOrder.type) {
+      localStorage.setItem('selectedOrderType', selectedOrder.type);
+    }
+
+    // Set final order ID
+    localStorage.setItem('finalOrderId', orderId.toString());
+
+    // Restore delivery address data if order type is Delivery
+    if (selectedOrder.type && (selectedOrder.type.toLowerCase() === 'delivery' || selectedOrder.type === 'توصيل')) {
+      if (selectedOrder.addresses) {
+        const formData = {
+          client_name: selectedOrder.addresses.client_name || '',
+          address_phone: selectedOrder.addresses.address_phone || '',
+          country_code: selectedOrder.addresses.country_code ? { code: selectedOrder.addresses.country_code } : null,
+          apartment_number: selectedOrder.addresses.apartment_number || '',
+          building: selectedOrder.addresses.building || '',
+          address_type: selectedOrder.addresses.address_type || '',
+          address: selectedOrder.addresses.address || '',
+          propertyType: selectedOrder.addresses.propertyType || '',
+          buildingName: selectedOrder.addresses.buildingName || '',
+          note: selectedOrder.addresses.note || '',
+          floor_number: selectedOrder.addresses.floor_number || '',
+          landmark: selectedOrder.addresses.landmark || '',
+          villaName: selectedOrder.addresses.villaName || '',
+          villaNumber: selectedOrder.addresses.villaNumber || '',
+          companyName: selectedOrder.addresses.companyName || '',
+          buildingNumber: selectedOrder.addresses.buildingNumber || '',
+        };
+        localStorage.setItem('form_data', JSON.stringify(formData));
+        localStorage.setItem('FormDataDetails', JSON.stringify(formData));
+      }
+    }
+
+    // Restore dine-in table data if order type is dine-in
+    if (selectedOrder.type && (selectedOrder.type === 'dine-in' || selectedOrder.type === 'في المطعم' || selectedOrder.type === 'فى المطعم')) {
+      if (selectedOrder.tableNumber) {
+        localStorage.setItem('table_number', selectedOrder.tableNumber.toString());
+      }
+      if (selectedOrder.table_id) {
+        localStorage.setItem('table_id', selectedOrder.table_id.toString());
+      }
+    }
+
+    // Restore client phone and country code
+    if (selectedOrder.client_phone) {
+      localStorage.setItem('clientPhone', selectedOrder.client_phone);
+    }
+    if (selectedOrder.client_country_code) {
+      localStorage.setItem('selectedCountryCode', selectedOrder.client_country_code);
+    }
+
+    // Restore payment data
+    if (selectedOrder.payment_method) {
+      localStorage.setItem('selectedPaymentMethod', selectedOrder.payment_method);
+    }
+    if (selectedOrder.payment_status) {
+      localStorage.setItem('selectedPaymentStatus', selectedOrder.payment_status);
+    }
+    if (selectedOrder.cash_amount !== null && selectedOrder.cash_amount !== undefined) {
+      localStorage.setItem('cash_amountt', selectedOrder.cash_amount.toString());
+    }
+    if (selectedOrder.credit_amount !== null && selectedOrder.credit_amount !== undefined) {
+      localStorage.setItem('credit_amountt', selectedOrder.credit_amount.toString());
+    }
+
+    // Restore coupon data
+    if (selectedOrder.coupon_code) {
+      localStorage.setItem('couponCode', selectedOrder.coupon_code);
+      // Try to restore applied coupon from invoice summary
+      if (selectedOrder.invoiceSummary && selectedOrder.invoiceSummary.coupon_value) {
+        const appliedCoupon = {
+          coupon_code: selectedOrder.coupon_code,
+          total_discount: selectedOrder.invoiceSummary.coupon_value,
+          amount_after_coupon: parseFloat(selectedOrder.invoiceSummary.subtotal_price) - parseFloat(selectedOrder.invoiceSummary.coupon_value),
+          currency_symbol: selectedOrder.invoiceSummary.currency_symbol || 'د.ك'
+        };
+        localStorage.setItem('appliedCoupon', JSON.stringify(appliedCoupon));
+        localStorage.setItem('discountAmount', selectedOrder.invoiceSummary.coupon_value);
+      }
+    }
+
+    // Restore note
+    if (selectedOrder.note) {
+      localStorage.setItem('notes', selectedOrder.note);
+      localStorage.setItem('additionalNote', selectedOrder.note);
+      localStorage.setItem('onholdOrdernote', selectedOrder.note);
+    }
+
+    console.log('✅ Order data restored to localStorage:', {
+      orderType: selectedOrder.type,
+      tableNumber: selectedOrder.tableNumber,
+      clientPhone: selectedOrder.client_phone,
+      paymentMethod: selectedOrder.payment_method,
+      couponCode: selectedOrder.coupon_code
+    });
+
+    // ✅ الانتقال إلى home بعد حفظ جميع البيانات
+    // Use setTimeout to ensure localStorage is updated before navigation
+    setTimeout(() => {
+      this.router.navigate(['/home']).then(() => {
+        // Force reload to ensure side-details component reloads with new data
+        setTimeout(() => {
+          window.location.reload();
+        }, 100);
+      });
+    }, 50);
+  }
+
+
 
   ngOnDestroy() {
     this.destroy$.next();
@@ -630,12 +1324,13 @@ async syncAllorders(): Promise<void> {
 
   continueOrder(order: any): void {
     console.log('continueOrder', order);
+    localStorage.setItem('selectedOrderType', order.order_details.order_type);
     this.productsService.destroyCart();
     localStorage.removeItem('cart');
     localStorage.setItem('currentOrderId', order.order_details.order_id);
     localStorage.setItem('currentOrderData', JSON.stringify(order));
     // Ensure side panel logic picks correct order type immediately
-    localStorage.setItem('selectedOrderType', order.order_details?.order_type || '');
+    // localStorage.setItem('selectedOrderType', order.order_details?.order_type || '');
 
     const type = order.order_details?.order_type;
     const status = order.order_details?.status;
