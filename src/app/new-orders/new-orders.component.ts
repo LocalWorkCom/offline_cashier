@@ -69,7 +69,7 @@ export class NewOrdersComponent implements OnInit, OnDestroy {
   page = 1;
   perPage = 30; // smaller first page for faster initial render
   hasMore = true;
-  private syncing = false;
+  syncing = false;
 
   // Cached counts to avoid recalculation each CD cycle
   private dynamicOrderTypeCounts: Record<string, number> = {};
@@ -208,10 +208,14 @@ private async loadOrdersFromIndexedDB(): Promise<void> {
 // }
 
 async syncOrdersInBackground(sync: boolean = false): Promise<void> {
-  if (this.loading || this.syncing || (!this.hasMore && !sync)) return;
+  if (this.loading || (!this.hasMore && !sync)) return;
 
   this.loading = true;
-  this.syncing = true;
+  // فقط نشغل syncing إذا كانت عملية مزامنة كاملة (sync = true)
+  if (sync && !this.syncing) {
+    this.syncing = true;
+    this.cdr.markForCheck();
+  }
   console.log(`📥 Fetching page ${this.page}...`);
 
   try {
@@ -247,7 +251,8 @@ async syncOrdersInBackground(sync: boolean = false): Promise<void> {
     if (sync) await this.loadOrdersFromIndexedDB();
   } finally {
     this.loading = false;
-    this.syncing = false;
+    // لا نعطل syncing هنا - نترك syncAllorders تتحكم فيه
+    // this.syncing = false; // تم نقله إلى syncAllorders
   }
 }
 
@@ -256,12 +261,22 @@ async syncAllorders(): Promise<void> {
   this.page = 1;
   this.hasMore = true;
 
-  while (this.hasMore) {
-    await this.syncOrdersInBackground(true);
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
+  // تفعيل حالة المزامنة لعرض spinner
+  this.syncing = true;
+  this.cdr.markForCheck();
 
-  console.log('✅ Full sync completed. IndexedDB is up to date.');
+  try {
+    while (this.hasMore) {
+      await this.syncOrdersInBackground(true);
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
+    console.log('✅ Full sync completed. IndexedDB is up to date.');
+  } finally {
+    // إيقاف حالة المزامنة بعد الانتهاء
+    this.syncing = false;
+    this.cdr.markForCheck();
+  }
 }
 
 
