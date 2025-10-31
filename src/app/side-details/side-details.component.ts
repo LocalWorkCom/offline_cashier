@@ -766,22 +766,81 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       .then((cartItems: any[]) => {
         if (cartItems && cartItems.length > 0) {
           this.cartItems = cartItems;
+          console.log('✅ Cart loaded from IndexedDB:', this.cartItems.length, 'items');
         } else {
           // Fallback إلى localStorage إذا لزم الأمر
-          const storedCart = localStorage.getItem('cart');
-          this.cartItems = storedCart ? JSON.parse(storedCart) : [];
+          // أولاً: جرب holdCart (لطلبات معلقة)
+          const holdCart = localStorage.getItem('holdCart');
+          if (holdCart) {
+            try {
+              const holdItems = JSON.parse(holdCart);
+              if (holdItems && holdItems.length > 0) {
+                this.cartItems = holdItems;
+                // حفظ في IndexedDB للاستخدام المستقبلي
+                this.saveHoldCartToIndexedDB(holdItems);
+                console.log('✅ Cart loaded from holdCart (localStorage):', this.cartItems.length, 'items');
+              } else {
+                // جرب cart
+                const storedCart = localStorage.getItem('cart');
+                this.cartItems = storedCart ? JSON.parse(storedCart) : [];
+                console.log('✅ Cart loaded from cart (localStorage):', this.cartItems.length, 'items');
+              }
+            } catch (error) {
+              console.error('❌ Error parsing holdCart:', error);
+              const storedCart = localStorage.getItem('cart');
+              this.cartItems = storedCart ? JSON.parse(storedCart) : [];
+            }
+          } else {
+            // جرب cart العادي
+            const storedCart = localStorage.getItem('cart');
+            this.cartItems = storedCart ? JSON.parse(storedCart) : [];
+            console.log('✅ Cart loaded from cart (localStorage):', this.cartItems.length, 'items');
+          }
         }
         this.updateTotalPrice();
-        console.log('✅ Cart loaded from IndexedDB:', this.cartItems);
         this.cdr.detectChanges();
       })
       .catch((error: any) => {
         console.error('❌ Error loading cart from IndexedDB:', error);
-        this.cartItems = [];
+        // Fallback إلى localStorage
+        const holdCart = localStorage.getItem('holdCart');
+        if (holdCart) {
+          try {
+            const holdItems = JSON.parse(holdCart);
+            if (holdItems && holdItems.length > 0) {
+              this.cartItems = holdItems;
+              console.log('✅ Cart loaded from holdCart (fallback):', this.cartItems.length, 'items');
+            } else {
+              const storedCart = localStorage.getItem('cart');
+              this.cartItems = storedCart ? JSON.parse(storedCart) : [];
+            }
+          } catch (parseError) {
+            console.error('❌ Error parsing holdCart in fallback:', parseError);
+            const storedCart = localStorage.getItem('cart');
+            this.cartItems = storedCart ? JSON.parse(storedCart) : [];
+          }
+        } else {
+          const storedCart = localStorage.getItem('cart');
+          this.cartItems = storedCart ? JSON.parse(storedCart) : [];
+        }
         this.updateTotalPrice();
         this.cdr.detectChanges();
       });
 
+  }
+
+  // حفظ holdCart في IndexedDB
+  private async saveHoldCartToIndexedDB(items: any[]): Promise<void> {
+    try {
+      await this.dbService.init();
+      await this.dbService.clearCart();
+      for (const item of items) {
+        await this.dbService.addToCart(item);
+      }
+      console.log('✅ holdCart saved to IndexedDB:', items.length, 'items');
+    } catch (error) {
+      console.warn('⚠️ Error saving holdCart to IndexedDB:', error);
+    }
   }
   // end hanan
 
