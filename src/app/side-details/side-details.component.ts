@@ -223,16 +223,16 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ===== Helpers required by template =====
-  // هل توجد معلومات توصيل كافية بالفعل؟ (عنوان/معرّف عنوان)
-  hasDeliveryInfo(): boolean {
-    try {
-      const hasAddressId = !!localStorage.getItem('address_id');
-      const hasFormDataAddress = !!(this.FormDataDetails && (this.FormDataDetails.address || this.address));
-      return hasAddressId || hasFormDataAddress;
-    } catch (_) {
-      return false;
-    }
-  }
+  // // هل توجد معلومات توصيل كافية بالفعل؟ (عنوان/معرّف عنوان)
+  // hasDeliveryInfo(): boolean {
+  //   try {
+  //     const hasAddressId = !!localStorage.getItem('address_id');
+  //     const hasFormDataAddress = !!(this.FormDataDetails && (this.FormDataDetails.address || this.address));
+  //     return hasAddressId || hasFormDataAddress;
+  //   } catch (_) {
+  //     return false;
+  //   }
+  // }
 
   // رسالة خطأ إدخال الدفع (تُستخدم في القالب)
   paymentError: string = '';
@@ -543,7 +543,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
           const payload = {
-            isOnline : false,
+            isOnline: false,
             order_id: order.order_id == order.order_number ? null : order.order_id,
             // table_id: order.table_number || null,
             type: order.order_details.order_type,
@@ -553,7 +553,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
             cashier_machine_id: order.order_details.cashier_machine_id || localStorage.getItem('cashier_machine_id'),
             branch_id: order.order_details.branch_id,
             table_id: order.order_details.table_id || null,
-            payment_method:  order.order_details.payment_method == "deferred" ? "credit" : order.order_details.payment_method,
+            payment_method: order.order_details.payment_method == "deferred" ? "credit" : order.order_details.payment_method,
             payment_status: order.order_details.payment_status,
             cash_amount: order.order_details.cash_amount,
             credit_amount: order.order_details.credit_amount,
@@ -2572,7 +2572,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
     // continued order from orders list
     let continuedOrderId: number | null = null;
-    let table_number : any;
+    let table_number: any;
     try {
       const currentOrderDataRaw = localStorage.getItem('currentOrderData');
       if (currentOrderDataRaw) {
@@ -2599,8 +2599,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       isOnline: navigator.onLine,
       orderId: this.finalOrderId || Date.now(),
       ...(continuedOrderId ? { order_id: continuedOrderId } : {}),
-      order_id : continuedOrderId ?? null,
-      table_number :table_number ?? null,
+      order_id: continuedOrderId ?? null,
+      table_number: table_number ?? null,
       type: this.selectedOrderType,
       branch_id: branchId,
       payment_method: this.selectedPaymentMethod ?? 'cash',
@@ -2998,8 +2998,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       console.log('Submitting order online:', orderData);
 
     }
-    if(this.currentOrderData && this.isOnline == false)
-    {
+    if (this.currentOrderData && this.isOnline == false) {
       console.log("ff");
       const orderId = await this.dbService.savePendingOrder(orderData);
     }
