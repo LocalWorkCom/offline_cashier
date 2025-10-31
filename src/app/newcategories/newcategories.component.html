@@ -24,7 +24,7 @@
         </div>
       </button>
     </li> -->
-    @for (category of categories; track category.id) {
+    @for (category of categories; track $index) {
     <li class="nav-item mb-2" role="presentation">
       <button class="nav-link" [ngClass]="{ active: selectedCategory?.id === category.id }"
         (click)="onCategorySelect(category)" id="pills-{{ category.id }}-tab" data-bs-toggle="pill"
@@ -53,11 +53,11 @@
         }
       </div>
     </div> -->
-    @for (category of categories; track category.id) {
+    @for (category of categories; track $index) {
     <div class="tab-pane fade" [ngClass]="{ 'show active': selectedCategory?.id === category.id }"
       [id]="'pills-' + category.id" role="tabpanel">
       <div class="row mx-0">
-        @for (product of filteredOrders; track product.id ) {
+        @for (product of filteredOrders; track $index ) {
         <div class="col-lg-4 col-md-6 mb-4">
           <app-product-card [item]="product" (sendToCategories)="recieveFromProduct($event)"></app-product-card>
         </div>
@@ -95,7 +95,7 @@
         </div>
         <ul class="nav nav-pills mb-3 px-0 align-items-center d-flex flex-wrap justify-content-center" id="pills-tab"
           role="tablist">
-          @for (category of filterCategories; track category.id) {
+          @for (category of filterCategories; track $index) {
           <li class="nav-item mb-2" role="presentation">
             <button class="nav-link" [ngClass]="{ active: selectedCategory?.id === category.id }"
               (click)="onCategorySelect(category)" id="pills-{{ category.id }}-tab" data-bs-toggle="pill"

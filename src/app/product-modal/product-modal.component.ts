@@ -3,11 +3,6 @@ import { ProductsService } from '../services/products.service';
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
-//start dalia
-import { IndexeddbService } from '../services/indexeddb.service';
-import { ChangeDetectorRef } from '@angular/core';
-//end dalia
-
 @Component({
   selector: 'app-product-modal',
   imports: [CommonModule],
@@ -24,25 +19,21 @@ export class ProductModalComponent implements OnInit {
   finalPrice: number = 0;
   note: string = ''; // Store user notes
   selectedAddonsByCategory: { [key: string]: any[] } = {}; // Stores selected addons per category
-  addonValidationErrors: {
-    [key: string]: {
-      minError: boolean;
-      maxError: boolean;
-      maxLabel: string;
-    }
+  addonValidationErrors: { 
+    [key: string]: { 
+      minError: boolean; 
+      maxError: boolean; 
+      maxLabel: string; 
+    } 
   } = {};
-  selectedAddons: any[] = [];
+    selectedAddons: any[] = [];
   addonCategories: any;
-  @Input() orderId: string = '';
+  @Input() orderId: string = ''; 
   currentRoute!: string;
   constructor(
     public activeModal: NgbActiveModal,
     private productService: ProductsService,
     private router: Router,
-    //start dalia
-    private dbService: IndexeddbService,
-    private cdr: ChangeDetectorRef,
-    //end dalia
 
     private route: ActivatedRoute
   ) {
@@ -62,86 +53,10 @@ export class ProductModalComponent implements OnInit {
     this.productService.updateSavedOrders(updatedOrders);
   }
 
-//  getProduct(product: any): any {
-//   if (localStorage.getItem('selectedOrderType') === 'talabat') {
-//     if (Array.isArray(product.Id_menus_integrations) && product.Id_menus_integrations.length > 0) {
-//       for (let integration of product.Id_menus_integrations) {
-//         if (integration.name_en?.toLowerCase().includes('talabat')) {
-//           console.log('✅ Talabat integration found:', integration);
-
-//           // تحديث القيم داخل الكائن بدون كسر الـ keys الأصلية
-//           Object.assign(product, {
-//             price: integration.menus_integration_dishs?.[0]?.price || product.price,
-//             sizes: integration.menus_integration_dish_sizes || [],
-//             addon_categories: integration.menus_integration_dish_addons || [],
-//           });
-//         }
-//       }
-//     }
-//   }
-
-//   return product;
-// }
-
-getProduct(product: any): any {
-
-  console.log('Original Product:', product);
-  if (localStorage.getItem('selectedOrderType') === 'talabat') {
-    if (Array.isArray(product.Id_menus_integrations) && product.Id_menus_integrations.length > 0) {
-      for (let integration of product.Id_menus_integrations) {
-        if (integration.name_en?.toLowerCase().includes('talabat')) {
-          console.log('✅ Talabat integration found:', integration);
-
-          // تحديث السعر الأساسي للطبق
-          const newPrice = integration.menus_integration_dishs?.[0]?.price || product.price;
-          product.price = parseFloat(newPrice);
-
-          // تحديث الأسعار داخل الـ sizes
-          if (Array.isArray(product.sizes) && Array.isArray(integration.menus_integration_dish_sizes)) {
-            product.sizes = product.sizes.map((size: any) => {
-              const matchedSize = integration.menus_integration_dish_sizes.find(
-                (s: any) => s.branch_menu_size_id === size.id
-              );
-              if (matchedSize) {
-                return { ...size, price: parseFloat(matchedSize.price) };
-              }
-              return size;
-            });
-          }
-
-          // تحديث الأسعار داخل الـ addons
-          if (Array.isArray(product.addon_categories) && Array.isArray(integration.menus_integration_dish_addons)) {
-            product.addon_categories = product.addon_categories.map((category: any) => ({
-              ...category,
-              addons: category.addons.map((addon: any) => {
-                const matchedAddon = integration.menus_integration_dish_addons.find(
-                  (a: any) => a.branch_menu_addon_id === addon.id
-                );
-                if (matchedAddon) {
-                  return { ...addon, price: parseFloat(matchedAddon.price) };
-                }
-                return addon;
-              }),
-            }));
-          }
-        }
-      }
-    }
-  }
-
-  return product;
-}
-
 
   ngOnInit(): void {
-    console.log('iit');
-
     this.productService.product$.subscribe(product => {
-      // this.selectedProduct = product;
-     this.selectedProduct = this.getProduct(product);
-    //  console.log('Selected Product in Modal after change:', this.selectedProduct);
-
-
+      this.selectedProduct = product;
 
       if (!this.selectedSize && this.selectedProduct?.sizes?.length) {
         const defaultSize = this.selectedProduct.sizes.find((size: { default_size: any; }) => size.default_size);
@@ -151,7 +66,7 @@ getProduct(product: any): any {
       this.updatePrice();
       this.initializeAddonValidation();
     });
-    this.productService.savedOrders$.subscribe((orders) => {
+        this.productService.savedOrders$.subscribe((orders) => {
       if (!orders || !this.orderId) return;
 
       const order = orders.find((o) => o.orderId === this.orderId);
@@ -219,32 +134,32 @@ getProduct(product: any): any {
       console.error("🚨 Error: addon_categories is missing or not an array!");
       return;
     }
-
+  
     this.selectedAddonsByCategory = {}; // Reset selections
     this.addonValidationErrors = {}; // Reset validation errors
-
+  
     this.selectedProduct.addon_categories.forEach((category: { id: any; min_addons: number; max_addons: number }) => {
       const categoryId = category.id.toString();
-
+  
       this.selectedAddonsByCategory[categoryId] = []; // Initialize empty array for selections
       this.addonValidationErrors[categoryId] = {
         minError: category.min_addons > 0, // Invalid if min addons > 0
         maxError: false, // Assume max is valid initially
         maxLabel: `حد أقصي: ${category.max_addons}`, // Max limit label
       };
-
+  
       console.log(`✅ Initialized category ${categoryId} (Min: ${category.min_addons}, Max: ${category.max_addons})`);
     });
-
+  
     console.log("🚀 Addon validation initialized:", this.selectedAddonsByCategory);
   }
   toggleAddon(addon: any, event: any, category: { id: string | number; min_addons: number; max_addons: number }): void {
     const categoryId = category.id.toString();
-
+  
     if (!this.selectedAddonsByCategory[categoryId]) {
       this.selectedAddonsByCategory[categoryId] = [];
     }
-
+  
     if (event.target.checked) {
       if (this.selectedAddonsByCategory[categoryId].length < category.max_addons) {
         this.selectedAddonsByCategory[categoryId].push(addon);
@@ -259,34 +174,34 @@ getProduct(product: any): any {
       this.selectedAddonsByCategory[categoryId] = this.selectedAddonsByCategory[categoryId].filter(a => a.id !== addon.id);
       this.selectedAddons = this.selectedAddons.filter(a => a.id !== addon.id);
     }
-
+  
     this.validateMinMaxAddons(category);
     this.updatePrice();
   }
-
-
+  
+  
   validateMinMaxAddons(category: { id: string | number; min_addons: number; max_addons: number }): void {
     const categoryId = category.id.toString();
     const selectedCount = this.selectedAddonsByCategory[categoryId]?.length || 0;
-
+  
     // 🚨 Check min & max errors
     this.addonValidationErrors[categoryId] = {
       minError: selectedCount < category.min_addons,
       maxError: selectedCount > category.max_addons,
-      maxLabel: `حد أقصي: ${category.max_addons}`,
+      maxLabel: `حد أقصي: ${category.max_addons}`, 
     };
   }
-
+  
   canAddToCart(): boolean {
     return Object.values(this.addonValidationErrors).every(errors => !errors.minError && !errors.maxError);
   }
-
+  
 
   // isAddonDisabled(category: any): boolean {
   //   return this.selectedAddonsByCategory[category.id]?.length >= category.max_addons;
   // }
 
-
+  
   addToCart(): void {
     if (!this.canAddToCart()) {
       console.warn("🚨 Cannot add to cart: Minimum addon requirement not met!");
@@ -349,10 +264,10 @@ getProduct(product: any): any {
     // Send data to cart service
     this.productService.addToCart(productToAdd);
     this.activeModal.dismiss(); // Close modal
-    this.addNote = false;
+    this.addNote=false;
 
   }
-
+  
   addToHoldCart(): void {
     if (!this.canAddToCart()) {
       console.warn("🚨 Cannot add to cart: Minimum addon requirement not met!");
@@ -415,7 +330,7 @@ getProduct(product: any): any {
     // Send data to cart service
     this.productService.addToHoldCart(productToAdd);
     this.activeModal.dismiss(); // Close modal
-    this.addNote = false;
+    this.addNote=false;
 
   }
   updateNote(event: any): void {
@@ -447,291 +362,25 @@ getProduct(product: any): any {
       this.updatePrice();
     }
   }
-  isAdding = false;
+isAdding = false;
 
-  // start dalia
-  // handleAddToCart() {
-  //   if (this.isAdding) return;   // ⛔ block double fire
-  //   this.isAdding = true;
-
-  //   const currentUrl = this.router.url;
-  //   console.log('🧭 Current route:', currentUrl);
-
-  //   if (currentUrl.includes('/onhold-orders/')) {
-  //     console.log('📝 Adding to ON HOLD order');
-  //     this.addToHoldCart();
-  //   } else {
-  //     console.log('🛍️ Adding to NEW cart');
-  //     this.addToCart();
-  //   }
-
-  //   setTimeout(() => this.isAdding = false, 300); // reset guard
-  // }
-
-  // handleAddToCart() {
-  //   if (this.isAdding) return;   // ⛔ block double fire
-  //   this.isAdding = true;
-
-  //   const currentUrl = this.router.url;
-  //   console.log('🧭 Current route:', currentUrl);
-
-  //   const isHoldOrder = currentUrl.includes('/onhold-orders/');
-  //   console.log(isHoldOrder ? '📝 Adding to ON HOLD order' : '🛍️ Adding to NEW cart');
-
-  //   if (!this.canAddToCart()) {
-  //     console.warn("🚨 Cannot add to cart: Minimum addon requirement not met!");
-  //     this.isAdding = false;
-  //     return;
-  //   }
-
-  //   // Prepare the cart item for IndexedDB
-  //   const cartItem = this.prepareCartItemForIndexedDB(isHoldOrder);
-
-  //   if (navigator.onLine) {
-  //     // Online: Use the original functions and also store in IndexedDB
-  //     try {
-  //       if (isHoldOrder) {
-  //         this.addToHoldCart(); // Call the original method
-  //       } else {
-  //         this.addToCart(); // Call the original method
-  //       }
-
-  //       // Also store in IndexedDB with sync status
-  //       cartItem.isSynced = true;
-  //       this.dbService.addToCart(cartItem)
-  //         .then(() => {
-  //           console.log('✅ Item also stored in IndexedDB');
-  //         })
-  //         .catch(error => {
-  //           console.error('❌ Error storing in IndexedDB:', error);
-  //         });
-
-  //     } catch (error) {
-  //       console.error('❌ Online cart failed, storing offline:', error);
-
-  //       // Fallback to offline storage
-  //       cartItem.isSynced = false;
-  //       this.storeOfflineCartItem(cartItem, isHoldOrder);
-  //     }
-
-  //     this.cdr.detectChanges();
-  //   } else {
-  //     // Offline: Store in IndexedDB only
-  //     cartItem.isSynced = false;
-  //     this.storeOfflineCartItem(cartItem, isHoldOrder);
-  //     this.cdr.detectChanges();
-  //   }
-
-  //   setTimeout(() => this.isAdding = false, 300); // reset guard
-  // }
-  async handleAddToCart() {
-  if (this.isAdding) return; // ⛔ Block double click
+handleAddToCart() {
+  if (this.isAdding) return;   // ⛔ block double fire
   this.isAdding = true;
 
-  try {
-    const currentUrl = this.router.url;
-    console.log('🧭 Current route:', currentUrl);
+  const currentUrl = this.router.url;
+  console.log('🧭 Current route:', currentUrl);
 
-    const isHoldOrder = currentUrl.includes('/onhold-orders/');
-    console.log(isHoldOrder ? '📝 Adding to ON HOLD order' : '🛍️ Adding to NEW cart');
-
-    if (!this.canAddToCart()) {
-      console.warn("🚨 Cannot add to cart: Minimum addon requirement not met!");
-      return;
-    }
-
-    const cartItem = this.prepareCartItemForIndexedDB(isHoldOrder);
-
-    // Check if item already exists in IndexedDB
-    const existingCartItems = await this.dbService.getCartItems();
-    const existingItem = existingCartItems.find((item: any) => {
-      const sameDish = item.dish?.id === cartItem.dish?.id;
-      const sameSize = item.selectedSize?.id === cartItem.selectedSize?.id;
-      const sameAddons = this.addonsAreEqualForIndexedDB(item.selectedAddons || [], cartItem.selectedAddons || []);
-      const sameNote = item.note === cartItem.note;
-      const sameHoldOrder = (item.isHoldOrder || false) === (cartItem.isHoldOrder || false);
-      const sameHoldOrderId = item.holdOrderId === cartItem.holdOrderId;
-
-      return sameDish && sameSize && sameAddons && sameNote && sameHoldOrder && sameHoldOrderId;
-    });
-
-    if (existingItem) {
-      // Item exists - increase quantity
-      existingItem.quantity += cartItem.quantity;
-
-      // Recalculate finalPrice
-      const unitPrice = existingItem.finalPrice / (existingItem.quantity - cartItem.quantity);
-      existingItem.finalPrice = unitPrice * existingItem.quantity;
-
-      // Update in IndexedDB
-      await this.dbService.updateCartItem(existingItem);
-      console.log('✅ Item quantity increased in IndexedDB');
-
-      // Also update localStorage for immediate UI sync
-      if (isHoldOrder) {
-        this.addToHoldCart();
-      } else {
-        this.addToCart();
-      }
-    } else {
-      // Item doesn't exist - add new item
-      if (navigator.onLine) {
-        // Online mode
-        if (isHoldOrder) {
-          await this.addToHoldCart();
-        } else {
-          await this.addToCart();
-        }
-
-        cartItem.isSynced = true;
-        await this.dbService.addToCart(cartItem);
-        console.log('✅ New item added to IndexedDB (Online)');
-      } else {
-        // Offline mode
-        cartItem.isSynced = false;
-        await this.storeOfflineCartItem(cartItem, isHoldOrder);
-        console.log('📦 New item added offline to IndexedDB');
-      }
-    }
-
-    this.cdr.detectChanges();
-
-    // Refresh the page to reflect changes
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
-
-  } catch (error) {
-    console.error('❌ Error while adding to cart:', error);
-  } finally {
-    // ✅ Reset the guard only after all operations finish
-    setTimeout(() => this.isAdding = false, 1000);
+  if (currentUrl.includes('/onhold-orders/')) {
+    console.log('📝 Adding to ON HOLD order');
+    this.addToHoldCart();
+  } else {
+    console.log('🛍️ Adding to NEW cart');
+    this.addToCart();
   }
+
+  setTimeout(() => this.isAdding = false, 300); // reset guard
 }
-
-// Helper method to compare addons for IndexedDB
-private addonsAreEqualForIndexedDB(a: any[], b: any[]): boolean {
-  if (a.length !== b.length) return false;
-
-  const sortById = (arr: any[]) => [...arr].sort((x, y) => x.id - y.id);
-  const sortedA = sortById(a);
-  const sortedB = sortById(b);
-
-  return sortedA.every((addon, index) =>
-    addon.id === sortedB[index].id &&
-    addon.name === sortedB[index].name &&
-    addon.price === sortedB[index].price
-  );
-}
-
-  // Helper method to prepare cart item for IndexedDB
-  private prepareCartItemForIndexedDB(isHoldOrder: boolean = false): any {
-    // Prepare dish details
-    const dish = {
-      id: this.selectedProduct.id,
-      name: this.selectedProduct.name,
-      description: this.selectedProduct.description,
-      price: this.selectedProduct.price,
-      currency_symbol: this.selectedProduct.currency_symbol || "ج.م",
-      has_size: this.selectedProduct.sizes?.length > 0,
-      has_addon: this.selectedProduct.addon_categories?.length > 0,
-      image: this.selectedProduct.image,
-      share_link: this.selectedProduct.share_link || '',
-      is_favorites: this.selectedProduct.is_favorites || false,
-      mostOrdered: this.selectedProduct.mostOrdered || false
-    };
-
-    // Prepare sizes data
-    const sizes = this.selectedProduct.sizes?.map((size: any) => ({
-      id: size.id,
-      name: size.name,
-      price: size.price,
-      currency_symbol: size.currency_symbol || "ج.م",
-      default_size: size.default_size || false
-    })) || [];
-
-    // Prepare addons data
-    const addon_categories = this.selectedProduct.addon_categories?.map((category: any) => ({
-      id: category.id,
-      name: category.name,
-      min_addons: category.min_addons || 0,
-      max_addons: category.max_addons || 0,
-      addons: category.addons?.map((addon: any) => ({
-        id: addon.id,
-        name: addon.name,
-        price: addon.price,
-        currency_symbol: addon.currency_symbol || "ج.م"
-      })) || []
-    })) || [];
-
-    // Generate unique ID for this specific combination
-    const generateUniqueId = (): string => {
-      const baseId = this.selectedProduct.id;
-      const sizeId = this.selectedSize ? `-size-${this.selectedSize.id}` : '';
-      const addonsIds = this.selectedAddons && this.selectedAddons.length > 0
-        ? `-addons-${this.selectedAddons.map((a: any) => a.id).sort().join('-')}`
-        : '';
-      return `${baseId}${sizeId}${addonsIds}`;
-    };
-
-    return {
-      dish: dish,
-      sizes: sizes,
-      addon_categories: addon_categories,
-      selectedSize: this.selectedSize || null,
-      selectedAddons: this.selectedAddons || [],
-      quantity: this.quantity || 1,
-      finalPrice: this.finalPrice,
-      note: this.note || '',
-      uniqueId: generateUniqueId(),
-      addedAt: new Date().toISOString(),
-      isSynced: navigator.onLine,
-      isHoldOrder: isHoldOrder,
-      holdOrderId: isHoldOrder ? this.extractHoldOrderIdFromUrl() : null
-    };
-  }
-  // Helper method to extract hold order ID from URL
-  private extractHoldOrderIdFromUrl(): string {
-    const url = this.router.url;
-    const match = url.match(/\/onhold-orders\/([^\/]+)/);
-    return match ? match[1] : '';
-  }
-  // Helper method to store offline cart item
-  private storeOfflineCartItem(cartItem: any, isHoldOrder: boolean) {
-    this.dbService.addToCart(cartItem)
-      .then(cartItemId => {
-        console.log('✅ Item stored in IndexedDB with ID:', cartItemId);
-
-        // Show appropriate message and close modal
-        const message = isHoldOrder
-          ? 'تم إضافة المنتج إلى الطلب المؤقت (وضع عدم الاتصال)'
-          : 'تم إضافة المنتج إلى السلة (وضع عدم الاتصال)';
-        this.showNotification(message);
-
-        // Close modal only for offline storage (online will be closed by original methods)
-        this.activeModal.dismiss();
-        this.addNote = false;
-      })
-      .catch(error => {
-        console.error('❌ Error storing in IndexedDB:', error);
-        const message = isHoldOrder
-          ? 'فشل في إضافة المنتج إلى الطلب المؤقت'
-          : 'فشل في إضافة المنتج إلى السلة';
-        this.showNotification(message, 'error');
-
-        // Close modal on error too
-        this.activeModal.dismiss();
-        this.addNote = false;
-      });
-  }
-  // Helper method to show notifications
-  private showNotification(message: string, type: 'success' | 'error' = 'success') {
-    console.log(type === 'success' ? '✅' : '❌', message);
-    // You can implement a proper notification system here
-    // Example: this.toastr.success(message) or this.toastr.error(message)
-  }
-
-  // end dalia
   // addToHoldCart(): void {
   //   if (!this.canAddToCart()) {
   //     console.warn("🚨 Cannot add to cart: Minimum addon requirement not met!");
@@ -895,9 +544,9 @@ private addonsAreEqualForIndexedDB(a: any[], b: any[]): boolean {
     const addonPrice = this.selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
     this.finalPrice = (basePrice + addonPrice) * this.quantity;
   }
-  addNote: boolean = false;
-  ShowAddNote() {
-    this.addNote = true
-  }
+  addNote:boolean=false;
+ShowAddNote(){
+this.addNote=true
+}
 
 }

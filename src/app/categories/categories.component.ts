@@ -291,4 +291,3 @@ export class CategoriesComponent implements OnInit, OnDestroy {
     this.newDish.stopListening();
   }
 }
-   

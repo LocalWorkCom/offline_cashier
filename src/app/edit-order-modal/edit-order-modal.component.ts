@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { baseUrl } from '../environment';
 import { AuthService } from '../services/auth.service';
 import { ProductsService } from '../services/products.service';
-import { IndexeddbService } from '../services/indexeddb.service';
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -13,10 +12,9 @@ declare var bootstrap: any;
 
 @Component({
   selector: 'app-edit-order-modal',
-  standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './edit-order-modal.component.html',
-  styleUrls: ['./edit-order-modal.component.css'],
+  styleUrl: './edit-order-modal.component.css',
 })
 export class EditOrderModalComponent implements OnInit {
   @Input() itemId!: number;
@@ -38,9 +36,8 @@ export class EditOrderModalComponent implements OnInit {
   constructor(
     private http: HttpClient,
     public actvModal: NgbActiveModal,
-    authService: AuthService,
-    private dbService: IndexeddbService
-  ) { }
+    authService: AuthService
+  ) {}
 
   ngOnInit(): void {
     if (this.itemId) this.loadItem();
@@ -93,7 +90,7 @@ export class EditOrderModalComponent implements OnInit {
       .get(url)
       .pipe(
         finalize(() => {
-          this.loading = false;
+          this.loading = false; 
         })
       )
       .subscribe({
@@ -179,8 +176,8 @@ export class EditOrderModalComponent implements OnInit {
     // base (size price if selected, else dish price)
     const sizePrice = this.selectedItem.selected_size
       ? this.selectedItem.sizes?.find(
-        (s: any) => s.id === this.selectedItem.selected_size
-      )?.price ?? dish.price
+          (s: any) => s.id === this.selectedItem.selected_size
+        )?.price ?? dish.price
       : this.selectedSize?.price ?? dish.price;
 
     // addons total (use checked)
@@ -242,7 +239,6 @@ export class EditOrderModalComponent implements OnInit {
       (errors: any) => !errors.minError && !errors.maxError
     );
   }
-  editLoading: boolean = false;
 
   toggleAddon(
     addon: any,
@@ -281,8 +277,6 @@ export class EditOrderModalComponent implements OnInit {
   }
 
   editItem(): void {
-    this.editLoading = true;
-
     if (!this.selectedItem?.dish) return;
 
     const url = `${this.apiUrl}api/orders/cashier/order-edit-item/api`;
@@ -306,27 +300,10 @@ export class EditOrderModalComponent implements OnInit {
       addon_categories: addon_categories,
     };
 
-    // 📴 Offline handling
-    if (!navigator.onLine) {
-      this.isLoading = false;
-      this.editLoading = false;
-
-      // Show offline message
-      this.error = 'يعمل النظام في وضع عدم الاتصال - سيتم تطبيق التعديل عند عودة الاتصال';
-
-      setTimeout(() => {
-        this.error = null;
-        // Close modal - user can see changes in refresh
-        this.actvModal.close('updated');
-      }, 2000);
-      return;
-    }
-
     this.isLoading = true;
     this.http.post(url, body).subscribe({
       next: (res: any) => {
         this.isLoading = false;
-        this.editLoading = false;
         if (res.status) {
           console.log('✅ Item updated', res);
           this.actvModal.close('updated');
@@ -345,7 +322,6 @@ export class EditOrderModalComponent implements OnInit {
       },
       error: (err) => {
         this.isLoading = false;
-        this.editLoading = false;
         console.error('❌ API error', err);
 
         const apiError =

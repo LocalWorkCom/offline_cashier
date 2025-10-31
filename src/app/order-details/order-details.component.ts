@@ -38,67 +38,33 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     private location: Location,
     private dbService: IndexeddbService
   ) {}
-  // ngOnInit(): void {
-  //   this.route.paramMap.subscribe({
-  //     next: (params) => {
-  //       console.log(params,'params order details')
-  //       this.orderId = params.get('id');
-  //       console.log(this.orderId ,'this.orderId')
-
-  //       if (this.orderId) {
-  //         // this.fetchOrderDetails();
-  //           // start dalia
-  //          this.searchOrderInIndexedDB();
-  //          //end dalia
-  //       }
-  //     },
-  //     error: (err) => {
-  //       this.error = 'Error retrieving order ID from route.';
-  //       // console.error(this.error, err);
-  //     },
-  //   });
-  // }
+  ngOnInit(): void {
+    this.route.paramMap.subscribe({
+      next: (params) => {
+        // console.log(params,'params order details')
+        this.orderId = params.get('id');
+        if (this.orderId) {
+          // this.fetchOrderDetails();
+            // start dalia
+           this.searchOrderInIndexedDB();
+           //end dalia
+        }
+      },
+      error: (err) => {
+        this.error = 'Error retrieving order ID from route.';
+        // console.error(this.error, err);
+      },
+    });
+  }
 
 
   // start dalia
-
-
-  ngOnInit(): void {
-  this.route.paramMap.subscribe({
-    next: async (params) => {
-      console.log(params, 'params order details');
-      this.orderId = params.get('id');
-      console.log(this.orderId, 'this.orderId from route');
-
-      if (this.orderId) {
-        if (navigator.onLine) {
-          // 🌐 Online → استخدم الـ id الحقيقي من السيرفر
-          console.log("✅ Online mode - using actual orderId from route");
-          this.searchOrderInIndexedDB();
-          // أو كمان API call: this.fetchOrderDetailsFromAPI(this.orderId);
-
-        } else {
-          // 📴 Offline → الـ orderId اللي في الـ params مش هو الحقيقي
-          // نجيب التفاصيل من الـ IndexedDB
-          console.log("📴 Offline mode - fetching order by runId/tempId");
-          await this.searchOrderInIndexedDB();
-        }
-      }
-    },
-    error: (err) => {
-      this.error = 'Error retrieving order ID from route.';
-    },
-  });
-}
-
   // Search for order in IndexedDB by ID
   searchOrderInIndexedDB(): void {
     this.loading = true;
     this.error = '';
     // Convert orderId to number
-    const numericOrderId = this.orderId;
-
-    console.log("numericOrderId",numericOrderId);
+    const numericOrderId = parseInt(this.orderId, 10);
     if (isNaN(numericOrderId)) {
       this.error = 'Invalid order ID';
       this.loading = false;
@@ -136,16 +102,14 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       // Set the main order details
       this.orderDetails = order.details_order ;
       this.orderSummary = order.details_order?.order_summary || order.details_order.order_summary || {};
-      this.orderItems =   order.order_items ;
+      this.orderItems = order.details_order?.order_details;
 
-      // this.orderItems = order.details_order?.order_details ;
-      // console.log("orderitems",this.orderItems);
-
+      console.log("orderitems",this.orderItems);
 
       // Fix delivery name if empty
-      // if (this.deliveryData?.delivery_name === '' || !this.deliveryData?.delivery_name) {
-      //   this.deliveryData.delivery_name = "test";
-      // }
+      if (this.deliveryData?.delivery_name === ' ' || !this.deliveryData?.delivery_name) {
+        this.deliveryData.delivery_name = "test";
+      }
 
       console.log('Order details from IndexedDB:', this.orderDetails);
       console.log('Order items from IndexedDB:', this.orderItems);

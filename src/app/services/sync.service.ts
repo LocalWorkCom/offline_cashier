@@ -74,42 +74,42 @@ export class SyncService {
   }
 
   // 👇 Helper تضيف delay + retry
-//   private triggerWithRetry(subject: Subject<void>, retries = 1, delayMs = 10000, startDelay = 5000) {
-//   let attempt = 0;
+  private triggerWithRetry(subject: Subject<void>, retries = 2, delayMs = 10000, startDelay = 5000) {
+  let attempt = 0;
 
-//   const tryEmit = () => {
-//     attempt++;
-//     console.log(`🔁 Retry attempt ${attempt}/${retries}`);
+  const tryEmit = () => {
+    attempt++;
+    console.log(`🔁 Retry attempt ${attempt}/${retries}`);
 
-//     subject.next(); // 🔥 يبعت إشارة للكومبوننت
+    subject.next(); // 🔥 يبعت إشارة للكومبوننت
 
-//     if (attempt < retries) {
-//       // ⏳ يستنى delay وبعدين يحاول تاني
-//       timer(delayMs).subscribe(() => tryEmit());
-//     } else {
-//       console.log("✅ Finished retries");
-//     }
-//   };
+    if (attempt < retries) {
+      // ⏳ يستنى delay وبعدين يحاول تاني
+      timer(delayMs).subscribe(() => tryEmit());
+    } else {
+      console.log("✅ Finished retries");
+    }
+  };
 
-//   // 👇 أول محاولة تبدأ بعد startDelay
-//   timer(startDelay).subscribe(() => tryEmit());
-// }
+  // 👇 أول محاولة تبدأ بعد startDelay
+  timer(startDelay).subscribe(() => tryEmit());
+}
 
 
   // Methods تنادي على الـ Subjects مع retries
   callRetryOrders() {
     console.log("🔄 Trigger retryOrders with retries");
-    // this.triggerWithRetry(this.retryOrdersSubject, 1, 5000);
+    this.triggerWithRetry(this.retryOrdersSubject, 1, 5000);
   }
 
   callRetryPills() {
     console.log("💊 Trigger retryPills with retries");
-    // this.triggerWithRetry(this.retryPillsSubject, 1, 5000);
+    this.triggerWithRetry(this.retryPillsSubject, 1, 5000);
   }
 
   callRetryInvoices() {
     console.log("🧾 Trigger retryInvoices with retries");
-    // this.triggerWithRetry(this.retryInvoicesSubject, 1, 5000);
+    this.triggerWithRetry(this.retryInvoicesSubject, 1, 5000);
   }
 
   // Run all at once (مثلاً لما الإنترنت يرجع)

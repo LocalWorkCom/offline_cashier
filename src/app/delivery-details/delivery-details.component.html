@@ -13,59 +13,99 @@
         </ol>
       </nav>
     </nav>
-
     <h4 class="fw-bold my-4">معلومات العميل</h4>
-
-    <!-- اسم العميل -->
     <div class="mb-3">
       <div class="mb-3 input-group">
-        <span class="input-group-text" id="basic-addon1" *ngIf="form.get('client_name')?.value">
-          ادخل اسم العميل
-        </span>
-        <input type="text" class="form-control" [class.is-invalid]="isFieldValid('client_name')"
-          [class.is-valid]="form.get('client_name')?.valid && (form.get('client_name')?.touched || submitted)"
-          placeholder="اسم العميل" formControlName="client_name"
-          [ngClass]="{'has-value': form.get('client_name')?.value}" />
+        <span class="input-group-text" id="basic-addon1" *ngIf="form.get('client_name')?.value">ادخل اسم العميل </span>
+        <input type="text" class="form-control" placeholder=" اسم العميل " formControlName="client_name" [ngClass]="{
+              'has-value': form.get('client_name')?.value,
+         }" />
       </div>
 
-      @if (isFieldValid('client_name')) {
-      <div class="invalid-feedback d-block text-danger small">
-        {{ getErrorMessage('client_name') }}
+      <div *ngIf="submitted && form.controls['client_name'].invalid" class="invalid-feedback d-block text-danger small">
+        <small
+          *ngIf="form.controls['client_name']?.errors?.['required'] && (form.controls['client_name'].touched || submitted)"
+          class="text-danger pt-3">
+          اسم العميل مطلوب
+        </small>
+
+        <small *ngIf="clientName?.errors?.['pattern']">
+          اسم العميل لا يمكن أن يحتوي على مسافات فقط
+        </small>
+
+        <div *ngIf="form.controls['client_name']?.errors?.['serverError']"
+          class="invalid-feedback d-block text-danger small">
+          {{ form.controls['client_name'].errors?.['serverError'] }}
+        </div>
       </div>
-      }
     </div>
-
-    <!-- رقم الهاتف ورمز الدولة -->
     <div class="d-flex gap-2 align-items-start">
       <div class="w-50">
-        <div class="mb-3 input-group">
-          <span class="input-group-text" id="basic-addon1" *ngIf="form.get('address_phone')?.value">
-            ادخل رقم العميل
-          </span>
-          <input type="text" class="form-control text-end" [class.is-invalid]="isFieldValid('address_phone')"
-            [class.is-valid]="form.get('address_phone')?.valid && (form.get('address_phone')?.touched || submitted)"
-            placeholder="ادخل رقم الهاتف" formControlName="address_phone" />
+        <div class="">
+          <div class="mb-3 input-group">
+            <span class="input-group-text" id="basic-addon1" *ngIf="form.get('address_phone')?.value">ادخل رقم العميل
+            </span>
+            <input type="text" class="form-control text-end" placeholder="ادخل رقم الهاتف"
+              formControlName="address_phone" [ngClass]="{
+              'has-value': form.get('address_phone')?.value,
+         }" [ngClass]="{
+          'is-invalid': (submitted || sumbitSearch) && addressPhone?.invalid
+        }" />
+          </div>
+          <small class="text-danger pt-5"
+            *ngIf="addressPhone?.errors?.['required'] && (form.controls['address_phone'].touched || (submitted||sumbitSearch))">
+            رقم الهاتف مطلوب
+          </small>
+          <div *ngIf="(submitted || sumbitSearch) && addressPhone?.invalid"
+            class="invalid-feedback d-block text-danger small">
+            <small *ngIf="addressPhone?.errors?.['leadingSpace']">
+              لا يمكن أن يبدأ رقم الهاتف بمسافة
+            </small>
+            <small *ngIf="addressPhone?.errors?.['pattern']">
+              رقم الهاتف يجب أن يحتوي على {{ requiredPhoneLength }} رقم فقط
+            </small>
+            <small *ngIf="addressPhone?.errors?.['serverError']">
+              {{ addressPhone?.errors?.['serverError'] }}
+            </small>
+          </div>
         </div>
-
-        @if (isFieldValid('address_phone')) {
-        <div class="invalid-feedback d-block text-danger small">
-          {{ getErrorMessage('address_phone') }}
-        </div>
-        }
         <p class="text-danger">{{ phoneNotFound }}</p>
       </div>
-
       <div class="w-25">
+        <!--   <div ngbDropdown class="custom-dropdown dropdown w-100">
+          <div ngbDropdownToggle class="selected-option dropdown-toggle text-muted d-flex align-items-center justify-content-between"
+            type="button"
+            data-bs-toggle="dropdown" aria-expanded="false"  [ngClass]="{
+            'is-invalid':
+              (submitted || sumbitSearch) &&
+              form.controls['country_code'].invalid
+          }">
+            <span class="px-1">{{ selectedCountry.code || "اختر الدولة" }}</span>
+            <img *ngIf="selectedCountry?.flag" [src]="selectedCountry.flag" class="flag-icon" />
+          </div>
+
+          <ul ngbDropdownMenu  class="dropdown-list dropdown-menu show w-100">
+            <li class="p-2">
+              <input type="text" formControlName="searchTerm" (input)="filterCountries()" class="form-control"
+                placeholder="ابحث" />
+            </li>
+            <li ngbDropdownItem *ngFor="let country of filteredCountries" (click)="selectCountry(country)"
+              class="d-flex justify-content-between text-muted p-2">
+              {{ country?.code }}
+              <img *ngIf="country?.flag" [src]="country.flag" class="flag-icon" />
+            </li>
+          </ul>
+        </div> -->
         <div ngbDropdown class="custom-dropdown dropdown w-100">
           <div ngbDropdownToggle
             class="selected-option dropdown-toggle text-muted d-flex align-items-center justify-content-between"
-            [class.is-invalid]="isFieldValid('country_code')"
-            [class.is-valid]="form.get('country_code')?.valid && (form.get('country_code')?.touched || submitted)"
-            type="button">
-            <span class="px-1">{{ form.controls['country_code'].value?.code ||
-              'اختر الدولة' }}</span>
-            <img *ngIf="form.controls['country_code'].value"
-              [src]="form.controls['country_code'].value?.flag||selectedCountry.flag" class="flag-icon" />
+            type="button" [ngClass]="{
+      'is-invalid':
+        (submitted || sumbitSearch) && form.controls['country_code'].invalid
+    }">
+            <span class="px-1">{{  form.controls['country_code'].value?.code || 'اختر الدولة' }}</span>
+            <!-- <span class="px-1">{{ selectedCountry.code || 'اختر الدولة' }}</span> -->
+            <img *ngIf="form.controls['country_code'].value" [src]="form.controls['country_code'].value?.flag||selectedCountry.flag" class="flag-icon" />
           </div>
 
           <ul ngbDropdownMenu class="dropdown-list dropdown-menu w-100">
@@ -81,26 +121,24 @@
           </ul>
         </div>
 
-        @if (isFieldValid('country_code')) {
-        <div class="invalid-feedback d-block text-danger small">
-          {{ getErrorMessage('country_code') }}
-        </div>
-        }
-      </div>
 
+        <div *ngIf="
+          (submitted || sumbitSearch) && form.controls['country_code']?.invalid
+        " class="invalid-feedback d-block text-danger small">
+          يرجى اختيار الدولة
+        </div>
+      </div>
       <div class="search w-25">
         <button type="button" class="w-100" (click)="searchPhoneNumber()" [disabled]="!searchPhoneLoading">
-          <span class="btn form-control" *ngIf="searchPhoneLoading">ابحث برقم
-            الهاتف</span>
+          <span class="btn form-control" *ngIf="searchPhoneLoading">ابحث برقم الهاتف</span>
           <span *ngIf="!searchPhoneLoading" class="loading-indicator">
             <span class="spinner"></span>
             جاري البحث...
           </span>
         </button>
       </div>
-    </div>
 
-    <!-- قسم الواتساب -->
+    </div>
     <div class="whatsapp">
       <div class="mb-3">
         <div class="d-flex align-items-center mb-1">
@@ -108,42 +146,40 @@
           <a class="text-success fw-bold p-1 mx-2 text-decoration-underline" (click)="useSameWhatsapp(true)">نعم</a>
           <a class="text-danger fw-bold p-1 mx-2 text-decoration-underline" (click)="useSameWhatsapp(false)">لا</a>
         </div>
-
-        @if (submitted && form.controls['whatsapp_number'].invalid &&
-        form.controls['whatsapp_number'].value=='') {
-        <div class="invalid-feedback d-block text-danger small">
-          <small>الرجاء تحديد ما إذا كان هذا رقم واتساب</small>
+        <div *ngIf="submitted && form.controls['whatsapp_number'].invalid&& form.controls['whatsapp_number'].value==''"
+          class="invalid-feedback d-block text-danger small">
+          <small> الرجاء تحديد ما إذا كان هذا رقم واتساب</small>
         </div>
-        }
       </div>
-
       @if (!useSameNumberForWhatsapp) {
       <div class="mb-3 d-flex gap-2 align-items-start">
         <div class="w-75">
-          <input type="text" class="form-control" [class.is-invalid]="isFieldValid('whatsapp_number')"
-            [class.is-valid]="form.get('whatsapp_number')?.valid && (form.get('whatsapp_number')?.touched || submitted)"
-            formControlName="whatsapp_number" [(ngModel)]="whatsappPhone" placeholder="رقم الواتساب" />
-
-          @if (isFieldValid('whatsapp_number')) {
-          <div class="invalid-feedback d-block text-danger small">
-            {{ getErrorMessage('whatsapp_number') }}
+          <input type="text" class="form-control" formControlName="whatsapp_number" [(ngModel)]="whatsappPhone"
+            placeholder="رقم الواتساب" />
+          <div *ngIf="submitted && form.controls['whatsapp_number'].invalid"
+            class="invalid-feedback d-block text-danger small">
+            <div *ngIf="submitted && form.controls['whatsapp_number'].invalid"
+              class="invalid-feedback d-block text-danger small">
+              <small *ngIf=" form.controls['whatsapp_number']?.errors?.['required']">
+                رقم الواتساب مطلوب
+              </small>
+              <small *ngIf="form.controls['whatsapp_number']?.errors?.['leadingSpace']">
+                لا يمكن أن يبدأ رقم الواتساب بمسافة
+              </small>
+              <small *ngIf="form.controls['whatsapp_number']?.errors?.['pattern']">
+                رقم الواتساب يجب أن يحتوي على {{whatsappNumberCode?.value?.phoneLength || selectedWhatsappCountry.phoneLength }} رقم فقط
+              </small>
+            </div>
           </div>
-          }
         </div>
-
         <div class="w-25">
           <div ngbDropdown class="custom-dropdown dropdown w-100">
             <div ngbDropdownToggle
               class="selected-option dropdown-toggle text-muted d-flex align-items-center justify-content-between"
-              [class.is-invalid]="isFieldValid('whatsapp_number_code')"
-              [class.is-valid]="form.get('whatsapp_number_code')?.valid && (form.get('whatsapp_number_code')?.touched || submitted)"
               type="button">
-              <span class="px-1">{{
-                form.controls['whatsapp_number_code'].value?.code||
-                selectedWhatsappCountry.code||'اختر الدولة' }}</span>
-              <img *ngIf="form.controls['whatsapp_number_code']"
-                [src]="form.controls['whatsapp_number_code'].value?.flag||selectedWhatsappCountry.flag"
-                class="flag-icon" />
+              <span class="px-1">{{  form.controls['whatsapp_number_code'].value?.code|| selectedWhatsappCountry.code||'اختر الدولة' }}</span>
+              <!-- <span class="px-1">{{ form.controls['whatsapp_number_code'].value.code|| selectedWhatsappCountry.code||'اختر الدولة' }}</span> -->
+              <img *ngIf=" form.controls['whatsapp_number_code']" [src]="form.controls['whatsapp_number_code'].value?.flag||selectedWhatsappCountry.flag" class="flag-icon" />
             </div>
 
             <ul ngbDropdownMenu class="dropdown-list dropdown-menu w-100">
@@ -157,55 +193,44 @@
               </li>
             </ul>
           </div>
-
-          @if (isFieldValid('whatsapp_number_code')) {
-          <div class="invalid-feedback d-block text-danger small">
-            {{ getErrorMessage('whatsapp_number_code') }}
-          </div>
-          }
+              <div *ngIf="
+          (submitted || sumbitSearch) && form.controls['whatsapp_number_code']?.invalid
+        " class="invalid-feedback d-block text-danger small">
+          يرجى اختيار الدولة
+        </div>
         </div>
       </div>
       }
     </div>
 
-    <!-- عناوين المستخدم المخزنة -->
-    @if(searchPhoneLoading){
-    @if((selectedAddress||userStoredAddress) && userAddNewAddress==false){
+    <!-- <div class="search my-3">
+    <span (click)="searchPhoneNumber()"> ابحث برقم الهاتف </span>
+  </div> -->
+    @if(searchPhoneLoading==true){
+    @if((selectedAddress||userStoredAddress) &&
+    userAddNewAddress==false){
     <div class="mb-3">
-      <app-select width="100%" [options]="userStoredAddress" [control]="selectedAddressControl"
+      <app-select width="100%" [options]="userStoredAddress"   [control]="selectedAddressControl"
         placeholder="يرجى اختيار عنوان التوصيل"></app-select>
     </div>
-    }
+    }@else if(userAddNewAddress) {
 
-    @else if(userAddNewAddress) {
     <h4 class="fw-bold my-3">اضف عنوان التوصيل</h4>
-
-    <!-- المنطقة -->
     <div class="mb-3">
       <label for="area" class="form-label fw-bold">اختر المنطقة</label>
-      <select class="form-select styled-select" [class.is-invalid]="isFieldValid('area_id')"
-        [class.is-valid]="form.get('area_id')?.valid && (form.get('area_id')?.touched || submitted)"
-        formControlName="area_id">
-        <option value>اختر المنطقة</option>
+      <select class="form-select styled-select" formControlName="area_id" [ngClass]="{
+        'is-invalid': submitted && form.controls['area_id'].invalid
+      }">
         @for (area of areas; track area.id) {
         <option [value]="area.id">{{ area.name }}</option>
         }
       </select>
 
-      @if (isFieldValid('area_id')) {
-      <div class="invalid-feedback d-block text-danger small">
-        {{ getErrorMessage('area_id') }}
+      <div *ngIf="submitted && form.controls['area_id'].invalid" class="invalid-feedback d-block text-danger small">
+        <small>الرجاء اختيار المنطقة</small>
       </div>
-      }
     </div>
-
-    <!-- نوع العقار -->
     <input type="hidden" formControlName="address_type" />
-    @if (isFieldValid('address_type')) {
-    <div class="invalid-feedback d-block text-danger small">
-      {{ getErrorMessage('address_type') }}
-    </div>
-    }
 
     <ul class="delivery-places nav nav-pills px-0 mb-3" id="pills-tab" role="tablist">
       <li class="nav-item" role="presentation">
@@ -233,313 +258,328 @@
         </button>
       </li>
     </ul>
+    <div class="text-danger small mt-1" *ngIf="submitted && form.controls['address_type'].invalid">
+      <sup>*</sup> من فضلك اختر نوع العقار
+    </div>
 
-    <!-- الحقول الديناميكية بناءً على نوع العقار -->
     <div class="tab-content" id="pills-tabContent">
-
-      <!-- شقة -->
       <div *ngIf="selectedProperty === 'apartment'">
-        <!-- المبنى -->
-        <div class="mb-3">
+        <div>
           <div class="mb-3 input-group">
-            <span class="input-group-text text-muted" *ngIf="form.get('building')?.value">
-              ادخل المبني
-            </span>
-            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('building')"
-              [class.is-valid]="form.get('building')?.valid && (form.get('building')?.touched || submitted)"
-              placeholder="ادخل المبني" formControlName="building" />
+            <span class="input-group-text text-muted" id="basic-addon1" *ngIf="form.get('building')?.value">ادخل
+              المبني</span>
+            <!--  -->
+            <input type="text" class="form-control" [ngClass]="{
+              'has-value': form.get('building')?.value,
+              'is-invalid': submitted && building?.invalid
+            }" placeholder="ادخل المبني" formControlName="building"
+              [ngClass]="{ 'is-invalid': submitted && building?.invalid }" />
           </div>
 
-          @if (isFieldValid('building')) {
-          <div class="invalid-feedback d-block text-danger small">
-            {{ getErrorMessage('building') }}
+          <div *ngIf="submitted && building?.invalid" class="invalid-feedback d-block text-danger small">
+            {{ getValidationMessage("building") }}
           </div>
-          }
         </div>
 
-        <!-- رقم الشقة والدور -->
         <div class="mb-3 d-flex gap-2">
           <div class="flex-grow-1">
             <div class="mb-3 input-group">
-              <span class="input-group-text text-muted" *ngIf="form.get('apartment_number')?.value">
-                ادخل رقم الشقة
-              </span>
-              <input type="text" class="form-control" [class.is-invalid]="isFieldValid('apartment_number')"
-                [class.is-valid]="form.get('apartment_number')?.valid && (form.get('apartment_number')?.touched || submitted)"
-                placeholder="ادخل رقم الشقة" formControlName="apartment_number" />
+              <span class="input-group-text text-muted" id="basic-addon1" *ngIf="form.get('apartment_number')?.value">
+                ادخل رقم الشقة</span>
+              <!--  -->
+              <input type="text" class="form-control" [ngClass]="{
+                'has-value': form.get('apartment_number')?.value
+              }" placeholder="ادخل رقم الشقة" formControlName="apartment_number" [ngClass]="{
+                'is-invalid': submitted && appartmentNumber?.invalid
+              }" />
             </div>
 
-            @if (isFieldValid('apartment_number')) {
-            <div class="invalid-feedback d-block text-danger small">
-              {{ getErrorMessage('apartment_number') }}
+            <div *ngIf="submitted && appartmentNumber?.invalid" class="invalid-feedback d-block text-danger small">
+              {{ getValidationMessage("apartment_number") }}
             </div>
-            }
           </div>
 
           <div class="me-2">
             <div class="mb-3 input-group">
-              <span class="input-group-text text-muted" *ngIf="form.get('floor_number')?.value">
+              <span class="input-group-text text-muted" id="basic-addon1" *ngIf="form.get('floor_number')?.value">
                 ادخل الدور
               </span>
-              <input type="text" class="form-control" [class.is-invalid]="isFieldValid('floor_number')"
-                [class.is-valid]="form.get('floor_number')?.valid && (form.get('floor_number')?.touched || submitted)"
-                placeholder="ادخل الدور" formControlName="floor_number" />
+              <input type="text" class="form-control" [ngClass]="{
+                'has-value': form.get('floor_number')?.value
+              }" placeholder="ادخل الدور" formControlName="floor_number"
+                [ngClass]="{ 'is-invalid': submitted && floorNumber?.invalid }" />
             </div>
-
-            @if (isFieldValid('floor_number')) {
-            <div class="invalid-feedback d-block text-danger small">
-              {{ getErrorMessage('floor_number') }}
+            <div *ngIf="submitted && floorNumber?.invalid" class="invalid-feedback d-block text-danger small">
+              {{ getValidationMessage("floor_number") }}
             </div>
-            }
           </div>
         </div>
 
-        <!-- العنوان -->
-        <div class="mb-3">
-          <div class="mb-3 input-group">
-            <span class="input-group-text" *ngIf="form.get('address')?.value">
-              ادخل العنوان
-            </span>
-            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('address')"
-              [class.is-valid]="form.get('address')?.valid && (form.get('address')?.touched || submitted)"
-              placeholder="ادخل العنوان" formControlName="address" />
-          </div>
-
-          @if (isFieldValid('address')) {
-          <div class="invalid-feedback d-block text-danger small">
-            {{ getErrorMessage('address') }}
-          </div>
-          }
-        </div>
-
-        <!-- الملاحظات -->
-        <div class="my-5">
-          <div class="mb-3 input-group">
-            <span class="input-group-text text-muted" *ngIf="form.get('notes')?.value">
-              علامة مميزة (اختياري)
-            </span>
-            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('notes')"
-              [class.is-valid]="form.get('notes')?.valid && (form.get('notes')?.touched || submitted)"
-              placeholder="علامة مميزة (اختياري)" formControlName="notes" />
-          </div>
-
-          @if (isFieldValid('notes')) {
-          <div class="invalid-feedback d-block text-danger small">
-            {{ getErrorMessage('notes') }}
-          </div>
-          }
-        </div>
-      </div>
-
-      <!-- فيلا -->
-      <div *ngIf="selectedProperty === 'villa'">
-        <!-- اسم الفيلا -->
-        <div class="mb-3">
-          <div class="mb-3 input-group">
-            <span class="input-group-text text-muted" *ngIf="form.get('building')?.value">
-              ادخل اسم الفيلا
-            </span>
-            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('building')"
-              [class.is-valid]="form.get('building')?.valid && (form.get('building')?.touched || submitted)"
-              placeholder="ادخل اسم الفيلا" formControlName="building" />
-          </div>
-
-          @if (isFieldValid('building')) {
-          <div class="invalid-feedback d-block text-danger small">
-            {{ getErrorMessage('building') }}
-          </div>
-          }
-        </div>
-
-        <!-- رقم الفيلا -->
-        <div class="mb-3">
-          <div class="mb-3 input-group">
-            <span class="input-group-text text-muted" *ngIf="form.get('apartment_number')?.value">
-              ادخل رقم الفيلا
-            </span>
-            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('apartment_number')"
-              [class.is-valid]="form.get('apartment_number')?.valid && (form.get('apartment_number')?.touched || submitted)"
-              placeholder="ادخل رقم الفيلا" formControlName="apartment_number" />
-          </div>
-
-          @if (isFieldValid('apartment_number')) {
-          <div class="invalid-feedback d-block text-danger small">
-            {{ getErrorMessage('apartment_number') }}
-          </div>
-          }
-        </div>
-
-        <!-- العنوان -->
-        <div class="mb-3">
-          <div class="mb-3 input-group">
-            <span class="input-group-text" *ngIf="form.get('address')?.value">
-              ادخل العنوان
-            </span>
-            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('address')"
-              [class.is-valid]="form.get('address')?.valid && (form.get('address')?.touched || submitted)"
-              placeholder="ادخل العنوان" formControlName="address" />
-          </div>
-
-          @if (isFieldValid('address')) {
-          <div class="invalid-feedback d-block text-danger small">
-            {{ getErrorMessage('address') }}
-          </div>
-          }
-        </div>
-
-        <!-- الملاحظات -->
-        <div class="my-5">
-          <div class="mb-3 input-group">
-            <span class="input-group-text text-muted" *ngIf="form.get('notes')?.value">
-              علامة مميزة (اختياري)
-            </span>
-            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('notes')"
-              [class.is-valid]="form.get('notes')?.valid && (form.get('notes')?.touched || submitted)"
-              placeholder="علامة مميزة (اختياري)" formControlName="notes" />
-          </div>
-
-          @if (isFieldValid('notes')) {
-          <div class="invalid-feedback d-block text-danger small">
-            {{ getErrorMessage('notes') }}
-          </div>
-          }
-        </div>
-      </div>
-
-      <!-- مكتب -->
-      <div *ngIf="selectedProperty === 'office'">
-        <!-- اسم المكتب -->
-        <div class="mb-3">
-          <div class="mb-3 input-group">
-            <span class="input-group-text text-muted" *ngIf="form.get('building')?.value">
-              ادخل اسم المكتب
-            </span>
-            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('building')"
-              [class.is-valid]="form.get('building')?.valid && (form.get('building')?.touched || submitted)"
-              placeholder="ادخل اسم المكتب" formControlName="building" />
-          </div>
-
-          @if (isFieldValid('building')) {
-          <div class="invalid-feedback d-block text-danger small">
-            {{ getErrorMessage('building') }}
-          </div>
-          }
-        </div>
-
-        <!-- رقم المكتب والدور -->
-        <div class="mb-3 d-flex gap-2">
-          <div class="flex-grow-1">
-            <div class="mb-3 input-group">
-              <span class="input-group-text text-muted" *ngIf="form.get('apartment_number')?.value">
-                ادخل رقم المكتب
-              </span>
-              <input type="text" class="form-control" [class.is-invalid]="isFieldValid('apartment_number')"
-                [class.is-valid]="form.get('apartment_number')?.valid && (form.get('apartment_number')?.touched || submitted)"
-                placeholder="ادخل رقم المكتب" formControlName="apartment_number" />
-            </div>
-
-            @if (isFieldValid('apartment_number')) {
-            <div class="invalid-feedback d-block text-danger small">
-              {{ getErrorMessage('apartment_number') }}
-            </div>
-            }
-          </div>
-
-          <div class="me-2">
-            <div class="mb-3 input-group">
-              <span class="input-group-text text-muted" *ngIf="form.get('floor_number')?.value">
-                ادخل الدور
-              </span>
-              <input type="text" class="form-control" [class.is-invalid]="isFieldValid('floor_number')"
-                [class.is-valid]="form.get('floor_number')?.valid && (form.get('floor_number')?.touched || submitted)"
-                placeholder="ادخل الدور" formControlName="floor_number" />
-            </div>
-
-            @if (isFieldValid('floor_number')) {
-            <div class="invalid-feedback d-block text-danger small">
-              {{ getErrorMessage('floor_number') }}
-            </div>
-            }
-          </div>
-        </div>
-
-        <!-- العنوان -->
-        <div class="mb-3">
+        <div class="mb-3 position-relative">
           <div class="mb-3 input-group">
             <span class="input-group-text" id="basic-addon1" *ngIf="form.get('address')?.value">
               ادخل العنوان
             </span>
-            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('address')"
-              [class.is-valid]="form.get('address')?.valid && (form.get('address')?.touched || submitted)"
-              placeholder="ادخل العنوان" formControlName="address" />
+            <input type="text" class="form-control" [ngClass]="{
+              'has-value': form.get('address')?.value
+            }" placeholder="ادخل العنوان " formControlName="address"
+              [ngClass]="{ 'is-invalid': submitted && address?.invalid }" />
           </div>
-
-          @if (isFieldValid('address')) {
-          <div class="invalid-feedback d-block text-danger small">
-            {{ getErrorMessage('address') }}
+          <div *ngIf="submitted && address?.invalid" class="invalid-feedback d-block position-absolute" style="
+            top: 100%;
+            right: 0;
+            width: max-content;
+            white-space: nowrap;
+            padding-inline-start: 5px;
+          ">
+            {{ getValidationMessage("address") }}
           </div>
-          }
         </div>
 
-        <!-- الملاحظات -->
         <div class="my-5">
           <div class="mb-3 input-group">
-            <span class="input-group-text text-muted" *ngIf="form.get('notes')?.value">
+            <span class="input-group-text text-muted" id="basic-addon1" *ngIf="form.get('notes')?.value">
               علامة مميزة (اختياري)
             </span>
-            <input type="text" class="form-control" [class.is-invalid]="isFieldValid('notes')"
-              [class.is-valid]="form.get('notes')?.valid && (form.get('notes')?.touched || submitted)"
-              placeholder="علامة مميزة (اختياري)" formControlName="notes" />
+            <input type="text" class="form-control" [ngClass]="{
+              'has-value': form.get('notes')?.value
+            }" placeholder="علامة مميزة (اختياري)" formControlName="notes" />
           </div>
-
-          @if (isFieldValid('notes')) {
-          <div class="invalid-feedback d-block text-danger small">
-            {{ getErrorMessage('notes') }}
-          </div>
-          }
         </div>
       </div>
 
-      <!-- فندق -->
-      <div *ngIf="selectedProperty === 'hotel'">
+      <div *ngIf="selectedProperty === 'villa'">
         <div class="mb-3">
-          <div ngbDropdown class="dropdown w-100 custom-dropdown">
-            <button ngbDropdownToggle class="w-100 bg-transparent dropdown-toggle border-0 selected-option"
-              [class.is-invalid]="!selectedHotel && (submitted)" [class.is-valid]="selectedHotel && (submitted)"
-              type="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <span *ngIf="!selectedHotel && !selectedAddress" class="text-muted">
-                اختر الفندق
+          <div class="mb-3 input-group">
+            <span class="input-group-text text-muted" id="basic-addon1" *ngIf="form.get('building')?.value">
+              ادخل اسم الفيلا
+            </span>
+            <input type="text" class="form-control" [ngClass]="{
+              'has-value': form.get('building')?.value
+            }" placeholder="ادخل اسم الفيلا  " formControlName="building"
+              [ngClass]="{ 'is-invalid': submitted && building?.invalid }" />
+          </div>
+          <div *ngIf="submitted && building?.invalid" class="invalid-feedback d-block text-danger small">
+            {{ getValidationMessage("building") }}
+          </div>
+        </div>
+
+        <div class="mb-3">
+          <div class="mb-3 input-group">
+            <span class="input-group-text text-muted" id="basic-addon1" *ngIf="form.get('apartment_number')?.value">
+              ادخل رقم الفيلا
+            </span>
+            <input type="text" class="form-control" [ngClass]="{
+              'has-value': form.get('apartment_number')?.value
+            }" placeholder="ادخل رقم الفيلا  " formControlName="apartment_number"
+              [ngClass]="{ 'is-invalid': submitted && appartmentNumber?.invalid }" />
+          </div>
+          <div *ngIf="submitted && appartmentNumber?.invalid" class="invalid-feedback d-block text-danger small">
+            {{ getValidationMessage("apartment_number") }}
+          </div>
+        </div>
+
+        <div class="mb-3 position-relative">
+          <div class="mb-3 input-group">
+            <span class="input-group-text " id="basic-addon1" *ngIf="form.get('address')?.value">
+              ادخل العنوان
+            </span>
+            <input type="text" class="form-control" [ngClass]="{
+              'has-value': form.get('address')?.value
+            }" placeholder="ادخل العنوان " formControlName="address"
+              [ngClass]="{ 'is-invalid': submitted && address?.invalid }" />
+          </div>
+          <div *ngIf="submitted && address?.invalid" class="invalid-feedback d-block position-absolute" style="
+            top: 100%;
+            right: 0;
+            width: max-content;
+            white-space: nowrap;
+            padding-inline-start: 5px;
+          ">
+            {{ getValidationMessage("address") }}
+          </div>
+        </div>
+
+        <div class="my-5">
+          <div class="mb-3 input-group">
+            <span class="input-group-text text-muted" id="basic-addon1" *ngIf="form.get('notes')?.value">
+              علامة مميزة (اختياري)
+            </span>
+            <input type="text" class="form-control" [ngClass]="{
+              'has-value': form.get('notes')?.value
+            }" placeholder="علامة مميزة (اختياري)" formControlName="notes" />
+          </div>
+        </div>
+      </div>
+      <div *ngIf="selectedProperty === 'office'">
+        <div class="mb-3">
+          <div class="mb-3 input-group">
+            <span class="input-group-text text-muted" id="basic-addon1" *ngIf="form.get('building')?.value">
+              ادخل اسم المكتب
+            </span>
+            <input type="text" class="form-control" [ngClass]="{
+              'has-value': form.get('building')?.value,
+              'is-invalid': submitted && building?.invalid
+            }" placeholder="ادخل اسم المكتب  " formControlName="building"
+              [ngClass]="{ 'is-invalid': submitted && building?.invalid }" />
+          </div>
+        </div>
+        <div *ngIf="submitted && building?.invalid" class="invalid-feedback d-block text-danger small">
+          {{ getValidationMessage("building") }}
+        </div>
+
+        <div class="mb-3 d-flex gap-2">
+          <div class="flex-grow-1">
+            <div class="mb-3 input-group">
+              <span class="input-group-text text-muted" id="basic-addon1" *ngIf="form.get('apartment_number')?.value">
+                ادخل رقم المكتب
               </span>
-              <span *ngIf="selectedHotel">{{ selectedHotel.name }}</span>
-            </button>
-            <ul ngbDropdownMenu class="dropdown-menu dropdown-list">
-              <li>
-                <input type="text" formControlName="searchTermhotel" (input)="searchHotel()" class="w-100 form-control"
-                  placeholder="ابحث ... " />
-              </li>
-              <li ngbDropdownItem class="dropdown-item" *ngFor="let hotel of hotels" (click)="onHotelChange(hotel)">
-                {{ hotel.name }}
-              </li>
-            </ul>
+              <input type="text" class="form-control" [ngClass]="{
+                'has-value': form.get('apartment_number')?.value,
+                'is-invalid': submitted && building?.invalid
+              }" placeholder="ادخل رقم المكتب " formControlName="apartment_number" [ngClass]="{
+                'is-invalid': submitted && appartmentNumber?.invalid
+              }" />
+            </div>
+            <div *ngIf="submitted && appartmentNumber?.invalid" class="invalid-feedback d-block text-danger small">
+              {{ getValidationMessage("apartment_number") }}
+            </div>
           </div>
 
-          @if (submitted && !selectedHotel) {
-          <div class="invalid-feedback d-block text-danger small">
-            <small>الرجاء اختيار الفندق</small>
+          <div class="me-2">
+            <div class="mb-3 input-group">
+              <span class="input-group-text text-muted" id="basic-addon1" *ngIf="form.get('floor_number')?.value">
+                ادخل الدور
+              </span>
+              <input type="text" class="form-control" [ngClass]="{
+                'has-value': form.get('floor_number')?.value,
+                'is-invalid': submitted && building?.invalid
+              }" placeholder="ادخل الدور" formControlName="floor_number"
+                [ngClass]="{ 'is-invalid': submitted && floorNumber?.invalid }" />
+            </div>
+            <div *ngIf="submitted && floorNumber?.invalid" class="invalid-feedback d-block text-danger small">
+              {{ getValidationMessage("floor_number") }}
+            </div>
           </div>
-          }
+        </div>
+
+        <div class="mb-3 position-relative">
+          <div class="mb-3 input-group">
+            <span class="input-group-text " id="basic-addon1" *ngIf="form.get('address')?.value">
+              ادخل العنوان
+            </span>
+            <input type="text" class="form-control" [ngClass]="{
+              'has-value': form.get('address')?.value,
+              'is-invalid': submitted && building?.invalid
+            }" placeholder=" ادخل العنوان" formControlName="address"
+              [ngClass]="{ 'is-invalid': submitted && address?.invalid }" />
+          </div>
+          <div *ngIf="submitted && address?.invalid" class="invalid-feedback d-block position-absolute" style="
+            top: 100%;
+            right: 0;
+            width: max-content;
+            white-space: nowrap;
+            padding-inline-start: 5px;
+          ">
+            {{ getValidationMessage("address") }}
+          </div>
+        </div>
+
+        <div class="my-5 position-relative">
+          <div class="mb-3 input-group">
+            <span class="input-group-text text-muted" id="basic-addon1" *ngIf="form.get('notes')?.value">
+              علامة مميزة (اختياري)
+            </span>
+            <input type="text" class="form-control" [ngClass]="{
+              'has-value': form.get('notes')?.value,
+              'is-invalid': submitted && building?.invalid
+            }" placeholder="علامة مميزة (اختياري)" formControlName="notes"
+              [ngClass]="{ 'is-invalid': submitted && notes?.invalid }" />
+          </div>
+          <div *ngIf="submitted && notes?.invalid" class="invalid-feedback d-block position-absolute" style="
+            top: 100%;
+            right: 0;
+            white-space: nowrap;
+            padding-inline-start: 5px;
+          ">
+            {{ getValidationMessage("notes") }}
+          </div>
         </div>
       </div>
     </div>
-    }
-    }
+    <div *ngIf="selectedProperty === 'hotel'">
+      <div class="mb-3">
 
-    <!-- زر الحفظ -->
+        <div ngbDropdown class="dropdown w-100 custom-dropdown">
+          <button ngbDropdownToggle class="w-100 bg-transparent dropdown-toggle border-0 selected-option" type="button"
+            data-bs-toggle="dropdown" aria-expanded="false">
+            <span *ngIf="!selectedHotel && !selectedAddress" class="text-muted"> اختر الفندق</span>
+            <span *ngIf="selectedHotel">{{ selectedHotel.name }}</span>
+          </button>
+          <ul ngbDropdownMenu class="dropdown-menu dropdown-list">
+            <li>
+              <input type="text" formControlName="searchTermhotel" (input)="searchHotel()" class="w-100 form-control"
+                placeholder="ابحث ... " />
+            </li>
+            <li ngbDropdownItem class="dropdown-item" *ngFor="let hotel of hotels" (click)="onHotelChange(hotel)">
+              {{ hotel.name }}
+            </li>
+            <!-- <li
+            ngbDropdownItem
+            class="dropdown-item"
+            (click)="onHotelChange('another')"
+          >
+            أخري
+          </li> -->
+          </ul>
+        </div>
+        <!--       <div class="my-3 position-relative" *ngIf="selectedHotel == 'another'">
+        <div class="mb-3 input-group">
+          <span
+            class="input-group-text"
+            id="basic-addon1"
+            *ngIf="form.get('address')?.value"
+          >
+            ادخل العنوان
+          </span>
+          <input
+            type="text"
+            class="form-control"
+            [ngClass]="{
+              'has-value': form.get('address')?.value
+            }"
+            placeholder="ادخل العنوان "
+            formControlName="address"
+            [ngClass]="{ 'has-value': submitted && address?.invalid }"
+          />
+        </div>
+        <div
+          *ngIf="submitted && address?.invalid"
+          class="invalid-feedback d-block position-absolute"
+          style="
+            top: 100%;
+            right: 0;
+            width: max-content;
+            white-space: nowrap;
+            padding-inline-start: 5px;
+          "
+        >
+          {{ getValidationMessage("address") }}
+        </div>
+      </div> -->
+        <div *ngIf="submitted && !selectedHotel" class="invalid-feedback d-block text-danger small">
+          <small>الرجاء اختيار الفندق</small>
+        </div>
+      </div>
+    </div>
+    }}
+
     <div class="d-flex justify-content-end">
       <button type="submit" class="btn py-2 px-5">حفظ العنوان</button>
     </div>
   </form>
 </section>
+<!-- <app-confirm-dialog [display]="appearConfirmDialog" (actionResult)="addNewAddress($event)"></app-confirm-dialog> -->
 
 <app-confirm-dialog #confirmDialog (actionResult)="addNewAddress($event)" [header]="'تأكيد'"
   [message]="'هل تريد إضافة عنوان جديد'" [acceptLabel]="'نعم'" [rejectLabel]="'لا'"></app-confirm-dialog>

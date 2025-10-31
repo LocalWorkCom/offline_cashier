@@ -67,13 +67,11 @@ export class OrdersCardComponent implements OnInit, OnDestroy {
     Takeaway: 0,
     Delivery: 0,
     'dine-in': 0,
-    talabat: 0,
   };
   orderTypeStaticCounts: any = {
     Takeaway: 0,
     Delivery: 0,
     'dine-in': 0,
-    talabat: 0,
   };
 
 
@@ -274,16 +272,16 @@ export class OrdersCardComponent implements OnInit, OnDestroy {
 
       const normalize = (s: unknown) => (s ?? '').toString().trim().toLowerCase();
 
-      // ✅ Normalize values + filter unpaid + unprinted
-      this.pills = (response.data?.invoices ?? [])
-        .map((p: any) => ({
-          ...p,
-          invoice_print_status: normalize(p.invoice_print_status),
-          invoice_type: normalize(p.invoice_type),
-          payment_method: normalize(p.payment_method),
-        }))
-        .filter((pill: any) => !(pill.order_items_count === 0 && pill.payment_status === "unpaid"))
-      const allStatuses = ['hold', 'urgent', 'done', 'returned', 'cancelled'];
+    // ✅ Normalize values + filter unpaid + unprinted
+    this.pills = (response.data?.invoices ?? [])
+      .map((p: any) => ({
+        ...p,
+        invoice_print_status: normalize(p.invoice_print_status),
+        invoice_type: normalize(p.invoice_type),
+        payment_method: normalize(p.payment_method),
+      }))
+    .filter((pill: any) => !(pill.order_items_count === 0 && pill.payment_status === "unpaid"))
+    const allStatuses = ['hold', 'urgent', 'done', 'returned', 'cancelled'];
 
       // ✅ Normal statuses (excluding credit_note ones)
       const normalStatuses = [...new Set(
@@ -409,7 +407,7 @@ export class OrdersCardComponent implements OnInit, OnDestroy {
   getTranslatedStatusOrder(status: string, orderType?: string): string {
 
     if (status === 'readyForPickup') {
-      if (orderType === 'Takeaway' || orderType === 'Delivery' || orderType === 'talabat') {
+      if (orderType === 'Takeaway' || orderType === 'Delivery') {
         return 'جاهزة للاستلام';
       } else if (orderType === 'dine-in') {
         return 'جاهزة للتقديم';
@@ -501,11 +499,6 @@ export class OrdersCardComponent implements OnInit, OnDestroy {
             (cartItem) => cartItem.type?.trim() === 'Takeaway'
           );
         }
-        else if (this.selectedOrderType === 'talabat') {
-          this.filteredOrdersByOrderType = this.filteredOrdersByStatus.filter(
-            (cartItem) => cartItem.type?.trim() === 'talabat'
-          );
-        }
       }
 
       this.calculateOrderTypeCounts();
@@ -524,8 +517,7 @@ export class OrdersCardComponent implements OnInit, OnDestroy {
         return ' إستلام';
       case 'Delivery':
         return 'توصيل';
-      case 'talabat':
-        return ' طلبات';
+
       default:
         return type;
     }
@@ -570,12 +562,7 @@ export class OrdersCardComponent implements OnInit, OnDestroy {
         );
 
       }
-      else if (this.selectedOrderType === 'talabat') {
-        this.filteredOrdersByStatus = this.filteredOrdersByStatus.filter(
-          (cartItem) => cartItem.type?.trim() === 'talabat'
-        );
 
-      }
 
     }
     this.calculateOrderTypeCounts()
@@ -584,7 +571,7 @@ export class OrdersCardComponent implements OnInit, OnDestroy {
 
   calculateOrderTypeCounts(): void {
     if (!this.orders || this.orders.length === 0) {
-      this.orderTypeCounts = { Takeaway: 0, Delivery: 0, 'dine-in': 0 , talabat:0 };
+      this.orderTypeCounts = { Takeaway: 0, Delivery: 0, 'dine-in': 0 };
     } else {
       this.orderTypeCounts = {
         Takeaway: this.orders.filter((order) => order.order_type === 'Takeaway')
@@ -592,8 +579,6 @@ export class OrdersCardComponent implements OnInit, OnDestroy {
         Delivery: this.orders.filter((order) => order.order_type === 'Delivery')
           .length,
         'dine-in': this.orders.filter((order) => order.order_type === 'dine-in')
-          .length,
-          talabat: this.orders.filter((order) => order.order_type === 'talabat')
           .length,
       };
     }
@@ -605,7 +590,7 @@ export class OrdersCardComponent implements OnInit, OnDestroy {
   calculateOrderStaticTypeCounts() {
 
     if (!this.cartItems || this.cartItems.length === 0) {
-      this.orderTypeStaticCounts = { Takeaway: 0, Delivery: 0, 'dine-in': 0 , talabat:0 };
+      this.orderTypeStaticCounts = { Takeaway: 0, Delivery: 0, 'dine-in': 0 };
     } else {
       this.orderTypeStaticCounts = {
         Takeaway: this.cartItems.filter((order: { type: string; }) => order.type === 'Takeaway')
@@ -613,8 +598,6 @@ export class OrdersCardComponent implements OnInit, OnDestroy {
         Delivery: this.cartItems.filter((order: { type: string; }) => order.type === 'Delivery')
           .length,
         'dine-in': this.cartItems.filter((order: { type: string; }) => order.type === 'dine-in')
-          .length,
-           talabat: this.cartItems.filter((order: { type: string; }) => order.type === 'talabat')
           .length,
       };
     }

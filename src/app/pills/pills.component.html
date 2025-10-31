@@ -1,4 +1,4 @@
-<div class appShowLoaderUntilPageLoaded [isReady]="loading">
+<div class="" appShowLoaderUntilPageLoaded [isReady]="loading">
   <!-- Pills Search and Navigation -->
   <div class="pills p-3">
 
@@ -21,7 +21,7 @@
           (click)="orderTypeFilter = 'dine-in'; filterPills()">
           فى المطعم
           <figure class="mb-0 me-2">
-            <img src="assets/images/in.png" alt />
+            <img src="assets/images/in.png" alt="" />
           </figure>
         </button>
       </li>
@@ -30,7 +30,7 @@
           (click)="orderTypeFilter = 'Takeaway'; filterPills()">
           إستلام
           <figure class="mb-0 me-2">
-            <img src="assets/images/out.png" alt />
+            <img src="assets/images/out.png" alt="" />
           </figure>
         </button>
       </li>
@@ -39,22 +39,15 @@
           (click)="orderTypeFilter = 'Delivery'; filterPills()">
           توصيل
           <figure class="mb-0 me-2">
-            <img src="assets/images/delivery.png" alt />
+            <img src="assets/images/delivery.png" alt="" />
           </figure>
         </button>
       </li>
 
-      <li class="nav-item flex-fill mx-1">
-        <button class="nav-link w-100 d-flex align-items-center" [ngClass]="{ active: orderTypeFilter === 'talabat' }"
-          (click)="orderTypeFilter = 'talabat'; filterPills()">
-          طلبات
-          <figure class="mb-0 me-2">
-            <img src="assets/images/out.png" alt />
-          </figure>
-        </button>
-      </li>
+
 
     </ul>
+
 
     <!-- Pills Status Navigation -->
     <ul class="nav nav-pills mb-4 px-0" id="pills-tab21" role="tablist">
@@ -62,59 +55,53 @@
         <button class="nav-link sub" [ngClass]="{ active: selectedStatus === i }" (click)="selectStatusGroup(i)"
           role="tab" [attr.aria-controls]="'pills-' + statusGroup.status">
           <span>
-            {{ getTranslatedStatus(statusGroup.status) }} ({{
-            statusGroup.pills.length }})
+            {{ getTranslatedStatus(statusGroup.status) }} ({{ statusGroup.pills.length }})
           </span>
         </button>
       </li>
     </ul>
+
 
     <div class="tab-content second-sub" id="pills-tabContent6" aria-live="polite">
       <div *ngFor="let statusGroup of filteredPillsByStatus; let i = index" class="tab-pane fade"
         [ngClass]="{ 'show active': selectedStatus === i }" [id]="'pills-' + statusGroup.status" role="tabpanel"
         [attr.aria-labelledby]="'pills-' + statusGroup.status + '-tab'">
 
-        <!-- <div class="row m-0 d-flex align-items-stretch"> -->
-        <div class="row m-0 d-flex align-items-stretch" infiniteScroll [infiniteScrollDistance]="0.9"
-          [infiniteScrollThrottle]="1" (scrolled)="onScroll()" [scrollWindow]="true">
-
-          <!-- <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4" *ngFor="let pill of statusGroup.pills; let i = index"
-            [attr.id]="'pill-' + pill.order_number"> -->
-          <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4"
-            *ngFor="let pill of getPillsForStatus(statusGroup); trackBy: trackByPillId">
-
+        <div class="row m-0 d-flex align-items-stretch">
+          <div class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4" *ngFor="let pill of statusGroup.pills; let i = index"
+            [attr.id]="'pill-' + pill.order_number">
             <div class="card pill-card p-3 d-flex flex-column h-100" [id]="'pill-' + pill.order_number"
               [class.highlight-order]="'pill-' + pill.order_number === highlightedPillId">
+
 
               <div class="d-flex flex-wrap justify-content-between">
                 <p class="fw-bold">{{ pill.invoice_number }}</p>
                 <p class="text-muted">{{ pill.order_number }}</p>
               </div>
-              @if(pill.table_number){
-              <div
-                class="d-flex flex-wrap justify-content-between mt-2  btn-static-warning px-2 py-1 rounded text-dark">
-                <p class="text-dark fw-bold"><small>رقم الطاولة</small></p>
-                <p class="text-dark fw-bold mb-0">
-                  <small>{{ pill.table_number }}</small>
-                </p>
-              </div>
-              }
-              <div class="d-flex align-items-center justify-content-end my-2">
-                @if (pill.payment_status == "unpaid") {
-                <small class="rounded-circle bg-main d-flex justify-content-center align-items-center text-white ms-1"
-                  style="width: 16px;height: 16px;">
-                  <i class="fa-solid fa-xmark fs-6"></i>
-                </small>
-                <small class="main-color fw-bold">غير مدفوع</small>
-                } @else {
-                <small
-                  class="rounded-circle bg-success d-flex justify-content-center align-items-center text-white ms-1"
-                  style="width: 16px;height: 16px;">
-                  <i class="fa-solid fa-check fs-6"></i>
-                </small>
-                <small class="text-success fw-bold">مدفوع</small>
+                @if(pill.table_number){
+                <div class="d-flex flex-wrap justify-content-between mt-2  btn-static-warning px-2 py-1 rounded text-dark">
+                  <p class="text-dark fw-bold"><small>رقم الطاولة</small></p>
+                  <p class="text-dark fw-bold mb-0">
+                    <small>{{ pill.table_number }}</small>
+                  </p>
+                </div>
                 }
-              </div>
+                <div class="d-flex align-items-center justify-content-end my-2">
+                  @if (pill.payment_status == "unpaid") {
+                  <small class="rounded-circle bg-main d-flex justify-content-center align-items-center text-white ms-1"
+                    style="width: 16px;height: 16px;">
+                    <i class="fa-solid fa-xmark fs-6"></i>
+                  </small>
+                  <small class="main-color fw-bold">غير مدفوع</small>
+                  } @else {
+                  <small
+                    class="rounded-circle bg-success d-flex justify-content-center align-items-center text-white ms-1"
+                    style="width: 16px;height: 16px;">
+                    <i class="fa-solid fa-check fs-6"></i>
+                  </small>
+                  <small class="text-success fw-bold">مدفوع</small>
+                  }
+                </div>
               <div class="d-flex justify-content-between mb-2">
                 <p class="text-muted">{{ pill.order_items_count }} عناصر</p>
                 <p class="text-muted">{{ pill.order_time }} دقائق</p>
@@ -127,16 +114,13 @@
                   [routerLinkActiveOptions]="{ exact: true }">
                   تفاصيل الفاتورة
                 </a>
-                @if ((pill.invoice_type != 'credit_note') &&
-                (pill.invoice_print_status !== 'done') &&
-                (pill.invoice_print_status !== 'cancelled')&&
-                (orderTypeFilter !== 'talabat')) {
+                @if ((pill.invoice_type != 'credit_note') &&  (pill.invoice_print_status !== 'done') && (pill.invoice_print_status !== 'cancelled')) {
                 <a class="btn-static text-main btn-transparent border-1 w-100 py-2"
                   [routerLink]="'/pill-edit/' + pill.invoice_id" routerLinkActive="active"
                   [routerLinkActiveOptions]="{ exact: true }">
                   تعديل الفاتورة
                 </a>
-                }
+              }
               </div>
             </div>
           </div>
@@ -146,13 +130,7 @@
 
   </div>
   <!-- Empty State: Display when there are no pills -->
-  <!-- <div *ngIf="pills.length === 0" class="d-flex justify-content-center align-items-center  text-center">
-    <h3 class="text-muted">لا توجد فواتير</h3>
-  </div> -->
-
-  <div *ngIf="isDataLoaded && displayedPills.length === 0"
-    class="d-flex justify-content-center align-items-center text-center">
+  <div *ngIf="pills.length === 0" class="d-flex justify-content-center align-items-center  text-center">
     <h3 class="text-muted">لا توجد فواتير</h3>
   </div>
-
 </div>
