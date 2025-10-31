@@ -243,6 +243,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       // إذا كان لديك حقل إدخال للنقد في القالب يربط بـ cashPaymentInput
       if (typeof this.cashPaymentInput === 'number') {
         this.cashPaymentInput = Number((this.cashPaymentInput || 0).toFixed(2));
+        // ✅ إضافة تحقق إضافي هنا
+        if (this.cashPaymentInput < 0) {
+          this.paymentError = 'لا يمكن إدخال مبلغ سالب';
+        } else if (this.cashPaymentInput === 0) {
+          this.paymentError = 'يرجى إدخال مبلغ أكبر من الصفر';
+        } else {
+          this.paymentError = ''; // مسح الخطأ إذا كان المبلغ صحيحاً
+        }
       }
       // لو كان هناك استخدام مباشر لمبلغ الكاش الرئيسي
       if (typeof this.cash_amountt === 'number') {
@@ -253,6 +261,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       this.cdr.markForCheck();
     } catch (_) {
       // تجاهل الخطأ، فقط تأكد من عدم كسر القالب
+      this.paymentError = 'حدث خطأ في معالجة المبلغ المدخل';
     }
   }
 
@@ -4919,10 +4928,18 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   selectPaymentSuggestionAndOpenModal(type: 'billAmount' | 'amount50' | 'amount100', billAmount: number, paymentAmount: number, modalContent: any): void {
     this.selectedSuggestionType = type; // هنا يتم حفظ النوع الذي تم الضغط عليه
     this.selectedPaymentSuggestion = paymentAmount;
-
+    // ✅ التحقق من أن المبلغ غير صفر أو سالب
+    if (paymentAmount <= 0) {
+      this.paymentError = 'المبلغ المقترح غير صالح';
+      return;
+    }
     if (paymentAmount >= billAmount) {
       this.cashPaymentInput = paymentAmount;
+      this.paymentError = ''; // مسح أي أخطاء
       this.openTipModal(modalContent, billAmount, paymentAmount);
+    }
+    else {
+      this.paymentError = `المبلغ المقترح (${paymentAmount}) أقل من المبلغ المستحق (${billAmount})`;
     }
   }
 
@@ -4931,6 +4948,17 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
     console.log('Bill Amount:', billAmount, 'Entered:', this.cashPaymentInput);
     const currentPaymentInput = this.cashPaymentInput;
+    // ✅ إضافة تحقق صريح للمبلغ المدخل
+    if (currentPaymentInput <= 0) {
+      this.paymentError = 'يرجى إدخال مبلغ صحيح أكبر من الصفر';
+      return;
+    }
+    if (currentPaymentInput < billAmount) {
+      this.paymentError = `المبلغ المدخل (${currentPaymentInput}) أقل من المبلغ المستحق (${billAmount})`;
+      return;
+    }
+    // مسح أي أخطاء سابقة إذا كان المبلغ صحيحاً
+    this.paymentError = '';
     if (currentPaymentInput > 0 && currentPaymentInput >= billAmount) {
       this.openTipModal(modalContent, billAmount, currentPaymentInput);
     }
