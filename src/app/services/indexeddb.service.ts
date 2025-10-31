@@ -5,7 +5,7 @@ import { Injectable } from '@angular/core';
 })
 export class IndexeddbService {
 
-    private db!: IDBDatabase;
+  private db!: IDBDatabase;
   private isInitialized = false;
   private initPromise!: Promise<void>;
 
@@ -197,44 +197,44 @@ export class IndexeddbService {
 
 
   // indexeddb.service.ts
-async getLastFormData(): Promise<any | null> {
-  return new Promise((resolve, reject) => {
-    const tx = this.db.transaction('formData', 'readonly'); // make sure you have 'form_data' store
-    const store = tx.objectStore('formData');
-    const request = store.getAll();
+  async getLastFormData(): Promise<any | null> {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('formData', 'readonly'); // make sure you have 'form_data' store
+      const store = tx.objectStore('formData');
+      const request = store.getAll();
 
-    request.onsuccess = () => {
-      const all = request.result || [];
-      if (all.length > 0) {
-        resolve(all[all.length - 1]); // ✅ last item
-      } else {
-        resolve(null);
-      }
-    };
+      request.onsuccess = () => {
+        const all = request.result || [];
+        if (all.length > 0) {
+          resolve(all[all.length - 1]); // ✅ last item
+        } else {
+          resolve(null);
+        }
+      };
 
-    request.onerror = () => reject(request.error);
-  });
-}
+      request.onerror = () => reject(request.error);
+    });
+  }
 
 
-async getLastSelectedOrdertype(): Promise<any | null> {
-  return new Promise((resolve, reject) => {
-    const tx = this.db.transaction('selectedOrderType', 'readonly'); // make sure you have 'form_data' store
-    const store = tx.objectStore('selectedOrderType');
-    const request = store.getAll();
+  async getLastSelectedOrdertype(): Promise<any | null> {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('selectedOrderType', 'readonly'); // make sure you have 'form_data' store
+      const store = tx.objectStore('selectedOrderType');
+      const request = store.getAll();
 
-    request.onsuccess = () => {
-      const all = request.result || [];
-      if (all.length > 0) {
-        resolve(all[all.length - 1]); // ✅ last item
-      } else {
-        resolve(null);
-      }
-    };
+      request.onsuccess = () => {
+        const all = request.result || [];
+        if (all.length > 0) {
+          resolve(all[all.length - 1]); // ✅ last item
+        } else {
+          resolve(null);
+        }
+      };
 
-    request.onerror = () => reject(request.error);
-  });
-}
+      request.onerror = () => reject(request.error);
+    });
+  }
 
 
 
@@ -852,7 +852,7 @@ async getLastSelectedOrdertype(): Promise<any | null> {
   async savePendingOrder(orderData: any): Promise<void> {
     try {
 
-      console.log("dorder_offline",orderData);
+      console.log("dorder_offline", orderData);
       await this.ensureInit();
 
       return new Promise((resolve, reject) => {
@@ -874,7 +874,7 @@ async getLastSelectedOrdertype(): Promise<any | null> {
             client_name: orderData.client_name || '',
             client_phone: orderData.client_phone || '',
             status: 'pending',
-            cashier_machine_id : orderData.cashier_machine_id,
+            cashier_machine_id: orderData.cashier_machine_id,
             order_number: orderId,
             branch_id: orderData.branch_id || null,
             table_id: orderData.table_id || null,
@@ -902,8 +902,8 @@ async getLastSelectedOrdertype(): Promise<any | null> {
 
           // Order items
           order_items: orderData.items.map((item: any) => ({
-            addon_categories : item.addon_categories,
-            currency_symbol : item.currency_symbol,
+            addon_categories: item.addon_categories,
+            currency_symbol: item.currency_symbol,
             dish_id: item.dish_id,
             dish_name: item.dish_name,
             dish_price: item.dish_price,
@@ -912,7 +912,7 @@ async getLastSelectedOrdertype(): Promise<any | null> {
             // size_id : ,
             note: item.note || '',
             addons: item.selectedAddons || [],
-            sizeId :item.sizeId,
+            sizeId: item.sizeId,
             size: item.size || '',
             size_name: item.sizeName || ''
           })),
@@ -1004,5 +1004,77 @@ async getLastSelectedOrdertype(): Promise<any | null> {
 
       request.onerror = (e) => reject(e);
     });
+  }
+  async updateTableStatus(identifier: number, newStatus: number): Promise<void> {
+    await this.ensureInit();
+
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('tables', 'readwrite');
+      const store = tx.objectStore('tables');
+
+      // حاول الأول بالـ id
+      const getById = store.get(identifier);
+
+      getById.onsuccess = () => {
+        let table = getById.result;
+
+        if (table) {
+          // ✅ لو لقاها بالـ id
+          table.status = newStatus;
+          const putReq = store.put(table);
+          putReq.onsuccess = () => resolve();
+          putReq.onerror = (e) => reject(e);
+        } else {
+          // ❌ مش لقاها بالـ id → نجرب بالـ table_number
+          const index = store.index('table_number');
+          const getByTableNumber = index.get(identifier);
+
+          getByTableNumber.onsuccess = () => {
+            const tableByNumber = getByTableNumber.result;
+            if (!tableByNumber) {
+              reject(`Table with ID or table_number ${identifier} not found`);
+              return;
+            }
+
+            tableByNumber.status = newStatus;
+            const putReq = store.put(tableByNumber);
+            putReq.onsuccess = () => resolve();
+            putReq.onerror = (e) => reject(e);
+          };
+
+          getByTableNumber.onerror = (e) => reject(e);
+        }
+      };
+
+      getById.onerror = (e) => reject(e);
+    });
+  }
+  deleteFromIndexedDB(storeName: string, key?: any): void {
+    const dbName = 'MyDB'; // replace with your DB name
+    const request = indexedDB.open(dbName);
+
+    request.onsuccess = (event: any) => {
+      const db = event.target.result;
+      const tx = db.transaction(storeName, 'readwrite');
+      const store = tx.objectStore(storeName);
+
+      if (key !== undefined) {
+        // ✅ Delete specific record by key
+        store.delete(key);
+        console.log(`Deleted record with key "${key}" from "${storeName}"`);
+      } else {
+        // ✅ Clear all records in store
+        store.clear();
+        console.log(`Cleared all data from store "${storeName}"`);
+      }
+
+      tx.oncomplete = () => {
+        db.close();
+      };
+    };
+
+    request.onerror = () => {
+      console.error(`Error opening DB "${dbName}"`);
+    };
   }
 }
