@@ -159,7 +159,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
   // hanan front
   isOrderTypeSelected: boolean = false;
-  paymentError: string = '';
 
   selectedPaymentSuggestion: number | null = null;
 
@@ -221,6 +220,40 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     // end hanan
   ) {
     this.cashier_machine_id = this.getCashierMachineId();
+  }
+
+  // ===== Helpers required by template =====
+  // هل توجد معلومات توصيل كافية بالفعل؟ (عنوان/معرّف عنوان)
+  hasDeliveryInfo(): boolean {
+    try {
+      const hasAddressId = !!localStorage.getItem('address_id');
+      const hasFormDataAddress = !!(this.FormDataDetails && (this.FormDataDetails.address || this.address));
+      return hasAddressId || hasFormDataAddress;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // رسالة خطأ إدخال الدفع (تُستخدم في القالب)
+  paymentError: string = '';
+
+  // تقريب قيمة الدفع النقدي لعدد عشريين وتحديث الحالة
+  roundCashPayment(): void {
+    try {
+      // إذا كان لديك حقل إدخال للنقد في القالب يربط بـ cashPaymentInput
+      if (typeof this.cashPaymentInput === 'number') {
+        this.cashPaymentInput = Number((this.cashPaymentInput || 0).toFixed(2));
+      }
+      // لو كان هناك استخدام مباشر لمبلغ الكاش الرئيسي
+      if (typeof this.cash_amountt === 'number') {
+        this.cash_amountt = Number((this.cash_amountt || 0).toFixed(2));
+      }
+      // مسح رسالة الخطأ عند أي تغير صحيح
+      this.paymentError = '';
+      this.cdr.markForCheck();
+    } catch (_) {
+      // تجاهل الخطأ، فقط تأكد من عدم كسر القالب
+    }
   }
 
   private getCashierMachineId(): number {
@@ -510,7 +543,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
 
           const payload = {
-            isOnline: false,
+            isOnline : false,
             order_id: order.order_id == order.order_number ? null : order.order_id,
             // table_id: order.table_number || null,
             type: order.order_details.order_type,
@@ -520,7 +553,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
             cashier_machine_id: order.order_details.cashier_machine_id || localStorage.getItem('cashier_machine_id'),
             branch_id: order.order_details.branch_id,
             table_id: order.order_details.table_id || null,
-            payment_method: order.order_details.payment_method == "deferred" ? "credit" : order.order_details.payment_method,
+            payment_method:  order.order_details.payment_method == "deferred" ? "credit" : order.order_details.payment_method,
             payment_status: order.order_details.payment_status,
             cash_amount: order.order_details.cash_amount,
             credit_amount: order.order_details.credit_amount,
@@ -1689,15 +1722,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
     // Case 2: older/test item structure (with final_price or dish_price)
     const fallbackPrice = Number(item.final_price ?? item.dish_price ?? 0);
-    console.log('روبيان مشوي - بيانات العنصر:', {
-      dish: item.dish,
-      selectedSize: item.selectedSize,
-      selectedAddons: item.selectedAddons,
-      quantity: item.quantity,
-      calculatedPrice: this.getItemTotal(item)
-    });
     return fallbackPrice * (Number(item.quantity) || 1);
-
   }
 
   clearMessage() {
@@ -2547,7 +2572,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
     // continued order from orders list
     let continuedOrderId: number | null = null;
-    let table_number: any;
+    let table_number : any;
     try {
       const currentOrderDataRaw = localStorage.getItem('currentOrderData');
       if (currentOrderDataRaw) {
@@ -2574,11 +2599,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       isOnline: navigator.onLine,
       orderId: this.finalOrderId || Date.now(),
       ...(continuedOrderId ? { order_id: continuedOrderId } : {}),
-      order_id: continuedOrderId ?? null,
-      table_number: table_number ?? null,
+      order_id : continuedOrderId ?? null,
+      table_number :table_number ?? null,
       type: this.selectedOrderType,
       branch_id: branchId,
-      payment_method: this.selectedPaymentMethod === 'cash + credit' ? 'cash' : (this.selectedPaymentMethod ?? 'cash'),
+      payment_method: this.selectedPaymentMethod ?? 'cash',
       payment_status: this.selectedPaymentStatus,
       cash_amount: this.selectedPaymentMethod === "cash" ? this.finalTipSummary?.billAmount ?? 0 : 0,
       credit_amount: this.selectedPaymentMethod === "credit" ? this.finalTipSummary?.billAmount ?? 0 : 0,
@@ -2702,46 +2727,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   async submitOrder() {
-
-    // ✅ التحقق من معلومات التوصيل لطلبات Delivery
-    if (this.selectedOrderType === 'Delivery' && this.isOnline) {
-      const validation = this.validateDeliveryInfo();
-      if (!validation.isValid) {
-        this.falseMessage = `⚠️ ${validation.message}`;
-        this.isLoading = false;
-        this.loading = false;
-
-        // التنقل لصفحة معلومات التوصيل
-        setTimeout(() => {
-          this.router.navigate(['/delivery-details']);
-        }, 1000);
-
-        return;
-      }
-    }
-    // ✅ التحقق من أن المبلغ المدفوع كافي (لطرق الدفع النقدي)
-    if (this.selectedPaymentStatus === 'paid' &&
-      (this.selectedPaymentMethod === 'cash' || this.selectedPaymentMethod === 'credit')) {
-
-      const billAmount = this.getCartTotal();
-
-      // إذا كان هناك مبلغ مدخل يدوياً وتحقق من كفايته
-      if (this.cashPaymentInput > 0 && this.cashPaymentInput < billAmount) {
-        this.paymentError = 'المبلغ المدخل أقل من المبلغ المطلوب. يرجى إدخال مبلغ يساوي أو أكبر من ' + billAmount + ' ج.م';
-        this.isLoading = false;
-        this.loading = false;
-        return;
-      }
-
-      // إذا كان هناك finalTipSummary وتحقق من كفاية الدفع
-      if (this.finalTipSummary && this.finalTipSummary.paymentAmount < billAmount) {
-        this.paymentError = 'المبلغ المدفوع غير كافي. يرجى التأكد من إدخال مبلغ كافٍ';
-        this.isLoading = false;
-        this.loading = false;
-        return;
-      }
-    }
-
     if (this.isLoading) {
       console.warn("🚫 Request already in progress, ignoring duplicate submit.");
       return;
@@ -2782,7 +2767,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       return;
     }
     let addressId = null;
-    if (this.isOnline) {
+    if (navigator.onLine) {
       if (this.selectedOrderType === 'Delivery') {
         addressId = localStorage.getItem('address_id');
 
@@ -2937,7 +2922,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
         }
         orderData.table_id = tableId;
       }
-      if (this.isOnline) {
+      if (navigator.onLine) {
         if (
           this.selectedOrderType === 'Delivery' ||
           this.selectedOrderType === 'توصيل'
@@ -2960,7 +2945,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
         }
       }
 
-      const isOnline = this.isOnline;
+      const isOnline = navigator.onLine;
 
       console.log("dd", orderData);
 
@@ -3013,7 +2998,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       console.log('Submitting order online:', orderData);
 
     }
-    if (this.currentOrderData && this.isOnline == false) {
+    if(this.currentOrderData && this.isOnline == false)
+    {
       console.log("ff");
       const orderId = await this.dbService.savePendingOrder(orderData);
     }
@@ -3207,9 +3193,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       this.isLoading = false;
       this.loading = false;
     }
-
   }
-
   // end hanan
 
   private extractDateAndTime(branch: any): void {
@@ -4776,7 +4760,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       this.selectedPaymentMethod = 'cash';
       // return;
     }
-
     // إعادة تعيين القيم عند تغيير طريقة الدفع
     if (method === 'cash') {
       this.cashAmountMixed = 0;
@@ -4970,23 +4953,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
       this.openTipModal(modalContent, billAmount, paymentAmount);
     }
   }
-  roundCashPayment() {
-    if (this.cashPaymentInput) {
-      this.cashPaymentInput = Math.round(this.cashPaymentInput * 100) / 100;
-    }
-  }
-  handleManualPaymentBlur(billAmount: number, modalContent: any): void {
-    // تقريب القيمة إلى رقمين عشريين
-    this.roundCashPayment();
-    this.selectedPaymentSuggestion = null; // إعادة تعيين عند الإدخال اليدوي
-    // إعادة تعيين رسالة الخطأ
-    this.paymentError = '';
 
-    // التحقق إذا كانت القيمة أقل من قيمة الفاتورة
-    if (this.cashPaymentInput < billAmount) {
-      this.paymentError = 'المبلغ المدخل أقل من المبلغ المطلوب. يرجى إدخال مبلغ يساوي أو أكبر من ' + billAmount + ' ج.م';
-      return;
-    }
+  handleManualPaymentBlur(billAmount: number, modalContent: any): void {
+    this.selectedPaymentSuggestion = null; // إعادة تعيين عند الإدخال اليدوي
+
     console.log('Bill Amount:', billAmount, 'Entered:', this.cashPaymentInput);
     const currentPaymentInput = this.cashPaymentInput;
     if (currentPaymentInput > 0 && currentPaymentInput >= billAmount) {
@@ -5031,67 +5001,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
   // التحقق إذا كان المبلغ المدفوع كافي
   isPaymentSufficient(billAmount: number): boolean {
     return this.getRemainingAmount(billAmount) <= 0;
-  }
-  // دالة للتحقق من وجود معلومات التوصيل
-  hasDeliveryInfo(): boolean {
-    if (this.selectedOrderType !== 'Delivery') {
-      return true; // ليس طلب توصيل، لا داعي للتحقق
-    }
-    // ✅ في حالة عدم وجود اتصال، نعتبر المعلومات متوفرة
-    if (!this.isOnline) {
-      console.log('📴 Offline mode - delivery info considered available');
-      return true;
-    }
-    // التحقق من وجود البيانات الأساسية للتوصيل
-    const hasBasicInfo = this.clientName && this.address && this.addressPhone;
-    const hasFormData = this.FormDataDetails &&
-      this.FormDataDetails.client_name &&
-      this.FormDataDetails.address &&
-      this.FormDataDetails.address_phone;
-
-    return hasBasicInfo || hasFormData;
-  }
-
-  // دالة للتحقق من اكتمال معلومات العميل للتوصيل
-  isDeliveryInfoComplete(): boolean {
-    if (this.selectedOrderType !== 'Delivery') {
-      return true;
-    }
-
-    return this.hasDeliveryInfo();
-  }
-  // دالة للتحقق من صحة رقم الهاتف
-  isValidPhoneNumber(phone: string): boolean {
-    const phoneRegex = /^[0-9]{10,15}$/;
-    return phoneRegex.test(phone.replace(/\D/g, ''));
-  }
-
-  // دالة شاملة للتحقق من بيانات التوصيل
-  validateDeliveryInfo(): { isValid: boolean; message: string } {
-    if (this.selectedOrderType !== 'Delivery') {
-      return { isValid: true, message: '' };
-    }
-    // ✅ في حالة عدم وجود اتصال، لا نطلب معلومات التوصيل
-    if (!this.isOnline) {
-      console.log('📴 Offline mode - delivery info considered available');
-      return true;
-    }) {
-      console.log('📴 Offline mode - delivery info not required');
-      return { isValid: true, message: '' };
-    }
-    if (!this.clientName || this.clientName.trim().length < 2) {
-      return { isValid: false, message: 'يرجى إدخال اسم العميل' };
-    }
-
-    if (!this.address || this.address.trim().length < 5) {
-      return { isValid: false, message: 'يرجى إدخال العنوان بالكامل' };
-    }
-
-    if (!this.addressPhone || !this.isValidPhoneNumber(this.addressPhone)) {
-      return { isValid: false, message: 'يرجى إدخال رقم هاتف صحيح' };
-    }
-
-    return { isValid: true, message: '' };
   }
 
 }
