@@ -1,4 +1,4 @@
-import { Component, OnInit, Inject, PLATFORM_ID, OnDestroy, HostListener, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID, OnDestroy, HostListener } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 // import { CategoriesComponent } from "../categories/categories.component";
 import { SideDetailsComponent } from "../side-details/side-details.component";
@@ -10,7 +10,6 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TotalsCardComponent } from "../totals-card/totals-card.component";
 import { NewcategoriesComponent } from '../newcategories/newcategories.component';
-import { Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-home',
@@ -24,8 +23,7 @@ import { Subject, takeUntil } from 'rxjs';
     NewcategoriesComponent,
     SideDetailsComponent,
     TotalsCardComponent
-  ],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  ]
 })
 export class HomeComponent implements OnInit, OnDestroy {
   cashInputDisabled = false;
@@ -53,18 +51,17 @@ export class HomeComponent implements OnInit, OnDestroy {
 
   private readonly BALANCE_OPENED_KEY = 'isBalanceOpened';
   enteredVisa: number | string | null | any = null;
-  private destroy$ = new Subject<void>();
-
   constructor(
     public modalStateService: ModalStateService,
     private authService: AuthService,
     private router: Router,
     private balanceService: BalanceService,
-    private cdr: ChangeDetectorRef,
+
     @Inject(PLATFORM_ID) private platformId: Object
   ) { }
 
   ngOnInit() {
+    console.log('this.platformId', this.platformId);
     if (isPlatformBrowser(this.platformId)) {
       this.initializeUserData();
 
@@ -72,21 +69,29 @@ export class HomeComponent implements OnInit, OnDestroy {
       const isBalanceOpened = localStorage.getItem('isBalanceOpened') === 'true' ||
         localStorage.getItem('is_open_balance') === 'true';
 
-      // Then subscribe to auth service with proper cleanup
-      this.authService.isOpenBalance$
-        .pipe(takeUntil(this.destroy$))
-        .subscribe(isOpen => {
-          if (!isOpen && !isBalanceOpened) {
-            this.showModal = true;
-            this.modalStateService.setModalOpen(true);
-            setTimeout(() => this.showWelcomeModal(), 10);
-          } else {
-            localStorage.setItem('isBalanceOpened', 'true');
-            localStorage.setItem('is_open_balance', 'true');
-            this.hideModal(true);
-          }
-          this.cdr.markForCheck();
+      // Then subscribe to auth service
+      this.authService.isOpenBalance$.subscribe(isOpen => {
+        console.log('Balance status from service:', isOpen);
+        console.log('Initial balance check:', {
+          localStorage: {
+            isBalanceOpened: localStorage.getItem('isBalanceOpened'),
+            is_open_balance: localStorage.getItem('is_open_balance')
+          },
+          authService: this.authService.getOpenBalanceStatus()
         });
+        //
+        if (!isOpen && !isBalanceOpened) {
+        console.log('Showing balance modal');
+        this.showModal = true;
+        this.modalStateService.setModalOpen(true);
+        setTimeout(() => this.showWelcomeModal(), 10);
+        } else {
+          console.log('Balance already opened, hiding modal');
+          localStorage.setItem('isBalanceOpened', 'true');
+          localStorage.setItem('is_open_balance', 'true');
+          this.hideModal(true);
+        }
+      });
 
       // Immediate check
       if (!isBalanceOpened) {
@@ -95,13 +100,9 @@ export class HomeComponent implements OnInit, OnDestroy {
         setTimeout(() => this.showWelcomeModal(), 500);
       }
     }
-
-    this.authService.visaTotal$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(total => {
-        this.visaTotal = total;
-        this.cdr.markForCheck();
-      });
+    this.authService.visaTotal$.subscribe(total => {
+      this.visaTotal = total;
+    });
   }
 
   @HostListener('window:popstate', ['$event'])
@@ -112,10 +113,6 @@ export class HomeComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
-    // Clean up all subscriptions
-    this.destroy$.next();
-    this.destroy$.complete();
-
     if (isPlatformBrowser(this.platformId)) {
       // Only clean up if we're not keeping the modal open
       if (!this.modalStateService.isModalOpen()) {
@@ -292,44 +289,34 @@ fetchCurrentBalance(): Promise<void> {
     this.currency_Symbol = localStorage.getItem('currency_symbol');
     this.imageUrl = localStorage.getItem('imageUrl');
 
-    this.authService.visaBalance$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(balance => {
-        this.visaBalance = balance;
-        this.cdr.markForCheck();
-      });
+    this.authService.visaBalance$.subscribe(balance => {
+      this.visaBalance = balance;
+    });
+    this.authService.employeeData$.subscribe(employee => {
+      if (employee) {
+        this.fullName = `${employee.first_name} ${employee.last_name}`;
+        this.cashierMachineId = employee.cashier_machine_id || null;
+      }
+    });
 
-    this.authService.employeeData$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(employee => {
-        if (employee) {
-          this.fullName = `${employee.first_name} ${employee.last_name}`;
-          this.cashierMachineId = employee.cashier_machine_id || null;
-          this.cdr.markForCheck();
-        }
-      });
+    this.authService.employeeData$.subscribe(employee => {
+      if (employee) {
+        this.fullName = `${employee.first_name} ${employee.last_name}`;
+      }
+    });
 
-    this.authService.branch$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(branch => {
-        this.branch = branch;
-        this.cdr.markForCheck();
-      });
+    this.authService.branch$.subscribe(branch => {
+      this.branch = branch;
+    });
 
-    this.authService.scheduleId$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(scheduleId => {
-        this.empScheduleId = scheduleId?.toString() || null;
-        this.cdr.markForCheck();
-      });
+    this.authService.scheduleId$.subscribe(scheduleId => {
+      this.empScheduleId = scheduleId?.toString() || null;
+    });
 
-    this.authService.shiftData$
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(shiftData => {
-        this.shiftData = shiftData;
-        this.shiftStart = shiftData?.shift_start || null;
-        this.cdr.markForCheck();
-      });
+    this.authService.shiftData$.subscribe(shiftData => {
+      this.shiftData = shiftData;
+      this.shiftStart = shiftData?.shift_start || null;
+    });
   }
 
   fetchOpenBalance(): void {

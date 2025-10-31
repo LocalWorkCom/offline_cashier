@@ -468,67 +468,10 @@ getProduct(product: any): any {
   //   setTimeout(() => this.isAdding = false, 300); // reset guard
   // }
 
-  // handleAddToCart() {
-  //   if (this.isAdding) return;   // ⛔ block double fire
-  //   this.isAdding = true;
+  handleAddToCart() {
+    if (this.isAdding) return;   // ⛔ block double fire
+    this.isAdding = true;
 
-  //   const currentUrl = this.router.url;
-  //   console.log('🧭 Current route:', currentUrl);
-
-  //   const isHoldOrder = currentUrl.includes('/onhold-orders/');
-  //   console.log(isHoldOrder ? '📝 Adding to ON HOLD order' : '🛍️ Adding to NEW cart');
-
-  //   if (!this.canAddToCart()) {
-  //     console.warn("🚨 Cannot add to cart: Minimum addon requirement not met!");
-  //     this.isAdding = false;
-  //     return;
-  //   }
-
-  //   // Prepare the cart item for IndexedDB
-  //   const cartItem = this.prepareCartItemForIndexedDB(isHoldOrder);
-
-  //   if (navigator.onLine) {
-  //     // Online: Use the original functions and also store in IndexedDB
-  //     try {
-  //       if (isHoldOrder) {
-  //         this.addToHoldCart(); // Call the original method
-  //       } else {
-  //         this.addToCart(); // Call the original method
-  //       }
-
-  //       // Also store in IndexedDB with sync status
-  //       cartItem.isSynced = true;
-  //       this.dbService.addToCart(cartItem)
-  //         .then(() => {
-  //           console.log('✅ Item also stored in IndexedDB');
-  //         })
-  //         .catch(error => {
-  //           console.error('❌ Error storing in IndexedDB:', error);
-  //         });
-
-  //     } catch (error) {
-  //       console.error('❌ Online cart failed, storing offline:', error);
-
-  //       // Fallback to offline storage
-  //       cartItem.isSynced = false;
-  //       this.storeOfflineCartItem(cartItem, isHoldOrder);
-  //     }
-
-  //     this.cdr.detectChanges();
-  //   } else {
-  //     // Offline: Store in IndexedDB only
-  //     cartItem.isSynced = false;
-  //     this.storeOfflineCartItem(cartItem, isHoldOrder);
-  //     this.cdr.detectChanges();
-  //   }
-
-  //   setTimeout(() => this.isAdding = false, 300); // reset guard
-  // }
-  async handleAddToCart() {
-  if (this.isAdding) return; // ⛔ Block double click
-  this.isAdding = true;
-
-  try {
     const currentUrl = this.router.url;
     console.log('🧭 Current route:', currentUrl);
 
@@ -537,93 +480,50 @@ getProduct(product: any): any {
 
     if (!this.canAddToCart()) {
       console.warn("🚨 Cannot add to cart: Minimum addon requirement not met!");
+      this.isAdding = false;
       return;
     }
 
+    // Prepare the cart item for IndexedDB
     const cartItem = this.prepareCartItemForIndexedDB(isHoldOrder);
 
-    // Check if item already exists in IndexedDB
-    const existingCartItems = await this.dbService.getCartItems();
-    const existingItem = existingCartItems.find((item: any) => {
-      const sameDish = item.dish?.id === cartItem.dish?.id;
-      const sameSize = item.selectedSize?.id === cartItem.selectedSize?.id;
-      const sameAddons = this.addonsAreEqualForIndexedDB(item.selectedAddons || [], cartItem.selectedAddons || []);
-      const sameNote = item.note === cartItem.note;
-      const sameHoldOrder = (item.isHoldOrder || false) === (cartItem.isHoldOrder || false);
-      const sameHoldOrderId = item.holdOrderId === cartItem.holdOrderId;
-
-      return sameDish && sameSize && sameAddons && sameNote && sameHoldOrder && sameHoldOrderId;
-    });
-
-    if (existingItem) {
-      // Item exists - increase quantity
-      existingItem.quantity += cartItem.quantity;
-
-      // Recalculate finalPrice
-      const unitPrice = existingItem.finalPrice / (existingItem.quantity - cartItem.quantity);
-      existingItem.finalPrice = unitPrice * existingItem.quantity;
-
-      // Update in IndexedDB
-      await this.dbService.updateCartItem(existingItem);
-      console.log('✅ Item quantity increased in IndexedDB');
-
-      // Also update localStorage for immediate UI sync
-      if (isHoldOrder) {
-        this.addToHoldCart();
-      } else {
-        this.addToCart();
-      }
-    } else {
-      // Item doesn't exist - add new item
-      if (navigator.onLine) {
-        // Online mode
+    if (navigator.onLine) {
+      // Online: Use the original functions and also store in IndexedDB
+      try {
         if (isHoldOrder) {
-          await this.addToHoldCart();
+          this.addToHoldCart(); // Call the original method
         } else {
-          await this.addToCart();
+          this.addToCart(); // Call the original method
         }
 
+        // Also store in IndexedDB with sync status
         cartItem.isSynced = true;
-        await this.dbService.addToCart(cartItem);
-        console.log('✅ New item added to IndexedDB (Online)');
-      } else {
-        // Offline mode
+        this.dbService.addToCart(cartItem)
+          .then(() => {
+            console.log('✅ Item also stored in IndexedDB');
+          })
+          .catch(error => {
+            console.error('❌ Error storing in IndexedDB:', error);
+          });
+
+      } catch (error) {
+        console.error('❌ Online cart failed, storing offline:', error);
+
+        // Fallback to offline storage
         cartItem.isSynced = false;
-        await this.storeOfflineCartItem(cartItem, isHoldOrder);
-        console.log('📦 New item added offline to IndexedDB');
+        this.storeOfflineCartItem(cartItem, isHoldOrder);
       }
+
+      this.cdr.detectChanges();
+    } else {
+      // Offline: Store in IndexedDB only
+      cartItem.isSynced = false;
+      this.storeOfflineCartItem(cartItem, isHoldOrder);
+      this.cdr.detectChanges();
     }
 
-    this.cdr.detectChanges();
-
-    // Refresh the page to reflect changes
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
-
-  } catch (error) {
-    console.error('❌ Error while adding to cart:', error);
-  } finally {
-    // ✅ Reset the guard only after all operations finish
-    setTimeout(() => this.isAdding = false, 1000);
+    setTimeout(() => this.isAdding = false, 300); // reset guard
   }
-}
-
-// Helper method to compare addons for IndexedDB
-private addonsAreEqualForIndexedDB(a: any[], b: any[]): boolean {
-  if (a.length !== b.length) return false;
-
-  const sortById = (arr: any[]) => [...arr].sort((x, y) => x.id - y.id);
-  const sortedA = sortById(a);
-  const sortedB = sortById(b);
-
-  return sortedA.every((addon, index) =>
-    addon.id === sortedB[index].id &&
-    addon.name === sortedB[index].name &&
-    addon.price === sortedB[index].price
-  );
-}
-
   // Helper method to prepare cart item for IndexedDB
   private prepareCartItemForIndexedDB(isHoldOrder: boolean = false): any {
     // Prepare dish details

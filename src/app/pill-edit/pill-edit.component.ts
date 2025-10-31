@@ -207,25 +207,6 @@ export class PillEditComponent {
       this.invoices = Array.isArray(data.invoice_details)
         ? data.invoice_details
         : [data.invoice_details];
-      // ✅ إصلاح بيانات الكاشير للطباعة - مباشرة بدون method
-      const cashierFullName = localStorage.getItem('fullName') || 'الكاشير';
-
-      this.invoices.forEach((invoice: any) => {
-        if (!invoice.cashier_info) {
-          invoice.cashier_info = {
-            first_name: cashierFullName,
-            last_name: ''
-          };
-        } else {
-          // ✅ إذا كانت البيانات موجودة ولكنها غير مكتملة
-          if (!invoice.cashier_info.first_name || invoice.cashier_info.first_name === 'test') {
-            invoice.cashier_info.first_name = cashierFullName;
-          }
-          if (!invoice.cashier_info.last_name) {
-            invoice.cashier_info.last_name = '';
-          }
-        }
-      });
 
       const statusMap: { [key: string]: string } = {
         completed: 'مكتمل',
@@ -257,26 +238,11 @@ export class PillEditComponent {
         (invoice: any) => invoice.order_type === 'Delivery'
       );
 
-      // ✅ إصلاح: دمج table_number من البيانات الرئيسية مع branch_details
-      this.branchDetails = this.invoices.map((e: any) => {
-        const branchDetails = e.branch_details || {};
+      this.branchDetails = this.invoices.map(
+        (e: { branch_details: any }) => e.branch_details
+      );
 
-        return {
-          ...branchDetails,
-          // ✅ استخدم table_number من البيانات الرئيسية إذا لم يكن موجوداً في branch_details
-          table_number: branchDetails.table_number || data.table_number || branchDetails.table_id
-        };
-      });
-      this.orderDetails = this.invoices.map((e: any) => {
-        if (e.orderDetails && Array.isArray(e.orderDetails)) {
-          return e.orderDetails.map((item: any) => ({
-            ...item,
-            // ✅ تطبيع هيكل الإضافات - هذا هو الجزء المهم!
-            addons: this.normalizeAddons(item.addons)
-          }));
-        }
-        return e.orderDetails || [];
-      });
+      this.orderDetails = this.invoices.map((e: any) => e.orderDetails);
 
       this.invoiceSummary = this.invoices.map((e: any) => ({
         ...e.invoice_summary,
@@ -305,29 +271,7 @@ export class PillEditComponent {
       console.error('Error processing pill details offline:', error, data);
     }
   }
-  private normalizeAddons(addons: any[]): any[] {
-    if (!addons || !Array.isArray(addons)) return [];
 
-    return addons.map(addon => {
-      // إذا كانت الإضافة object تحتوي على name بدلاً من addon_name
-      if (addon && typeof addon === 'object') {
-        return {
-          addon_name: addon.addon_name || addon.name || 'Unknown Addon',
-          addon_price: addon.addon_price || addon.price || 0,
-          // احتفظي بالبيانات الأصلية أيضاً
-          ...addon
-        };
-      }
-      // إذا كانت string
-      else if (typeof addon === 'string') {
-        return {
-          addon_name: addon,
-          addon_price: 0
-        };
-      }
-      return addon;
-    });
-  }
   // end dalia
   getNoteFromLocalStorage() {
     throw new Error('Method not implemented.');
@@ -589,9 +533,9 @@ export class PillEditComponent {
 
     //  const cashAmount= this.cash_value != null ? this.cash_value : 0;
     // const creditAmount = this.credit_value != null ? this.credit_value : 0;
-    const paymentMethodForDB = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
-    const cashAmount = paymentMethodForDB === "cash" ? this.finalTipSummary?.billAmount ?? 0 : 0;
-    const creditAmount = paymentMethodForDB === "credit" ? this.finalTipSummary?.billAmount ?? 0 : 0;
+
+    const cashAmount = this.selectedPaymentMethod === "cash" ? this.finalTipSummary?.billAmount ?? 0 : 0;
+    const creditAmount = this.selectedPaymentMethod === "credit" ? this.finalTipSummary?.billAmount ?? 0 : 0;
     this.DeliveredOrNot = this.orderType == 'Delivery';
     console.log("DD");
 
@@ -745,23 +689,17 @@ export class PillEditComponent {
             const order: any = await this.dbService.getOrderById(this.pillId);
 
             if (order) {
-
               console.log("Offline order found:", order);
-
-
-
               order.order_details.payment_method = cashAmount > 0 ? "cash" : "credit";
               order.order_details.payment_status = this.paymentStatus;
-              // order.order_details.payment_status = "unpaid";
               order.order_details.cash_amount = cashAmount || 0;
               order.order_details.credit_amount = creditAmount || 0;
-              order.edit_invoice = order.order_details.order_type == "dine-in" ? true : false;
 
               order.isUpdatedOffline = true;
               order.isSynced = false;
               order.bill_amount = this.finalTipSummary?.billAmount ?? 0;
               order.change_amount = this.tempChangeAmount ?? 0;
-              order.tips_aption = this.tip_aption ?? "no_tip"; //'tip_the_change', 'tip_specific_amount','no_tip'
+              order.tips_aption = this.tip_aption ?? "tip_the_change";
               order.tip_amount = this.finalTipSummary?.tipAmount ?? 0;
               order.tip_specific_amount = this.specificTipAmount ? this.finalTipSummary?.tipAmount : 0;
               order.payment_amount = this.finalTipSummary?.paymentAmount ?? 0;
@@ -770,38 +708,7 @@ export class PillEditComponent {
               order.returned_amount = this.finalTipSummary?.changeToReturn ?? 0;
 
               await this.dbService.updateOrderById(this.pillId, order);
-              console.log("ee", order.order_details.table_id);
 
-              // ✅ تحديث حالة الطاولة فقط إذا كان table_id موجود
-              // ✅ الكود النهائي المحسن
-              if (order.order_details.order_type === 'dine-in') {
-                let tableIdToUpdate = order.order_details.table_id;
-
-                // إذا لم يكن هناك table_id، جرب البحث باستخدام table_number
-                if (!tableIdToUpdate && order.order_details.table_number) {
-                  console.log("🔍 Searching for table_id using table_number:", order.order_details.table_number);
-                  tableIdToUpdate = await this.findTableIdByNumber(order.order_details.table_number);
-
-                  if (tableIdToUpdate) {
-                    console.log("✅ Found table_id:", tableIdToUpdate);
-                    order.order_details.table_id = tableIdToUpdate; // تحديث الـ order بالـ table_id الجديد
-                  }
-                }
-
-                if (tableIdToUpdate) {
-                  console.log("🔄 Updating table status for table_id:", tableIdToUpdate);
-                  try {
-                    await this.dbService.updateTableStatus(tableIdToUpdate, 1);
-                    console.log("✅ Table status updated successfully");
-                  } catch (error) {
-                    console.error("❌ Error updating table status:", error);
-                  }
-                } else {
-                  console.log("🍽️ Dine-in order but no table identifier found");
-                }
-              } else {
-                console.log("📦 Order type:", order.order_details.order_type, "- Skipping table update");
-              }
 
 
               console.log("💾 Order updated offline only:", order);
@@ -845,11 +752,6 @@ export class PillEditComponent {
             existingPill.isUpdatedOffline = false;
           }
           await this.dbService.updatePill(existingPill);
-          if (existingPill.isUpdatedOffline == true) {
-            console.log("dsfre", existingPill.table_number);
-            await this.dbService.updateTableStatus(existingPill.table_number, 1);
-          }
-
 
           console.log("💾 Invoice updated offline in IndexedDB:", existingPill);
           alert("تم تحديث الفاتورة Offline وسيتم رفعها عند الاتصال بالإنترنت ✅");
@@ -865,17 +767,11 @@ export class PillEditComponent {
     }
   }
 
-  // ✅ دالة مساعدة للبحث عن table_id باستخدام table_number
-  private async findTableIdByNumber(tableNumber: string): Promise<number | null> {
-    try {
-      const tables = await this.dbService.getAll('tables');
-      const table = tables.find((t: any) => t.table_number === tableNumber);
-      return table ? table.id : null;
-    } catch (error) {
-      console.error("Error finding table by number:", error);
-      return null;
-    }
-  }
+
+
+
+
+
   //end dalia
   isFinal: boolean = false;
   async printInvoice(isfinal: boolean) {
@@ -886,12 +782,9 @@ export class PillEditComponent {
     this.closeConfirmationDialog();
     if (!this.invoices?.length || !this.invoiceSummary?.length) {
       console.warn('بيانات الفاتورة غير جاهزة.');
-
       // محاولة تحميل البيانات من التخزين المحلي
       if (!this.isOnline) {
-
         await this.fetchPillFromIndexedDB(this.pillId);
-        await this.dbService.updateTableStatus(this.invoices.branch_details.table_number, 1);
       }
       if (!this.invoices?.length) {
         alert('بيانات الفاتورة غير متوفرة للطباعة.');
@@ -912,9 +805,6 @@ export class PillEditComponent {
         }
       } else {
         console.log('الطباعة في وضع عدم الاتصال');
-        console.log('ss1', this.invoices);
-        console.log('ss', this.invoices[0].branch_details.table_number);
-        await this.dbService.updateTableStatus(this.invoices[0].branch_details.table_number, 1);
       }
       // الطباعة المحلية
       await this.performLocalPrint();
@@ -1104,7 +994,6 @@ export class PillEditComponent {
 
   onPrintButtonClick() {
     this.confirmationDialog.confirm();
-
   }
 
 
@@ -1206,15 +1095,14 @@ export class PillEditComponent {
     }
 
     const changeToReturn = Math.max(0, this.tempChangeAmount - finalTipAmount);
-    // ✅ التعديل: كاش + فيزا تتحول لـ cash
-    const paymentMethodForDB = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
+
     // حساب المبالغ النهائية بناءً على طريقة الدفع
     let cashFinal = 0;
     let creditFinal = 0;
 
-    if (paymentMethodForDB === 'cash') {
+    if (this.selectedPaymentMethod === 'cash') {
       cashFinal = this.tempPaymentAmount;
-    } else if (paymentMethodForDB === 'credit') {
+    } else if (this.selectedPaymentMethod === 'credit') {
       creditFinal = this.tempPaymentAmount;
     } else if (this.selectedPaymentMethod === 'cash + credit') {
       // توزيع المبلغ على الكاش والفيزا مع احتساب الإكرامية
@@ -1283,15 +1171,14 @@ export class PillEditComponent {
     this.tipPaymentStatus = status;
     console.log('حالة دفع الإكرامية:', this.tipPaymentStatus);
   }
-
+  
   selectPaymentSuggestionAndOpenModal(type: 'billAmount' | 'amount50' | 'amount100', billAmount: number, paymentAmount: number, modalContent: any): void {
     this.selectedSuggestionType = type; // هنا يتم حفظ النوع الذي تم الضغط عليه
     this.selectedPaymentSuggestion = paymentAmount;
 
     if (paymentAmount >= billAmount) {
       this.cashPaymentInput = paymentAmount;
-      const paymentMethodForModal = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
-    this.openTipModal(modalContent, billAmount, paymentAmount, paymentMethodForModal);
+      this.openTipModal(modalContent, billAmount, paymentAmount);
     }
   }
 
@@ -1301,8 +1188,7 @@ export class PillEditComponent {
     console.log('Bill Amount:', billAmount, 'Entered:', this.cashPaymentInput);
     const currentPaymentInput = this.cashPaymentInput;
     if (currentPaymentInput > 0 && currentPaymentInput >= billAmount) {
-      const paymentMethodForModal = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
-    this.openTipModal(modalContent, billAmount, currentPaymentInput, paymentMethodForModal);
+      this.openTipModal(modalContent, billAmount, currentPaymentInput);
     }
   }
 
@@ -1332,9 +1218,8 @@ export class PillEditComponent {
       this.tempBillAmount = billAmount;
       this.tempPaymentAmount = totalPaid;
       this.tempChangeAmount = totalPaid - billAmount;
- // ✅ التعديل: تمرير القيمة المعدلة
-    const paymentMethodForModal = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
-      this.openTipModal(modalContent, billAmount, totalPaid, paymentMethodForModal);
+
+      this.openTipModal(modalContent, billAmount, totalPaid);
     } else {
       // يمكن إضافة رسالة تنبيه هنا إذا أردت
       console.warn('المبلغ المدفوع غير كافي لفتح مودال الإكرامية');
