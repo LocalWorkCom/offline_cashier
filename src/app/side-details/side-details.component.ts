@@ -5012,14 +5012,24 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
     if (this.selectedOrderType !== 'Delivery') {
       return { isValid: true, message: '' };
     }
+
     // ✅ في حالة عدم وجود اتصال، لا نطلب معلومات التوصيل
     if (!this.isOnline) {
       console.log('📴 Offline mode - delivery info considered available');
-      return true;
-    }) {
-      console.log('📴 Offline mode - delivery info not required');
       return { isValid: true, message: '' };
     }
+
+    // التحقق من وجود البيانات الأساسية للتوصيل
+    const hasBasicInfo = this.clientName && this.address && this.addressPhone;
+    const hasFormData = this.FormDataDetails &&
+      this.FormDataDetails.client_name &&
+      this.FormDataDetails.address &&
+      this.FormDataDetails.address_phone;
+
+    if (!hasBasicInfo && !hasFormData) {
+      return { isValid: false, message: 'يرجى إدخال معلومات التوصيل' };
+    }
+
     if (!this.clientName || this.clientName.trim().length < 2) {
       return { isValid: false, message: 'يرجى إدخال اسم العميل' };
     }
@@ -5034,5 +5044,4 @@ export class SideDetailsComponent implements OnInit, AfterViewInit, OnDestroy {
 
     return { isValid: true, message: '' };
   }
-
 }
