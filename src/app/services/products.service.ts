@@ -117,16 +117,6 @@ loadCart(): void {
     return this.cartSubject.getValue(); // Fix: Return the current cart array
   }
 
-  // ✅ Set cart without triggering multiple updates
-  setCart(cartItems: any[]): void {
-    // ✅ Only update if cart actually changed
-    const currentCart = this.cartSubject.getValue();
-    if (JSON.stringify(currentCart) !== JSON.stringify(cartItems)) {
-      this.cart = cartItems;
-      this.cartSubject.next(cartItems);
-    }
-  }
-
 
   // addToCart(product: any): void {
   //   let cart = JSON.parse(localStorage.getItem('cart') || '[]');
@@ -221,19 +211,8 @@ loadCart(): void {
 
   clearCart(): void {
     this.cart = [];
-    try {
-      // Clear both localStorage carts
-      localStorage.removeItem('cart');
-      localStorage.removeItem('holdCart');
-    } catch (_) {}
-
-    // Emit empty cart to subscribers immediately
-    this.cartSubject.next([]);
-
-    // Clear IndexedDB cart (fire-and-forget)
-    try {
-      this.db.clearCart().catch(() => {});
-    } catch (_) {}
+    localStorage.removeItem('cart');
+    this.saveCart();
   }
 
   private isMatchingItem(item: any, productId: number, sizeId?: number): boolean {

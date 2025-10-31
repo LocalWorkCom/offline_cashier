@@ -15,6 +15,7 @@
     <!-- <app-select   [options]="printOptions"></app-select> -->
     <!-- Confirm Dialog -->
 
+
     <!-- Print Button -->
     <button pButton type="button" label="طباعة الفاتورة" icon="pi pi-print" (click)="onPrintButtonClick()"
       [disabled]="isPrinting" class="fs-6 rounded-4"></button>
@@ -97,13 +98,11 @@
         <a class="text-decoration-underline mb-3" [routerLink]="'/pill-details/' + invoices[0].original_invoice_id"
           routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
 
-          <span class="fw-bold">رقم الإيصال :</span> {{
-          invoices[0].original_invoice_number }}
+          <span class="fw-bold">رقم الإيصال :</span> {{ invoices[0].original_invoice_number }}
         </a>
         <p>
           <span class="fw-bold">نوع المرتجع :</span>
-          {{ invoices[0].return_type === 'partial' ? 'جزئي' :
-          invoices[0].return_type === 'full' ? 'كلي' :
+          {{ invoices[0].return_type === 'partial' ? 'جزئي' : invoices[0].return_type === 'full' ? 'كلي' :
           invoices[0].return_type }}
         </p>
 
@@ -138,11 +137,12 @@
         <span class="fw-bold">الاسم :</span>
         {{ addresDetails.client_name }}
       </p>
-      <p *ngIf="addresDetails?.client_address || addresDetails?.branch_name">
+      <p v-if="addresDetails.client_address || addresDetails.branch_name">
         <span class="fw-bold">العنوان :</span>
-        {{ addresDetails?.client_address || 'غير متوفر' }}
-        <span *ngIf="addresDetails?.branch_name">, {{ addresDetails?.branch_name
-          }}</span>
+        {{ addresDetails.client_address ?? "غير متوفر" }}
+        @if(addresDetails.branch_name){
+        , {{ addresDetails.branch_name}}
+        }
       </p>
 
       <p v-if="addresDetails.address_phone">
@@ -150,8 +150,7 @@
         {{ addresDetails.address_phone}}
       </p>
       <p>
-        <span class="fw-bold" *ngIf="invoices[0].delivery_name">اسم الطيار
-          :</span>
+        <span class="fw-bold" *ngIf="invoices[0].delivery_name">اسم الطيار :</span>
         {{ invoices[0].delivery_name }}
       </p>
     </div>
@@ -186,8 +185,7 @@
                   </h6>
                   <h6 class="text-muted mx-5 fw-medium" *ngIf="item.addons.length>0"> الاضافات :
                     <span *ngFor="let addon of item.addons; let last = last">
-                      <span>{{ addon.addon_name }}<span *ngIf="!last">،
-                        </span></span>
+                      <span>{{ addon.addon_name }}<span *ngIf="!last">، </span></span>
                     </span>
 
                   </h6>
@@ -284,8 +282,7 @@
           item.coupon_value !== 0
         ">
         <h6>كوبون خصم
-          <span class="btn-static-secondary p-1 rounded">{{
-            invoices[0].invoice_summary.coupon_title
+          <span class="btn-static-secondary p-1 rounded">{{ invoices[0].invoice_summary.coupon_title
             }} </span>
         </h6>
         <h6>
@@ -320,28 +317,27 @@
         <h6>سعر الوجبات يشتمل على ضريبة القيمة المضافة</h6>
       </div> -->
 
-      <div class="px-2 mb-1" *ngIf="item.tax_application">
+      <div class="px-2 mb-1" *ngIf="!item.tax_application">
         <h6>
           تضاف ضريبة القيمة المضافة
           <span class="main-color"> بنسبة {{ item.tax_percentage }}% </span>
-          بمعنى اخر {{ item.tax_value | number:'1.2-2' }} {{
-          item.currency_symbol }}
+          بمعنى اخر {{ item.tax_value }} {{ item.currency_symbol }}
         </h6>
       </div>
       <div class="d-flex flex-column">
-        <div class="px-2 mb-1" *ngIf="!item.tax_application">
+        <div class="px-2 mb-1" *ngIf="item.tax_application">
           <h6>سعر الوجبات يشتمل على ضريبة القيمة المضافة</h6>
         </div>
 
         <hr />
+
 
         <div class="d-flex justify-content-between px-2 mb-1">
           <h4 class="mb-0" style="font-weight: bold !important">
             المجموع الكلى
           </h4>
           <h6 class="fw-bold mb-0">
-            <span>{{ item.total_price | number:'1.2-2'}} {{ item.currency_symbol
-              }}</span>
+            <span>{{ item.total_price }} {{ item.currency_symbol }}</span>
           </h6>
         </div>
 
@@ -355,8 +351,7 @@
                 الدفع - {{ tip.payment_method === 'cash' ? 'كاش' : 'فيزا' }}
               </h5>
               <h6 class="fw-bold mb-0">
-                <span>{{ tip.payment_amount | number: '1.2-2' }} {{
-                  item.currency_symbol || 'ج.م' }}</span>
+                <span>{{ tip.payment_amount | number: '1.2-2' }} {{ item.currency_symbol || 'ج.م' }}</span>
               </h6>
             </div>
 
@@ -365,8 +360,7 @@
                 المبلغ الباقى للعميل
               </h5>
               <h6 class="fw-bold mb-0">
-                <span>{{ tip.returned_amount | number: '1.2-2' }} {{
-                  item.currency_symbol || 'ج.م' }}</span>
+                <span>{{ tip.returned_amount | number: '1.2-2' }} {{ item.currency_symbol || 'ج.م' }}</span>
               </h6>
             </div>
 
@@ -375,8 +369,7 @@
                 الاكرامية
               </h5>
               <h6 class="fw-bold mb-0">
-                <span>{{ tip.tip_amount | number: '1.2-2' }} {{
-                  item.currency_symbol || 'ج.م' }}</span>
+                <span>{{ tip.tip_amount | number: '1.2-2' }} {{ item.currency_symbol || 'ج.م' }}</span>
               </h6>
             </div>
             <div class="d-flex justify-content-between px-2 mb-1">
@@ -384,8 +377,7 @@
                 المجموع مع الاكرامية
               </h5>
               <h6 class="fw-bold mb-0">
-                <span>{{ tip.total_with_tip | number: '1.2-2' }} {{
-                  item.currency_symbol || 'ج.م' }}</span>
+                <span>{{ tip.total_with_tip | number: '1.2-2' }} {{ item.currency_symbol || 'ج.م' }}</span>
               </h6>
             </div>
           </div>
@@ -394,12 +386,17 @@
         </div>
         <!-- dalia end -->
 
+
+
         <div class="text-center mb-1">
           <h5>شكرا لك علي وقتك وثقتك بنا</h5>
         </div>
       </div>
     </div>
   </div>
+
+
+
 
   <!-- Hidden Printable Section -->
   <div id="printSection" class="d-none printSection p-0">
@@ -432,7 +429,7 @@
           <small>
             اسم الكاشير:
             <span>{{ invoices[0].cashier_info.first_name }} &nbsp;
-              <!-- {{ invoices[0].cashier_info.last_name }} -->
+              {{ invoices[0].cashier_info.last_name }}
             </span></small>
         </h6>
         <hr />
@@ -467,9 +464,7 @@
           </h6>
           <h6>
             اسم الطيار:
-            <span>{{ invoices?.[0]?.delivery_name &&
-              invoices[0].delivery_name.trim() !== '' ?
-              invoices[0].delivery_name
+            <span>{{ invoices?.[0]?.delivery_name && invoices[0].delivery_name.trim() !== '' ? invoices[0].delivery_name
               :
               'لا يوجد' }}</span>
           </h6>
@@ -505,8 +500,7 @@
                 </div>
                 <div class="pe-2">{{ item.size }}</div>
                 <div class="pe-2" *ngFor="let addon of item.addons">
-                  <small class="text-muted fst-italic fw-semibold">- {{
-                    addon.addon_name }}</small>
+                  <small class="text-muted fst-italic fw-semibold">- {{ addon.addon_name }}</small>
                 </div>
 
               </div>
@@ -554,8 +548,7 @@
           <div *ngIf="showPrices && test">
             <div class="d-flex justify-content-between align-items-center mb-2">
               <h6 class="fw-bold">الاجمالي:</h6>
-              <span class="fw-bold">{{ item.subtotal_price_before_coupon }} {{
-                item.currency_symbol }}</span>
+              <span class="fw-bold">{{ item.subtotal_price_before_coupon }} {{ item.currency_symbol }}</span>
             </div>
             <div class="d-flex justify-content-between mb-1 fw-bold" *ngIf="
               item.tax_application !== 0 &&
@@ -563,8 +556,7 @@
               item.coupon_value !== 0
             ">
               <h6>تخفيض:
-                <span class="btn-static-secondary p-1 rounded">{{
-                  invoices[0].invoice_summary.coupon_title
+                <span class="btn-static-secondary p-1 rounded">{{ invoices[0].invoice_summary.coupon_title
                   }} </span>
               </h6>
               <span>-{{ item.coupon_value }} {{ item.currency_symbol }}</span>
@@ -635,8 +627,7 @@
             <div class="px-2 mb-1" *ngIf="!item.tax_application">
               <h6>
                 تضاف ضريبة القيمة المضافة
-                <span class="main-color">بنسبة {{ item.tax_percentage }}%
-                </span>
+                <span class="main-color">بنسبة {{ item.tax_percentage }}% </span>
                 بمعني اخر
                 {{ item.tax_value }} {{ item.currency_symbol }}
               </h6>
@@ -670,8 +661,7 @@
                 الدفع - {{ tip.payment_method === 'cash' ? 'كاش' : 'فيزا' }}
               </h5>
               <h6 class="fw-bold mb-0">
-                <span>{{ tip.payment_amount | number: '1.2-2' }} {{
-                  item.currency_symbol || 'ج.م' }}</span>
+                <span>{{ tip.payment_amount | number: '1.2-2' }} {{ item.currency_symbol || 'ج.م' }}</span>
               </h6>
             </div>
 
@@ -680,8 +670,7 @@
                 المبلغ الباقى للعميل
               </h5>
               <h6 class="fw-bold mb-0">
-                <span>{{ tip.returned_amount | number: '1.2-2' }} {{
-                  item.currency_symbol || 'ج.م' }}</span>
+                <span>{{ tip.returned_amount | number: '1.2-2' }} {{ item.currency_symbol || 'ج.م' }}</span>
               </h6>
             </div>
 
@@ -690,8 +679,7 @@
                 الاكرامية
               </h5>
               <h6 class="fw-bold mb-0">
-                <span>{{ tip.tip_amount | number: '1.2-2' }} {{
-                  item.currency_symbol || 'ج.م' }}</span>
+                <span>{{ tip.tip_amount | number: '1.2-2' }} {{ item.currency_symbol || 'ج.م' }}</span>
               </h6>
             </div>
             <div class="d-flex justify-content-between px-2 mb-1">
@@ -699,8 +687,7 @@
                 المجموع مع الاكرامية
               </h5>
               <h6 class="fw-bold mb-0">
-                <span>{{ tip.total_with_tip | number: '1.2-2' }} {{
-                  item.currency_symbol || 'ج.م' }}</span>
+                <span>{{ tip.total_with_tip | number: '1.2-2' }} {{ item.currency_symbol || 'ج.م' }}</span>
               </h6>
             </div>
           </div>
@@ -708,7 +695,7 @@
           <!-- dalia end -->
         </div>
         <!-- dalia end -->
-
+         
       </ng-container>
 
       <h6 class="text-center my-3">شكرا لثقتكم بخدمتنا</h6>

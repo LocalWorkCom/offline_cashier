@@ -51,7 +51,7 @@ export class PillDetailsComponent implements OnInit {
   date: string | null = null;
   time: string | null = null;
   invoiceSummary: any;
-  invoiceTips: any;
+  invoiceTips : any;
   addressDetails: any;
   isDeliveryOrder: boolean = false;
   paymentStatus: any = '';
@@ -98,19 +98,18 @@ export class PillDetailsComponent implements OnInit {
 
       if (this.pillId) {
 
-        if (navigator.onLine) {
-          // ✅ Online
-          this.fetchPillsDetails(this.pillId);
-        } else {
-          // ✅ Offline
-          this.fetchPillFromIndexedDB(this.pillId);
-          console.log(this.pillId);
+          if (navigator.onLine) {
+        // ✅ Online
+        this.fetchPillsDetails(this.pillId);
+      } else {
+        // ✅ Offline
+        this.fetchPillFromIndexedDB(this.pillId);
+        console.log(this.pillId);
 
-        }
+      }
 
       }
     });
-
     this.fetchTrackingStatus();
     // this.getNoteFromLocalStorage();
     this.cashier_machine_id = Number(
@@ -131,12 +130,7 @@ export class PillDetailsComponent implements OnInit {
       console.log('No data found in localStorage.');
     }
   }
-  // أضف دالة للتأكد من البيانات
-  private checkAddressData(): void {
-    console.log('🔍 Address Details:', this.addresDetails);
-    console.log('🔍 Invoices:', this.invoices);
-    console.log('🔍 First Invoice Address:', this.invoices?.[0]?.address_details);
-  }
+
   //   ngOnInit() {
   //   // Initialize DB first
   //    this.dbService.init();
@@ -291,10 +285,10 @@ export class PillDetailsComponent implements OnInit {
 
   async fetchPillFromIndexedDB(identifier: string | number) {
     try {
-      console.log("offline-identifier", identifier);
+      console.log("offline-identifier",identifier);
       const pill = await this.dbService.getPillByInvoiceId(identifier);
 
-      console.log("toqa_pills", pill);
+      console.log("toqa_pills",pill);
 
 
       if (pill) {
@@ -310,142 +304,83 @@ export class PillDetailsComponent implements OnInit {
       this.fetchPillsDetails(String(identifier));  // ✅ fetch online
     }
   }
-  private normalizeAddons(addons: any[]): any[] {
-    if (!addons || !Array.isArray(addons)) return [];
-
-    return addons.map(addon => {
-      // إذا كانت الإضافة object تحتوي على name بدلاً من addon_name
-      if (addon && typeof addon === 'object') {
-        return {
-          addon_name: addon.addon_name || addon.name || 'Unknown Addon',
-          addon_price: addon.addon_price || addon.price || 0,
-          // احتفظي بالبيانات الأصلية أيضاً
-          ...addon
-        };
-      }
-      // إذا كانت string
-      else if (typeof addon === 'string') {
-        return {
-          addon_name: addon,
-          addon_price: 0
-        };
-      }
-      return addon;
-    });
-  }
-
-  private processPillDetails(data: any): void {
-    console.log("toqa offline", data);
-
-    try {
-      this.order_id = data.order_id;
-
-      // ✅ لو جاية Object حطها في Array عشان تبقى زي الـ Online
-      this.invoices = Array.isArray(data.invoice_details)
-        ? data.invoice_details
-        : [data.invoice_details];
-
-      // ✅ إصلاح بيانات الكاشير للطباعة - مباشرة بدون method
-      const cashierFullName = localStorage.getItem('fullName') || 'الكاشير';
-
-      this.invoices.forEach((invoice: any) => {
-        if (!invoice.cashier_info) {
-          invoice.cashier_info = {
-            first_name: cashierFullName,
-            last_name: ''
-          };
-        } else {
-          // ✅ إذا كانت البيانات موجودة ولكنها غير مكتملة
-          if (!invoice.cashier_info.first_name || invoice.cashier_info.first_name === 'test') {
-            invoice.cashier_info.first_name = cashierFullName;
-          }
-          if (!invoice.cashier_info.last_name) {
-            invoice.cashier_info.last_name = '';
-          }
-        }
-      });
-
-      const statusMap: { [key: string]: string } = {
-        completed: 'مكتمل',
-        pending: 'في انتظار الموافقة',
-        cancelled: 'ملغي',
-        packing: 'يتم تجهيزها',
-        readyForPickup: 'جاهز للاستلام',
-        on_way: 'في الطريق',
-        in_progress: 'يتم تحضير الطلب',
-        delivered: 'تم التوصيل',
-      };
-
-      const trackingKey = this.invoices[0]?.['tracking-status'];
-      if (trackingKey === 'completed') {
-        this.isShow = false;
-      }
-      this.trackingStatus = statusMap[trackingKey] || trackingKey;
-
-      this.orderNumber = data.order_id;
-      this.couponType = this.invoices[0]?.invoice_summary?.coupon_type;
-
-      this.addresDetails = this.invoices[0]?.address_details || {};
-      this.paymentMethod =
-        this.invoices[0]?.transactions?.[0]?.['payment_method'];
-      this.paymentStatus =
-        this.invoices[0]?.transactions?.[0]?.['payment_status'];
-
-      this.isDeliveryOrder = this.invoices.some(
-        (invoice: any) => invoice.order_type === 'Delivery'
-      );
-
-      // ✅ إصلاح: دمج table_number من البيانات الرئيسية مع branch_details
-      this.branchDetails = this.invoices.map((e: any) => {
-        const branchDetails = e.branch_details || {};
-
-        return {
-          ...branchDetails,
-          // ✅ استخدم table_number من البيانات الرئيسية إذا لم يكن موجوداً في branch_details
-          table_number: branchDetails.table_number || data.table_number || branchDetails.table_id
-        };
-      });
-
-      this.orderDetails = this.invoices.map((e: any) => {
-        if (e.orderDetails && Array.isArray(e.orderDetails)) {
-          return e.orderDetails.map((item: any) => ({
-            ...item,
-            // ✅ تطبيع هيكل الإضافات - هذا هو الجزء المهم!
-            addons: this.normalizeAddons(item.addons)
-          }));
-        }
-        return e.orderDetails || [];
-      });
 
 
-      this.invoiceSummary = this.invoices.map((e: any) => ({
-        ...e.invoice_summary,
-        currency_symbol: e.currency_symbol,
-      }));
+private processPillDetails(data: any): void {
+  console.log("toqa offline", data);
 
-      this.addressDetails = this.invoices.map((e: any) => e.address_details);
+  try {
+    this.order_id = data.order_id;
 
-      if (this.branchDetails?.length) {
-        this.extractDateAndTime(this.branchDetails[0]);
-      }
-      this.invoiceTips = data.invoice_tips;
+    // ✅ لو جاية Object حطها في Array عشان تبقى زي الـ Online
+    this.invoices = Array.isArray(data.invoice_details)
+      ? data.invoice_details
+      : [data.invoice_details];
 
-      console.log(" this.invoiceTips ", this.invoiceTips);
+    const statusMap: { [key: string]: string } = {
+      completed: 'مكتمل',
+      pending: 'في انتظار الموافقة',
+      cancelled: 'ملغي',
+      packing: 'يتم تجهيزها',
+      readyForPickup: 'جاهز للاستلام',
+      on_way: 'في الطريق',
+      in_progress: 'يتم تحضير الطلب',
+      delivered: 'تم التوصيل',
+    };
 
-      console.log(
-        this.orderNumber,
-        this.couponType,
-        this.addresDetails,
-        this.paymentMethod,
-        this.paymentStatus,
-        this.isDeliveryOrder,
-        this.branchDetails,
-        this.invoiceSummary
-      );
-    } catch (error) {
-      console.error('Error processing pill details offline:', error, data);
+    const trackingKey = this.invoices[0]?.['tracking-status'];
+    if (trackingKey === 'completed') {
+      this.isShow = false;
     }
+    this.trackingStatus = statusMap[trackingKey] || trackingKey;
+
+    this.orderNumber = data.order_id;
+    this.couponType = this.invoices[0]?.invoice_summary?.coupon_type;
+
+    this.addresDetails = this.invoices[0]?.address_details || {};
+    this.paymentMethod =
+      this.invoices[0]?.transactions?.[0]?.['payment_method'];
+    this.paymentStatus =
+      this.invoices[0]?.transactions?.[0]?.['payment_status'];
+
+    this.isDeliveryOrder = this.invoices.some(
+      (invoice: any) => invoice.order_type === 'Delivery'
+    );
+
+    this.branchDetails = this.invoices.map(
+      (e: { branch_details: any }) => e.branch_details
+    );
+
+    this.orderDetails = this.invoices.map((e: any) => e.orderDetails);
+
+    this.invoiceSummary = this.invoices.map((e: any) => ({
+      ...e.invoice_summary,
+      currency_symbol: e.currency_symbol,
+    }));
+
+    this.addressDetails = this.invoices.map((e: any) => e.address_details);
+
+    if (this.branchDetails?.length) {
+      this.extractDateAndTime(this.branchDetails[0]);
+    }
+    this.invoiceTips = data.invoice_tips;
+
+    console.log(" this.invoiceTips ", this.invoiceTips);
+
+    console.log(
+      this.orderNumber,
+      this.couponType,
+      this.addresDetails,
+      this.paymentMethod,
+      this.paymentStatus,
+      this.isDeliveryOrder,
+      this.branchDetails,
+      this.invoiceSummary
+    );
+  } catch (error) {
+    console.error('Error processing pill details offline:', error, data);
   }
+}
 
 
 
@@ -486,19 +421,11 @@ export class PillDetailsComponent implements OnInit {
       })
     ).subscribe({
       next: (response: any) => {
-        console.log('📦 Full Address Details:', response.data.invoices[0]?.address_details);
-        console.log('🔍 All keys in address_details:', Object.keys(response.data.invoices[0]?.address_details || {}));
-
-
-        // // اطبع كل القيم
-        // Object.keys(this.addresDetails).forEach(key => {
-        //   console.log(`📍 ${key}:`, this.addresDetails[key]);
-        // });
         this.order_id = response.data.order_id
         this.invoices = response.data.invoices;
         this.invoiceTips = response.data.invoice_tips || [];
         console.log(response, 'response gggg');
-        this.addresDetails = this.invoices[0]?.address_details || {};
+
 
         const statusMap: { [key: string]: string } = {
           completed: 'مكتمل',

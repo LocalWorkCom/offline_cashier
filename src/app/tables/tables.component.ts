@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { TablesService } from '../services/tables.service';
 import { CommonModule, Location } from '@angular/common';
 import { Router } from '@angular/router';
@@ -17,15 +17,12 @@ import { map, tap } from 'rxjs/operators';
   imports: [CommonModule, FormsModule, ShowLoaderUntilPageLoadedDirective],
   templateUrl: './tables.component.html',
   styleUrls: ['./tables.component.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class TablesComponent implements OnInit, OnDestroy {
   tables: any[] = [];
   tabless: any[] = [];
   tablesByStatus: { status: number; label: string; tables: any[] }[] = [];
   filteredTablesByStatus: { status: number; label: string; tables: any[] }[] = [];
-  // Incremental rendering: render first chunk quickly, reveal rest gradually
-  visibleCount = 12;
   selectedStatus: number = -1;
   clickedTableId: number | null = null;
   searchText: string = '';
@@ -43,18 +40,11 @@ export class TablesComponent implements OnInit, OnDestroy {
     private tableOperation: TableCrudOperationService
   ) {}
 
-  async ngOnInit(): Promise<void> {
-    // Ensure DB is ready and online status monitoring is active
-    await this.initDatabase();
-    this.setupOnlineStatusMonitoring();
-
-    await this.fetchTablesData();
+  ngOnInit(): void {
+    this.fetchTablesData(); 
     this.loadClickedTable();
     this.listenToNewTable();
     this.listenOnTableChangeStatus();
-
-    // Schedule gradual reveal of remaining items to reduce first paint cost
-    this.scheduleIncrementalReveal();
   }
 
   //start dalia
@@ -107,15 +97,13 @@ export class TablesComponent implements OnInit, OnDestroy {
     }
   }
     /** Fetch tables from API with offline fallback */
-  async fetchTablesData(): Promise<void> {
-    // Show skeleton briefly while we grab cache
+  fetchTablesData(): void {
     this.loading = false;
-    // Always show cached data first for instant render
-    await this.loadFromIndexedDB();
 
-    // Then, if online, fetch fresh data in background and update UI
     if (this.isOnline) {
       this.fetchFromAPI();
+    } else {
+      this.loadFromIndexedDB();
     }
   }
   /** Fetch tables from API */
@@ -160,7 +148,6 @@ export class TablesComponent implements OnInit, OnDestroy {
 
         this.updateTableData();
         this.saveTablesToIndexedDB();
-        this.cdr.markForCheck();
       }
     },
     error: (err) => {
@@ -214,7 +201,6 @@ export class TablesComponent implements OnInit, OnDestroy {
     this.updateTableData();
   } finally {
     this.loading = true; // ✅ stop loading here too
-    this.cdr.markForCheck();
   }
 }
 
@@ -329,8 +315,6 @@ export class TablesComponent implements OnInit, OnDestroy {
         tables: [...group.tables],
       })),
     ];
-    // Reset visible chunk to ensure fast re-render after updates
-    this.visibleCount = Math.max(20, Math.min(40, this.tabless.length));
   }
   listenOnTableChangeStatus() {
     this.tableOperation.listenToTable();
@@ -510,29 +494,5 @@ get activeTables() {
 trackByTableId(index: number, table: any) {
   return table.id;
 }
-
-  private scheduleIncrementalReveal(): void {
-    const step = 16;
-    const bump = () => {
-      const total = this.activeTables.length;
-      if (this.visibleCount < total) {
-        this.visibleCount = Math.min(this.visibleCount + step, total);
-        this.cdr.markForCheck();
-      }
-    };
-
-    const schedule = (cb: () => void) => {
-      if (typeof (window as any).requestIdleCallback === 'function') {
-        (window as any).requestIdleCallback(cb, { timeout: 500 });
-      } else {
-        setTimeout(cb, 120);
-      }
-    };
-
-    // A few staged bumps after initial render
-    schedule(bump);
-    schedule(bump);
-    schedule(bump);
-  }
 
 }

@@ -136,16 +136,14 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       // Set the main order details
       this.orderDetails = order.details_order ;
       this.orderSummary = order.details_order?.order_summary || order.details_order.order_summary || {};
-      this.orderItems =   order.order_items ;
+      this.orderItems = order.details_order?.order_details;
 
-      // this.orderItems = order.details_order?.order_details ;
-      // console.log("orderitems",this.orderItems);
-
+      console.log("orderitems",this.orderItems);
 
       // Fix delivery name if empty
-      // if (this.deliveryData?.delivery_name === '' || !this.deliveryData?.delivery_name) {
-      //   this.deliveryData.delivery_name = "test";
-      // }
+      if (this.deliveryData?.delivery_name === ' ' || !this.deliveryData?.delivery_name) {
+        this.deliveryData.delivery_name = "test";
+      }
 
       console.log('Order details from IndexedDB:', this.orderDetails);
       console.log('Order items from IndexedDB:', this.orderItems);

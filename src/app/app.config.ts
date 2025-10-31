@@ -8,9 +8,9 @@ import {
 
 } from '@angular/core';
 
-// import { provideRouter } from '@angular/router';
+// import { provideRouter } from '@angular/router'; 
 
-//add withHashLocation
+//add withHashLocation 
 
 import { provideRouter, withHashLocation } from '@angular/router';
 
@@ -82,15 +82,23 @@ export const appConfig: ApplicationConfig = {
 
     provideZoneChangeDetection({ eventCoalescing: true }),
 
-    // provideRouter(routes),
+    // provideRouter(routes), 
 
-    //add withHashLocation
+    //add withHashLocation 
 
 
 
     provideRouter(routes, withHashLocation()),
 
     provideHttpClient(withFetch(), withInterceptorsFromDi()),
+
+    provideServiceWorker('ngsw-worker.js', {
+
+      enabled: !isDevMode(),
+
+      registrationStrategy: 'registerWhenStable:30000',
+
+    }),
 
     provideServiceWorker('ngsw-worker.js', {
 
@@ -146,8 +154,14 @@ export const appConfig: ApplicationConfig = {
 
       },
 
+    }), provideServiceWorker('ngsw-worker.js', {
+
+      enabled: !isDevMode(),
+
+      registrationStrategy: 'registerWhenStable:30000'
+
     }),
 
   ],
 
-};
+}; 

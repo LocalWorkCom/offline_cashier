@@ -4,7 +4,6 @@ import { FormsModule } from '@angular/forms';
 import { baseUrl } from '../environment';
 import { AuthService } from '../services/auth.service';
 import { ProductsService } from '../services/products.service';
-import { IndexeddbService } from '../services/indexeddb.service';
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
@@ -13,10 +12,9 @@ declare var bootstrap: any;
 
 @Component({
   selector: 'app-edit-order-modal',
-  standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './edit-order-modal.component.html',
-  styleUrls: ['./edit-order-modal.component.css'],
+  styleUrl: './edit-order-modal.component.css',
 })
 export class EditOrderModalComponent implements OnInit {
   @Input() itemId!: number;
@@ -38,8 +36,7 @@ export class EditOrderModalComponent implements OnInit {
   constructor(
     private http: HttpClient,
     public actvModal: NgbActiveModal,
-    authService: AuthService,
-    private dbService: IndexeddbService
+    authService: AuthService
   ) { }
 
   ngOnInit(): void {
@@ -306,27 +303,10 @@ export class EditOrderModalComponent implements OnInit {
       addon_categories: addon_categories,
     };
 
-    // 📴 Offline handling
-    if (!navigator.onLine) {
-      this.isLoading = false;
-      this.editLoading = false;
-
-      // Show offline message
-      this.error = 'يعمل النظام في وضع عدم الاتصال - سيتم تطبيق التعديل عند عودة الاتصال';
-
-      setTimeout(() => {
-        this.error = null;
-        // Close modal - user can see changes in refresh
-        this.actvModal.close('updated');
-      }, 2000);
-      return;
-    }
-
     this.isLoading = true;
     this.http.post(url, body).subscribe({
       next: (res: any) => {
         this.isLoading = false;
-        this.editLoading = false;
         if (res.status) {
           console.log('✅ Item updated', res);
           this.actvModal.close('updated');
@@ -345,7 +325,6 @@ export class EditOrderModalComponent implements OnInit {
       },
       error: (err) => {
         this.isLoading = false;
-        this.editLoading = false;
         console.error('❌ API error', err);
 
         const apiError =
@@ -358,6 +337,8 @@ export class EditOrderModalComponent implements OnInit {
         // 🔑 auto-hide after 3 seconds
         setTimeout(() => {
           this.error = null;
+          this.editLoading = false; // ✅ يشتغل بعد الـ next أو error
+
         }, 3000);
       },
     });

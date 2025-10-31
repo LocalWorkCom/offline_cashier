@@ -1,8 +1,21 @@
 import { Routes } from '@angular/router';
-import { AuthGuard } from './auth.guard';
+import { OrdersComponent } from './orders/orders.component';
+import { NewOrdersComponent } from './new-orders/new-orders.component';
+import { HomeComponent } from './home/home.component';
+import { LoginComponent } from './login/login.component';
+import { TablesComponent } from './tables/tables.component';
+import { PillsComponent } from './pills/pills.component';
+import { DeliveryDetailsComponent } from './delivery-details/delivery-details.component';
+import { OrderDetailsComponent } from './order-details/order-details.component';
 import { AuthLayoutComponent } from './auth-layout/auth-layout.component';
 import { MainLayoutComponent } from './main-layout/main-layout.component';
-import { LoginComponent } from './login/login.component';
+import { PillDetailsComponent } from './pill-details/pill-details.component';
+import { SettingsComponent } from './settings/settings.component';
+import { AuthGuard } from './auth.guard';
+import { CartComponent } from './cart/cart.component';
+import { PillEditComponent } from './pill-edit/pill-edit.component';
+import { OnholdOrderComponent } from './onhold-order/onhold-order.component';
+import { ReturnedInvoiceComponent } from './returned-invoice/returned-invoice.component';
 
 export const routes: Routes = [
   {
@@ -19,61 +32,37 @@ export const routes: Routes = [
     canActivate: [AuthGuard],
     canActivateChild: [AuthGuard],
     children: [
-      {
-        path: 'home',
-        loadComponent: () => import('./home/home.component').then(m => m.HomeComponent)
-      },
-      {
-        path: 'orders',
-        loadComponent: () => import('./new-orders/new-orders.component').then(m => m.NewOrdersComponent)
-        // loadComponent: () => import('./orders/orders.component').then(m => m.OrdersComponent)
-      },
-      {
-        path: 'tables',
-        loadComponent: () => import('./tables/tables.component').then(m => m.TablesComponent)
-      },
-      {
-        path: 'pills',
-        loadComponent: () => import('./pills/pills.component').then(m => m.PillsComponent)
-      },
-      {
-        path: 'delivery-details',
-        loadComponent: () => import('./delivery-details/delivery-details.component').then(m => m.DeliveryDetailsComponent)
-      },
+      { path: 'home', component: HomeComponent },
+      // { path: 'orders', component: OrdersComponent },
+      { path: 'orders', component: NewOrdersComponent },
+      { path: 'tables', component: TablesComponent },
+      { path: 'pills', component: PillsComponent },
+      { path: 'delivery-details', component: DeliveryDetailsComponent },
       {
         path: 'order-details',
-        loadComponent: () => import('./order-details/order-details.component').then(m => m.OrderDetailsComponent),
+        component: OrderDetailsComponent,
         data: { renderMode: 'dynamic' },
       },
       {
         path: 'pill-details/:id',
-        loadComponent: () => import('./pill-details/pill-details.component').then(m => m.PillDetailsComponent),
+        component: PillDetailsComponent,
       },
       {
         path: 'returned-invoice/:id',
-        loadComponent: () => import('./returned-invoice/returned-invoice.component').then(m => m.ReturnedInvoiceComponent),
+        component: ReturnedInvoiceComponent,
       },
       {
         path: 'pill-edit/:id',
-        loadComponent: () => import('./pill-edit/pill-edit.component').then(m => m.PillEditComponent),
+        component: PillEditComponent,
       },
-      {
-        path: 'settings',
-        loadComponent: () => import('./settings/settings.component').then(m => m.SettingsComponent)
-      },
+      { path: 'settings', component: SettingsComponent },
       {
         path: 'order-details/:id',
-        loadComponent: () => import('./order-details/order-details.component').then(m => m.OrderDetailsComponent),
+        component: OrderDetailsComponent,
         data: { renderMode: 'dynamic' },
       },
-      {
-        path: 'cart/:id',
-        loadComponent: () => import('./cart/cart.component').then(m => m.CartComponent)
-      },
-      {
-        path: 'onhold-orders/:id',
-        loadComponent: () => import('./onhold-order/onhold-order.component').then(m => m.OnholdOrderComponent)
-      },
+      { path: 'cart/:id', component: CartComponent },
+      { path: 'onhold-orders/:id', component: OnholdOrderComponent },
     ],
   },
   { path: '**', redirectTo: 'home' } // Redirect unknown routes to home

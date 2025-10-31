@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { PillsService } from '../services/pills.service';
 import { CommonModule } from '@angular/common';
@@ -16,11 +16,10 @@ import { InfiniteScrollModule } from 'ngx-infinite-scroll';
 
 @Component({
   selector: 'app-pills',
-  standalone: true,
-  imports: [RouterLink, ShowLoaderUntilPageLoadedDirective, RouterLinkActive, CommonModule, FormsModule, InfiniteScrollModule],
+   standalone: true,
+  imports: [RouterLink, ShowLoaderUntilPageLoadedDirective, RouterLinkActive, CommonModule, FormsModule,InfiniteScrollModule],
   templateUrl: './pills.component.html',
   styleUrl: './pills.component.css',
-  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PillsComponent implements OnInit, OnDestroy {
   isOnline: boolean = navigator.onLine;
@@ -44,9 +43,6 @@ export class PillsComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
   loading: boolean = true;
-
-  // Incremental rendering controls
-  visibleCount = 24;
 
   // dalia enchance
   displayedPills: any[] = [];
@@ -87,7 +83,7 @@ export class PillsComponent implements OnInit, OnDestroy {
   ngOnInit() {
     window.addEventListener('online', this.handleOnlineStatus.bind(this));
     window.addEventListener('offline', this.handleOnlineStatus.bind(this));
-    this.startTimeRefresh();
+
     //  window.addEventListener("online", () => {
     //     this.syncPillsToServer();
     //   });
@@ -96,19 +92,19 @@ export class PillsComponent implements OnInit, OnDestroy {
       this.syncPillsToServer(); // 👈 الفانكشن اللي عندك
     });
 
-    this.dbService.init()
-      .then(async () => {
-        await this.loadFromIndexedDB();
-        // ✅ ثانياً: لو في إنترنت، حمّلي من السيرفر في الخلفية
-        if (navigator.onLine) {
-          this.syncAllPills();
-          // this.fetchPillsData(); // دي هتعمل merge/update وتحدث الـ IndexedDB
-        }
-      })
-      .catch(error => {
-        console.error('Error initializing IndexedDB:', error);
-        this.loading = true;
-      })
+     this.dbService.init()
+    .then(async () => {
+      await this.loadFromIndexedDB();
+      // ✅ ثانياً: لو في إنترنت، حمّلي من السيرفر في الخلفية
+      if (navigator.onLine) {
+         this.syncAllPills();
+        // this.fetchPillsData(); // دي هتعمل merge/update وتحدث الـ IndexedDB
+      }
+    })
+    .catch(error => {
+      console.error('Error initializing IndexedDB:', error);
+      this.loading = true;
+    })
 
     this.listenToNewInvoice();
   }
@@ -231,213 +227,195 @@ export class PillsComponent implements OnInit, OnDestroy {
   //       }
   //     });
   //   }
-  // async fetchPillsData(): Promise<void> {
-  //   console.log('🔄 Fetching pills data from server...');
-  //   try {
-  //      console.log('🔄 try to cal Api pills data from server...');
-  //     // this.pillRequestService.getPills().pipe(
-  //     //   finalize(() => console.log('🔁 Server sync finished'))
-  //     // ).subscribe({
-  //     //   next: async (response) => {
-  //     //     if (response.status) {
-  //     //        console.log('🔄 get reponse from call Api pills data from server...');
-  //     //       const serverPills = response.data.invoices
-  //     //         .filter((pill: any) => !(pill.order_items_count === 0 && pill.payment_status === "unpaid"))
-  //     //         .map((pill: any) =>
-  //     //           pill.invoice_type === 'credit_note'
-  //     //             ? { ...pill, invoice_print_status: 'returned' }
-  //     //             : pill
-  //     //         );
-  //     //         console.log('🔄 get pills data from server...');
+// async fetchPillsData(): Promise<void> {
+//   console.log('🔄 Fetching pills data from server...');
+//   try {
+//      console.log('🔄 try to cal Api pills data from server...');
+//     // this.pillRequestService.getPills().pipe(
+//     //   finalize(() => console.log('🔁 Server sync finished'))
+//     // ).subscribe({
+//     //   next: async (response) => {
+//     //     if (response.status) {
+//     //        console.log('🔄 get reponse from call Api pills data from server...');
+//     //       const serverPills = response.data.invoices
+//     //         .filter((pill: any) => !(pill.order_items_count === 0 && pill.payment_status === "unpaid"))
+//     //         .map((pill: any) =>
+//     //           pill.invoice_type === 'credit_note'
+//     //             ? { ...pill, invoice_print_status: 'returned' }
+//     //             : pill
+//     //         );
+//     //         console.log('🔄 get pills data from server...');
 
-  //     //       // 🔄 2️⃣ مزامنة السيرفر مع IndexedDB
-  //     //       await this.mergeServerAndLocalPills(serverPills);
+//     //       // 🔄 2️⃣ مزامنة السيرفر مع IndexedDB
+//     //       await this.mergeServerAndLocalPills(serverPills);
 
-  //     //       // 🔁 3️⃣ بعد المزامنة، حمّل النسخة المحدثة من IndexedDB (بدون فاصل زمني)
-  //     //       await this.loadFromIndexedDB();
+//     //       // 🔁 3️⃣ بعد المزامنة، حمّل النسخة المحدثة من IndexedDB (بدون فاصل زمني)
+//     //       await this.loadFromIndexedDB();
 
-  //     //       this.usingOfflineData = false;
-  //     //       console.log('✅ Data refreshed from server');
-  //     //     }
-  //     //   },
-  //     //   error: async (error) => {
-  //     //     console.error('⚠️ Server fetch failed, showing offline data:', error);
-  //     //     // بنسيب البيانات اللي في IndexedDB زي ما هي
-  //     //     this.usingOfflineData = true;
-  //     //   }
-  //     // });
-  //   this.pillRequestService.getPillsD().subscribe({
-  //   next: async (response) => {
-  //     if (response.status) {
-  //       const invoices = response.data.invoices;
-  //       console.log('🔄 Streaming pills data from server...');
-  //       let counter = 0;
+//     //       this.usingOfflineData = false;
+//     //       console.log('✅ Data refreshed from server');
+//     //     }
+//     //   },
+//     //   error: async (error) => {
+//     //     console.error('⚠️ Server fetch failed, showing offline data:', error);
+//     //     // بنسيب البيانات اللي في IndexedDB زي ما هي
+//     //     this.usingOfflineData = true;
+//     //   }
+//     // });
+//   this.pillRequestService.getPillsD().subscribe({
+//   next: async (response) => {
+//     if (response.status) {
+//       const invoices = response.data.invoices;
+//       console.log('🔄 Streaming pills data from server...');
+//       let counter = 0;
 
-  //       for (const pill of invoices) {
-  //         // احفظ في IndexedDB
-  //         await this.dbService.updatePill(pill);
-  //         // console.log('🔄 Pill update to IndexedDB:');
+//       for (const pill of invoices) {
+//         // احفظ في IndexedDB
+//         await this.dbService.updatePill(pill);
+//         // console.log('🔄 Pill update to IndexedDB:');
 
-  //         // اعرض أول 50 بسرعة
-  //         if (counter < 50) {
-  //           this.displayedPills.push(pill);
-  //         }
+//         // اعرض أول 50 بسرعة
+//         if (counter < 50) {
+//           this.displayedPills.push(pill);
+//         }
 
-  //         counter++;
-  //         if (counter % 200 === 0) {
-  //           this.cdr.detectChanges(); // يحدث العرض كل فترة صغيرة
-  //         }
-  //       }
+//         counter++;
+//         if (counter % 200 === 0) {
+//           this.cdr.detectChanges(); // يحدث العرض كل فترة صغيرة
+//         }
+//       }
 
-  //       // بعد ما يخلص
-  //       this.updatePillsByStatus();
-  //       this.loading = true;
-  //       this.cdr.detectChanges();
-  //       console.log('✅ Streamed pills loaded and displayed gradually');
-  //     }
-  //   }
-  // });
+//       // بعد ما يخلص
+//       this.updatePillsByStatus();
+//       this.loading = true;
+//       this.cdr.detectChanges();
+//       console.log('✅ Streamed pills loaded and displayed gradually');
+//     }
+//   }
+// });
 
-  //   } catch (err) {
-  //     console.error('❌ Error in fetchPillsData:', err);
-  //   }
-  // }
+//   } catch (err) {
+//     console.error('❌ Error in fetchPillsData:', err);
+//   }
+// }
 
-  // async fetchPillsData(sync: boolean = false): Promise<void> {
-  //   if (this.isLoading || (!this.hasMore && !sync)) return;
+// async fetchPillsData(sync: boolean = false): Promise<void> {
+//   if (this.isLoading || (!this.hasMore && !sync)) return;
 
-  //   this.isLoading = true;
-  //   console.log(`📥 Fetching page ${this.page}...`);
+//   this.isLoading = true;
+//   console.log(`📥 Fetching page ${this.page}...`);
 
-  //   try {
-  //     this.pillRequestService.getPillsD(this.page, this.perPage).subscribe({
-  //       next: async (response) => {
-  //         if (response.status) {
-  //           const invoices = response.data.invoices;
-  //           const pagination = response.data.pagination;
+//   try {
+//     this.pillRequestService.getPillsD(this.page, this.perPage).subscribe({
+//       next: async (response) => {
+//         if (response.status) {
+//           const invoices = response.data.invoices;
+//           const pagination = response.data.pagination;
 
-  //           console.log(`🔄 Received ${invoices.length} invoices from server (page ${pagination.current_page})`);
+//           console.log(`🔄 Received ${invoices.length} invoices from server (page ${pagination.current_page})`);
 
-  //           // 🧩 1️⃣ مزامنة IndexedDB مع السيرفر (إضافة أو تحديث)
-  //           for (const pill of invoices) {
-  //             await this.dbService.updatePill(pill);
-  //             // console.log('🔄 Pill updated to IndexedDB:', pill.invoice_number);
-  //           }
+//           // 🧩 1️⃣ مزامنة IndexedDB مع السيرفر (إضافة أو تحديث)
+//           for (const pill of invoices) {
+//             await this.dbService.updatePill(pill);
+//             // console.log('🔄 Pill updated to IndexedDB:', pill.invoice_number);
+//           }
 
-  //           // 🧩 2️⃣ تحميل للعرض فقط الجديد
-  //           if (!sync) {
-  //             this.displayedPills.push(...invoices);
-  //           }
+//           // 🧩 2️⃣ تحميل للعرض فقط الجديد
+//           if (!sync) {
+//             this.displayedPills.push(...invoices);
+//           }
 
-  //           // 🧩 3️⃣ تحديث الحالة
-  //           this.updatePillsByStatus();
-  //           this.hasMore = pagination.current_page < pagination.last_page;
-  //           this.page++;
-  //           this.cdr.detectChanges();
+//           // 🧩 3️⃣ تحديث الحالة
+//           this.updatePillsByStatus();
+//           this.hasMore = pagination.current_page < pagination.last_page;
+//           this.page++;
+//           this.cdr.detectChanges();
 
-  //           console.log(`✅ Synced & displayed page ${pagination.current_page} / ${pagination.last_page}`);
-  //         }
+//           console.log(`✅ Synced & displayed page ${pagination.current_page} / ${pagination.last_page}`);
+//         }
 
-  //         this.isLoading = false;
-  //       },
-  //       error: (err) => {
-  //         console.error('⚠️ Server fetch failed, fallback to offline data:', err);
-  //         this.isLoading = false;
-  //         this.usingOfflineData = true;
+//         this.isLoading = false;
+//       },
+//       error: (err) => {
+//         console.error('⚠️ Server fetch failed, fallback to offline data:', err);
+//         this.isLoading = false;
+//         this.usingOfflineData = true;
 
-  //         if (sync) {
-  //           this.loadFromIndexedDB();
-  //         }
-  //       }
-  //     });
-  //   } catch (err) {
-  //     console.error('❌ Error in fetchPillsData:', err);
-  //     this.isLoading = false;
-  //   }
-  // }
+//         if (sync) {
+//           this.loadFromIndexedDB();
+//         }
+//       }
+//     });
+//   } catch (err) {
+//     console.error('❌ Error in fetchPillsData:', err);
+//     this.isLoading = false;
+//   }
+// }
 
-  async fetchPillsData(sync: boolean = false): Promise<void> {
-    if (this.isLoading || (!this.hasMore && !sync)) return;
+async fetchPillsData(sync: boolean = false): Promise<void> {
+  if (this.isLoading || (!this.hasMore && !sync)) return;
 
-    this.isLoading = true;
-    console.log(`📥 Fetching page ${this.page}...`);
+  this.isLoading = true;
+  console.log(`📥 Fetching page ${this.page}...`);
 
-    try {
-      this.pillRequestService.getPillsD(this.page, this.perPage).subscribe({
-        next: async (response) => {
-          if (response.status) {
-            const invoices = response.data.invoices;
-            const pagination = response.data.pagination;
+  try {
+    this.pillRequestService.getPillsD(this.page, this.perPage).subscribe({
+      next: async (response) => {
+        if (response.status) {
+          const invoices = response.data.invoices;
+          const pagination = response.data.pagination;
 
-            // إضافة timestamp للبيانات
-            const invoicesWithTimestamp = invoices.map((invoice: any) => ({
-              ...invoice,
-              saved_at: new Date().toISOString(),
-              created_at: invoice.created_at || new Date().toISOString(),
-              // تحديث order_time بناء على الوقت الحالي
-              order_time: this.calculateOrderTime(invoice)
-            }));
+          console.log(`🔄 Received ${invoices.length} invoices from server (page ${pagination.current_page})`);
 
+          // 🧩 1️⃣ تحديث IndexedDB بكل الفواتير الجديدة
+          await Promise.all(invoices.map((p: any) => this.dbService.updatePill(p)));
 
-            console.log(`🔄 Received ${invoices.length} invoices from server (page ${pagination.current_page})`);
+          // 🧩 2️⃣ تحميل فقط التحديثات الجديدة من IndexedDB
+          const updatedPills = await this.dbService.getAll('pills');
 
-            // 🧩 1️⃣ تحديث IndexedDB بكل الفواتير الجديدة
-            await Promise.all(invoices.map((p: any) => this.dbService.updatePill(p)));
+          // 🧩 3️⃣ تحديث واجهة العرض بدون reload
+          this.displayedPills = updatedPills;
+          this.updatePillsByStatus();
+          this.cdr.detectChanges();
 
-            // 🧩 2️⃣ تحميل فقط التحديثات الجديدة من IndexedDB
-            const updatedPills = await this.dbService.getAll('pills');
+          // 🧩 4️⃣ تحديث حالة الـ pagination
+          this.hasMore = pagination.current_page < pagination.last_page;
+          this.page++;
 
-            // 🧩 3️⃣ تحديث واجهة العرض بدون reload
-            this.displayedPills = updatedPills;
-            this.updatePillsByStatus();
-            this.cdr.detectChanges();
-
-            // 🧩 4️⃣ تحديث حالة الـ pagination
-            this.hasMore = pagination.current_page < pagination.last_page;
-            this.page++;
-
-            console.log(`✅ Synced & displayed page ${pagination.current_page} / ${pagination.last_page}`);
-          }
-
-          this.isLoading = false;
-        },
-        error: (err) => {
-          console.error('⚠️ Server fetch failed, fallback to offline data:', err);
-          this.isLoading = false;
-          this.usingOfflineData = true;
-
-          if (sync) {
-            this.loadFromIndexedDB();
-          }
+          console.log(`✅ Synced & displayed page ${pagination.current_page} / ${pagination.last_page}`);
         }
-      });
-    } catch (err) {
-      console.error('❌ Error in fetchPillsData:', err);
-      this.isLoading = false;
-    }
+
+        this.isLoading = false;
+      },
+      error: (err) => {
+        console.error('⚠️ Server fetch failed, fallback to offline data:', err);
+        this.isLoading = false;
+        this.usingOfflineData = true;
+
+        if (sync) {
+          this.loadFromIndexedDB();
+        }
+      }
+    });
+  } catch (err) {
+    console.error('❌ Error in fetchPillsData:', err);
+    this.isLoading = false;
   }
-  private calculateOrderTime(invoice: any): string {
-    if (!invoice.created_at) return invoice.order_time || '0';
+}
 
-    const createdTime = new Date(invoice.created_at).getTime();
-    const currentTime = new Date().getTime();
-    const diffMinutes = Math.floor((currentTime - createdTime) / (1000 * 60));
 
-    return Math.max(0, diffMinutes).toString();
+async syncAllPills(): Promise<void> {
+  console.log('🔁 Starting full sync from server...');
+  this.page = 1;
+  this.hasMore = true;
+
+  while (this.hasMore) {
+    await this.fetchPillsData(true);
+    await new Promise(resolve => setTimeout(resolve, 100)); // تأخير خفيف بين الصفحات
   }
 
-  async syncAllPills(): Promise<void> {
-    console.log('🔁 Starting full sync from server...');
-    this.page = 1;
-    this.hasMore = true;
-
-    while (this.hasMore) {
-      await this.fetchPillsData(true);
-      await new Promise(resolve => setTimeout(resolve, 100)); // تأخير خفيف بين الصفحات
-    }
-
-    console.log('✅ Full sync completed. IndexedDB is up to date.');
-  }
+  console.log('✅ Full sync completed. IndexedDB is up to date.');
+}
 
 
 
@@ -446,26 +424,26 @@ export class PillsComponent implements OnInit, OnDestroy {
   // dalia infinite scroll end
 
 
-  onScroll(): void {
-    console.log('🌀 Scroll triggered');
+onScroll(): void {
+  console.log('🌀 Scroll triggered');
 
-    // if (this.isLoading) return;
+  // if (this.isLoading) return;
 
-    // if (this.usingOfflineData) {
-    //   const nextIndex = this.displayedPills.length + this.batchSize;
-    //   const more = this.pills.slice(this.displayedPills.length, nextIndex);
+  // if (this.usingOfflineData) {
+  //   const nextIndex = this.displayedPills.length + this.batchSize;
+  //   const more = this.pills.slice(this.displayedPills.length, nextIndex);
 
-    //   if (more.length > 0) {
-    //     this.displayedPills.push(...more);
-    //     this.cdr.detectChanges();
-    //     console.log(`📦 Loaded offline batch (${this.displayedPills.length}/${this.pills.length})`);
-    //   } else {
-    //     console.log('✅ No more offline data to load');
-    //   }
-    // } else {
+  //   if (more.length > 0) {
+  //     this.displayedPills.push(...more);
+  //     this.cdr.detectChanges();
+  //     console.log(`📦 Loaded offline batch (${this.displayedPills.length}/${this.pills.length})`);
+  //   } else {
+  //     console.log('✅ No more offline data to load');
+  //   }
+  // } else {
     this.fetchPillsData();
-    // }
-  }
+  // }
+}
 
 
 
@@ -503,20 +481,14 @@ export class PillsComponent implements OnInit, OnDestroy {
       const pills = await this.dbService.getAll('pills');
 
       if (pills && pills.length > 0) {
-        // تحديث order_time للبيانات المخزنة
-        const updatedPills = pills.map(pill => ({
-          ...pill,
-          order_time: this.calculateOrderTime(pill)
-        }));
-
-        this.pills = updatedPills.reverse();
-        // this.displayedPills = this.pills.slice(0, this.batchSize);
-        this.displayedPills = this.pills;
-        this.usingOfflineData = true;
-        this.allPillsLoaded = this.pills.length <= this.batchSize; // ✅ أول دفعة بس
-        this.updatePillsByStatus();
-        console.log(`✅ Loaded ${pills.length} pills from IndexedDB`);
-      }
+      this.pills = pills.reverse();
+      // this.displayedPills = this.pills.slice(0, this.batchSize);
+      this.displayedPills = this.pills;
+      this.usingOfflineData = true;
+      this.allPillsLoaded = this.pills.length <= this.batchSize; // ✅ أول دفعة بس
+      this.updatePillsByStatus();
+      console.log(`✅ Loaded ${pills.length} pills from IndexedDB`);
+    }
 
 
       // if (pills && pills.length > 0) {
@@ -781,38 +753,38 @@ export class PillsComponent implements OnInit, OnDestroy {
 
 
   private updatePillsByStatus(): void {
-    const allStatuses = ['hold', 'urgent', 'done', 'cancelled', 'returned'];
+  const allStatuses = ['hold', 'urgent', 'done', 'cancelled', 'returned'];
 
-    // ✅ استخدمي displayedPills بدل pills علشان التمرير التدريجي
-    const fetchedStatuses = Array.from(
-      new Set(this.displayedPills.map((pill) => pill.invoice_print_status))
+  // ✅ استخدمي displayedPills بدل pills علشان التمرير التدريجي
+  const fetchedStatuses = Array.from(
+    new Set(this.displayedPills.map((pill) => pill.invoice_print_status))
+  );
+
+  console.log('updatePillsByStatus');
+
+  const mergedStatuses = Array.from(new Set([...allStatuses, ...fetchedStatuses]));
+
+  this.pillsByStatus = mergedStatuses.map((status) => {
+    let pillsForStatus = this.displayedPills.filter(
+      (pill) => pill.invoice_print_status === status
     );
 
-    console.log('updatePillsByStatus');
-
-    const mergedStatuses = Array.from(new Set([...allStatuses, ...fetchedStatuses]));
-
-    this.pillsByStatus = mergedStatuses.map((status) => {
-      let pillsForStatus = this.displayedPills.filter(
-        (pill) => pill.invoice_print_status === status
+    // ✅ تأكدي إن returned بيعرض بس فواتير credit_note
+    if (status === 'returned') {
+      pillsForStatus = pillsForStatus.filter(
+        (pill) => pill.invoice_type === 'credit_note'
       );
+    }
 
-      // ✅ تأكدي إن returned بيعرض بس فواتير credit_note
-      if (status === 'returned') {
-        pillsForStatus = pillsForStatus.filter(
-          (pill) => pill.invoice_type === 'credit_note'
-        );
-      }
+    return {
+      status,
+      pills: pillsForStatus,
+    };
+  });
 
-      return {
-        status,
-        pills: pillsForStatus,
-      };
-    });
-
-    this.filteredPillsByStatus = [...this.pillsByStatus];
-    this.filterPills();
-  }
+  this.filteredPillsByStatus = [...this.pillsByStatus];
+  this.filterPills();
+}
 
 
 
@@ -933,52 +905,15 @@ export class PillsComponent implements OnInit, OnDestroy {
   // }
 
   getPillsForStatus(statusGroup: any) {
-    // Slice to visibleCount for incremental render
-    const filtered = this.displayedPills.filter(
-      pill => pill.invoice_print_status === statusGroup.status && pill.order_type === this.orderTypeFilter
-    );
-    return filtered.slice(0, this.visibleCount);
-  }
+    // console.log('Filtering pills for status:', statusGroup.status, 'with orderTypeFilter:', this.orderTypeFilter);
+  return this.displayedPills.filter(
+    pill => pill.invoice_print_status === statusGroup.status && pill.order_type === this.orderTypeFilter
+  );
+}
 
   //  dalia infinite scroll end
 
-  // أضف هذه الدالة لتحيين الوقت كل دقيقة
-  startTimeRefresh() {
-    if (this.usingOfflineData) {
-      setInterval(() => {
-        this.pills = this.pills.map(pill => ({
-          ...pill,
-          order_time: this.calculateOrderTime(pill)
-        }));
-        this.updatePillsByStatus();
-        this.cdr.markForCheck();
-      }, 60000); // كل دقيقة
-    }
-  }
 
-  // Gradually increase visible items during idle time
-  private scheduleIncrementalReveal(): void {
-    const step = 24;
-    const bump = () => {
-      const total = this.displayedPills.length;
-      if (this.visibleCount < total) {
-        this.visibleCount = Math.min(this.visibleCount + step, total);
-        this.cdr.markForCheck();
-      }
-    };
-    const schedule = (cb: () => void) => {
-      if (typeof (window as any).requestIdleCallback === 'function') {
-        (window as any).requestIdleCallback(cb, { timeout: 500 });
-      } else {
-        setTimeout(cb, 150);
-      }
-    };
-    schedule(bump);
-    schedule(bump);
-    schedule(bump);
-  }
 
-  trackByPillId(index: number, pill: any) {
-    return pill.invoice_id || pill.invoice_number || index;
-  }
+
 }
