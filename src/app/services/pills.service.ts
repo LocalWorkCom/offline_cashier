@@ -29,28 +29,6 @@ export class PillsService {
     return this.http.get(`${this.apiUrl}/invoices`, { headers });
   }
 
-  //  getPillsD(): Observable<any> {
-  //   // Get the token from AuthService
-  //   // const token = this.authService.getToken();
-  //   const token = localStorage.getItem('authToken');
-
-  //   if (!token) {
-  //     throw new Error('No authentication token found');
-  //   }
-
-  //   const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
-
-  //   // Make the HTTP request
-  //   return this.http.get(`${this.apiUrl}/invoices/d`, { headers });
-
-  // }
-
- getPillsD(page: number = 1, perPage: number = 10) {
-  return this.http.get<any>(`${this.apiUrl}/invoices/d?page=${page}&per_page=${perPage}`);
-}
-
-
-
 //start dalia
   fetchAndSave(): Observable<any> {
     return new Observable(observer => {

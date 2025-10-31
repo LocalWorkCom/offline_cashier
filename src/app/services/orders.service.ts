@@ -1,8 +1,8 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { AuthService } from './auth.service';
-import { baseUrl } from '../environment';
+import { AuthService } from './auth.service'; 
+import { baseUrl } from '../environment'; 
 
 @Injectable({
   providedIn: 'root',
@@ -23,6 +23,4 @@ export class OrdersService {
 
     return this.http.get(`${this.apiUrl}/orders`, { headers });
   }
-
-  
 }
