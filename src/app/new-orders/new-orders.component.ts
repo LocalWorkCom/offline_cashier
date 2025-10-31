@@ -1239,6 +1239,11 @@ async syncAllorders(): Promise<void> {
     // حفظ currentOrderId للتوافق مع side-details
     localStorage.setItem('currentOrderId', orderId.toString());
 
+    // أبلغ الـ ProductsService لتحديث الـ cart$ فوراً بدون ريفرش
+    try {
+      this.productsService.loadCart();
+    } catch (_) {}
+
     this.router.navigate(['/home']);
   }
 
