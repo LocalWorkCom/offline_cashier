@@ -266,32 +266,33 @@ destroyCart() {
 
 
 
- fetchAndSave(): Observable<any> {
-    return new Observable(observer => {
-      this.getMenuDishes().subscribe({
-        next: async (response: any) => {
-           if (response && response.status && response.data) {
-        this.categories = response.data;
+fetchAndSave(): Observable<any> {
+  return new Observable(observer => {
+    this.getMenuDishes().subscribe({
+      next: async (response: any) => {
+         if (response && response.status && response.data) {
+      this.categories = response.data;
 
 
-        // Save to IndexedDB for offline use (non-blocking)
-        this.db.saveData('categories', this.categories)
-          .catch(error => console.error('Error saving to IndexedDB:', error));
-      } else {
-        console.error("Invalid response format", response);
-        // Fallback to offline data if API returns invalid response
+      // Save to IndexedDB for offline use (non-blocking)
+      this.db.saveData('categories', this.categories)
+        .catch(error => console.error('Error saving to IndexedDB:', error));
+    } else {
+      console.error("Invalid response format", response);
+      // Fallback to offline data if API returns invalid response
 
+    }
+        observer.next(response);
+        observer.complete();
+      },
+      error: (err) => {
+        console.error('❌ Failed to fetch pils', err);
+        observer.error(err);
       }
-          observer.next(response);
-          observer.complete();
-        },
-        error: (err) => {
-          console.error('❌ Failed to fetch pils', err);
-          observer.error(err);
-        }
-      });
     });
-  }
+  });
+}
+
 
 
 }
