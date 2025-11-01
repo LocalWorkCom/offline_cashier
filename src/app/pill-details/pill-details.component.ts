@@ -249,6 +249,9 @@ private processPillDetails(data: any): void {
       });
   }
 
+
+  
+
   fetchPillsDetails(pillId: string): void {
     this.loading = false
     this.pillDetailsService.getPillsDetailsById(pillId).pipe(

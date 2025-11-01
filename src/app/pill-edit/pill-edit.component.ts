@@ -186,6 +186,7 @@ order_id:any ;
   orderType: string = '';
   totalll: any;
 
+  
   fetchPillsDetails(pillId: string): void {
     console.log('aaaaaaaaaaaaa');
     this.pillDetailsService.getPillsDetailsById(pillId).subscribe({
