@@ -27,29 +27,29 @@ export class OrderListService {
     return this.http.get(`${this.apiUrl}/orders/list`, { headers });
   }
 //start dalia
-   fetchAndSaveOrders(): Observable<any> {
-    return new Observable(observer => {
-      this.getOrdersList().subscribe({
-        next: async (response: any) => {
-          if (response.status && response.data.orders) {
-            try {
-              await this.db.saveOrders(response.data.orders);
-              await this.db.setOrdersLastSync(Date.now());
-              console.log('✅ Orders saved to IndexedDB:', response.data.orders.length);
-            } catch (err) {
-              console.error('❌ Error saving orders to IndexedDB:', err);
-            }
+fetchAndSaveOrders(): Observable<any> {
+  return new Observable(observer => {
+    this.getOrdersList().subscribe({
+      next: async (response: any) => {
+        if (response.status && response.data.orders) {
+          try {
+            await this.db.saveOrders(response.data.orders);
+            await this.db.setOrdersLastSync(Date.now());
+            console.log('✅ Orders saved to IndexedDB:', response.data.orders.length);
+          } catch (err) {
+            console.error('❌ Error saving orders to IndexedDB:', err);
           }
-          observer.next(response);
-          observer.complete();
-        },
-        error: (err) => {
-          console.error('❌ Failed to fetch orders', err);
-          observer.error(err);
         }
-      });
+        observer.next(response);
+        observer.complete();
+      },
+      error: (err) => {
+        console.error('❌ Failed to fetch orders', err);
+        observer.error(err);
+      }
     });
-  }
+  });
+}
 //end dalia
 
 }
