@@ -41,7 +41,7 @@ selectedOrderType === 'talabat') {
         id="pills-side-in-tab" data-bs-toggle="pill" data-bs-target="#pills-side-in" type="button" role="tab"
         aria-controls="pills-side-in" aria-selected="true">
         <figure class="mb-0">
-          <img src="assets/images/in.png" alt />
+          <img src="assets/images/in.png" alt="" />
         </figure>
         <span>في المطعم</span>
       </button>
@@ -53,7 +53,7 @@ selectedOrderType === 'talabat') {
         (click)="selectOrderType('Takeaway')" id="pills-side-out-tab" data-bs-toggle="pill"
         data-bs-target="#pills-side-out" type="button" role="tab" aria-controls="pills-side-out" aria-selected="false">
         <figure class="mb-0">
-          <img src="assets/images/out.png" alt />
+          <img src="assets/images/out.png" alt="" />
         </figure>
         <span> إستلام</span>
       </button>
@@ -66,7 +66,7 @@ selectedOrderType === 'talabat') {
         data-bs-target="#pills-side-delivery" type="button" role="tab" aria-controls="pills-side-delivery"
         aria-selected="false">
         <figure class="mb-0">
-          <img src="assets/images/delivery.png" alt />
+          <img src="assets/images/delivery.png" alt="" />
         </figure>
         <span>توصيل</span>
       </button>
@@ -94,7 +94,7 @@ selectedOrderType === 'talabat') {
         routerLinkActive="active_link" [routerLinkActiveOptions]="{ exact: true }" (click)="setCameFromSideDetails()">
         <div>
           <div class="d-flex">
-            <img src="assets/images/red-table.png" alt />
+            <img src="assets/images/red-table.png" alt="" />
             <div class="h5">أختر طاولة</div>
           </div>
           @if (tableNumber ||table_number) {
@@ -123,19 +123,11 @@ selectedOrderType === 'talabat') {
       <a class="d-flex align-items-center mb-2 justify-content-between" routerLink="/delivery-details"
         routerLinkActive="active_link" [routerLinkActiveOptions]="{ exact: true }">
         <div>
-          <img src="assets/images/location.png" alt />
+          <img src="assets/images/location.png" alt="" />
           <span class="h5">اضف معلومات التوصيل</span>
         </div>
         <i class="fas fa-chevron-left"></i>
       </a>
-      <!-- عرض رسالة تحذير إذا لم يتم إدخال معلومات التوصيل -->
-      @if (selectedOrderType === 'Delivery' && !hasDeliveryInfo() && isOnline) {
-      <div class="alert alert-warning mt-2">
-        <small><i class="fas fa-exclamation-triangle me-1"></i>
-          يرجى إضافة معلومات التوصيل قبل تنفيذ الطلب
-        </small>
-      </div>
-      }
       <!-- <pre>{{FormDataDetails }}</pre> -->
       <!-- @if (FormDataDetails ) {
       <div>
@@ -191,15 +183,14 @@ selectedOrderType === 'talabat') {
     </div>
   </div>
 
+
   <div class="text-muted fw-bold">
     اسم العميل:
-    <small class="fw-medium">{{ currentOrderData?.order_details?.client_name
-      }}</small>
+    <small class="fw-medium">{{ currentOrderData?.order_details?.client_name }}</small>
   </div>
   <div class="text-muted fw-bold">
     رقم العميل:
-    <small class="fw-medium">{{ currentOrderData?.order_details?.client_phone
-      }}</small>
+    <small class="fw-medium">{{ currentOrderData?.order_details?.client_phone }}</small>
   </div>
 </div>
 <div class="card p-3 mt-3">
@@ -209,7 +200,7 @@ selectedOrderType === 'talabat') {
       <button class="nav-link sub {{ currentOrderData.order_details?.order_type === 'dine-in' ? 'active' : '' }}"
         type="button" [disabled]="currentOrderData.order_details?.order_type !== 'dine-in'">
         <figure class="mb-0">
-          <img src="assets/images/in.png" alt />
+          <img src="assets/images/in.png" alt="" />
         </figure>
         <span>في المطعم</span>
       </button>
@@ -220,7 +211,7 @@ selectedOrderType === 'talabat') {
       <button class="nav-link sub {{ currentOrderData.order_details?.order_type === 'Takeaway' ? 'active' : '' }}"
         type="button" [disabled]="currentOrderData.order_details?.order_type !== 'Takeaway'">
         <figure class="mb-0">
-          <img src="assets/images/out.png" alt />
+          <img src="assets/images/out.png" alt="" />
         </figure>
         <span>إستلام</span>
       </button>
@@ -231,7 +222,7 @@ selectedOrderType === 'talabat') {
       <button class="nav-link sub {{ currentOrderData.order_details?.order_type === 'Delivery' ? 'active' : '' }}"
         type="button" [disabled]="currentOrderData.order_details?.order_type !== 'Delivery'">
         <figure class="mb-0">
-          <img src="assets/images/delivery.png" alt />
+          <img src="assets/images/delivery.png" alt="" />
         </figure>
         <span>توصيل</span>
       </button>
@@ -253,25 +244,21 @@ selectedOrderType === 'talabat') {
     @if (currentOrderData.order_details?.order_type === 'dine-in') {
     <div class="text-muted fw-bold">
       الطاولة المختارة :
-      <small class="fw-medium">{{ currentOrderData.order_details?.table_number
-        }}</small>
+      <small class="fw-medium">{{ currentOrderData.order_details?.table_number }}</small>
     </div>
     }
     @if (currentOrderData.order_type === 'Delivery') {
     <div>
       <small class="fw-bold text-muted">الاسم : </small>
-      <small class="text-muted">{{ currentOrderData.order_details?.client_name
-        }}</small>
+      <small class="text-muted">{{ currentOrderData.order_details?.client_name }}</small>
     </div>
     <div>
       <small class="fw-bold text-muted">العنوان : </small>
-      <small class="text-muted">{{ currentOrderData.order_details?.address
-        }}</small>
+      <small class="text-muted">{{ currentOrderData.order_details?.address }}</small>
     </div>
     <div>
       <small class="fw-bold text-muted">رقم الهاتف : </small>
-      <small class="text-muted">{{ currentOrderData.order_details?.client_phone
-        }}</small>
+      <small class="text-muted">{{ currentOrderData.order_details?.client_phone }}</small>
     </div>
     }
   </div>
@@ -300,8 +287,7 @@ selectedOrderType === 'talabat') {
   <div class="d-flex justify-content-between mb-1">
     <div class="d-flex">
       <p>رقم الطلب</p>
-      <p class="text-muted me-2">{{ currentOrderData.order_details.order_number
-        }}</p>
+      <p class="text-muted me-2">{{ currentOrderData.order_details.order_number }}</p>
     </div>
     <p>{{ getTotalItemCount() }} عناصر</p>
   </div>
@@ -314,8 +300,7 @@ selectedOrderType === 'talabat') {
     <p>{{ getTotalItemCount() }} عناصر</p>
   </div>}
 
-  @for (item of cartItems; track trackByCartItem($index, item); let i = $index)
-  {
+  @for (item of cartItems; track i; let i = $index) {
   <!-- @if(item.dish.id === this.appliedCoupon.discount_details
 [0].dish_id){} -->
   <div class="sideCart-plate p-3 mb-3">
@@ -368,7 +353,7 @@ selectedOrderType === 'talabat') {
     <div class="all d-flex justify-content-end align-items-center">
       <a class="sidebar-link" (click)="openCartItemsModal()">
         <span class="fs-5 fw-bold ms-3">عرض الكل</span>
-        <img src="assets/images/arrow-right.svg" alt />
+        <img src="assets/images/arrow-right.svg" alt="" />
       </a>
     </div>
     }
@@ -406,13 +391,11 @@ selectedOrderType === 'talabat') {
         @if (discountAmount > 0 ) {
         <p class="fw-bold main-color">
           -
-          {{ discountAmount.toFixed(2) || this.appliedCoupon.total_discount }}
-          {{ currencySymbol }}
+          {{ discountAmount.toFixed(2) || this.appliedCoupon.total_discount }} {{ currencySymbol }}
         </p>
         }
       </li>
-      }
-      @if (selectedOrderType === 'في المطعم' || selectedOrderType ===
+      } @if (selectedOrderType === 'في المطعم' || selectedOrderType ===
       'dine-in') {
       <li class="order-list">
         <p>رسوم الخدمة</p>
@@ -439,10 +422,8 @@ selectedOrderType === 'talabat') {
         <p>رسوم التوصيل</p>
         @if(appliedCoupon){
         <p class="fw-bold">
-          {{appliedCoupon.coupon_value=='100.00' &&
-          appliedCoupon.value_type=='percentage' &&
-          appliedCoupon.coupon_apply_type == 'order' ? 0: this.delivery_fees }}
-          {{ currencySymbol }}
+          {{appliedCoupon.coupon_value=='100.00' && appliedCoupon.value_type=='percentage' &&
+          appliedCoupon.coupon_apply_type == 'order' ? 0: this.delivery_fees }} {{ currencySymbol }}
         </p>
         }@else {
         <p class="fw-bold">
@@ -453,9 +434,8 @@ selectedOrderType === 'talabat') {
       }
     </ul>
 
-    @if (branchData?.tax_application === false && (selectedOrderType !==
-    'talabat' && selectedOrderType !== 'طلبات'))
-    {
+    @if (branchData?.tax_application === false&& (selectedOrderType !==
+    'talabat' && selectedOrderType !== 'طلبات')) {
     <div class="message bg-lightYellow p-2 rounded-3 mb-3">
       <small>
         تضاف ضريبة القيمة المضافة
@@ -540,6 +520,7 @@ selectedOrderType === 'talabat') {
     </div>
     }  -->
 
+
     <form #paymentForm="ngForm">
       @if (!currentOrderData) {
       <div class="mb-3 d-flex justify-content-between">
@@ -570,8 +551,8 @@ selectedOrderType === 'talabat') {
       <!-- @if (selectedOrderType === 'Takeaway'|| selectedOrderType === 'dine-in') { -->
       <!-- Inputs shown only if "paid" -->
       @if (selectedPaymentStatus == 'paid') {
-      <!-- <div>
-        <div class="mb-3 row mx-0 justify-content-center align-items-center">
+      <!-- <div> -->
+      <!-- <div class="mb-3 row mx-0 justify-content-center align-items-center">
           <div class="col-4 text-center">
             <label class="form-check-label w-100" for="cash_amount">
               <img src="assets/images/money.svg" alt="Cash" /> كاش
@@ -581,8 +562,8 @@ selectedOrderType === 'talabat') {
             <input class="form-control" type="number" id="cash_amount" [(ngModel)]="cash_amountt" name="cash_amountt"
               (ngModelChange)="setCashAmount($event)" step="0.01" />
           </div>
-        </div>
-
+        </div> -->
+      <!-- 
         <div class="mb-3 row mx-0 justify-content-between align-items-start">
           <div class="col-4 text-center">
             <label class="form-check-label w-100" for="credit_amount">
@@ -592,35 +573,36 @@ selectedOrderType === 'talabat') {
           <div class="col-8">
             <input class="form-control mb-3" type="number" id="credit_amount" [(ngModel)]="credit_amountt"
               name="credit_amountt" (ngModelChange)="setCreditAmount($event)" step="0.01" />
-            //@if(this.credit_amountt){
-          //  <input type="text" id="reference_number" class="form-control" [(ngModel)]="referenceNumber"
-            //  name="referenceNumber" required #ref="ngModel" />
-          //  <div *ngIf="ref.invalid && formSubmitted" class="text-danger">
-           //   المرجو إدخال رقم المرجع للفيزا.
-           // </div>
-          //  }
-          </div>
+            @if(this.credit_amountt){
+                                                <input type="text" id="reference_number" class="form-control" [(ngModel)]="referenceNumber"
+                                                  name="referenceNumber" required #ref="ngModel" />
+                                                <div *ngIf="ref.invalid && formSubmitted" class="text-danger">
+                                                  المرجو إدخال رقم المرجع للفيزا.
+                                                </div>
+                                                } 
+      </div>
 
-        </div>
-        @if(this.credit_amountt){
-        <div class="mb-3 row mx-0 justify-content-center align-items-center">
-          <div class="col-4 text-center">
-            <label class="form-check-label w-100" for="cash_amount">
-              رقم المرجع
-            </label>
-          </div>
-          <div class="col-8">
-            <input type="text" id="reference_number" class="form-control" [(ngModel)]="referenceNumber"
-              name="referenceNumber" required #ref="ngModel" />
-            <div *ngIf="ref.invalid && formSubmitted" class="text-danger">
-              المرجو إدخال رقم المرجع للفيزا.
-            </div>
-          </div>
-        </div>
-        }
+  </div> -->
+      <!-- @if(this.credit_amountt){ -->
+      <!-- <div class="mb-3 row mx-0 justify-content-center align-items-center">
+                  <div class="col-4 text-center">
+                    <label class="form-check-label w-100" for="cash_amount">
+                      رقم المرجع
+                    </label>
+                  </div>
+                  <div class="col-8">
+                    <input type="text" id="reference_number" class="form-control" [(ngModel)]="referenceNumber"
+                      name="referenceNumber" required #ref="ngModel" />
+                    <div *ngIf="ref.invalid && formSubmitted" class="text-danger">
+                      المرجو إدخال رقم المرجع للفيزا.
+                    </div>
+                  </div>
+                </div> -->
+      <!-- } -->
+      <!-- Error if cash + credit is less than cart total -->
 
 
-      </div> -->
+      <!-- </div> -->
 
       <div *ngIf="(currentOrderData && currentOrderData.total_due > 0) || getCartTotal() > 0 " class="my-3">
 
@@ -995,9 +977,7 @@ selectedOrderType === 'talabat') {
         </h6>
         <h6>
           اسم السائق:
-          <span>{{ invoices?.[0]?.delivery_name &&
-            invoices[0].delivery_name.trim() !== '' ? invoices[0].delivery_name
-            :
+          <span>{{ invoices?.[0]?.delivery_name && invoices[0].delivery_name.trim() !== '' ? invoices[0].delivery_name :
             'لا يوجد' }}</span>
         </h6>
 
@@ -1024,7 +1004,7 @@ selectedOrderType === 'talabat') {
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of orderDetails[0]; trackBy: trackByOrderDetail">
+        <tr *ngFor="let item of orderDetails[0]">
           <td>
             <div>
               <div>
@@ -1032,8 +1012,7 @@ selectedOrderType === 'talabat') {
               </div>
               <div class="pe-2">{{ item.size }}</div>
               <div class="pe-2" *ngFor="let addon of item.addons">
-                <small class="text-muted fst-italic fw-semibold">- {{
-                  addon?.addon_name }}</small>
+                <small class="text-muted fst-italic fw-semibold">- {{ addon?.addon_name }}</small>
               </div>
             </div>
           </td>
@@ -1059,7 +1038,7 @@ selectedOrderType === 'talabat') {
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of orderDetails[0]; trackBy: trackByOrderDetail">
+        <tr *ngFor="let item of orderDetails[0]">
           <td class="addons">
             <small>{{ item.addons.length > 0 ? item.addons.join(', ') : 'لا توجد اضافات' }}</small>
           </td>
@@ -1186,19 +1165,17 @@ selectedOrderType === 'talabat') {
     <div class="modal-content">
       <div class="modal-header border-0">
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"
-          (click)=" closeModal(true)"></button>
+          (click)=" closeModal()"></button>
       </div>
       <div class="modal-body">
         <h1 class="modal-title fs-5 text-center" id="couponModalLabel">
           اضافة كوبون
         </h1>
         <h6 class="fw-bold">
-          <img src="assets/images/coupon-icon.png" alt />
+          <img src="assets/images/coupon-icon.png" alt="" />
           وفرناها عليك
         </h6>
         <input class="form-control" type="text" [(ngModel)]="couponCode" placeholder="أدخل الكوبون" />
-
-        <!-- <input class="form-control" type="text"  id="couponCode" placeholder="أدخل الكوبون" /> -->
         @if (successMessage) {
         <p class="message">{{ successMessage }}</p>
         } @if (errorMessage) {
@@ -1365,6 +1342,7 @@ selectedOrderType === 'talabat') {
     </div>
   </div>
 </div>
+
 
 <ng-template #tipModalContent let-modal>
   <div class="modal-header tip-modal-header border-0 pb-0">

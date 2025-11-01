@@ -8,13 +8,13 @@ import { baseUrl } from '../environment';
   providedIn: 'root',
 })
 export class PillDetailsService {
-  private apiUrl = `${baseUrl}api`;
+  private apiUrl =  `${baseUrl}api`;
 
   constructor(
     private http: HttpClient,
     private authService: AuthService // Inject AuthService
-  ) { }
-  payload: any;
+  ) {}
+payload: any;
   getPillsDetailsById(pillId: any): Observable<any> {
     // const token = this.authService.getToken();
     const token = localStorage.getItem('authToken');
@@ -25,7 +25,7 @@ export class PillDetailsService {
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
 
     // return this.http.get(`${this.apiUrl}/invoices/invoice-details/${pillId}`, {
-    return this.http.get(`${this.apiUrl}/invoices/invoice/${pillId}`, {
+          return this.http.get(`${this.apiUrl}/invoices/invoice/${pillId}`, {
 
       headers,
     });
@@ -37,57 +37,57 @@ export class PillDetailsService {
     trackingStatus?: string,
     cash?: number,
     credit?: number,
-    DeliveredOrNot?: boolean,
-    totalll?: any,
-    tip?: any,
+    DeliveredOrNot?:boolean,
+    totalll?:any,
+    tip?:any
   ): Observable<any> {
     // const token = this.authService.getToken();
     const token = localStorage.getItem('authToken');
     if (!token) {
       throw new Error('No token found. User is not authenticated.');
     }
-    console.log(paymentStatus)
+console.log(paymentStatus)
     const headers = new HttpHeaders({
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     });
-    if (DeliveredOrNot) { // delivery
-      if (trackingStatus == 'on_way') {
-        this.payload = {
-          order_status: trackingStatus || null,
-          Tracking_status: trackingStatus || null,
-        };
-      } else {
-        this.payload = {
-          order_number: orderNumber,
-          payment_status: paymentStatus || null,
-          order_status: trackingStatus || null,
-          Tracking_status: trackingStatus || null,
-          cash_amount: totalll,
-          credit_amount: 0,
-          tip: tip || 0,
+if(DeliveredOrNot){ // delivery
+  if(trackingStatus == 'on_way'){
+     this.payload = {
+      order_status: trackingStatus || null,
+      Tracking_status: trackingStatus || null,
+    };
+  }else{
+    this.payload = {
+      order_number: orderNumber,
+      payment_status: paymentStatus || null,
+      order_status: trackingStatus || null,
+      Tracking_status: trackingStatus || null,
+      cash_amount: totalll,
+      credit_amount: 0,
+      tip: tip || null,
 
-        };
-      }
+    };
+  }
 
-    } else {
-      if (paymentStatus == 'paid') {
-        this.payload = {
-          order_number: orderNumber,
-          payment_status: paymentStatus || null,
-          cash_amount: cash || 0,
-          credit_amount: credit || 0,
-          tip: tip || 0,
-        };
-      } else {
-        this.payload = {
-          order_number: orderNumber,
-          payment_status: paymentStatus || null,
-          tip: tip || 0,
+}else{
+  if(paymentStatus == 'paid'){
+    this.payload= {
+      order_number: orderNumber,
+      payment_status: paymentStatus || null,
+      cash_amount: cash || 0,
+      credit_amount: credit || 0,
+      tip: tip || null,
+    };
+  }else{
+      this.payload= {
+      order_number: orderNumber,
+      payment_status: paymentStatus || null,
+      tip: tip || null,
 
-        };
-      }
-    }
+    };
+  }
+}
 
 
 
