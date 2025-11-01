@@ -37,17 +37,25 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private location: Location,
     private dbService: IndexeddbService
-  ) {}
+  ) { }
   ngOnInit(): void {
     this.route.paramMap.subscribe({
       next: (params) => {
         // console.log(params,'params order details')
         this.orderId = params.get('id');
         if (this.orderId) {
-          this.fetchOrderDetails();
-            // start dalia
-          //  this.searchOrderInIndexedDB();
-           //end dalia
+          if (navigator.onLine) {
+            // 🌐 Online → استخدم الـ id الحقيقي من السيرفر
+            console.log("✅ Online mode - using actual orderId from route");
+            this.searchOrderInIndexedDB();
+            // أو كمان API call: this.fetchOrderDetailsFromAPI(this.orderId);
+
+          } else {
+            // 📴 Offline → الـ orderId اللي في الـ params مش هو الحقيقي
+            // نجيب التفاصيل من الـ IndexedDB
+            console.log("📴 Offline mode - fetching order by runId/tempId");
+            this.searchOrderInIndexedDB();
+          }
         }
       },
       error: (err) => {
@@ -60,7 +68,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
 
   // start dalia
   // Search for order in IndexedDB by ID
-  searchOrderInIndexedDB(): void {
+  async searchOrderInIndexedDB(): Promise<void> {
     this.loading = true;
     this.error = '';
     // Convert orderId to number
@@ -93,18 +101,25 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       // Extract order details
       this.currencySymbol = order.details_order.currency_symbol || 'ج.م';
 
-      this.paymenMethod =  order.details_order.transactions[0].payment_method;;
-
+      this.paymenMethod = order.details_order.transactions[0].payment_method;
       this.deliveryData = order.details_order?.delivery_data || "";
       this.deliveryFees = order.details_order.order_summary?.delivery_fees ||
-                         order.details_order.order_summary?.delivery_fees || 0;
+        order.details_order.order_summary?.delivery_fees || 0;
 
       // Set the main order details
-      this.orderDetails = order.details_order ;
-      this.orderSummary = order.details_order?.order_summary || order.details_order.order_summary || {};
-      this.orderItems = order.details_order?.order_details;
+      this.orderDetails = order.details_order;
+      this.orderSummary = order.details_order?.order_summary || {
+        total_dish_price: order.order_details?.total_dish_price || 0,
+        total: order.total_price || 0,
+        delivery_fees: order.delivery_fees_amount || 0,
+        coupon_value: order.coupon_value || 0,
+        service_percentage: order.service_percentage || 0
+        // يمكنك إضافة باقي الحقول هنا حسب الحاجة
+      };
 
-      console.log("orderitems",this.orderItems);
+      this.orderItems = order.details_order?.order_details || [];
+
+      console.log("orderitems", this.orderItems);
 
       // Fix delivery name if empty
       if (this.deliveryData?.delivery_name === ' ' || !this.deliveryData?.delivery_name) {
@@ -124,7 +139,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
-   fetchOrderDetailsFromAPI(): void {
+  fetchOrderDetailsFromAPI(): void {
     this.loading = true;
     this.error = '';
 
@@ -254,7 +269,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     if (!this.orderId) return;
 
 
-   const cancelUrl = `${baseUrl}api/orders/cashier/order-cancel`;
+    const cancelUrl = `${baseUrl}api/orders/cashier/order-cancel`;
 
     const token = localStorage.getItem('authToken');
 
@@ -281,11 +296,11 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       },
     });
   }
-    cancelOrder(): void {
+  cancelOrder(): void {
     if (!this.orderId) return;
 
 
-   const cancelUrl = `${baseUrl}api/orders/cashier/request-cancel`;
+    const cancelUrl = `${baseUrl}api/orders/cashier/request-cancel`;
 
     const token = localStorage.getItem('authToken');
 
@@ -296,7 +311,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       order_id: this.orderId,
       type: "full", // 1 to delete all the dishes
       items: this.orderItems,
-      reason:"fff",
+      reason: "fff",
     };
 
     this.http.post(cancelUrl, body, { headers }).subscribe({

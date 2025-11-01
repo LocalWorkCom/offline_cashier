@@ -72,7 +72,7 @@ export class OrdersComponent implements OnDestroy {
   selectedOrderTypeStatus: string = 'All';
   // selectedOrderTypeStatus: string = 'dine-in';
   filteredCartItems: any;
-  allowedOrderTypes = ['Takeaway', 'Delivery', 'dine-in' ,'talabat'];
+  allowedOrderTypes = ['Takeaway', 'Delivery', 'dine-in', 'talabat'];
   allowedStatuses = [
     'pending',
     'in_progress',
@@ -114,14 +114,12 @@ export class OrdersComponent implements OnDestroy {
   }
 
   ngOnInit(): void {
-    console.log("this.isOnline",this.isOnline);
+    console.log("this.isOnline", this.isOnline);
     this.selectedOrderTypeStatus = 'All';
-    if(this.isOnline == false)
-    {
+    if (this.isOnline == false) {
       this.loadOrdersFromIndexedDB();
     }
-    else
-    {
+    else {
       this.fetchOrdersFromAPI();
     }
 
@@ -417,28 +415,28 @@ export class OrdersComponent implements OnDestroy {
     }
 
     // Find the order that matches the search
-    const foundOrder = this.orders.find((order) =>
+    const foundOrders = this.orders.find((order) =>
       order.order_details?.order_number
         ?.toString()
         .toLowerCase()
         .includes(search)
     );
 
-    if (foundOrder) {
-      this.selectedOrderTypeStatus = foundOrder.order_details?.order_type;
+    if (foundOrders.length > 0) {
+      this.selectedOrderTypeStatus = foundOrders[0].order_details?.order_type;
       this.selectedStatus = 'all';
 
-      // Show only the matched order
-      this.filteredOrders = [foundOrder];
+      // Show all matched orders
+      this.filteredOrders = foundOrders;
 
-      // Optional: scroll and highlight
+      // Optional: scroll and highlight the first one
       setTimeout(() => {
         document
           .querySelectorAll('.highlight-order')
           .forEach((el) => el.classList.remove('highlight-order'));
 
         const el = document.getElementById(
-          `order-${foundOrder.order_details?.order_number}`
+          `order-${foundOrders[0].order_details?.order_number}`
         );
         if (el) {
           el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -770,7 +768,8 @@ export class OrdersComponent implements OnDestroy {
       case 'readyForPickup':
         if (
           this.selectedOrderTypeStatus === 'Delivery' ||
-          this.selectedOrderTypeStatus === 'Takeaway'
+          this.selectedOrderTypeStatus === 'Takeaway' ||
+          this.selectedOrderTypeStatus === 'talabat'
         ) {
           return 'جاهزة للاستلام';
         } else {
@@ -841,7 +840,7 @@ export class OrdersComponent implements OnDestroy {
       Takeaway: 'assets/images/out.png',
       Delivery: 'assets/images/delivery.png',
       'dine-in': 'assets/images/in.png',
-      talabat: 'assets/images/out.png',
+      'talabat': 'assets/images/in.png',
     };
 
     return (
@@ -1032,7 +1031,7 @@ export class OrdersComponent implements OnDestroy {
       Takeaway: ' إستلام',
       Delivery: 'توصيل',
       'dine-in': 'فى المطعم',
-      talabat: 'طلبات',
+      'talabat': 'طلبات',
     };
     return translations[orderType] || orderType;
   }
@@ -1760,7 +1759,7 @@ export class OrdersComponent implements OnDestroy {
         if (result) {
           this.successMessage = 'تم تحديث الطلب بنجاح';
           this.successMessageModal.show();
-              setTimeout(() => {
+          setTimeout(() => {
             this.successMessageModal.dismiss();
             document
               .querySelectorAll('.modal-backdrop')
