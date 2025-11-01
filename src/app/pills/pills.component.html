@@ -43,8 +43,15 @@
           </figure>
         </button>
       </li>
-
-
+      <li class="nav-item flex-fill mx-1">
+        <button class="nav-link w-100 d-flex align-items-center" [ngClass]="{ active: orderTypeFilter === 'talabat' }"
+          (click)="orderTypeFilter = 'talabat'; filterPills()">
+          طلبات
+          <figure class="mb-0 me-2">
+            <img src="assets/images/out.png" alt="" />
+          </figure>
+        </button>
+      </li>
 
     </ul>
 
@@ -114,7 +121,7 @@
                   [routerLinkActiveOptions]="{ exact: true }">
                   تفاصيل الفاتورة
                 </a>
-                @if ((pill.invoice_type != 'credit_note') &&  (pill.invoice_print_status !== 'done') && (pill.invoice_print_status !== 'cancelled')) {
+                @if ((pill.invoice_type != 'credit_note') &&  (pill.invoice_print_status !== 'done') && (pill.invoice_print_status !== 'cancelled') && (orderTypeFilter !== 'talabat')) {
                 <a class="btn-static text-main btn-transparent border-1 w-100 py-2"
                   [routerLink]="'/pill-edit/' + pill.invoice_id" routerLinkActive="active"
                   [routerLinkActiveOptions]="{ exact: true }">

@@ -72,7 +72,7 @@ export class OrdersComponent implements OnDestroy {
   selectedOrderTypeStatus: string = 'All';
   // selectedOrderTypeStatus: string = 'dine-in';
   filteredCartItems: any;
-  allowedOrderTypes = ['Takeaway', 'Delivery', 'dine-in'];
+  allowedOrderTypes = ['Takeaway', 'Delivery', 'dine-in' ,'talabat'];
   allowedStatuses = [
     'pending',
     'in_progress',
@@ -798,6 +798,7 @@ export class OrdersComponent implements OnDestroy {
       'dine-in': 'فى المطعم',
       Takeaway: ' إستلام',
       Delivery: 'توصيل',
+      talabat: 'طلبات',
     };
 
     return translations[type] || type;
@@ -840,10 +841,11 @@ export class OrdersComponent implements OnDestroy {
       Takeaway: 'assets/images/out.png',
       Delivery: 'assets/images/delivery.png',
       'dine-in': 'assets/images/in.png',
+      talabat: 'assets/images/out.png',
     };
 
     return (
-      images[type as 'Takeaway' | 'Delivery' | 'dine-in'] ||
+      images[type as 'Takeaway' | 'Delivery' | 'dine-in' | 'talabat'] ||
       'assets/images/default.png'
     );
   }
@@ -1030,6 +1032,7 @@ export class OrdersComponent implements OnDestroy {
       Takeaway: ' إستلام',
       Delivery: 'توصيل',
       'dine-in': 'فى المطعم',
+      talabat: 'طلبات',
     };
     return translations[orderType] || orderType;
   }
@@ -1202,7 +1205,7 @@ export class OrdersComponent implements OnDestroy {
         if (orderIndex !== -1) {
           const currentOrder = this.orders[orderIndex];
 
-          
+
           const updatedOrder = {
             ...currentOrder,
             ...dishChanged,
@@ -1212,7 +1215,7 @@ export class OrdersComponent implements OnDestroy {
           this.orders.splice(orderIndex, 1, updatedOrder);
           this.orders = [...this.orders];
           this.filterOrders();
-        
+
           this.cdr.detectChanges();
           console.log(' Order status updated:', updatedOrder);
         } else {

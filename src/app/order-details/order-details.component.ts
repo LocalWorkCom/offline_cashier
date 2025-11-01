@@ -44,9 +44,9 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         // console.log(params,'params order details')
         this.orderId = params.get('id');
         if (this.orderId) {
-          // this.fetchOrderDetails();
+          this.fetchOrderDetails();
             // start dalia
-           this.searchOrderInIndexedDB();
+          //  this.searchOrderInIndexedDB();
            //end dalia
         }
       },
