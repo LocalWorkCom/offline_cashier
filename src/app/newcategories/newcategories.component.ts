@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DoCheck, Input, OnDestroy, OnInit, ViewChild, ChangeDetectionStrategy } from '@angular/core';
+import { Component, DoCheck, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ProductCardComponent } from '../product-card/product-card.component';
 import { ProductsService } from '../services/products.service';
@@ -22,7 +22,6 @@ import { ChangeDetectorRef } from '@angular/core';
   ],
   templateUrl: './newcategories.component.html',
   styleUrls: ['./newcategories.component.css'],
-  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NewcategoriesComponent implements OnInit, OnDestroy {
   products: any;
@@ -172,7 +171,6 @@ export class NewcategoriesComponent implements OnInit, OnDestroy {
         this.onCategorySelect(this.categories[0]);
       }
     }
-    this.cdr.markForCheck();
   }
 
   private handleOnlineStatus() {
@@ -189,7 +187,6 @@ export class NewcategoriesComponent implements OnInit, OnDestroy {
   onCategorySelect(category: any): void {
     if (!category || !Array.isArray(category.dishes)) {
       this.selectedCategoryProducts = [];
-      this.cdr.markForCheck();
       return;
     }
 
@@ -205,10 +202,7 @@ export class NewcategoriesComponent implements OnInit, OnDestroy {
 
     this.filteredOrders = [...this.selectedCategoryProducts];
     this.filterCategories = [...this.categories];
-    this.cdr.markForCheck();
-    if (this.closebutton) {
-      this.closebutton.nativeElement.click();
-    }
+    this.closebutton.nativeElement.click();
   }
 
   isDishActive(dish: any): boolean {

@@ -189,7 +189,6 @@ getCurrentBalance(): Observable<any> {
   ).pipe(
     catchError(error => {
       console.error('Error fetching current balance:', error);
-      
       return throwError(() => error);
     })
   );

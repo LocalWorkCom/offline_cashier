@@ -1,4 +1,3 @@
-import { invoice } from './../interfaces/invoice';
 import {
   Component,
   OnInit,
@@ -23,16 +22,16 @@ import { IndexeddbService } from '../services/indexeddb.service';
 @Component({
   selector: 'app-pill-details',
   imports: [CommonModule, ShowLoaderUntilPageLoadedDirective, DecimalPipe, ConfirmDialogModule,
-    ButtonModule, ConfirmDialogComponent, RouterLink, RouterLinkActive],
+    ButtonModule, ConfirmDialogComponent,RouterLink ,RouterLinkActive],
   templateUrl: './pill-details.component.html',
   styleUrls: ['./pill-details.component.css'],
   providers: [DatePipe],
 })
 export class PillDetailsComponent implements OnInit {
-  printOptions = [
-    { name: 'طباعة نهائية', id: 0 },
-    { name: 'معاينة فقط', id: 1 },
-  ];
+    printOptions = [
+      { name: 'طباعة نهائية', id: 0 },
+      { name: 'معاينة فقط', id: 1 },
+    ];
   @ViewChild('confirmPrintDialog') confirmationDialog!: ConfirmDialogComponent;
 
   @ViewChild('printedPill') printedPill!: ElementRef;
@@ -42,10 +41,6 @@ export class PillDetailsComponent implements OnInit {
   invoices: any;
   pillDetails: any;
   branchDetails: any;
-  // start hanan
-  isOnline: boolean = navigator.onLine;
-  offlinePillData: any = null;
-  // end hanan
   pillId!: any;
   orderDetails: any[] = [];
   date: string | null = null;
@@ -97,20 +92,9 @@ export class PillDetailsComponent implements OnInit {
       this.pillId = params.get('id');
 
       if (this.pillId) {
-
-        if (navigator.onLine) {
-          // ✅ Online
-          this.fetchPillsDetails(this.pillId);
-        } else {
-          // ✅ Offline
-          this.fetchPillFromIndexedDB(this.pillId);
-          console.log(this.pillId);
-
-        }
-
+        this.fetchPillsDetails(this.pillId);
       }
     });
-
     this.fetchTrackingStatus();
     // this.getNoteFromLocalStorage();
     this.cashier_machine_id = Number(
@@ -131,323 +115,110 @@ export class PillDetailsComponent implements OnInit {
       console.log('No data found in localStorage.');
     }
   }
-  // أضف دالة للتأكد من البيانات
-  private checkAddressData(): void {
-    console.log('🔍 Address Details:', this.addresDetails);
-    console.log('🔍 Invoices:', this.invoices);
-    console.log('🔍 First Invoice Address:', this.invoices?.[0]?.address_details);
-  }
-  //   ngOnInit() {
-  //   // Initialize DB first
-  //    this.dbService.init();
-  //   // Subscribe to route param
-  //   this.route.paramMap.subscribe((params) => {
-  //     this.pillId = params.get('id');
-  //     if (this.pillId) {
-  //       this.fetchPillFromIndexedDB(this.pillId);
-  //     }
-  //   });
 
-  //   this.fetchTrackingStatus();
+//   ngOnInit() {
+//   // Initialize DB first
+//    this.dbService.init();
+//   // Subscribe to route param
+//   this.route.paramMap.subscribe((params) => {
+//     this.pillId = params.get('id');
+//     if (this.pillId) {
+//       this.fetchPillFromIndexedDB(this.pillId);
+//     }
+//   });
 
-  //   this.cashier_machine_id = Number(
-  //     localStorage.getItem('cashier_machine_id')
-  //   );
+//   this.fetchTrackingStatus();
 
-  //   const storedData: string | null = localStorage.getItem('cashier_machine_id');
-  //   if (storedData !== null) {
-  //     const transactionDataFromLocalStorage = JSON.parse(storedData);
+//   this.cashier_machine_id = Number(
+//     localStorage.getItem('cashier_machine_id')
+//   );
 
-  //   //     // Access the cashier_machine_id
-  //       this.cashier_machine_id = transactionDataFromLocalStorage;
-  //   } else {
-  //     console.log('No data found in localStorage.');
-  //   }
-  // }
+//   const storedData: string | null = localStorage.getItem('cashier_machine_id');
+//   if (storedData !== null) {
+//     const transactionDataFromLocalStorage = JSON.parse(storedData);
+
+//   //     // Access the cashier_machine_id
+//       this.cashier_machine_id = transactionDataFromLocalStorage;
+//   } else {
+//     console.log('No data found in localStorage.');
+//   }
+// }
+
+async fetchPillFromIndexedDB(identifier: string | number) {
+  try {
+    const pill = await this.dbService.getPillByInvoiceId(identifier);
 
 
-  // start hanan
-  async printInvoice(isFinal: boolean = false) {
-    console.log('جاري طباعة الفاتورة...');
-    this.isFinal = isFinal;
-    this.isPrinting = true;
-    // إغلاق الـ modal فورًا بعد بدء الطباعة
-    this.closeConfirmationDialog();
-    // التحقق من وجود البيانات
-    if (!this.invoices?.length || !this.invoiceSummary?.length) {
-      console.warn('بيانات الفاتورة غير جاهزة.');
-
-      // محاولة تحميل البيانات من التخزين المحلي
-      if (!this.isOnline) {
-        await this.fetchPillFromIndexedDB(this.pillId);
-      }
-
-      if (!this.invoices?.length) {
-        alert('بيانات الفاتورة غير متوفرة للطباعة.');
-        this.isPrinting = false;
-        return;
-      }
+    if (pill) {
+      console.log("Loaded pill from IndexedDB ✅");
+      this.processPillDetails(pill);
+    } else {
+      console.log('Pill not found in IndexedDB, fallback to API');
+      this.fetchPillsDetails(String(identifier)); // ✅ fetch online
     }
-
-    try {
-      // إذا كان هناك اتصال، محاولة الطباعة عبر الخدمة
-      if (this.isOnline) {
-        try {
-          const response = await this.printedInvoiceService
-            .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
-            .toPromise();
-          console.log('استجابة طباعة الفاتورة:', response);
-        } catch (onlineError) {
-          console.warn('فشل الطباعة عبر الخدمة، الانتقال للطباعة المحلية:', onlineError);
-        }
-      } else {
-        console.log('الطباعة في وضع عدم الاتصال');
-      }
-
-      // الطباعة المحلية
-      await this.performLocalPrint();
-
-    } catch (error) {
-      console.error('خطأ في طباعة الفاتورة:', error);
-      // في حالة الخطأ، حاولي الطباعة محلياً فقط
-      await this.performLocalPrint();
-    } finally {
-      this.isPrinting = false;
-
-      // التأكد من إغلاق الـ modal نهائيًا
-      this.closeConfirmationDialog();
-    }
+  } catch (error) {
+    console.error('Error retrieving pill from IndexedDB:', error);
+    this.fetchPillsDetails(String(identifier));  // ✅ fetch online
   }
+}
 
-  // دورة الطباعة المحلية
-  private async performLocalPrint(): Promise<void> {
-    const printContent = document.getElementById('printSection');
-    if (!printContent) {
-      console.error('قسم الطباعة غير موجود.');
+
+private processPillDetails(data: any): void {
+  try {
+    this.order_id = data.order_id;
+    this.invoices = Array.isArray(data.invoices.invoice_details) ? data.invoices.invoice_details : []; // ✅ fix
+
+    if (!this.invoices.length) {
+      console.warn("No invoices found in offline pill:", data);
       return;
     }
 
-    const originalHTML = document.body.innerHTML;
+    const statusMap: { [key: string]: string } = {
+      completed: 'مكتمل',
+      pending: 'في انتظار الموافقة',
+      cancelled: 'ملغي',
+      packing: 'يتم تجهيزها',
+      readyForPickup: 'جاهز للاستلام',
+      on_way: 'في الطريق',
+      in_progress: 'يتم تحضير الطلب',
+      delivered: 'تم التوصيل',
+    };
 
-    const copies = this.isDeliveryOrder
-      ? [
-        { showPrices: true, test: true },
-        { showPrices: false, test: false },
-        { showPrices: true, test: true },
-      ]
-      : [
-        { showPrices: true, test: true },
-        { showPrices: false, test: false },
-      ];
-
-    for (let i = 0; i < copies.length; i++) {
-      this.showPrices = copies[i].showPrices;
-      this.test = copies[i].test;
-
-      await new Promise((resolve) => setTimeout(resolve, 300));
-
-      const singlePageHTML = `
-        <div>
-          ${printContent.innerHTML}
-          ${!this.isOnline ? '<div style="text-align: center; color: red; margin-top: 10px;">🔴 طباعة محلية - غير متصل بالإنترنت</div>' : ''}
-        </div>
-      `;
-
-      document.body.innerHTML = singlePageHTML;
-
-      await new Promise((resolve) =>
-        setTimeout(() => {
-          window.print();
-          resolve(true);
-        }, 200)
-      );
+    const trackingKey = this.invoices[0]?.['tracking-status'];
+    if (trackingKey === 'completed') {
+      this.isShow = false;
     }
+    this.trackingStatus = statusMap[trackingKey] || trackingKey;
+    this.orderNumber = data.order_id;
+    this.couponType = this.invoices[0]?.invoice_summary?.coupon_type;
 
-    document.body.innerHTML = originalHTML;
+    this.addresDetails = this.invoices[0]?.address_details || {};
+    this.paymentMethod = this.invoices[0]?.transactions?.[0]?.['payment_method'];
+    this.paymentStatus = this.invoices[0]?.transactions?.[0]?.['payment_status'];
 
-    // إعادة تحميل الصفحة فقط إذا كان هناك اتصال
-    if (this.isOnline) {
-      location.reload();
+    this.isDeliveryOrder = this.invoices.some(
+      (invoice: any) => invoice.order_type === 'Delivery'
+    );
+
+    this.branchDetails = this.invoices.map(
+      (e: { branch_details: any }) => e.branch_details
+    );
+    this.orderDetails = this.invoices.map((e: any) => e.orderDetails);
+
+    this.invoiceSummary = this.invoices.map((e: any) => ({
+      ...e.invoice_summary,
+      currency_symbol: e.currency_symbol,
+    }));
+
+    this.addressDetails = this.invoices.map((e: any) => e.address_details);
+
+    if (this.branchDetails?.length) {
+      this.extractDateAndTime(this.branchDetails[0]);
     }
+  } catch (error) {
+    console.error("Error processing pill details offline:", error, data);
   }
-
-
-  private closeConfirmationDialog(): void {
-    if (this.confirmationDialog) {
-      // إغلاق الـ modal يدويًا
-      const modalElement = document.querySelector('.p-dialog-mask');
-      if (modalElement) {
-        modalElement.remove();
-      }
-
-      // إزالة class الـ backdrop إذا كان موجودًا
-      const backdropElement = document.querySelector('.p-component-overlay');
-      if (backdropElement) {
-        backdropElement.remove();
-      }
-    }
-  }
-  // end hanan
-
-  async fetchPillFromIndexedDB(identifier: string | number) {
-    try {
-      console.log("offline-identifier", identifier);
-      const pill = await this.dbService.getPillByInvoiceId(identifier);
-
-      console.log("toqa_pills", pill);
-
-
-      if (pill) {
-        console.log("Loaded pill from IndexedDB ✅");
-        this.processPillDetails(pill);
-
-      } else {
-        console.log('Pill not found in IndexedDB, fallback to API');
-        this.fetchPillsDetails(String(identifier)); // ✅ fetch online
-      }
-    } catch (error) {
-      console.error('Error retrieving pill from IndexedDB:', error);
-      this.fetchPillsDetails(String(identifier));  // ✅ fetch online
-    }
-  }
-  private normalizeAddons(addons: any[]): any[] {
-    if (!addons || !Array.isArray(addons)) return [];
-
-    return addons.map(addon => {
-      // إذا كانت الإضافة object تحتوي على name بدلاً من addon_name
-      if (addon && typeof addon === 'object') {
-        return {
-          addon_name: addon.addon_name || addon.name || 'Unknown Addon',
-          addon_price: addon.addon_price || addon.price || 0,
-          // احتفظي بالبيانات الأصلية أيضاً
-          ...addon
-        };
-      }
-      // إذا كانت string
-      else if (typeof addon === 'string') {
-        return {
-          addon_name: addon,
-          addon_price: 0
-        };
-      }
-      return addon;
-    });
-  }
-
-  private processPillDetails(data: any): void {
-    console.log("toqa offline", data);
-
-    try {
-      this.order_id = data.order_id;
-
-      // ✅ لو جاية Object حطها في Array عشان تبقى زي الـ Online
-      this.invoices = Array.isArray(data.invoice_details)
-        ? data.invoice_details
-        : [data.invoice_details];
-
-      // ✅ إصلاح بيانات الكاشير للطباعة - مباشرة بدون method
-      const cashierFullName = localStorage.getItem('fullName') || 'الكاشير';
-
-      this.invoices.forEach((invoice: any) => {
-        if (!invoice.cashier_info) {
-          invoice.cashier_info = {
-            first_name: cashierFullName,
-            last_name: ''
-          };
-        } else {
-          // ✅ إذا كانت البيانات موجودة ولكنها غير مكتملة
-          if (!invoice.cashier_info.first_name || invoice.cashier_info.first_name === 'test') {
-            invoice.cashier_info.first_name = cashierFullName;
-          }
-          if (!invoice.cashier_info.last_name) {
-            invoice.cashier_info.last_name = '';
-          }
-        }
-      });
-
-      const statusMap: { [key: string]: string } = {
-        completed: 'مكتمل',
-        pending: 'في انتظار الموافقة',
-        cancelled: 'ملغي',
-        packing: 'يتم تجهيزها',
-        readyForPickup: 'جاهز للاستلام',
-        on_way: 'في الطريق',
-        in_progress: 'يتم تحضير الطلب',
-        delivered: 'تم التوصيل',
-      };
-
-      const trackingKey = this.invoices[0]?.['tracking-status'];
-      if (trackingKey === 'completed') {
-        this.isShow = false;
-      }
-      this.trackingStatus = statusMap[trackingKey] || trackingKey;
-
-      this.orderNumber = data.order_id;
-      this.couponType = this.invoices[0]?.invoice_summary?.coupon_type;
-
-      this.addresDetails = this.invoices[0]?.address_details || {};
-      this.paymentMethod =
-        this.invoices[0]?.transactions?.[0]?.['payment_method'];
-      this.paymentStatus =
-        this.invoices[0]?.transactions?.[0]?.['payment_status'];
-
-      this.isDeliveryOrder = this.invoices.some(
-        (invoice: any) => invoice.order_type === 'Delivery'
-      );
-
-      // ✅ إصلاح: دمج table_number من البيانات الرئيسية مع branch_details
-      this.branchDetails = this.invoices.map((e: any) => {
-        const branchDetails = e.branch_details || {};
-
-        return {
-          ...branchDetails,
-          // ✅ استخدم table_number من البيانات الرئيسية إذا لم يكن موجوداً في branch_details
-          table_number: branchDetails.table_number || data.table_number || branchDetails.table_id
-        };
-      });
-
-      this.orderDetails = this.invoices.map((e: any) => {
-        if (e.orderDetails && Array.isArray(e.orderDetails)) {
-          return e.orderDetails.map((item: any) => ({
-            ...item,
-            // ✅ تطبيع هيكل الإضافات - هذا هو الجزء المهم!
-            addons: this.normalizeAddons(item.addons)
-          }));
-        }
-        return e.orderDetails || [];
-      });
-
-
-      this.invoiceSummary = this.invoices.map((e: any) => ({
-        ...e.invoice_summary,
-        currency_symbol: e.currency_symbol,
-      }));
-
-      this.addressDetails = this.invoices.map((e: any) => e.address_details);
-
-      if (this.branchDetails?.length) {
-        this.extractDateAndTime(this.branchDetails[0]);
-      }
-      this.invoiceTips = data.invoice_tips;
-
-      console.log(" this.invoiceTips ", this.invoiceTips);
-
-      console.log(
-        this.orderNumber,
-        this.couponType,
-        this.addresDetails,
-        this.paymentMethod,
-        this.paymentStatus,
-        this.isDeliveryOrder,
-        this.branchDetails,
-        this.invoiceSummary
-      );
-    } catch (error) {
-      console.error('Error processing pill details offline:', error, data);
-    }
-  }
-
-
+}
 
 
 
@@ -478,6 +249,9 @@ export class PillDetailsComponent implements OnInit {
       });
   }
 
+
+  
+
   fetchPillsDetails(pillId: string): void {
     this.loading = false
     this.pillDetailsService.getPillsDetailsById(pillId).pipe(
@@ -486,19 +260,11 @@ export class PillDetailsComponent implements OnInit {
       })
     ).subscribe({
       next: (response: any) => {
-        console.log('📦 Full Address Details:', response.data.invoices[0]?.address_details);
-        console.log('🔍 All keys in address_details:', Object.keys(response.data.invoices[0]?.address_details || {}));
-
-
-        // // اطبع كل القيم
-        // Object.keys(this.addresDetails).forEach(key => {
-        //   console.log(`📍 ${key}:`, this.addresDetails[key]);
-        // });
         this.order_id = response.data.order_id
         this.invoices = response.data.invoices;
         this.invoiceTips = response.data.invoice_tips || [];
         console.log(response, 'response gggg');
-        this.addresDetails = this.invoices[0]?.address_details || {};
+
 
         const statusMap: { [key: string]: string } = {
           completed: 'مكتمل',
@@ -546,6 +312,8 @@ export class PillDetailsComponent implements OnInit {
             ...e.invoice_summary,
             currency_symbol: e.currency_symbol,
           };
+
+
 
           // // Convert coupon_value if it's a percentage
           // if (summary.coupon_type === 'percentage') {
@@ -645,77 +413,77 @@ export class PillDetailsComponent implements OnInit {
   }
   isFinal = false;
   order_id: any
-  //   async printInvoice(isFinal: boolean = false) {
+  async printInvoice(isFinal: boolean = false) {
 
-  //     this.isFinal = isFinal;
-  //     this.isPrinting = true;
+    this.isFinal = isFinal;
+    this.isPrinting = true;
 
-  //     if (!this.invoices?.length || !this.invoiceSummary?.length) {
-  //       console.warn('Invoice data not ready.');
-  //       this.isPrinting = false;
-  //       return;
-  //     }
+    if (!this.invoices?.length || !this.invoiceSummary?.length) {
+      console.warn('Invoice data not ready.');
+      this.isPrinting = false;
+      return;
+    }
 
-  //     try {
-  //       const response = await this.printedInvoiceService
-  //         .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
-  //         .toPromise();
-  // /* if(response.status==false){
-  //   alert(response.message);
-  //   return;
-  // }
-  //    */    console.log('Print invoice response:', response);
+    try {
+      const response = await this.printedInvoiceService
+        .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
+        .toPromise();
+/* if(response.status==false){
+  alert(response.message);
+  return;
+}
+   */    console.log('Print invoice response:', response);
 
-  //       const printContent = document.getElementById('printSection');
-  //       if (!printContent) {
-  //         console.error('Print section not found.');
-  //         return;
-  //       }
+      const printContent = document.getElementById('printSection');
+      if (!printContent) {
+        console.error('Print section not found.');
+        return;
+      }
 
-  //       const originalHTML = document.body.innerHTML;
+      const originalHTML = document.body.innerHTML;
 
-  //       const copies = this.isDeliveryOrder
-  //         ? [
-  //           { showPrices: true, test: true },
-  //           { showPrices: false, test: false },
-  //           { showPrices: true, test: true },
-  //         ]
-  //         : [
-  //           { showPrices: true, test: true },
-  //           { showPrices: false, test: false },
-  //         ];
+      const copies = this.isDeliveryOrder
+        ? [
+          { showPrices: true, test: true },
+          { showPrices: false, test: false },
+          { showPrices: true, test: true },
+        ]
+        : [
+          { showPrices: true, test: true },
+          { showPrices: false, test: false },
+        ];
 
-  //       for (let i = 0; i < copies.length; i++) {
-  //         this.showPrices = copies[i].showPrices;
-  //         this.test = copies[i].test;
-  //         await new Promise((resolve) => setTimeout(resolve, 300));
+      for (let i = 0; i < copies.length; i++) {
+        this.showPrices = copies[i].showPrices;
+        this.test = copies[i].test;
+        await new Promise((resolve) => setTimeout(resolve, 300));
 
-  //         const singlePageHTML = `
-  //   <div>
-  //     ${printContent.innerHTML}
-  //   </div>
-  // `;
+        const singlePageHTML = `
+  <div>
+    ${printContent.innerHTML}
+  </div>
+`;
 
 
-  //         document.body.innerHTML = singlePageHTML;
+        document.body.innerHTML = singlePageHTML;
 
-  //         await new Promise((resolve) =>
-  //           setTimeout(() => {
-  //             window.print();
-  //             resolve(true);
-  //           }, 200)
-  //         );
-  //       }
+        await new Promise((resolve) =>
+          setTimeout(() => {
+            window.print();
+            resolve(true);
+          }, 200)
+        );
+      }
 
-  //       document.body.innerHTML = originalHTML;
-  //       location.reload();
-  //     } catch (error) {
-  //       console.error('Error printing invoice:', error);
-  //     } finally {
-  //       this.isPrinting = false;
-  //     }
+      document.body.innerHTML = originalHTML;
+      location.reload();
+    } catch (error) {
+      console.error('Error printing invoice:', error);
+    } finally {
+      this.isPrinting = false;
+    }
 
-  //   }
+  }
 
   getDiscountAmount(): number {
     if (

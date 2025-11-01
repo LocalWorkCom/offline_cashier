@@ -33,7 +33,6 @@ import { EditOrderModalComponent } from '../edit-order-modal/edit-order-modal.co
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ProductsService } from '../services/products.service';
 import { IndexeddbService } from '../services/indexeddb.service';
-import { json } from 'node:stream/consumers';
 
 @Component({
   selector: 'app-orders',
@@ -73,7 +72,7 @@ export class OrdersComponent implements OnDestroy {
   selectedOrderTypeStatus: string = 'All';
   // selectedOrderTypeStatus: string = 'dine-in';
   filteredCartItems: any;
-  allowedOrderTypes = ['Takeaway', 'Delivery', 'dine-in' , 'talabat'];
+  allowedOrderTypes = ['Takeaway', 'Delivery', 'dine-in' ,'talabat'];
   allowedStatuses = [
     'pending',
     'in_progress',
@@ -408,50 +407,49 @@ export class OrdersComponent implements OnDestroy {
 
     this.filterOrders();
   }
-filterOrdersInput(): void {
-  const search = this.searchOrderNumber?.trim().toLowerCase();
+  filterOrdersInput(): void {
+    const search = this.searchOrderNumber?.trim().toLowerCase();
 
-  // Reset view if search is empty
-  if (!search) {
-    this.filterOrders();
-    return;
+    // Reset view if search is empty
+    if (!search) {
+      this.filterOrders();
+      return;
+    }
+
+    // Find the order that matches the search
+    const foundOrder = this.orders.find((order) =>
+      order.order_details?.order_number
+        ?.toString()
+        .toLowerCase()
+        .includes(search)
+    );
+
+    if (foundOrder) {
+      this.selectedOrderTypeStatus = foundOrder.order_details?.order_type;
+      this.selectedStatus = 'all';
+
+      // Show only the matched order
+      this.filteredOrders = [foundOrder];
+
+      // Optional: scroll and highlight
+      setTimeout(() => {
+        document
+          .querySelectorAll('.highlight-order')
+          .forEach((el) => el.classList.remove('highlight-order'));
+
+        const el = document.getElementById(
+          `order-${foundOrder.order_details?.order_number}`
+        );
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          el.classList.add('highlight-order');
+        }
+      }, 100);
+    } else {
+      // No match
+      this.filteredOrders = [];
+    }
   }
-
-  // Find all orders that match the search
-  const foundOrders = this.orders.filter((order) =>
-    order.order_details?.order_number
-      ?.toString()
-      .toLowerCase()
-      .includes(search)
-  );
-
-  if (foundOrders.length > 0) {
-    this.selectedOrderTypeStatus = foundOrders[0].order_details?.order_type;
-    this.selectedStatus = 'all';
-
-    // Show all matched orders
-    this.filteredOrders = foundOrders;
-
-    // Optional: scroll and highlight the first one
-    setTimeout(() => {
-      document
-        .querySelectorAll('.highlight-order')
-        .forEach((el) => el.classList.remove('highlight-order'));
-
-      const el = document.getElementById(
-        `order-${foundOrders[0].order_details?.order_number}`
-      );
-      if (el) {
-        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        el.classList.add('highlight-order');
-      }
-    }, 100);
-  } else {
-    // No match
-    this.filteredOrders = [];
-  }
-}
-
 
   increaseItem(item: any, index: number): void {
     if (item.selectedQuantity === undefined) {
@@ -762,11 +760,9 @@ filterOrdersInput(): void {
   }
 
   getStatusText(status: any): string {
-
     switch (status) {
       case 'all':
         return 'الكل';
-      case 'pending':
       case 'pending':
         return 'بانتظار التحضير';
       case 'completed':
@@ -774,8 +770,7 @@ filterOrdersInput(): void {
       case 'readyForPickup':
         if (
           this.selectedOrderTypeStatus === 'Delivery' ||
-          this.selectedOrderTypeStatus === 'Takeaway'||
-        this.selectedOrderTypeStatus === 'talabat' 
+          this.selectedOrderTypeStatus === 'Takeaway'
         ) {
           return 'جاهزة للاستلام';
         } else {
@@ -794,7 +789,6 @@ filterOrdersInput(): void {
       case 'cancel':
         return 'ملغية';
       default:
-
         return `Unknown : ${status}`;
     }
   }
@@ -847,7 +841,7 @@ filterOrdersInput(): void {
       Takeaway: 'assets/images/out.png',
       Delivery: 'assets/images/delivery.png',
       'dine-in': 'assets/images/in.png',
-      'talabat': 'assets/images/in.png',
+      talabat: 'assets/images/out.png',
     };
 
     return (
@@ -1038,7 +1032,7 @@ filterOrdersInput(): void {
       Takeaway: ' إستلام',
       Delivery: 'توصيل',
       'dine-in': 'فى المطعم',
-      'talabat': 'طلبات',
+      talabat: 'طلبات',
     };
     return translations[orderType] || orderType;
   }
@@ -1211,7 +1205,7 @@ filterOrdersInput(): void {
         if (orderIndex !== -1) {
           const currentOrder = this.orders[orderIndex];
 
-          
+
           const updatedOrder = {
             ...currentOrder,
             ...dishChanged,
@@ -1221,7 +1215,7 @@ filterOrdersInput(): void {
           this.orders.splice(orderIndex, 1, updatedOrder);
           this.orders = [...this.orders];
           this.filterOrders();
-        
+
           this.cdr.detectChanges();
           console.log(' Order status updated:', updatedOrder);
         } else {
@@ -1785,10 +1779,10 @@ filterOrdersInput(): void {
   message: string = '';
   messageType: 'success' | 'error' = 'success';
   errMsg: any;
-  removeDish(orderDetailId: number , quantity: number , order: any): void {
+  removeDish(orderDetailId: number, order: any): void {
     this.removeLoading = true;
     const url = `${this.apiUrl}api/orders/cashier/request-cancel`;
-    console.log(orderDetailId, order,"id to delete");
+    console.log(orderDetailId, "id to delete");
 
     // 1️⃣ Find dish inside this order by order_detail_id
     const dish = order.order_items.find(
@@ -1805,7 +1799,7 @@ filterOrdersInput(): void {
       items: [
         {
           item_id: orderDetailId, // API expects this
-          quantity: quantity 
+          quantity: order.quantity ?? 1, // cancel this qty
         },
       ],
       type: 'partial',
@@ -1893,7 +1887,7 @@ filterOrdersInput(): void {
 
   continueOrder(order: any): void {
     console.log('tet');
-    this.productsService.destroy(); // 🔥 destroy stream
+    this.productsService.destroyCart(); // 🔥 destroy stream
 
     localStorage.removeItem('cart');
     localStorage.setItem('currentOrderId', order.order_details.order_id);
