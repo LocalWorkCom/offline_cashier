@@ -529,7 +529,7 @@
 
               <!-- dalia start -->
     <!-- قسم التيبس -->
-    <div class="tips-section" *ngIf="invoiceTips.length > 0 && paymentStatus == 'paid'" >
+    <div class="tips-section" *ngIf="invoiceTips.length > 0 && invoices[0].transactions[0].payment_status=== 'paid'" >
       <hr />
       <div *ngFor="let tip of invoiceTips" class="mb-3">
         <div class="d-flex justify-content-between px-2 mb-1">
