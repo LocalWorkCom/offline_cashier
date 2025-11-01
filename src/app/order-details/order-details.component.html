@@ -14,17 +14,17 @@
 
   </div>
   @if (orderDetails?.status === "pending") {
-<div class="d-flex justify-content-between align-items-center gap-2">
-<!--     <button class="btn reversed main-color px-5 my-2 w-50">
+  <div class="d-flex justify-content-between align-items-center gap-2">
+    <!--     <button class="btn reversed main-color px-5 my-2 w-50">
       <span><i class="fa-solid fa-pen px-1"></i></span>
     تعديل الطلب
   </button> -->
-  <!-- <button class="btn reversed main-color px-5 my-2"  (click)="cancelOrder()">
+    <!-- <button class="btn reversed main-color px-5 my-2"  (click)="cancelOrder()">
     <span><i class="fa-solid fa-trash-can px-1"></i></span>
     حذف الطلب
   </button>  -->
 
-</div>
+  </div>
   }
   <p class="fs-4  text-center" [ngClass]="status_order? 'text-success' : 'main-color' ">{{errorMessage}}</p>
   <div *ngIf="loading" class="card px-4 py-2 my-2">
@@ -213,4 +213,3 @@
       </h4>
     </div>
   </div>
-
