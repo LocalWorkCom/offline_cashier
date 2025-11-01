@@ -14,8 +14,9 @@
     <h4>الطلبات</h4>
     <ul class="nav nav-requests mb-4 px-0" role="tablist">
       <li class="d-flex w-100 justify-content-between">
-        <button *ngFor="let type of ['All', 'dine-in', 'Takeaway', 'Delivery', 'talabat']" class="nav-link sub w-100 mx-2"
-          [class.active]="selectedOrderTypeStatus === type" (click)="selectOrderType(type)">
+        <button *ngFor="let type of ['All', 'dine-in', 'Takeaway', 'Delivery', 'talabat']"
+          class="nav-link sub w-100 mx-2" [class.active]="selectedOrderTypeStatus === type"
+          (click)="selectOrderType(type)">
           {{ type === 'All' ? 'الكل' : getOrderTypeLabel(type) }}
 
           <figure class="mb-0" *ngIf="type !== 'All'">
@@ -146,7 +147,8 @@
                       </h6>
 
                       <h6 class="mb-0 fs-6 text-nowrap">
-                        {{ item.final_price }} {{ order.invoiceSummary?.currency_symbol }}
+                        {{ item.final_price }} {{
+                        order.invoiceSummary?.currency_symbol }}
                       </h6>
                     </div>
 
@@ -256,7 +258,8 @@
                   </span>
                 </h5>
                 <div>
-                  @if(order.order_details.status != 'cancelled' && order.order_details.payment_status == "unpaid" && order.order_details.order_type != "talabat"){
+                  @if(order.order_details.status != 'cancelled' && order.order_details.payment_status == "unpaid" &&
+                  order.order_details.order_type != "talabat"){
                   <span class="badge text-dark">
                     <button type="button" class="bg-main rounded-circle p-0 border-0 ms-1"
                       style="width: 20px; height: 20px" (click)="continueOrder(order)">

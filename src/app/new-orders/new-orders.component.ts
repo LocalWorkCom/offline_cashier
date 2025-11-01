@@ -29,7 +29,7 @@ import { AccordionModule } from 'primeng/accordion';
   standalone: true,
   templateUrl: './new-orders.component.html',
   styleUrls: ['./new-orders.component.css'],
-  imports: [CommonModule, FormsModule, RouterLink,AccordionModule],
+  imports: [CommonModule, FormsModule, RouterLink, AccordionModule],
   changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class NewOrdersComponent implements OnInit, OnDestroy {
@@ -51,7 +51,9 @@ export class NewOrdersComponent implements OnInit, OnDestroy {
   message: string = '';
   messageType: 'success' | 'error' = 'success';
   usingOfflineData: boolean = false;
-
+  cartItems: any;
+  storedValueLocalStorage: any;
+  filteredCartItems: any;
   // UI State
   loading = false;
   selectedStatus = 'all';
@@ -67,11 +69,19 @@ export class NewOrdersComponent implements OnInit, OnDestroy {
   page = 1;
   perPage = 50;
   hasMore = true;
+  syncing = false;
+  // Cached counts to avoid recalculation each CD cycle
+  private dynamicOrderTypeCounts: Record<string, number> = {};
+  private dynamicStatusTypeCounts: Record<string, Record<string, number>> = {};
+  private staticOrderTypeCounts: Record<string, number> = {};
+  private staticStatusTypeCounts: Record<string, Record<string, number>> = {};
 
   // Constants for performance
   readonly ORDER_TYPES = ['All', 'dine-in', 'Takeaway', 'Delivery', 'talabat'];
   readonly STATUSES = ['all', 'pending', 'in_progress', 'readyForPickup', 'completed', 'cancelled', 'static'];
-
+  // Incremental rendering: show first N immediately, then increase gradually
+  visibleCountStatic = 12;
+  visibleCountDynamic = 12;
   // TrackBy Functions
   trackByOrderId: TrackByFunction<any> = (index, order) =>
     order.order_details?.order_id || order.orderId || index;
@@ -99,130 +109,140 @@ export class NewOrdersComponent implements OnInit, OnDestroy {
   //   this.loadInitialData();
   //   this.loadStaticOrders();
   // }
-async ngOnInit() {
-  this.loading = true;
+  async ngOnInit() {
+    this.loading = true;
 
-  // 1️⃣ عرض البيانات من IndexedDB أولًا
-  await this.loadOrdersFromIndexedDB();
+    // 1️⃣ عرض البيانات من IndexedDB أولًا
+    await this.loadOrdersFromIndexedDB();
+    // 2️⃣ تحميل الطلبات المعلقة من localStorage
+    this.loadStaticOrders();
 
-  this.setupReactiveFilters();
+    // 3️⃣ حساب العدادات بعد تحميل البيانات
+    this.recomputeCounts(this.orders$.getValue(), this.staticOrders$.getValue());
 
-  this.loading = false;
+    this.setupReactiveFilters();
 
-  // 2️⃣ بعد العرض، انتظر 1 ثوانٍ ثم ابدأ المزامنة
-  if (navigator.onLine) {
-    setTimeout(() => {
-      console.log('⏳ Waiting 1 seconds... then syncing');
-      this.syncAllorders();
-    }, 1000);
+    this.loading = false;
+
+    // 2️⃣ بعد العرض، انتظر 1 ثوانٍ ثم ابدأ المزامنة
+    if (navigator.onLine) {
+      setTimeout(() => {
+        console.log('⏳ Waiting 1 seconds... then syncing');
+        this.syncAllorders();
+      }, 1000);
+    }
+    // Schedule incremental reveal in idle time without breaking offline/online/sync
+    this.scheduleIncrementalReveal();
   }
-}
 
-// 🟢 تحميل الطلبات من IndexedDB
-private async loadOrdersFromIndexedDB(): Promise<void> {
-  try {
-    await this.dbService.init();
-    const cachedOrders = await this.dbService.getOrders();
-    
+  // 🟢 تحميل الطلبات من IndexedDB
+  private async loadOrdersFromIndexedDB(): Promise<void> {
+    try {
+      await this.dbService.init();
+      const cachedOrders = await this.dbService.getOrders();
 
-    if (cachedOrders?.length > 0) {
-      this.orders$.next(this.processOrders(cachedOrders));
-      this.filteredOrders$.next(this.processOrders(cachedOrders));
-      //  this.orders$ = this.filteredOrders$;
-      console.log('📦 Loaded from IndexedDB:', cachedOrders.length);
-    } else {
-      console.log('⚠️ No cached orders found');
+
+      if (cachedOrders?.length > 0) {
+        this.orders$.next(this.processOrders(cachedOrders));
+        this.filteredOrders$.next(this.processOrders(cachedOrders));
+        //  this.orders$ = this.filteredOrders$;
+        console.log('📦 Loaded from IndexedDB:', cachedOrders.length);
+      } else {
+        console.log('⚠️ No cached orders found');
+      }
+
+    } catch (error) {
+      console.error('❌ Error loading from IndexedDB:', error);
+    }
+  }
+
+  // 🟣 المزامنة الصامتة عند كل refresh
+  // private syncOrdersInBackgroundold(): void {
+  //   from(this.ordersListService.getOrdersListE(1, 50))
+  //     .pipe(takeUntil(this.destroy$))
+  //     .subscribe({
+  //       next: async (response) => {
+  //         if (response?.data?.orders?.length) {
+  //           console.log('🔄 Sync complete. Updating cache...');
+
+  //           // تحديث البيانات في IndexedDB
+  //           await this.batchSaveOrders(response.data.orders);
+
+  //           // تحديث البيانات المعروضة في BehaviorSubject
+  //           const updatedOrders = await this.dbService.getOrders();
+  //           this.orders$.next(this.processOrders(updatedOrders));
+  //           this.filteredOrders$.next(this.processOrders(updatedOrders));
+  //           // this.orders$ = this.filteredOrders$;
+
+  //           console.log('✅ Orders synced silently');
+  //         }
+  //       },
+  //       error: (error) => console.error('❌ Sync error:', error),
+  //     });
+  // }
+
+  async syncOrdersInBackground(sync: boolean = false): Promise<void> {
+    if (this.loading || (!this.hasMore && !sync)) return;
+
+    this.loading = true;
+    if (sync && !this.syncing) {
+      this.syncing = true;
+      this.cdr.markForCheck();
+    }
+    console.log(`📥 Fetching page ${this.page}...`);
+    try {
+      this.ordersListService.getOrdersListE(this.page, this.perPage).subscribe({
+        next: async (response) => {
+          if (response.status && response.data?.orders?.length) {
+            const pagination = response.data.pagination;
+            console.log('🔄 Sync complete. Updating cache...');
+
+            // تشغيل عمليات التخزين والمعالجة خارج Angular لتحسين الأداء
+            this.ngZone.runOutsideAngular(async () => {
+              await this.batchSaveOrders(response.data.orders);
+              const updatedOrders = await this.dbService.getOrders();
+
+              this.ngZone.run(() => {
+                const processed = this.processOrders(updatedOrders);
+                this.orders$.next(processed);
+                this.filteredOrders$.next(processed);
+                this.cdr.markForCheck();
+              });
+            });
+
+            this.hasMore = pagination.current_page < pagination.last_page;
+            this.page++;
+            console.log(`✅ Synced & displayed page ${pagination.current_page} / ${pagination.last_page}`);
+          }
+
+          this.loading = false;
+        },
+        error: (err) => {
+          console.error('⚠️ Server fetch failed, fallback to offline data:', err);
+          this.loading = false;
+          this.usingOfflineData = true;
+
+          if (sync) this.loadOrdersFromIndexedDB();
+        }
+      });
+    } catch (err) {
+      console.error('❌ Error in syncOrdersInBackground:', err);
+      this.loading = false;
+    }
+  }
+
+  async syncAllorders(): Promise<void> {
+    console.log('🔁 Starting full sync from server...');
+    this.page = 1;
+    this.hasMore = true;
+
+    while (this.hasMore) {
+      await this.syncOrdersInBackground(true);
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
 
-  } catch (error) {
-    console.error('❌ Error loading from IndexedDB:', error);
+    console.log('✅ Full sync completed. IndexedDB is up to date.');
   }
-}
-
-// 🟣 المزامنة الصامتة عند كل refresh
-// private syncOrdersInBackgroundold(): void {
-//   from(this.ordersListService.getOrdersListE(1, 50))
-//     .pipe(takeUntil(this.destroy$))
-//     .subscribe({
-//       next: async (response) => {
-//         if (response?.data?.orders?.length) {
-//           console.log('🔄 Sync complete. Updating cache...');
-
-//           // تحديث البيانات في IndexedDB
-//           await this.batchSaveOrders(response.data.orders);
-
-//           // تحديث البيانات المعروضة في BehaviorSubject
-//           const updatedOrders = await this.dbService.getOrders();
-//           this.orders$.next(this.processOrders(updatedOrders));
-//           this.filteredOrders$.next(this.processOrders(updatedOrders));
-//           // this.orders$ = this.filteredOrders$;
-
-//           console.log('✅ Orders synced silently');
-//         }
-//       },
-//       error: (error) => console.error('❌ Sync error:', error),
-//     });
-// }
-
-async syncOrdersInBackground(sync: boolean = false): Promise<void> {
-  if (this.loading || (!this.hasMore && !sync)) return;
-
-  this.loading = true;
-  console.log(`📥 Fetching page ${this.page}...`);
-
-  try {
-    this.ordersListService.getOrdersListE(this.page, this.perPage).subscribe({
-      next: async (response) => {
-        if (response.status && response.data?.orders?.length) {
-          const pagination = response.data.pagination;
-          console.log('🔄 Sync complete. Updating cache...');
-
-          // تشغيل عمليات التخزين والمعالجة خارج Angular لتحسين الأداء
-          this.ngZone.runOutsideAngular(async () => {
-            await this.batchSaveOrders(response.data.orders);
-            const updatedOrders = await this.dbService.getOrders();
-
-            this.ngZone.run(() => {
-              const processed = this.processOrders(updatedOrders);
-              this.orders$.next(processed);
-              this.filteredOrders$.next(processed);
-              this.cdr.markForCheck();
-            });
-          });
-
-          this.hasMore = pagination.current_page < pagination.last_page;
-          this.page++;
-          console.log(`✅ Synced & displayed page ${pagination.current_page} / ${pagination.last_page}`);
-        }
-
-        this.loading = false;
-      },
-      error: (err) => {
-        console.error('⚠️ Server fetch failed, fallback to offline data:', err);
-        this.loading = false;
-        this.usingOfflineData = true;
-
-        if (sync) this.loadOrdersFromIndexedDB();
-      }
-    });
-  } catch (err) {
-    console.error('❌ Error in syncOrdersInBackground:', err);
-    this.loading = false;
-  }
-}
-
-async syncAllorders(): Promise<void> {
-  console.log('🔁 Starting full sync from server...');
-  this.page = 1;
-  this.hasMore = true;
-
-  while (this.hasMore) {
-    await this.syncOrdersInBackground(true);
-    await new Promise(resolve => setTimeout(resolve, 100));
-  }
-
-  console.log('✅ Full sync completed. IndexedDB is up to date.');
-}
 
 
 
@@ -618,93 +638,93 @@ async syncAllorders(): Promise<void> {
     );
   }
 
-   removeDish(orderDetailId: number, order: any): void {
-     this.removeLoading = true;
-     const url = `${this.apiUrl}api/orders/cashier/request-cancel`;
-     console.log(orderDetailId, "id to delete");
+  removeDish(orderDetailId: number, order: any): void {
+    this.removeLoading = true;
+    const url = `${this.apiUrl}api/orders/cashier/request-cancel`;
+    console.log(orderDetailId, "id to delete");
 
-     // 1️⃣ Find dish inside this order by order_detail_id
-     const dish = order.order_items.find(
-       (d: any) => d.order_detail_id === orderDetailId
-     );
-     if (!dish) {
-       console.warn('❌ Dish not found in this order');
-       return;
-     }
+    // 1️⃣ Find dish inside this order by order_detail_id
+    const dish = order.order_items.find(
+      (d: any) => d.order_detail_id === orderDetailId
+    );
+    if (!dish) {
+      console.warn('❌ Dish not found in this order');
+      return;
+    }
 
-     // 2️⃣ Build request body
-     const body = {
-       order_id: order.order_details.order_id,
-       items: [
-         {
-           item_id: orderDetailId, // API expects this
-           quantity: order.quantity ?? 1, // cancel this qty
-         },
-       ],
-       type: 'partial',
-       reason: 'cashier reason',
-     };
+    // 2️⃣ Build request body
+    const body = {
+      order_id: order.order_details.order_id,
+      items: [
+        {
+          item_id: orderDetailId, // API expects this
+          quantity: order.quantity ?? 1, // cancel this qty
+        },
+      ],
+      type: 'partial',
+      reason: 'cashier reason',
+    };
 
-     // 3️⃣ Call API
-     this.http
-       .post(url, body)
-       .pipe(
-         finalize(() => {
-           this.removeLoading = false; // ✅ يشتغل بعد الـ next أو error
-         })
-       )
-       .subscribe({
-         next: (res: any) => {
-           if (res.status) {
-             order.items = order.order_items.filter(
-               (d: any) => d.order_detail_id !== orderDetailId
-             );
-             const modalElement = document.getElementById('deleteConfirmModal');
-             if (modalElement) {
-               const modalInstance =
-                 bootstrap.Modal.getInstance(modalElement) ||
-                 new bootstrap.Modal(modalElement);
-               modalInstance.hide();
-             }
-             this.showMessageModal(
-               res.message || 'تم حذف الطلب بنجاح',
-               'success'
-             );
-           } else {
-             // ✅ ناخد كل الرسائل من errorData (بغض النظر عن المفتاح)
-             const errors = res.errorData
-               ? Object.values(res.errorData)
-                 .flat()
-                 .map((e: any) => String(e))
-               : [];
-             this.errMsg = errors.length
-               ? errors.join(' \n ')
-               : res.message || 'تعذر حذف الطلب';
-             /*           this.showMessageModal(errMsg, 'error');
-              */
+    // 3️⃣ Call API
+    this.http
+      .post(url, body)
+      .pipe(
+        finalize(() => {
+          this.removeLoading = false; // ✅ يشتغل بعد الـ next أو error
+        })
+      )
+      .subscribe({
+        next: (res: any) => {
+          if (res.status) {
+            order.items = order.order_items.filter(
+              (d: any) => d.order_detail_id !== orderDetailId
+            );
+            const modalElement = document.getElementById('deleteConfirmModal');
+            if (modalElement) {
+              const modalInstance =
+                bootstrap.Modal.getInstance(modalElement) ||
+                new bootstrap.Modal(modalElement);
+              modalInstance.hide();
+            }
+            this.showMessageModal(
+              res.message || 'تم حذف الطلب بنجاح',
+              'success'
+            );
+          } else {
+            // ✅ ناخد كل الرسائل من errorData (بغض النظر عن المفتاح)
+            const errors = res.errorData
+              ? Object.values(res.errorData)
+                .flat()
+                .map((e: any) => String(e))
+              : [];
+            this.errMsg = errors.length
+              ? errors.join(' \n ')
+              : res.message || 'تعذر حذف الطلب';
+            /*           this.showMessageModal(errMsg, 'error');
+             */
 
-             setTimeout(() => {
-               this.errMsg = null;
-             }, 2000);
-           }
-         },
-         error: (err) => {
-           const errors = err.error?.errorData
-             ? Object.values(err.error.errorData)
-               .flat()
-               .map((e: any) => String(e))
-             : [];
-           this.errMsg = errors.length
-             ? errors.join(' \n ')
-             : err.error?.message || 'خطأ في الاتصال بالخادم';
-           /*         this.showMessageModal(errMsg, 'error');
-            */
-           setTimeout(() => {
-             this.errMsg = null;
-           }, 2000);
-         },
-       });
-   }
+            setTimeout(() => {
+              this.errMsg = null;
+            }, 2000);
+          }
+        },
+        error: (err) => {
+          const errors = err.error?.errorData
+            ? Object.values(err.error.errorData)
+              .flat()
+              .map((e: any) => String(e))
+            : [];
+          this.errMsg = errors.length
+            ? errors.join(' \n ')
+            : err.error?.message || 'خطأ في الاتصال بالخادم';
+          /*         this.showMessageModal(errMsg, 'error');
+           */
+          setTimeout(() => {
+            this.errMsg = null;
+          }, 2000);
+        },
+      });
+  }
 
 
   @ViewChild('messageModal') messageModal: any;
@@ -754,20 +774,20 @@ async syncAllorders(): Promise<void> {
     this.removeDish(this.selectedItem.order_detail_id, this.selectedOrder);
   }
 
-//   selectedOrder: any = null;
-// cancelReason: string = '';
+  //   selectedOrder: any = null;
+  // cancelReason: string = '';
 
 
-openOrderModal(order: any): void {
-  this.selectedOrder = order;
-  this.cancelReason = '';
+  openOrderModal(order: any): void {
+    this.selectedOrder = order;
+    this.cancelReason = '';
 
-  const modalElement = document.getElementById('orderModal');
-  if (modalElement) {
-    const modal = new bootstrap.Modal(modalElement);
-    modal.show();
+    const modalElement = document.getElementById('orderModal');
+    if (modalElement) {
+      const modal = new bootstrap.Modal(modalElement);
+      modal.show();
+    }
   }
-}
   submitCancelRequest(order: any): void {
     if (this.isSubmitting) return; // منع تكرار الضغط لو لسه الطلب شغال
     this.isSubmitting = true; // ⏳ بداية الطلب
@@ -955,7 +975,7 @@ openOrderModal(order: any): void {
         },
       });
   }
-   increaseItem(item: any, index: number): void {
+  increaseItem(item: any, index: number): void {
     if (item.selectedQuantity === undefined) {
       item.selectedQuantity = item.quantity;
     }
