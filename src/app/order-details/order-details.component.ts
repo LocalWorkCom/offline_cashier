@@ -119,6 +119,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
 
       this.orderItems = order.details_order?.order_details || [];
 
+
+
       console.log("orderitems", this.orderItems);
 
       // Fix delivery name if empty
