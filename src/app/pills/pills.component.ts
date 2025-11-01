@@ -7,7 +7,6 @@ import { NewOrderService } from '../services/pusher/newOrder';
 import { finalize, Subject, takeUntil } from 'rxjs';
 import { NewInvoiceService } from '../services/pusher/newInvoice';
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
-
 import { IndexeddbService } from '../services/indexeddb.service';
 import { ChangeDetectorRef } from '@angular/core';
 @Component({
@@ -211,7 +210,7 @@ export class PillsComponent implements OnInit, OnDestroy {
       });
   }
 
-  
+
   //end dalia
   // listenToNewInvoice() {
   //   this.newOrder.listenToNewOrder();
