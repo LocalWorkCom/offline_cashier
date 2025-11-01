@@ -186,7 +186,7 @@ order_id:any ;
   orderType: string = '';
   totalll: any;
 
-  
+
   fetchPillsDetails(pillId: string): void {
     console.log('aaaaaaaaaaaaa');
     this.pillDetailsService.getPillsDetailsById(pillId).subscribe({
@@ -350,6 +350,7 @@ order_id:any ;
 
     }
 
+    
     this.tip =
     {
       change_amount: this.tempChangeAmount || 0,
