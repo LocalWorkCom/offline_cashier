@@ -1,6 +1,7 @@
 import {
   Component,
   OnInit,
+  OnDestroy,
   ViewChild,
   ElementRef,
   ChangeDetectorRef,
@@ -17,6 +18,7 @@ import { FormsModule } from '@angular/forms';
 import { ConfirmDialogComponent } from "../shared/ui/component/confirm-dialog/confirm-dialog.component";
 import { finalize } from 'rxjs';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { IndexeddbService } from '../services/indexeddb.service';
 
 @Component({
   selector: 'app-pill-edit',
@@ -25,7 +27,7 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
   styleUrl: './pill-edit.component.css',
   providers: [DatePipe],
 })
-export class PillEditComponent {
+export class PillEditComponent implements OnInit, OnDestroy {
   @ViewChild('printedPill') printedPill!: ElementRef;
   @ViewChild('printDialog') confirmationDialog!: ConfirmDialogComponent;
   @ViewChild('tipModalContent') tipModalContent!: TemplateRef<any>;
@@ -100,6 +102,19 @@ export class PillEditComponent {
   selectedTipType: 'tip_the_change' | 'tip_specific_amount' | 'no_tip' = 'no_tip';
   specificTipAmount: number = 0; // المبلغ الذي يتم إدخاله يدوياً كإكرامية
   selectedSuggestionType: 'billAmount' | 'amount50' | 'amount100' | null = null; // متغير جديد لتخزين نوع الاقتراح
+  isOnline: boolean = navigator.onLine;
+  hasPendingOfflineUpdate: boolean = false;
+  pendingUpdateMessage: string = '';
+  private onlineHandler = async () => {
+    this.isOnline = true;
+    this.cdr.detectChanges();
+    // Sync pending invoice updates when coming back online
+    await this.syncPendingInvoiceUpdates();
+  };
+  private offlineHandler = () => {
+    this.isOnline = false;
+    this.cdr.detectChanges();
+  };
 
 
   constructor(
@@ -110,6 +125,7 @@ export class PillEditComponent {
     private datePipe: DatePipe,
     private printedInvoiceService: PrintedInvoiceService,
     private router: Router,
+    private dbService: IndexeddbService,
     private modalService: NgbModal
   ) { }
 
@@ -125,17 +141,39 @@ export class PillEditComponent {
       this.time = this.datePipe.transform(dateObj, 'hh:mm a');
     }
   }
-order_id:any ;
+  order_id: any;
 
   ngOnInit(): void {
+    this.isOnline = navigator.onLine;
+
+    // Listen to online/offline events
+    window.addEventListener('online', this.onlineHandler);
+    window.addEventListener('offline', this.offlineHandler);
+
+    // Sync pending updates if online on init
+    if (this.isOnline) {
+      this.syncPendingInvoiceUpdates();
+    }
+
+    // checkPendingOfflineUpdate will be called after orderNumber is set
+
     this.route.paramMap.subscribe((params) => {
       this.pillId = params.get('id');
 
       if (this.pillId) {
-        this.fetchPillsDetails(this.pillId);
+        // this.fetchPillsDetails(this.pillId);
+        if (navigator.onLine) {
+          // ✅ Online
+          this.fetchPillsDetails(this.pillId);
+        } else {
+          // ✅ Offline
+          this.fetchPillFromIndexedDB(this.pillId);
+          console.log(this.pillId);
+
+        }
       }
     });
-    this.fetchPillsDetails(this.pillId);
+    // this.fetchPillsDetails(this.pillId);
 
     this.fetchTrackingStatus();
     // this.getNoteFromLocalStorage();
@@ -155,6 +193,116 @@ order_id:any ;
       console.log(this.cashier_machine_id, 'one'); // Output: 1
     } else {
       console.log('No data found in localStorage.');
+    }
+  }
+
+  ngOnDestroy(): void {
+    // Clean up event listeners
+    window.removeEventListener('online', this.onlineHandler);
+    window.removeEventListener('offline', this.offlineHandler);
+  }
+
+  // Sync pending invoice updates when coming back online
+  async syncPendingInvoiceUpdates(): Promise<void> {
+    if (!this.isOnline) {
+      return;
+    }
+
+    try {
+      const pendingUpdates = await this.dbService.getPendingInvoiceUpdates();
+
+      if (pendingUpdates.length === 0) {
+        console.log('✅ No pending invoice updates to sync');
+        return;
+      }
+
+      console.log(`🔄 Syncing ${pendingUpdates.length} pending invoice update(s)...`);
+
+      for (const pendingUpdate of pendingUpdates) {
+        try {
+          const updateData = pendingUpdate;
+
+          await new Promise<void>((resolve, reject) => {
+            this.orderService
+              .updateInvoiceStatus(
+                updateData.orderNumber,
+                updateData.paymentStatus,
+                updateData.trackingStatus,
+                updateData.cashAmount,
+                updateData.creditAmount,
+                updateData.DeliveredOrNot,
+                updateData.totalll,
+                updateData.tip
+              )
+              .subscribe({
+                next: (response) => {
+                  if (response.status !== false && !response.errorData) {
+                    // Mark as synced and delete
+                    this.dbService.markPendingInvoiceUpdateAsSynced(pendingUpdate.id)
+                      .then(() => this.dbService.deleteSyncedPendingInvoiceUpdate(pendingUpdate.id))
+                      .then(() => {
+                        console.log(`✅ Successfully synced invoice update for order ${updateData.orderNumber}`);
+                        // Clear pending flag if this is the current invoice
+                        if (updateData.orderNumber === this.orderNumber) {
+                          this.hasPendingOfflineUpdate = false;
+                          this.pendingUpdateMessage = '';
+                          this.cdr.detectChanges();
+                        }
+                        resolve();
+                      })
+                      .catch(reject);
+                  } else {
+                    console.error(`❌ API returned error for order ${updateData.orderNumber}:`, response);
+                    resolve(); // Continue with next update even if this one failed
+                  }
+                },
+                error: (err) => {
+                  console.error(`❌ Error syncing invoice update for order ${updateData.orderNumber}:`, err);
+                  resolve(); // Continue with next update even if this one failed
+                }
+              });
+          });
+        } catch (err) {
+          console.error(`❌ Error processing pending update ${pendingUpdate.id}:`, err);
+          // Continue with next update
+        }
+      }
+
+      console.log('✅ Finished syncing all pending invoice updates');
+
+      // Check again if this invoice has pending updates after sync
+      this.checkPendingOfflineUpdate();
+    } catch (err) {
+      console.error('❌ Error in syncPendingInvoiceUpdates:', err);
+    }
+  }
+
+  // Check if this invoice has a pending offline update
+  async checkPendingOfflineUpdate(): Promise<void> {
+    try {
+      const pendingUpdates = await this.dbService.getPendingInvoiceUpdates();
+      const pendingForThisInvoice = pendingUpdates.find(
+        (update: any) => update.orderNumber === this.orderNumber
+      );
+
+      if (pendingForThisInvoice) {
+        this.hasPendingOfflineUpdate = true;
+        const statusMessages: { [key: string]: string } = {
+          'paid': 'تم دفع هذه الفاتورة',
+          'unpaid': 'تم تحديث حالة هذه الفاتورة',
+          'delivered': 'تم تحديث حالة التوصيل',
+          'on_way': 'تم تحديث حالة التوصيل'
+        };
+        const statusKey = pendingForThisInvoice.paymentStatus === 'paid' ? 'paid' :
+                         (pendingForThisInvoice.trackingStatus ? pendingForThisInvoice.trackingStatus : 'unpaid');
+        this.pendingUpdateMessage = `${statusMessages[statusKey] || 'تم تحديث هذه الفاتورة'}، في انتظار الاتصال بالإنترنت للمزامنة`;
+      } else {
+        this.hasPendingOfflineUpdate = false;
+        this.pendingUpdateMessage = '';
+      }
+      this.cdr.detectChanges();
+    } catch (err) {
+      console.error('❌ Error checking pending offline update:', err);
     }
   }
   getNoteFromLocalStorage() {
@@ -197,7 +345,7 @@ order_id:any ;
         console.log("invoiceTips", this.invoices);
 
         console.log(this.invoices[0].order_type);
-        this.totalll=this.invoices[0].invoice_summary.total_price
+        this.totalll = this.invoices[0].invoice_summary.total_price
         this.orderType = this.invoices[0].order_type;
 
         const statusMap: { [key: string]: string } = {
@@ -212,14 +360,17 @@ order_id:any ;
         };
 
         const trackingKey = this.invoices[0]?.['tracking-status'];
-       /*  if (trackingKey === 'completed') {
-          this.isShow = false;
-        } */
+        /*  if (trackingKey === 'completed') {
+           this.isShow = false;
+         } */
         this.trackingStatus = statusMap[trackingKey] || trackingKey;
-        this.orderNumber =Number( response.data.order_id);
+        this.orderNumber = Number(response.data.order_id);
         this.couponType = this.invoices[0].invoice_summary.coupon_type;
 
         this.addresDetails = this.invoices[0]?.address_details || {};
+
+        // Check for pending offline updates after orderNumber is set
+        this.checkPendingOfflineUpdate();
 
         this.paymentStatus = this.invoices[0]?.['payment_status'];
         this.paymentMethod = this.invoices[0]?.transactions[0].payment_method;
@@ -269,6 +420,164 @@ order_id:any ;
       },
     });
   }
+
+
+  async fetchPillFromIndexedDB(identifier: string | number) {
+    try {
+      console.log("offline-identifier", identifier);
+      const pill = await this.dbService.getPillByInvoiceId(identifier);
+
+      console.log("toqa_pills", pill);
+
+
+      if (pill) {
+        console.log("Loaded pill from IndexedDB ✅");
+        this.processPillDetails(pill);
+
+      } else {
+        console.log('Pill not found in IndexedDB, fallback to API');
+        this.fetchPillsDetails(String(identifier)); // ✅ fetch online
+      }
+    } catch (error) {
+      console.error('Error retrieving pill from IndexedDB:', error);
+      this.fetchPillsDetails(String(identifier));  // ✅ fetch online
+    }
+  }
+
+  private processPillDetails(data: any): void {
+    console.log("toqa offline", data);
+
+    try {
+      this.order_id = data.order_id;
+
+      // ✅ لو جاية Object حطها في Array عشان تبقى زي الـ Online
+      this.invoices = Array.isArray(data.invoice_details)
+        ? data.invoice_details
+        : [data.invoice_details];
+      // ✅ إصلاح بيانات الكاشير للطباعة - مباشرة بدون method
+      const cashierFullName = localStorage.getItem('fullName') || 'الكاشير';
+
+      this.invoices.forEach((invoice: any) => {
+        if (!invoice.cashier_info) {
+          invoice.cashier_info = {
+            first_name: cashierFullName,
+            last_name: ''
+          };
+        } else {
+          // ✅ إذا كانت البيانات موجودة ولكنها غير مكتملة
+          if (!invoice.cashier_info.first_name || invoice.cashier_info.first_name === 'test') {
+            invoice.cashier_info.first_name = cashierFullName;
+          }
+          if (!invoice.cashier_info.last_name) {
+            invoice.cashier_info.last_name = '';
+          }
+        }
+      });
+
+      const statusMap: { [key: string]: string } = {
+        completed: 'مكتمل',
+        pending: 'في انتظار الموافقة',
+        cancelled: 'ملغي',
+        packing: 'يتم تجهيزها',
+        readyForPickup: 'جاهز للاستلام',
+        on_way: 'في الطريق',
+        in_progress: 'يتم تحضير الطلب',
+        delivered: 'تم التوصيل',
+      };
+
+      const trackingKey = this.invoices[0]?.['tracking-status'];
+      if (trackingKey === 'completed') {
+        this.isShow = false;
+      }
+      this.trackingStatus = statusMap[trackingKey] || trackingKey;
+
+      this.orderNumber = data.order_id;
+      this.couponType = this.invoices[0]?.invoice_summary?.coupon_type;
+
+      this.addresDetails = this.invoices[0]?.address_details || {};
+
+      // Check for pending offline updates after orderNumber is set
+      this.checkPendingOfflineUpdate();
+      this.paymentMethod =
+        this.invoices[0]?.transactions?.[0]?.['payment_method'];
+      this.paymentStatus =
+        this.invoices[0]?.transactions?.[0]?.['payment_status'];
+
+      this.isDeliveryOrder = this.invoices.some(
+        (invoice: any) => invoice.order_type === 'Delivery'
+      );
+
+      // ✅ إصلاح: دمج table_number من البيانات الرئيسية مع branch_details
+      this.branchDetails = this.invoices.map((e: any) => {
+        const branchDetails = e.branch_details || {};
+
+        return {
+          ...branchDetails,
+          // ✅ استخدم table_number من البيانات الرئيسية إذا لم يكن موجوداً في branch_details
+          table_number: branchDetails.table_number || data.table_number || branchDetails.table_id
+        };
+      });
+      this.orderDetails = this.invoices.map((e: any) => {
+        if (e.orderDetails && Array.isArray(e.orderDetails)) {
+          return e.orderDetails.map((item: any) => ({
+            ...item,
+            // ✅ تطبيع هيكل الإضافات - هذا هو الجزء المهم!
+            addons: this.normalizeAddons(item.addons)
+          }));
+        }
+        return e.orderDetails || [];
+      });
+
+      this.invoiceSummary = this.invoices.map((e: any) => ({
+        ...e.invoice_summary,
+        currency_symbol: e.currency_symbol,
+      }));
+
+      this.addressDetails = this.invoices.map((e: any) => e.address_details);
+
+      if (this.branchDetails?.length) {
+        this.extractDateAndTime(this.branchDetails[0]);
+      }
+
+      this.invoiceTips = data.invoice_tips;
+
+      console.log(
+        this.orderNumber,
+        this.couponType,
+        this.addresDetails,
+        this.paymentMethod,
+        this.paymentStatus,
+        this.isDeliveryOrder,
+        this.branchDetails,
+        this.invoiceSummary
+      );
+    } catch (error) {
+      console.error('Error processing pill details offline:', error, data);
+    }
+  }
+  private normalizeAddons(addons: any[]): any[] {
+    if (!addons || !Array.isArray(addons)) return [];
+
+    return addons.map(addon => {
+      // إذا كانت الإضافة object تحتوي على name بدلاً من addon_name
+      if (addon && typeof addon === 'object') {
+        return {
+          addon_name: addon.addon_name || addon.name || 'Unknown Addon',
+          addon_price: addon.addon_price || addon.price || 0,
+          // احتفظي بالبيانات الأصلية أيضاً
+          ...addon
+        };
+      }
+      // إذا كانت string
+      else if (typeof addon === 'string') {
+        return {
+          addon_name: addon,
+          addon_price: 0
+        };
+      }
+      return addon;
+    });
+  }
   hasDeliveryOrDineIn(): boolean {
     return this.invoices?.some((invoice: { order_type: string }) =>
       ['Delivery', 'Dine-in'].includes(invoice.order_type)
@@ -314,7 +623,7 @@ order_id:any ;
 
   saveOrder() {
     console.log('pa', this.paymentStatus);
-    this.paymentStatus ='unpaid';
+    this.paymentStatus = 'unpaid';
 
     if (!this.paymentStatus && this.trackingStatus !== 'on_way') {
       alert('يجب تحديد حالة الدفع  قبل الحفظ!');
@@ -350,7 +659,7 @@ order_id:any ;
 
     }
 
-    
+
     this.tip =
     {
       change_amount: this.tempChangeAmount || 0,
@@ -373,13 +682,13 @@ order_id:any ;
     let creditAmount = 0;
 
     if (this.selectedPaymentMethod === 'cash') {
-      this.paymentStatus ='paid';
+      this.paymentStatus = 'paid';
       cashAmount = this.finalTipSummary?.paymentAmount ?? 0;
     } else if (this.selectedPaymentMethod === 'credit') {
-      this.paymentStatus ='paid';
+      this.paymentStatus = 'paid';
       creditAmount = this.finalTipSummary?.paymentAmount ?? 0;
     } else if (this.selectedPaymentMethod === 'cash + credit') {
-      this.paymentStatus ='paid';
+      this.paymentStatus = 'paid';
       // Use the calculated values from finalTipSummary
       cashAmount = this.finalTipSummary?.cashAmountMixed ?? 0;
       creditAmount = this.finalTipSummary?.creditAmountMixed ?? 0;
@@ -390,56 +699,102 @@ order_id:any ;
       this.DeliveredOrNot = false;
     }
     console.log(cashAmount,
-        creditAmount)
- if(this.amountError == false && this.loading==false){
-  this.loading=true
+      creditAmount)
+    if (this.amountError == false && this.loading == false) {
+      this.loading = true
+
+      // Check if offline - save to IndexedDB for later sync
+      if (!this.isOnline) {
+        const invoiceUpdateData = {
+          orderNumber: this.orderNumber,
+          paymentStatus: this.paymentStatus,
+          trackingStatus: this.trackingStatus,
+          cashAmount: cashAmount,
+          creditAmount: creditAmount,
+          DeliveredOrNot: this.DeliveredOrNot,
+          totalll: this.totalll,
+          tip: this.tip
+        };
+
+        this.dbService.savePendingInvoiceUpdate(invoiceUpdateData)
+          .then(() => {
+            console.log('✅ Invoice update saved to IndexedDB for offline sync');
+            this.loading = false;
+            this.apiErrors = [];
+            localStorage.removeItem('cash_value');
+            localStorage.removeItem('credit_value');
+
+            // Set pending update flag and message
+            this.hasPendingOfflineUpdate = true;
+            const statusMessages: { [key: string]: string } = {
+              'paid': 'تم دفع هذه الفاتورة',
+              'unpaid': 'تم تحديث حالة هذه الفاتورة',
+              'delivered': 'تم تحديث حالة التوصيل',
+              'on_way': 'تم تحديث حالة التوصيل'
+            };
+            const statusKey = this.paymentStatus === 'paid' ? 'paid' :
+                             (this.trackingStatus ? this.trackingStatus : 'unpaid');
+            this.pendingUpdateMessage = `${statusMessages[statusKey] || 'تم تحديث هذه الفاتورة'}، في انتظار الاتصال بالإنترنت للمزامنة`;
+            this.cdr.detectChanges();
+
+            this.showSuccessPillEditModal();
+          })
+          .catch((err) => {
+            console.error('❌ Error saving pending invoice update:', err);
+            this.loading = false;
+            this.apiErrors = ['حدث خطأ أثناء حفظ التحديثات محلياً.'];
+          });
+        return;
+      }
+
+      // Online - proceed with API call
       this.orderService
-      .updateInvoiceStatus(
-        this.orderNumber,
-        this.paymentStatus,
-        this.trackingStatus,
-        cashAmount,
-        creditAmount,
-        this.DeliveredOrNot,this.totalll,
-        this.tip
-      ).pipe(finalize(()=>this.loading=false))
-      .subscribe({
-        next: (response) => {
-          if (response.status === false && response.message) {
-            this.errr = response.message
-          }
-          if (response.status === false || response.errorData) {
-            // Handle validation or logical API errors
-            this.apiErrors = Object.values(
-              response.errorData as { [key: string]: string[] }
-            ).flat();
+        .updateInvoiceStatus(
+          this.orderNumber,
+          this.paymentStatus,
+          this.trackingStatus,
+          cashAmount,
+          creditAmount,
+          this.DeliveredOrNot, this.totalll,
+          this.tip
+        ).pipe(finalize(() => this.loading = false))
+        .subscribe({
+          next: (response) => {
+            if (response.status === false && response.message) {
+              this.errr = response.message
+            }
+            if (response.status === false || response.errorData) {
+              // Handle validation or logical API errors
+              this.apiErrors = Object.values(
+                response.errorData as { [key: string]: string[] }
+              ).flat();
 
-            return; // ❌ Do not continue
-          }
+              return; // ❌ Do not continue
+            }
 
 
-          // ✅ Success
-          this.apiErrors = [];
-          localStorage.removeItem('cash_value')
-          localStorage.removeItem('credit_value')
-          localStorage.setItem(
-            'pill_detail_data',
-            JSON.stringify(response.data)
-          );
-          this.showSuccessPillEditModal();
-          this.fetchPillsDetails(this.pillId);
-           window.location.reload();
-        },
-        error: (err) => {
-          console.error('خطأ في حفظ الطلب:', err);
-          this.apiErrors = ['حدث خطأ أثناء الاتصال بالخادم.'];
-        },
-      });
+            // ✅ Success
+            this.apiErrors = [];
+            localStorage.removeItem('cash_value')
+            localStorage.removeItem('credit_value')
+            localStorage.setItem(
+              'pill_detail_data',
+              JSON.stringify(response.data)
+            );
+            this.showSuccessPillEditModal();
+            this.fetchPillsDetails(this.pillId);
+            window.location.reload();
+          },
+          error: (err) => {
+            console.error('خطأ في حفظ الطلب:', err);
+            this.apiErrors = ['حدث خطأ أثناء الاتصال بالخادم.'];
+          },
+        });
+    }
   }
-}
-isFinal:boolean=false;
-  async printInvoice(isfinal:boolean) {
-    this.isFinal=isfinal
+  isFinal: boolean = false;
+  async printInvoice(isfinal: boolean) {
+    this.isFinal = isfinal
     if (!this.invoices?.length || !this.invoiceSummary?.length) {
       console.warn('Invoice data not ready.');
       return;
@@ -449,7 +804,7 @@ isFinal:boolean=false;
       const response = await this.printedInvoiceService
         .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
         .toPromise();
-console.log(response,'testttttt')
+      console.log(response, 'testttttt')
       console.log('Print invoice response:', response);
       const printContent = document.getElementById('printSection');
       if (!printContent) {
@@ -492,7 +847,7 @@ console.log(response,'testttttt')
       }
 
       document.body.innerHTML = originalHTML;
-       location.reload();
+      location.reload();
     } catch (error) {
       console.error('Error printing invoice:', error);
     }
@@ -569,7 +924,7 @@ console.log(response,'testttttt')
     const cash = Number(this.cash_value ?? 0);
     const credit = Number(this.credit_value ?? 0);
     const total = this.getInvoiceTotal();
-  return Number(((Number(cash) || 0) + (Number(credit) || 0)).toFixed(2)) >= total;
+    return Number(((Number(cash) || 0) + (Number(credit) || 0)).toFixed(2)) >= total;
   }
   show_delivered_only(aa: any) {
     if (aa == 'delivered') {
@@ -580,7 +935,7 @@ console.log(response,'testttttt')
 
 
   }
-    setCashAmount(value: number) {
+  setCashAmount(value: number) {
     this.cash_value = value;
     localStorage.setItem('cash_value', String(value));
   }
@@ -644,7 +999,7 @@ console.log(response,'testttttt')
     this.selectedTipType = type;
     this.tip_aption = type; // حفظ الخيار المحدد
 
-    switch(type) {
+    switch (type) {
       case 'tip_the_change':
         this.specificTipAmount = this.tempChangeAmount;
         break;
@@ -803,7 +1158,7 @@ console.log(response,'testttttt')
     if (paymentAmount >= billAmount) {
       this.cashPaymentInput = paymentAmount;
       const paymentMethodForModal = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
-    this.openTipModal(modalContent, billAmount, paymentAmount, paymentMethodForModal);
+      this.openTipModal(modalContent, billAmount, paymentAmount, paymentMethodForModal);
     }
   }
   handleManualPaymentBlur(billAmount: number, modalContent: any): void {
@@ -813,11 +1168,11 @@ console.log(response,'testttttt')
     const currentPaymentInput = this.cashPaymentInput;
     if (currentPaymentInput > 0 && currentPaymentInput >= billAmount) {
       const paymentMethodForModal = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
-    this.openTipModal(modalContent, billAmount, currentPaymentInput, paymentMethodForModal);
+      this.openTipModal(modalContent, billAmount, currentPaymentInput, paymentMethodForModal);
     }
   }
-   // فتح مودال الإكرامية للدفع المختلط
-   openMixedPaymentTipModal(billAmount: number, modalContent: any): void {
+  // فتح مودال الإكرامية للدفع المختلط
+  openMixedPaymentTipModal(billAmount: number, modalContent: any): void {
     const totalPaid = this.cashAmountMixed + this.creditAmountMixed;
 
     // التحقق من أن المبلغ المدفوع كافي
@@ -825,8 +1180,8 @@ console.log(response,'testttttt')
       this.tempBillAmount = billAmount;
       this.tempPaymentAmount = totalPaid;
       this.tempChangeAmount = totalPaid - billAmount;
- // ✅ التعديل: تمرير القيمة المعدلة
-    const paymentMethodForModal = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
+      // ✅ التعديل: تمرير القيمة المعدلة
+      const paymentMethodForModal = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
       this.openTipModal(modalContent, billAmount, totalPaid, paymentMethodForModal);
     } else {
       // يمكن إضافة رسالة تنبيه هنا إذا أردت
