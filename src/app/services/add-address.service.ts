@@ -1,6 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { baseUrl } from '../environment';
 import { IndexeddbService } from './indexeddb.service';
 
@@ -68,33 +69,31 @@ export class AddAddressService {
   }
 
 
-    fetchAndSaveAreas() {
-    const branchId = localStorage.getItem('branch_id');
-    if (!branchId) {
-      console.error('branch_id not found in localStorage');
-      return;
-    }
+    fetchAndSaveAreas(): Observable<any> {
+      const branchId = localStorage.getItem('branch_id');
+      if (!branchId) {
+        console.error('branch_id not found in localStorage');
+        return new Observable(observer => {
+          observer.error(new Error('branch_id not found in localStorage'));
+        });
+      }
       const url = `${baseUrl}api/areas/${branchId}`;
-      this.http.get<any>(url).subscribe({
-        next: (res: { status: any; data: any }) => {
+      return this.http.get<any>(url).pipe(
+        tap(async (res: { status: any; data: any }) => {
           if (res.status && res.data) {
             this.areas = res.data;
             this.allAreas = res.data;
             // Save to IndexedDB
-            this.db.saveData('areas', res.data);
-               this.db.saveData('branch_id', {
-            id: 'current_branch_id',
-            value: branchId,
-            timestamp: new Date().toISOString()
-          });
+            await this.db.saveData('areas', res.data);
+            await this.db.saveData('branch_id', {
+              id: 'current_branch_id',
+              value: branchId,
+              timestamp: new Date().toISOString()
+            });
             console.log('Areas loaded from API and saved to IndexedDB', this.areas);
           }
-        },
-        error: (err) => {
-          console.error('Error loading areas from API, using cached data:', err);
-        },
-      });
-
+        })
+      );
   }
   //end dalia
 }
