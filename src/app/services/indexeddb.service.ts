@@ -134,10 +134,17 @@ export class IndexeddbService {
 
         // Create pendingOperations store for offline operations
         if (!this.db.objectStoreNames.contains('pendingOperations')) {
-          this.db.createObjectStore('pendingOperations', {
+          const pendingStore = this.db.createObjectStore('pendingOperations', {
             keyPath: 'id',
             autoIncrement: true
           });
+          pendingStore.createIndex('type', 'type', { unique: false });
+        } else {
+          // Ensure index exists if store already exists
+          const pendingStore = this.db.transaction('pendingOperations', 'readwrite').objectStore('pendingOperations');
+          if (!pendingStore.indexNames.contains('type')) {
+            pendingStore.createIndex('type', 'type', { unique: false });
+          }
         }
       };
 
@@ -337,6 +344,20 @@ export class IndexeddbService {
       return new Promise((resolve, reject) => {
         const tx = this.db.transaction('cart', 'readwrite');
         const store = tx.objectStore('cart');
+        const request = store.clear();
+
+        request.onsuccess = () => resolve();
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  // Clear pills store
+  clearPills(): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('pills', 'readwrite');
+        const store = tx.objectStore('pills');
         const request = store.clear();
 
         request.onsuccess = () => resolve();
@@ -1855,7 +1876,95 @@ export class IndexeddbService {
     });
   }
 
+  // Save pending invoice update to IndexedDB
+  async savePendingInvoiceUpdate(invoiceUpdateData: any): Promise<number> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('pendingOperations', 'readwrite');
+        const store = tx.objectStore('pendingOperations');
 
+        const pendingUpdate = {
+          ...invoiceUpdateData,
+          type: 'invoiceUpdate',
+          savedAt: new Date().toISOString(),
+          isSynced: false
+        };
 
+        const request = store.add(pendingUpdate);
 
+        request.onsuccess = () => {
+          console.log('✅ Pending invoice update saved to IndexedDB:', request.result);
+          resolve(request.result as number);
+        };
+        request.onerror = (e) => {
+          console.error('❌ Error saving pending invoice update:', e);
+          reject(e);
+        };
+      });
+    });
+  }
+
+  // Get all pending invoice updates
+  async getPendingInvoiceUpdates(): Promise<any[]> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('pendingOperations', 'readonly');
+        const store = tx.objectStore('pendingOperations');
+
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+          const pendingUpdates = request.result.filter((item: any) =>
+            item.type === 'invoiceUpdate' && !item.isSynced
+          );
+          resolve(pendingUpdates);
+        };
+        request.onerror = (e) => {
+          console.error('❌ Error getting pending invoice updates:', e);
+          reject(e);
+        };
+      });
+    });
+  }
+
+  // Mark pending invoice update as synced
+  async markPendingInvoiceUpdateAsSynced(id: number): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('pendingOperations', 'readwrite');
+        const store = tx.objectStore('pendingOperations');
+        const request = store.get(id);
+
+        request.onsuccess = () => {
+          const item = request.result;
+          if (item) {
+            item.isSynced = true;
+            store.put(item);
+          }
+          resolve();
+        };
+        request.onerror = (e) => {
+          console.error('❌ Error marking pending invoice update as synced:', e);
+          reject(e);
+        };
+      });
+    });
+  }
+
+  // Delete synced pending invoice update
+  async deleteSyncedPendingInvoiceUpdate(id: number): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('pendingOperations', 'readwrite');
+        const store = tx.objectStore('pendingOperations');
+        const request = store.delete(id);
+
+        request.onsuccess = () => resolve();
+        request.onerror = (e) => {
+          console.error('❌ Error deleting synced pending invoice update:', e);
+          reject(e);
+        };
+      });
+    });
+  }
 }
