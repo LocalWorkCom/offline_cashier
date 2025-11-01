@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Injector } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
+import { Router } from '@angular/router';
+import { Observable, BehaviorSubject, of, throwError, forkJoin } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { baseUrl } from '../environment';
 import { OrderListService } from './order-list.service';
@@ -165,7 +166,7 @@ export class AuthService {
   getCurrentEmployee() {
     return (this.employeeData$ as BehaviorSubject<any>).value;
   }
-  constructor(private http: HttpClient ,  private injector: Injector) {
+  constructor(private http: HttpClient ,  private injector: Injector, private router: Router) {
     window.addEventListener('storage', (event: StorageEvent) => {
       if (event.key === 'authToken') {
         if (event.newValue) {
@@ -340,12 +341,12 @@ export class AuthService {
               next: () => {
                 console.log('✅ All background data fetched successfully.');
               },
-              error: (err) => {
+              error: (err: any) => {
                 console.error('❌ Error fetching background data:', err);
               },
             });
           },
-          error: (err) => {
+          error: (err: any) => {
             console.error('❌ Error fetching categories after login:', err);
           },
         });
