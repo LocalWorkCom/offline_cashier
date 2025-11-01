@@ -1,8 +1,10 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { tap } from 'rxjs/operators';
 import { baseUrl } from '../environment';
 import { IndexeddbService } from './indexeddb.service';
+import { of } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -44,7 +46,7 @@ export class AddAddressService {
 
   //start dalia
 
-   fetchAndSave(): Observable<any> {
+  fetchAndSave(): Observable<any> {
     return new Observable(observer => {
       this.getHotelsData().subscribe({
         next: async (response: any) => {
@@ -68,33 +70,39 @@ export class AddAddressService {
   }
 
 
-    fetchAndSaveAreas() {
+  fetchAndSaveAreas(): Observable<any> {
     const branchId = localStorage.getItem('branch_id');
     if (!branchId) {
       console.error('branch_id not found in localStorage');
-      return;
+      return of(null); // ✅ لازم ترجع Observable حتى في حالة الخطأ
     }
-      const url = `${baseUrl}api/areas/${branchId}`;
-      this.http.get<any>(url).subscribe({
+
+    const url = `${baseUrl}api/areas/${branchId}`;
+    return this.http.get<any>(url).pipe(
+      tap({
         next: (res: { status: any; data: any }) => {
           if (res.status && res.data) {
             this.areas = res.data;
             this.allAreas = res.data;
+
             // Save to IndexedDB
             this.db.saveData('areas', res.data);
-               this.db.saveData('branch_id', {
-            id: 'current_branch_id',
-            value: branchId,
-            timestamp: new Date().toISOString()
-          });
-            console.log('Areas loaded from API and saved to IndexedDB', this.areas);
+            this.db.saveData('branch_id', {
+              id: 'current_branch_id',
+              value: branchId,
+              timestamp: new Date().toISOString(),
+            });
+
+            console.log('✅ Areas loaded from API and saved to IndexedDB', this.areas);
+          } else {
+            console.warn('⚠️ No area data received from API');
           }
         },
         error: (err) => {
-          console.error('Error loading areas from API, using cached data:', err);
+          console.error('❌ Error loading areas from API, using cached data:', err);
         },
-      });
-
+      })
+    );
   }
   //end dalia
 }

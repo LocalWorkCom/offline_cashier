@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
 import { Injector } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, BehaviorSubject, of, throwError } from 'rxjs';
+import { Router } from '@angular/router';
+import { Observable, BehaviorSubject, of, throwError, forkJoin } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { baseUrl } from '../environment';
 import { OrderListService } from './order-list.service';
@@ -165,7 +166,7 @@ export class AuthService {
   getCurrentEmployee() {
     return (this.employeeData$ as BehaviorSubject<any>).value;
   }
-  constructor(private http: HttpClient ,  private injector: Injector) {
+  constructor(private http: HttpClient ,  private injector: Injector, private router: Router) {
     window.addEventListener('storage', (event: StorageEvent) => {
       if (event.key === 'authToken') {
         if (event.newValue) {
@@ -310,70 +311,48 @@ export class AuthService {
         }
 
 
-        //start dalia
-
+        // ==========================
+        // 🚀 START DALIA - after login logic
+        // ==========================
         this.loading = false;
-        // Fetch and save orders after successful login
-       const orderListService = this.injector.get(OrderListService);
 
-        orderListService.fetchAndSaveOrders().subscribe({
-          next: (res) => {
-            console.log('✅ Orders fetched and saved after login.');
-          },
-          error: (err) => {
-            console.error('❌ Error fetching orders after login:', err);
-          },
-        });
+        // ✅ Navigate immediately to home
+        this.router.navigate(['/home']);
 
-        // fetch and save pills after login
-        const pillService = this.injector.get(PillsService);
-        pillService.fetchAndSave().subscribe({
-          next: (res) => {
-            console.log('✅ Pills fetched and saved after login.');
-          },
-          error: (err) => {
-            console.error('❌ Error fetching pills after login:', err);
-          },
-        });
-
-        // fetch and save categories after login
+        // ✅ Load categories first
         const productService = this.injector.get(ProductsService);
         productService.fetchAndSave().subscribe({
-          next: (res) => {
+          next: () => {
             console.log('✅ Categories fetched and saved after login.');
+
+            // ✅ After categories → load all other data in background
+            const tablesService = this.injector.get(TablesService);
+            const addAddressService = this.injector.get(AddAddressService);
+            const orderListService = this.injector.get(OrderListService);
+            const pillService = this.injector.get(PillsService);
+
+            forkJoin({
+              tables: tablesService.fetchAndSave(),
+              hotels: addAddressService.fetchAndSave(),
+              areas: addAddressService.fetchAndSaveAreas(),
+              orders: orderListService.fetchAndSaveOrders(),
+              pills: pillService.fetchAndSave(),
+            }).subscribe({
+              next: () => {
+                console.log('✅ All background data fetched successfully.');
+              },
+              error: (err: any) => {
+                console.error('❌ Error fetching background data:', err);
+              },
+            });
           },
-          error: (err) => {
+          error: (err: any) => {
             console.error('❌ Error fetching categories after login:', err);
           },
         });
-
-        // fetch and save tables after login
-        const tablesService = this.injector.get(TablesService);
-        tablesService.fetchAndSave().subscribe({
-          next: (res) => {
-            console.log('✅ Tables fetched and saved after login.');
-          },
-          error: (err) => {
-            console.error('❌ Error fetching tables after login:', err);
-          },
-        });
-
-        // fetch and save hotels after login
-        const addAddressService = this.injector.get(AddAddressService);
-        addAddressService.fetchAndSave().subscribe({
-          next: (res) => {
-            console.log('✅ Hotels fetched and saved after login.');
-          },
-          error: (err) => {
-            console.error('❌ Error fetching hotels after login:', err);
-          },
-        });
-
-        // fetch and save areas after login
-        addAddressService.fetchAndSaveAreas();
-
-
-        //end dalia
+        // ==========================
+        // 🚀 END DALIA
+        // ==========================
 
       }),
       catchError((error) => {

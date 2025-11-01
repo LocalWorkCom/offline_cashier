@@ -23,32 +23,32 @@ export class TablesService {
     return this.http.get(`${this.apiUrl}/tables/index`, { headers });
   }
   //start dalia
-    fetchAndSave(): Observable<any> {
-      return new Observable(observer => {
-        this.getTables().subscribe({
-          next: async (response: any) => {
-            if (response.status) {
-              this.tables = response.data.map((table: any) => ({
-                ...table,
-                status: Number(table.status),
-              }));
-              try {
-                console.log('Tables to save:', this.tables);
+  fetchAndSave(): Observable<any> {
+    return new Observable(observer => {
+      this.getTables().subscribe({
+        next: async (response: any) => {
+          if (response.status) {
+            this.tables = response.data.map((table: any) => ({
+              ...table,
+              status: Number(table.status),
+            }));
+            try {
+              console.log('Tables to save:', this.tables);
 
-                this.db.saveData('tables', this.tables);
-                console.log('Tables saved to IndexedDB');
-              } catch (error) {
-                console.error('Error saving tables to IndexedDB:', error);
-              }
+              this.db.saveData('tables', this.tables);
+              console.log('Tables saved to IndexedDB');
+            } catch (error) {
+              console.error('Error saving tables to IndexedDB:', error);
             }
-          },
-          error: (err) => {
-            console.error('❌ Failed to fetch pils', err);
-            observer.error(err);
           }
-        });
+        },
+        error: (err) => {
+          console.error('❌ Failed to fetch pils', err);
+          observer.error(err);
+        }
       });
-    }
+    });
+  }
   //end dalia
 
 }

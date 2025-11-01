@@ -165,11 +165,15 @@ export class PillsComponent implements OnInit, OnDestroy {
           });
 
           // ✅ حفظ الفواتير في IndexedDB عند العمل online
-          this.dbService.saveData('pills', this.pills)
+          // First clear existing pills, then save new ones
+          this.dbService.clearPills()
+            .then(() => {
+              return this.dbService.saveData('pills', this.pills);
+            })
             .then(() => {
               console.log('Pills data saved to IndexedDB');
             })
-            .catch(error => console.error('Error saving to IndexedDB:', error));
+            .catch(error => console.error('Error clearing and saving pills:', error));
 
           this.updatePillsByStatus();
           this.usingOfflineData = false;
