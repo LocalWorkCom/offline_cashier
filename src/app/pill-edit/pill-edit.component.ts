@@ -4,6 +4,7 @@ import {
   ViewChild,
   ElementRef,
   ChangeDetectorRef,
+  TemplateRef,
 } from '@angular/core';
 import { PillDetailsService } from '../services/pill-details.service';
 import { CommonModule, DecimalPipe } from '@angular/common';
@@ -15,6 +16,7 @@ declare var bootstrap: any;
 import { FormsModule } from '@angular/forms';
 import { ConfirmDialogComponent } from "../shared/ui/component/confirm-dialog/confirm-dialog.component";
 import { finalize } from 'rxjs';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-pill-edit',
@@ -26,6 +28,7 @@ import { finalize } from 'rxjs';
 export class PillEditComponent {
   @ViewChild('printedPill') printedPill!: ElementRef;
   @ViewChild('printDialog') confirmationDialog!: ConfirmDialogComponent;
+  @ViewChild('tipModalContent') tipModalContent!: TemplateRef<any>;
 
   loading: boolean = false;
   // @ViewChild('deliveredButton', { static: false }) deliveredButton!: ElementRef;
@@ -56,6 +59,49 @@ export class PillEditComponent {
   amountError: boolean = false;
   Delivery_show_delivered_only: boolean = false;
 
+  selectedPaymentSuggestion: number | null = null;
+  // hanan front
+  tip_aption: any;
+  tip: any;
+
+  // selectedPaymentMethod: 'cash' | 'credit' | 'cash + credit' | null = null;
+  tipPaymentStatus: 'paid' | 'unpaid' = 'unpaid'; // حالة دفع الإكرامية
+  // متغيرات لتخزين البيانات مؤقتاً عند فتح المودال
+  tempBillAmount: number = 0;
+  tempPaymentAmount: number = 0;
+  tempChangeAmount: number = 0;
+  // المتغير الجديد لتخزين المبلغ الذي أدخله أو اختاره الكاشير للدفع
+  cashPaymentInput: number = 0;
+  // المتغيرات الجديدة للدفع المختلط
+  cashAmountMixed: number = 0;
+  creditAmountMixed: number = 0;
+  selectedPaymentMethod: any;
+  invoiceTips: any;
+
+
+  // Tip modal variables
+  // selectedTipType: 'tip_the_change' | 'tip_specific_amount' | 'no_tip' = 'no_tip';
+  // specificTipAmount: number = 0;
+
+  finalTipSummary: {
+    total: number;
+    serviceFee: number;
+    billAmount: number;
+    paymentAmount: number;
+    paymentMethod: string;
+    tipAmount: number;
+    grandTotalWithTip: number;
+    changeToReturn: number;
+    cashAmountMixed?: number;
+    creditAmountMixed?: number;
+    additionalPaymentRequired?: number;
+    originalPaymentAmount?: number;
+  } | null = null;
+  selectedTipType: 'tip_the_change' | 'tip_specific_amount' | 'no_tip' = 'no_tip';
+  specificTipAmount: number = 0; // المبلغ الذي يتم إدخاله يدوياً كإكرامية
+  selectedSuggestionType: 'billAmount' | 'amount50' | 'amount100' | null = null; // متغير جديد لتخزين نوع الاقتراح
+
+
   constructor(
     private pillDetailsService: PillDetailsService,
     private route: ActivatedRoute,
@@ -63,7 +109,8 @@ export class PillEditComponent {
     private cdr: ChangeDetectorRef,
     private datePipe: DatePipe,
     private printedInvoiceService: PrintedInvoiceService,
-    private router: Router
+    private router: Router,
+    private modalService: NgbModal
   ) { }
 
   private extractDateAndTime(branch: any): void {
@@ -145,6 +192,8 @@ order_id:any ;
       next: (response: any) => {
         this.order_id = response.data.order_id
         this.invoices = response.data.invoices;
+        this.invoiceTips = response.data.invoice_tips ?? [];
+        console.log("invoiceTips", this.invoices);
 
         console.log(this.invoices[0].order_type);
         this.totalll=this.invoices[0].invoice_summary.total_price
@@ -242,6 +291,7 @@ order_id:any ;
   changePaymentStatus(status: string) {
     this.paymentStatus = status;
     console.log(this.paymentStatus);
+
     this.cdr.detectChanges();
   }
 
@@ -263,6 +313,7 @@ order_id:any ;
 
   saveOrder() {
     console.log('pa', this.paymentStatus);
+    this.paymentStatus ='unpaid';
 
     if (!this.paymentStatus && this.trackingStatus !== 'on_way') {
       alert('يجب تحديد حالة الدفع  قبل الحفظ!');
@@ -294,11 +345,43 @@ order_id:any ;
     this.amountError = false;
 
     if (this.paymentStatus === 'paid' && !this.isPaymentAmountValid() && this.orderType !== 'Delivery') {
-      this.amountError = true;
+      this.amountError = false;
 
     }
-    var cashAmount = this.cash_value != null ? this.cash_value : 0;
-    var creditAmount = this.credit_value != null ? this.credit_value : 0;
+
+    this.tip =
+    {
+      change_amount: this.tempChangeAmount || 0,
+      // tips_aption : this.selectedTipType ?? "tip_the_change" ,                  //'tip_the_change', 'tip_specific_amount','no_tip'
+      tips_aption: this.tip_aption ?? "tip_the_change",                  //'tip_the_change', 'tip_specific_amount','no_tip'
+      tip_amount: this.finalTipSummary?.tipAmount ?? 0,
+      tip_specific_amount: this.specificTipAmount ? this.finalTipSummary?.tipAmount : 0,
+      payment_amount: this.finalTipSummary?.paymentAmount ?? 0,
+      bill_amount: this.finalTipSummary?.billAmount ?? 0,
+      total_with_tip: (this.finalTipSummary?.tipAmount ?? 0) + (this.finalTipSummary?.billAmount ?? 0),
+      returned_amount: this.finalTipSummary?.changeToReturn ?? 0
+    }
+
+    // var cashAmount = this.cash_value != null ? this.cash_value : 0;
+    // var creditAmount = this.credit_value != null ? this.credit_value : 0;
+    const paymentMethodForDB = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
+
+    // Calculate cash and credit amounts based on payment method
+    let cashAmount = 0;
+    let creditAmount = 0;
+
+    if (this.selectedPaymentMethod === 'cash') {
+      this.paymentStatus ='paid';
+      cashAmount = this.finalTipSummary?.paymentAmount ?? 0;
+    } else if (this.selectedPaymentMethod === 'credit') {
+      this.paymentStatus ='paid';
+      creditAmount = this.finalTipSummary?.paymentAmount ?? 0;
+    } else if (this.selectedPaymentMethod === 'cash + credit') {
+      this.paymentStatus ='paid';
+      // Use the calculated values from finalTipSummary
+      cashAmount = this.finalTipSummary?.cashAmountMixed ?? 0;
+      creditAmount = this.finalTipSummary?.creditAmountMixed ?? 0;
+    }
     if (this.orderType == 'Delivery') {
       this.DeliveredOrNot = true;
     } else {
@@ -315,7 +398,8 @@ order_id:any ;
         this.trackingStatus,
         cashAmount,
         creditAmount,
-        this.DeliveredOrNot,this.totalll
+        this.DeliveredOrNot,this.totalll,
+        this.tip
       ).pipe(finalize(()=>this.loading=false))
       .subscribe({
         next: (response) => {
@@ -406,7 +490,7 @@ console.log(response,'testttttt')
       }
 
       document.body.innerHTML = originalHTML;
-       location.reload(); 
+       location.reload();
     } catch (error) {
       console.error('Error printing invoice:', error);
     }
@@ -530,4 +614,222 @@ console.log(response,'testttttt')
   onPrintButtonClick() {
     this.confirmationDialog.confirm();
   }
+
+  // Tip modal methods
+  openTipModal(content: any, billAmount: number, paymentAmount: number, paymentMethod?: string): void {
+    this.tempBillAmount = billAmount;
+    this.tempPaymentAmount = paymentAmount;
+    this.tempChangeAmount = paymentAmount - billAmount;
+
+    if (paymentMethod) {
+      this.paymentMethod = paymentMethod;
+    }
+
+    this.selectedTipType = 'no_tip';
+    this.specificTipAmount = 0;
+
+    this.modalService.open(content, {
+      centered: true,
+      size: 'md'
+    }).result.then((result) => {
+      console.log('Tip Modal Closed with final result:', result);
+    }, (reason) => {
+      console.log('Tip Modal Dismissed:', reason);
+    });
+  }
+
+  selectTipOption(type: 'tip_the_change' | 'tip_specific_amount' | 'no_tip'): void {
+    this.selectedTipType = type;
+    this.tip_aption = type; // حفظ الخيار المحدد
+
+    switch(type) {
+      case 'tip_the_change':
+        this.specificTipAmount = this.tempChangeAmount;
+        break;
+      case 'no_tip':
+        this.specificTipAmount = 0;
+        break;
+      case 'tip_specific_amount':
+        let initialTipAmount = this.tempChangeAmount > 0 ? this.tempChangeAmount : 0;
+        this.specificTipAmount = parseFloat(initialTipAmount.toFixed(2));
+        break;
+    }
+  }
+
+
+
+  showAdditionalPaymentConfirmation(additionalAmount: number, modal: any) {
+    const confirmed = confirm(
+      `لتحقيق الإكرامية المطلوبة (${this.specificTipAmount} ج.م)، تحتاج لدفع ${additionalAmount} ج.م إضافية.\n\nهل تريد المتابعة؟`
+    );
+
+    if (confirmed) {
+      modal.close(this.finalTipSummary);
+    } else {
+      this.tempPaymentAmount = this.finalTipSummary!.originalPaymentAmount!;
+      this.finalTipSummary = null;
+      this.specificTipAmount = 0;
+    }
+  }
+
+  // Method to open tip modal when payment status is paid
+  openTipModalIfPaid(): void {
+    if (this.paymentStatus === 'paid' && this.invoices && this.invoices.length > 0) {
+      const billAmount = this.invoices[0].invoice_summary.total_price;
+      const paymentAmount = this.cash_value || this.credit_value || billAmount;
+      this.openTipModal(this.tipModalContent, billAmount, paymentAmount, this.paymentMethod);
+    }
+  }
+
+  selectPaymentMethod(method: 'cash' | 'credit' | 'cash + credit'): void {
+    this.selectedPaymentMethod = method;
+
+    // إعادة تعيين القيم عند تغيير طريقة الدفع
+    if (method === 'cash') {
+      this.cashAmountMixed = 0;
+      this.creditAmountMixed = 0;
+    } else if (method === 'credit') {
+      this.cashAmountMixed = 0;
+      this.creditAmountMixed = 0;
+      this.cashPaymentInput = 0;
+      // فتح مودال الإكرامية مباشرة للفيزا
+      // const billAmount = this.getInvoiceTotal();
+      // this.openTipModal(this.tipModalContent, billAmount, billAmount);
+    } else if (method === 'cash + credit') {
+      this.cashPaymentInput = 0;
+      // تعيين القيم الافتراضية للدفع المختلط
+      const billAmount = this.getInvoiceTotal();
+      this.cashAmountMixed = billAmount / 2;
+      this.creditAmountMixed = billAmount / 2;
+    }
+  }
+
+  getNearestAmount(amount: number, base: number): number {
+    if (amount <= 0) return base;
+
+    // التقريب للأعلى لأقرب مضاعف للقاعدة (base)
+    const roundedAmount = Math.ceil(amount / base) * base;
+    return roundedAmount;
+  }
+
+  confirmTipAndClose(modal: any): void {
+    let finalTipAmount: number = 0;
+    let additionalPaymentRequired: number = 0;
+    let originalPaymentAmount: number = this.tempPaymentAmount;
+
+    if (this.selectedTipType === 'tip_the_change') {
+      finalTipAmount = this.tempChangeAmount;
+      additionalPaymentRequired = 0;
+    } else if (this.selectedTipType === 'tip_specific_amount') {
+      finalTipAmount = Math.max(0, this.specificTipAmount);
+
+      // ✅ حساب المبلغ الإضافي المطلوب
+      if (finalTipAmount > this.tempChangeAmount) {
+        additionalPaymentRequired = finalTipAmount - this.tempChangeAmount;
+        // تحديث المبلغ المدفوع الإجمالي
+        this.tempPaymentAmount = this.tempPaymentAmount + additionalPaymentRequired;
+      }
+    }
+
+    const changeToReturn = Math.max(0, this.tempPaymentAmount - (this.tempBillAmount + finalTipAmount));
+    // ✅ التعديل: كاش + فيزا تتحول لـ cash
+    const paymentMethodForDB = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
+    // حساب المبالغ النهائية بناءً على طريقة الدفع
+    let cashFinal = 0;
+    let creditFinal = 0;
+
+    if (paymentMethodForDB === 'cash') {
+      cashFinal = this.tempPaymentAmount;
+    } else if (paymentMethodForDB === 'credit') {
+      creditFinal = this.tempPaymentAmount;
+    } else if (this.selectedPaymentMethod === 'cash + credit') {
+      const totalPaid = this.cashAmountMixed + this.creditAmountMixed + additionalPaymentRequired;
+
+      if (totalPaid > 0) {
+        const cashRatio = this.cashAmountMixed / (this.cashAmountMixed + this.creditAmountMixed);
+        const creditRatio = this.creditAmountMixed / (this.cashAmountMixed + this.creditAmountMixed);
+
+        const totalWithTip = this.tempBillAmount + finalTipAmount;
+
+        cashFinal = totalWithTip * cashRatio;
+        creditFinal = totalWithTip * creditRatio;
+      }
+    }
+
+    // إنشاء الكائن مع جميع الخصائص
+    this.finalTipSummary = {
+      total: this.tempBillAmount,
+      serviceFee: 0,
+      billAmount: this.tempBillAmount,
+      paymentAmount: this.tempPaymentAmount,
+      paymentMethod: this.selectedPaymentMethod === 'cash' ? 'كاش' :
+        this.selectedPaymentMethod === 'credit' ? 'فيزا' : 'كاش + فيزا',
+      tipAmount: finalTipAmount,
+      grandTotalWithTip: this.tempBillAmount + finalTipAmount,
+      changeToReturn: changeToReturn,
+      cashAmountMixed: cashFinal,
+      creditAmountMixed: creditFinal,
+      additionalPaymentRequired: additionalPaymentRequired,
+      originalPaymentAmount: originalPaymentAmount
+    };
+
+    // ✅ إذا كان هناك مبلغ إضافي مطلوب، نعرض تأكيد للمستخدم
+    if (additionalPaymentRequired > 0) {
+      this.showAdditionalPaymentConfirmation(additionalPaymentRequired, modal);
+    } else {
+      modal.close(this.finalTipSummary);
+    }
+
+    // إعادة تعيين المتغيرات
+    this.selectedTipType = 'no_tip';
+    this.specificTipAmount = 0;
+  }
+
+  getChangeToReturn(changeAmount: number, tipAmount: number): number {
+    return Math.max(0, changeAmount - tipAmount);
+  }
+  // تغيير حالة دفع الإكرامية
+  changeTipPaymentStatus(status: 'paid' | 'unpaid'): void {
+    this.tipPaymentStatus = status;
+    console.log('حالة دفع الإكرامية:', this.tipPaymentStatus);
+  }
+
+  selectPaymentSuggestionAndOpenModal(type: 'billAmount' | 'amount50' | 'amount100', billAmount: number, paymentAmount: number, modalContent: any): void {
+    this.selectedSuggestionType = type; // هنا يتم حفظ النوع الذي تم الضغط عليه
+    this.selectedPaymentSuggestion = paymentAmount;
+
+    if (paymentAmount >= billAmount) {
+      this.cashPaymentInput = paymentAmount;
+      const paymentMethodForModal = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
+    this.openTipModal(modalContent, billAmount, paymentAmount, paymentMethodForModal);
+    }
+  }
+  handleManualPaymentBlur(billAmount: number, modalContent: any): void {
+    this.selectedPaymentSuggestion = null; // إعادة تعيين عند الإدخال اليدوي
+
+    console.log('Bill Amount:', billAmount, 'Entered:', this.cashPaymentInput);
+    const currentPaymentInput = this.cashPaymentInput;
+    if (currentPaymentInput > 0 && currentPaymentInput >= billAmount) {
+      const paymentMethodForModal = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
+    this.openTipModal(modalContent, billAmount, currentPaymentInput, paymentMethodForModal);
+    }
+  }
+   // فتح مودال الإكرامية للدفع المختلط
+   openMixedPaymentTipModal(billAmount: number, modalContent: any): void {
+    const totalPaid = this.cashAmountMixed + this.creditAmountMixed;
+
+    // التحقق من أن المبلغ المدفوع كافي
+    if (totalPaid >= billAmount) {
+      this.tempBillAmount = billAmount;
+      this.tempPaymentAmount = totalPaid;
+      this.tempChangeAmount = totalPaid - billAmount;
+ // ✅ التعديل: تمرير القيمة المعدلة
+    const paymentMethodForModal = this.selectedPaymentMethod === 'cash + credit' ? 'cash' : this.selectedPaymentMethod;
+      this.openTipModal(modalContent, billAmount, totalPaid, paymentMethodForModal);
+    } else {
+      // يمكن إضافة رسالة تنبيه هنا إذا أردت
+      console.warn('المبلغ المدفوع غير كافي لفتح مودال الإكرامية');
+    }
+  }
+
 }

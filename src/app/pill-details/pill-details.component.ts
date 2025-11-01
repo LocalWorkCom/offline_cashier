@@ -46,6 +46,7 @@ export class PillDetailsComponent implements OnInit {
   date: string | null = null;
   time: string | null = null;
   invoiceSummary: any;
+  invoiceTips: any;
   addressDetails: any;
   isDeliveryOrder: boolean = false;
   paymentStatus: any = '';
@@ -258,6 +259,7 @@ private processPillDetails(data: any): void {
       next: (response: any) => {
         this.order_id = response.data.order_id
         this.invoices = response.data.invoices;
+        this.invoiceTips = response.data.invoice_tips || [];
         console.log(response, 'response gggg');
 
 
@@ -307,6 +309,8 @@ private processPillDetails(data: any): void {
             ...e.invoice_summary,
             currency_symbol: e.currency_symbol,
           };
+
+
 
           // // Convert coupon_value if it's a percentage
           // if (summary.coupon_type === 'percentage') {
