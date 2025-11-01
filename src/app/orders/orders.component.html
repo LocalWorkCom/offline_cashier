@@ -492,9 +492,7 @@
                   تفاصيل الطلب
                 </a>
                 @if (order.order_details.status !== 'cancelled'&& !(order.order_details.payment_status == 'unpaid' &&
-                order.order_details.order_type != "talabat" &&
-                order.order_details.status ===
-                'pending'))
+                order.order_details.status ==='pending') && order.order_details.order_type != "talabat")
                 {
                 <button type="button" class="btn btn-transparent w-100 py-2" data-bs-toggle="modal"
                   [attr.data-bs-target]="'#modal-' + order.order_details.order_id">
@@ -526,7 +524,7 @@
                         مرتجع </p>
                       }
                       @else if(order.order_details.payment_status == 'unpaid' && order.order_details.status ===
-                      'pending' && order.order_details.order_type != "talabat") {
+                      'pending' ) {
                       <p class="fs-4 fw-bold text-center"> حذف
                         الطلب </p>
                       }

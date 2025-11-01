@@ -2,7 +2,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { catchError, Observable, tap, throwError } from 'rxjs';
 import { AuthService } from './auth.service'; // Import AuthService
-import { baseUrl } from '../environment'; 
+import { baseUrl } from '../environment';
 
 @Injectable({
   providedIn: 'root',
@@ -16,7 +16,7 @@ export class PillDetailsService {
   ) {}
 payload: any;
   getPillsDetailsById(pillId: any): Observable<any> {
-    // const token = this.authService.getToken(); 
+    // const token = this.authService.getToken();
     const token = localStorage.getItem('authToken');
     if (!token) {
       throw new Error('No token found. User is not authenticated.');
@@ -38,7 +38,8 @@ payload: any;
     cash?: number,
     credit?: number,
     DeliveredOrNot?:boolean,
-    totalll?:any
+    totalll?:any,
+    tip?:any
   ): Observable<any> {
     // const token = this.authService.getToken();
     const token = localStorage.getItem('authToken');
@@ -64,10 +65,11 @@ if(DeliveredOrNot){ // delivery
       Tracking_status: trackingStatus || null,
       cash_amount: totalll,
       credit_amount: 0,
+      tip: tip || null,
 
     };
   }
- 
+
 }else{
   if(paymentStatus == 'paid'){
     this.payload= {
@@ -75,11 +77,13 @@ if(DeliveredOrNot){ // delivery
       payment_status: paymentStatus || null,
       cash_amount: cash || 0,
       credit_amount: credit || 0,
+      tip: tip || null,
     };
   }else{
       this.payload= {
       order_number: orderNumber,
       payment_status: paymentStatus || null,
+      tip: tip || null,
 
     };
   }
