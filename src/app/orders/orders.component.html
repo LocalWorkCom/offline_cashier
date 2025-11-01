@@ -14,7 +14,7 @@
     <h4>الطلبات</h4>
     <ul class="nav nav-requests mb-4 px-0" role="tablist">
       <li class="d-flex w-100 justify-content-between">
-        <button *ngFor="let type of ['All', 'dine-in', 'Takeaway', 'Delivery']" class="nav-link sub w-100 mx-2"
+        <button *ngFor="let type of ['All', 'dine-in', 'Takeaway', 'Delivery', 'talabat']" class="nav-link sub w-100 mx-2"
           [class.active]="selectedOrderTypeStatus === type" (click)="selectOrderType(type)">
           {{ type === 'All' ? 'الكل' : getOrderTypeLabel(type) }}
 
@@ -212,7 +212,7 @@
                   تفاصيل الطلب
                 </a>
                 <a (click)="loadOrderToCart(order.orderId)" class="btn fs-6 w-100 mt-auto bg-success">
-                  
+
                   إستكمال الطلب
                 </a>
               </div>
@@ -249,12 +249,14 @@
                     ? "توصيل"
                     : order.order_details.order_type === "dine-in"
                     ? "فى المطعم"
+                    : order.order_details.order_type === "talabat"
+                    ? "طلبات"
                     : order.order_details.order_type
                     }}
                   </span>
                 </h5>
                 <div>
-                  @if(order.order_details.status != 'cancelled' && order.order_details.payment_status == "unpaid"){
+                  @if(order.order_details.status != 'cancelled' && order.order_details.payment_status == "unpaid" && order.order_details.order_type != "talabat"){
                   <span class="badge text-dark">
                     <button type="button" class="bg-main rounded-circle p-0 border-0 ms-1"
                       style="width: 20px; height: 20px" (click)="continueOrder(order)">
@@ -395,14 +397,14 @@
                           item?.dish_status === 'pending',
                         'fa fa-times-circle text-danger':
                           item?.dish_status === 'cancel',
-                
+
                         'fa-spinner text-progress ':
                           item?.dish_status === 'inprogress'
                       }" class="me-1"></i>
                       {{ getStatusText(item.dish_status) }}
 
                     </span>
-                    @if (order.order_details.payment_status == 'unpaid')
+                    @if (order.order_details.payment_status == 'unpaid' && order.order_details.order_type != "talabat")
                     {
                     @if(item?.dish_status == 'pending' || item?.dish_status == 'inprogress' ){
                     <div class="dropdown">
@@ -490,6 +492,7 @@
                   تفاصيل الطلب
                 </a>
                 @if (order.order_details.status !== 'cancelled'&& !(order.order_details.payment_status == 'unpaid' &&
+                order.order_details.order_type != "talabat" &&
                 order.order_details.status ===
                 'pending'))
                 {
@@ -517,13 +520,13 @@
                       </div>
                       @if (order.order_details.status !== 'cancelled'&& !(order.order_details.payment_status == 'unpaid'
                       && order.order_details.status ===
-                      'pending'))
+                      'pending') && order.order_details.order_type != "talabat")
                       {
                       <p class="fs-4 fw-bold text-center"> فاتورة
                         مرتجع </p>
                       }
                       @else if(order.order_details.payment_status == 'unpaid' && order.order_details.status ===
-                      'pending') {
+                      'pending' && order.order_details.order_type != "talabat") {
                       <p class="fs-4 fw-bold text-center"> حذف
                         الطلب </p>
                       }

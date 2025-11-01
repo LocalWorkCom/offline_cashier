@@ -19,16 +19,16 @@ export class ProductModalComponent implements OnInit {
   finalPrice: number = 0;
   note: string = ''; // Store user notes
   selectedAddonsByCategory: { [key: string]: any[] } = {}; // Stores selected addons per category
-  addonValidationErrors: { 
-    [key: string]: { 
-      minError: boolean; 
-      maxError: boolean; 
-      maxLabel: string; 
-    } 
+  addonValidationErrors: {
+    [key: string]: {
+      minError: boolean;
+      maxError: boolean;
+      maxLabel: string;
+    }
   } = {};
     selectedAddons: any[] = [];
   addonCategories: any;
-  @Input() orderId: string = ''; 
+  @Input() orderId: string = '';
   currentRoute!: string;
   constructor(
     public activeModal: NgbActiveModal,
@@ -53,10 +53,61 @@ export class ProductModalComponent implements OnInit {
     this.productService.updateSavedOrders(updatedOrders);
   }
 
+  //talabat currency symbol
+  getProduct(product: any): any {
+
+    console.log('Original Product:', product);
+    if (localStorage.getItem('selectedOrderType') === 'talabat') {
+      if (Array.isArray(product.Id_menus_integrations) && product.Id_menus_integrations.length > 0) {
+        for (let integration of product.Id_menus_integrations) {
+          if (integration.name_en?.toLowerCase().includes('talabat')) {
+            console.log('✅ Talabat integration found:', integration);
+
+            // تحديث السعر الأساسي للطبق
+            const newPrice = integration.menus_integration_dishs?.[0]?.price || product.price;
+            product.price = parseFloat(newPrice);
+
+            // تحديث الأسعار داخل الـ sizes
+            if (Array.isArray(product.sizes) && Array.isArray(integration.menus_integration_dish_sizes)) {
+              product.sizes = product.sizes.map((size: any) => {
+                const matchedSize = integration.menus_integration_dish_sizes.find(
+                  (s: any) => s.branch_menu_size_id === size.id
+                );
+                if (matchedSize) {
+                  return { ...size, price: parseFloat(matchedSize.price) };
+                }
+                return size;
+              });
+            }
+
+            // تحديث الأسعار داخل الـ addons
+            if (Array.isArray(product.addon_categories) && Array.isArray(integration.menus_integration_dish_addons)) {
+              product.addon_categories = product.addon_categories.map((category: any) => ({
+                ...category,
+                addons: category.addons.map((addon: any) => {
+                  const matchedAddon = integration.menus_integration_dish_addons.find(
+                    (a: any) => a.branch_menu_addon_id === addon.id
+                  );
+                  if (matchedAddon) {
+                    return { ...addon, price: parseFloat(matchedAddon.price) };
+                  }
+                  return addon;
+                }),
+              }));
+            }
+          }
+        }
+      }
+    }
+
+    return product;
+  }
+
 
   ngOnInit(): void {
     this.productService.product$.subscribe(product => {
-      this.selectedProduct = product;
+      // this.selectedProduct = product;
+      this.selectedProduct = this.getProduct(product);
 
       if (!this.selectedSize && this.selectedProduct?.sizes?.length) {
         const defaultSize = this.selectedProduct.sizes.find((size: { default_size: any; }) => size.default_size);
@@ -134,32 +185,32 @@ export class ProductModalComponent implements OnInit {
       console.error("🚨 Error: addon_categories is missing or not an array!");
       return;
     }
-  
+
     this.selectedAddonsByCategory = {}; // Reset selections
     this.addonValidationErrors = {}; // Reset validation errors
-  
+
     this.selectedProduct.addon_categories.forEach((category: { id: any; min_addons: number; max_addons: number }) => {
       const categoryId = category.id.toString();
-  
+
       this.selectedAddonsByCategory[categoryId] = []; // Initialize empty array for selections
       this.addonValidationErrors[categoryId] = {
         minError: category.min_addons > 0, // Invalid if min addons > 0
         maxError: false, // Assume max is valid initially
         maxLabel: `حد أقصي: ${category.max_addons}`, // Max limit label
       };
-  
+
       console.log(`✅ Initialized category ${categoryId} (Min: ${category.min_addons}, Max: ${category.max_addons})`);
     });
-  
+
     console.log("🚀 Addon validation initialized:", this.selectedAddonsByCategory);
   }
   toggleAddon(addon: any, event: any, category: { id: string | number; min_addons: number; max_addons: number }): void {
     const categoryId = category.id.toString();
-  
+
     if (!this.selectedAddonsByCategory[categoryId]) {
       this.selectedAddonsByCategory[categoryId] = [];
     }
-  
+
     if (event.target.checked) {
       if (this.selectedAddonsByCategory[categoryId].length < category.max_addons) {
         this.selectedAddonsByCategory[categoryId].push(addon);
@@ -174,34 +225,34 @@ export class ProductModalComponent implements OnInit {
       this.selectedAddonsByCategory[categoryId] = this.selectedAddonsByCategory[categoryId].filter(a => a.id !== addon.id);
       this.selectedAddons = this.selectedAddons.filter(a => a.id !== addon.id);
     }
-  
+
     this.validateMinMaxAddons(category);
     this.updatePrice();
   }
-  
-  
+
+
   validateMinMaxAddons(category: { id: string | number; min_addons: number; max_addons: number }): void {
     const categoryId = category.id.toString();
     const selectedCount = this.selectedAddonsByCategory[categoryId]?.length || 0;
-  
+
     // 🚨 Check min & max errors
     this.addonValidationErrors[categoryId] = {
       minError: selectedCount < category.min_addons,
       maxError: selectedCount > category.max_addons,
-      maxLabel: `حد أقصي: ${category.max_addons}`, 
+      maxLabel: `حد أقصي: ${category.max_addons}`,
     };
   }
-  
+
   canAddToCart(): boolean {
     return Object.values(this.addonValidationErrors).every(errors => !errors.minError && !errors.maxError);
   }
-  
+
 
   // isAddonDisabled(category: any): boolean {
   //   return this.selectedAddonsByCategory[category.id]?.length >= category.max_addons;
   // }
 
-  
+
   addToCart(): void {
     if (!this.canAddToCart()) {
       console.warn("🚨 Cannot add to cart: Minimum addon requirement not met!");
@@ -244,7 +295,7 @@ export class ProductModalComponent implements OnInit {
       addons: category.addons?.map((addon: { id: any; name: any; price: any; currency_symbol: any; }) => ({
         id: addon.id,
         name: addon.name,
-        price: addon.price,
+        price:   addon.price,
         currency_symbol: addon.currency_symbol || "ج.م"
       })) || []
     })) || [];
@@ -267,7 +318,7 @@ export class ProductModalComponent implements OnInit {
     this.addNote=false;
 
   }
-  
+
   addToHoldCart(): void {
     if (!this.canAddToCart()) {
       console.warn("🚨 Cannot add to cart: Minimum addon requirement not met!");
