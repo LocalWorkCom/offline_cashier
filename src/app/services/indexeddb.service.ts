@@ -1967,4 +1967,96 @@ export class IndexeddbService {
       });
     });
   }
+
+  // Save pending order (raw orderData for API sync)
+  async savePendingOrderForSync(orderData: any): Promise<number> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('pendingOperations', 'readwrite');
+        const store = tx.objectStore('pendingOperations');
+
+        const pendingOrder = {
+          ...orderData,
+          type: 'orderPlacement',
+          savedAt: new Date().toISOString(),
+          isSynced: false
+        };
+
+        const request = store.add(pendingOrder);
+
+        request.onsuccess = () => {
+          console.log('✅ Pending order saved to IndexedDB for sync:', request.result);
+          resolve(request.result as number);
+        };
+        request.onerror = (e) => {
+          console.error('❌ Error saving pending order:', e);
+          reject(e);
+        };
+      });
+    });
+  }
+
+  // Get all pending orders
+  async getPendingOrders(): Promise<any[]> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('pendingOperations', 'readonly');
+        const store = tx.objectStore('pendingOperations');
+
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+          const pendingOrders = request.result.filter((item: any) =>
+            item.type === 'orderPlacement' && !item.isSynced
+          );
+          resolve(pendingOrders);
+        };
+        request.onerror = (e) => {
+          console.error('❌ Error getting pending orders:', e);
+          reject(e);
+        };
+      });
+    });
+  }
+
+  // Mark pending order as synced
+  async markPendingOrderAsSynced(id: number): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('pendingOperations', 'readwrite');
+        const store = tx.objectStore('pendingOperations');
+        const request = store.get(id);
+
+        request.onsuccess = () => {
+          const item = request.result;
+          if (item) {
+            item.isSynced = true;
+            store.put(item);
+          }
+          resolve();
+        };
+        request.onerror = (e) => {
+          console.error('❌ Error marking pending order as synced:', e);
+          reject(e);
+        };
+      });
+    });
+  }
+
+  // Delete synced pending order
+  async deleteSyncedPendingOrder(id: number): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('pendingOperations', 'readwrite');
+        const store = tx.objectStore('pendingOperations');
+        const request = store.delete(id);
+
+        request.onsuccess = () => resolve();
+        request.onerror = (e) => {
+          console.error('❌ Error deleting synced pending order:', e);
+          reject(e);
+        };
+      });
+    });
+  }
 }
