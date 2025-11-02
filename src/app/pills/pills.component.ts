@@ -53,19 +53,20 @@ export class PillsComponent implements OnInit, OnDestroy {
 
   // start dalia
   ngOnInit() {
-    window.addEventListener('online', this.handleOnlineStatus.bind(this));
-    window.addEventListener('offline', this.handleOnlineStatus.bind(this));
+    // window.addEventListener('online', this.handleOnlineStatus.bind(this));
+    // window.addEventListener('offline', this.handleOnlineStatus.bind(this));
 
-    this.dbService.init().then(() => {
-      if (navigator.onLine) {
-        this.fetchPillsData(); // جلب وحفظ البيانات في IndexedDB
-      } else {
-        this.loadFromIndexedDB(); // جلب البيانات من IndexedDB عند العمل offline
-      }
-    }).catch(error => {
-      console.error('Error initializing IndexedDB:', error);
-      this.loading = true;
-    });
+    this.fetchPillsData();
+    // this.dbService.init().then(() => {
+    //   if (navigator.onLine) {
+    //     this.fetchPillsData(); // جلب وحفظ البيانات في IndexedDB
+    //   } else {
+    //     this.loadFromIndexedDB(); // جلب البيانات من IndexedDB عند العمل offline
+    //   }
+    // }).catch(error => {
+    //   console.error('Error initializing IndexedDB:', error);
+    //   this.loading = true;
+    // });
 
     this.listenToNewInvoice();
   }
@@ -94,8 +95,8 @@ export class PillsComponent implements OnInit, OnDestroy {
         this.updatePillsByStatus();
 
         // Save to IndexedDB for offline access
-        this.dbService.saveData('pills', this.pills)
-          .catch(error => console.error('Error saving to IndexedDB:', error));
+        // this.dbService.saveData('pills', this.pills)
+        //   .catch(error => console.error('Error saving to IndexedDB:', error));
       });
 
     this.newInvoice.invoiceAdded$
@@ -121,8 +122,8 @@ export class PillsComponent implements OnInit, OnDestroy {
         this.updatePillsByStatus();
 
         // Save to IndexedDB for offline access
-        this.dbService.saveData('pills', this.pills)
-          .catch(error => console.error('Error saving to IndexedDB:', error));
+        // this.dbService.saveData('pills', this.pills)
+        //   .catch(error => console.error('Error saving to IndexedDB:', error));
       });
   }
 
@@ -166,14 +167,14 @@ export class PillsComponent implements OnInit, OnDestroy {
 
           // ✅ حفظ الفواتير في IndexedDB عند العمل online
           // First clear existing pills, then save new ones
-          this.dbService.clearPills()
-            .then(() => {
-              return this.dbService.saveData('pills', this.pills);
-            })
-            .then(() => {
-              console.log('Pills data saved to IndexedDB');
-            })
-            .catch(error => console.error('Error clearing and saving pills:', error));
+          // this.dbService.clearPills()
+          //   .then(() => {
+          //     return this.dbService.saveData('pills', this.pills);
+          //   })
+          //   .then(() => {
+          //     console.log('Pills data saved to IndexedDB');
+          //   })
+          //   .catch(error => console.error('Error clearing and saving pills:', error));
 
           this.updatePillsByStatus();
           this.usingOfflineData = false;
