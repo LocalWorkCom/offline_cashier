@@ -4650,4 +4650,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     return { isValid: true, message: '' };
   }
+
+  filterCountries() {
+    this.filteredCountries = this.countryList.filter((country) =>
+      country.code.toLowerCase().includes(this.searchTerm.toLowerCase())
+    );
+  }
 }
