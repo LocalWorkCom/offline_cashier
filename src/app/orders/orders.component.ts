@@ -105,7 +105,7 @@ export class OrdersComponent implements OnDestroy {
     private http: HttpClient,
     private NgbModal: NgbModal,
     private productsService: ProductsService,
-    private dbService: IndexeddbService
+    // private dbService: IndexeddbService
   ) {
     // const navigation = this.router.getCurrentNavigation();
     // this.orderDetails = navigation?.extras.state?.['orderData'];
@@ -114,14 +114,14 @@ export class OrdersComponent implements OnDestroy {
   }
 
   ngOnInit(): void {
-    console.log("this.isOnline", this.isOnline);
+    // console.log("this.isOnline", this.isOnline);
     this.selectedOrderTypeStatus = 'All';
-    if (this.isOnline == false) {
-      this.loadOrdersFromIndexedDB();
-    }
-    else {
+    // if (this.isOnline == false) {
+    //   this.loadOrdersFromIndexedDB();
+    // }
+    // else {
       this.fetchOrdersFromAPI();
-    }
+    // }
 
     this.loadCartItems();
     this.filterCartItems();
@@ -148,42 +148,42 @@ export class OrdersComponent implements OnDestroy {
   //start dalia
 
   // Load orders from IndexedDB
-  private loadOrdersFromIndexedDB(): void {
-    this.dbService.getOrders().then(orders => {
-      if (orders && orders.length > 0) {
-        console.log('Orders loaded from IndexedDB:', orders.length);
+  // private loadOrdersFromIndexedDB(): void {
+  //   this.dbService.getOrders().then(orders => {
+  //     if (orders && orders.length > 0) {
+  //       console.log('Orders loaded from IndexedDB:', orders.length);
 
-        this.processOrders(orders);
+  //       this.processOrders(orders);
 
-        // Check if data is stale (older than 5 minutes)
-        this.dbService.getOrdersLastSync().then(lastSync => {
-          const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
-          if (this.isOnline && lastSync < fiveMinutesAgo) {
-            this.fetchOrdersFromAPI();
-          }
-        }).catch(err => {
-          console.error('Error getting last sync time:', err);
-          if (this.isOnline) {
-            this.fetchOrdersFromAPI();
-          }
-        });
-      } else if (this.isOnline) {
-        // No data in IndexedDB, fetch from API
-        this.fetchOrdersFromAPI();
-      } else {
-        // Offline and no data available
-        this.loading = false;
-        console.warn('No orders available offline');
-      }
-    }).catch(err => {
-      console.error('Error loading orders from IndexedDB:', err);
-      if (this.isOnline) {
-        this.fetchOrdersFromAPI();
-      } else {
-        this.loading = false;
-      }
-    });
-  }
+  //       // Check if data is stale (older than 5 minutes)
+  //       this.dbService.getOrdersLastSync().then(lastSync => {
+  //         const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+  //         if (this.isOnline && lastSync < fiveMinutesAgo) {
+  //           this.fetchOrdersFromAPI();
+  //         }
+  //       }).catch(err => {
+  //         console.error('Error getting last sync time:', err);
+  //         if (this.isOnline) {
+  //           this.fetchOrdersFromAPI();
+  //         }
+  //       });
+  //     } else if (this.isOnline) {
+  //       // No data in IndexedDB, fetch from API
+  //       this.fetchOrdersFromAPI();
+  //     } else {
+  //       // Offline and no data available
+  //       this.loading = false;
+  //       console.warn('No orders available offline');
+  //     }
+  //   }).catch(err => {
+  //     console.error('Error loading orders from IndexedDB:', err);
+  //     if (this.isOnline) {
+  //       this.fetchOrdersFromAPI();
+  //     } else {
+  //       this.loading = false;
+  //     }
+  //   });
+  // }
   // Fetch orders from API
   private fetchOrdersFromAPI(): void {
     this.loading = false;
@@ -199,12 +199,12 @@ export class OrdersComponent implements OnDestroy {
           this.processOrders(response.data.orders);
 
           // Save to IndexedDB
-          this.dbService.saveOrders(response.data.orders).then(() => {
-            console.log('Orders saved to IndexedDB');
-            return this.dbService.setOrdersLastSync(Date.now());
-          }).catch(err => {
-            console.error('Error saving orders to IndexedDB:', err);
-          });
+          // this.dbService.saveOrders(response.data.orders).then(() => {
+          //   console.log('Orders saved to IndexedDB');
+          //   return this.dbService.setOrdersLastSync(Date.now());
+          // }).catch(err => {
+          //   console.error('Error saving orders to IndexedDB:', err);
+          // });
         } else {
           console.warn('No orders found in API response.');
           this.loading = true;
@@ -215,14 +215,14 @@ export class OrdersComponent implements OnDestroy {
         this.loading = true;
 
         // If we're online but API failed, try to use IndexedDB data as fallback
-        if (this.isOnline) {
-          this.dbService.getOrders().then(orders => {
-            if (orders && orders.length > 0) {
-              console.log('Using IndexedDB data as fallback:', orders.length);
-              this.processOrders(orders);
-            }
-          });
-        }
+        // if (this.isOnline) {
+        //   this.dbService.getOrders().then(orders => {
+        //     if (orders && orders.length > 0) {
+        //       console.log('Using IndexedDB data as fallback:', orders.length);
+        //       this.processOrders(orders);
+        //     }
+        //   });
+        // }
       },
     });
   }
