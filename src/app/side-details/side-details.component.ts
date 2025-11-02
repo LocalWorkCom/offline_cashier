@@ -3044,10 +3044,10 @@ getFinalPrice(): number {
 selectOrderType(type: string) {
   const currentCart = [...this.cartItems];
   this.clearOrderTypeData();
-  
+
   // ✅ Clear selectedOrderType from localStorage first to ensure correct pricing
   localStorage.removeItem('selectedOrderType');
-  
+
   const typeMapping: { [key: string]: string } = {
     'في المطعم': 'dine-in',
     'خارج المطعم': 'Takeaway',
@@ -3131,7 +3131,6 @@ for (const category of allCategories) {
 if (!found && this.selectedOrderType === 'talabat') {
   console.warn('❌ No matching dish found for cart item, removing it...');
   this.removeCartItem(cartItem);
-
 }
 
     } catch (error) {
@@ -3155,7 +3154,15 @@ removeCartItem(cartItem: any) {
   this.dbService.removeFromCart(cartItem.cartItemId); // تحديث IndexedDB لو بتستخدميها للكارت
   this.cartItems = cart; // تحديث المتغير المحلي لو عندك واحد
 
+  // ✅ تحديث الأسعار الإجمالية بعد الحذف (يفعل detectChanges تلقائياً)
+  this.updateTotalPrices();
+
   console.log(`🗑️ Removed item from cart:`, cartItem.dish?.name);
+
+  // ✅ إعادة تحميل الصفحة لتحديث الكارت في الـ UI
+  setTimeout(() => {
+    window.location.reload();
+  }, 100);
 }
 updateCartPricesFromDish(cartItem: any, dishData: any) {
   // 1. تحديث سعر الطبق الرئيسي
