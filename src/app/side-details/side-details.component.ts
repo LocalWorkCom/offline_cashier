@@ -1879,24 +1879,21 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.errorMessage = '';
     this.removeCouponFromLocalStorage();
     this.updateTotalPrice();
+    // setTimeout(() => {
+    //  const modalEl = document.getElementById('couponModal');
+    // if (modalEl) {
+    //     let bsModal = bootstrap.Modal.getInstance(modalEl);
+    //     if (!bsModal) {
+    //     bsModal = new bootstrap.Modal(modalEl);
+    //     }
+    //    bsModal.hide();
+    //      const backdrops = document.querySelectorAll('.modal-backdrop');
+    //     backdrops.forEach((el) => el.remove());
+    //    document.body.classList.remove('modal-open');
+    //   document.body.style.removeProperty('padding-right');
+    //}
+    // }, 1000);
     this.initializePaymentAmount();
-
-    setTimeout(() => {
-      const modalEl = document.getElementById('couponModal');
-      if (modalEl) {
-        let bsModal = bootstrap.Modal.getInstance(modalEl);
-        if (!bsModal) {
-          bsModal = new bootstrap.Modal(modalEl);
-        }
-        bsModal.hide();
-
-        const backdrops = document.querySelectorAll('.modal-backdrop');
-        backdrops.forEach((el) => el.remove());
-
-        document.body.classList.remove('modal-open');
-        document.body.style.removeProperty('padding-right');
-      }
-    }, 1000);
   }
 
   removeCouponFromLocalStorage() {
@@ -2482,350 +2479,350 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           };
         }
 
-      // ✅ النظام الجديد مع الإكرامية
-      if (this.finalTipSummary && this.finalTipSummary.paymentAmount > 0) {
-        totalEntered = Number(this.finalTipSummary.paymentAmount.toFixed(2));
+        // ✅ النظام الجديد مع الإكرامية
+        if (this.finalTipSummary && this.finalTipSummary.paymentAmount > 0) {
+          totalEntered = Number(this.finalTipSummary.paymentAmount.toFixed(2));
+        }
+        // ✅ النظام الجديد - كاش فقط
+        else if (this.selectedPaymentMethod === 'cash' && this.cashPaymentInput > 0) {
+          totalEntered = Number(this.cashPaymentInput.toFixed(2));
+        }
+        // ✅ النظام الجديد - دفع مختلط
+        else if (this.selectedPaymentMethod === 'cash + credit') {
+          totalEntered = Number(((this.cashAmountMixed || 0) + (this.creditAmountMixed || 0)).toFixed(2));
+        }
+        // ✅ النظام القديم
+        else {
+          totalEntered = Number((((Number(this.cash_amountt) || 0) + (Number(this.credit_amountt) || 0)).toFixed(2)));
+        }
+
+        console.log('💰 Payment validation - Fixed:', {
+          totalEntered,
+          cartTotal,
+          paymentMethod: this.selectedPaymentMethod,
+          hasFinalTipSummary: !!this.finalTipSummary,
+          finalTipAmount: this.finalTipSummary?.paymentAmount,
+          cashPaymentInput: this.cashPaymentInput,
+          cashAmountMixed: this.cashAmountMixed,
+          creditAmountMixed: this.creditAmountMixed
+        });
+
+        if (totalEntered < cartTotal) {
+          this.amountError = true;
+          this.falseMessage = `يجب أدخال الإجمالي. ${cartTotal.toFixed(2)} ${this.currencySymbol}`;
+          console.log('❌ Entered amount less than total:', totalEntered, cartTotal);
+          this.isLoading = false;
+
+          setTimeout(() => {
+            this.amountError = false;
+            this.falseMessage = '';
+          }, 3500);
+          return;
+        }
+
+        console.log('✅ Valid payment amount:', totalEntered, cartTotal);
       }
-      // ✅ النظام الجديد - كاش فقط
-      else if (this.selectedPaymentMethod === 'cash' && this.cashPaymentInput > 0) {
-        totalEntered = Number(this.cashPaymentInput.toFixed(2));
+    }
+
+    // التحقق من رقم المرجع للفيزا
+    if (this.selectedPaymentStatus === 'paid' && this.credit_amountt > 0 && !this.referenceNumber) {
+      this.showError('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
+      return;
+    }
+
+    this.isLoading = true;
+    this.loading = true;
+    this.falseMessage = '';
+    this.tableError = '';
+    this.couponError = '';
+
+    const paymentStatus = this.selectedPaymentMethod === 'cash' ? this.selectedPaymentStatus : 'paid';
+    console.log(this.selectedPaymentMethod, 'selectedPaymentMethod');
+
+    const orderData: any = this.prepareOrderData();
+
+    // معالجة عنوان التوصيل
+    let addressId = null;
+    if (navigator.onLine) {
+      if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
+        addressId = localStorage.getItem('address_id');
+        if (!addressId && !this.addressRequestInProgress) {
+          this.addressRequestInProgress = true;
+          try {
+            addressId = await this.getAddressId();
+            if (addressId) {
+              localStorage.setItem('address_id', addressId.toString());
+            }
+          } finally {
+            this.addressRequestInProgress = false;
+          }
+        }
       }
-      // ✅ النظام الجديد - دفع مختلط
-      else if (this.selectedPaymentMethod === 'cash + credit') {
-        totalEntered = Number(((this.cashAmountMixed || 0) + (this.creditAmountMixed || 0)).toFixed(2));
-      }
-      // ✅ النظام القديم
-      else {
-        totalEntered = Number((((Number(this.cash_amountt) || 0) + (Number(this.credit_amountt) || 0)).toFixed(2)));
+    }
+
+    if (!this.currentOrderData) {
+      console.log("no current order data");
+
+      // إضافة الكوبون
+      if (this.appliedCoupon && this.couponCode?.trim() && this.validCoupon) {
+        orderData.coupon_code = this.couponCode.trim();
+        orderData.discount_amount = this.discountAmount;
+        orderData.coupon_type = this.appliedCoupon.value_type;
+      } else {
+        orderData.coupon_code = ' ';
       }
 
-      console.log('💰 Payment validation - Fixed:', {
-        totalEntered,
-        cartTotal,
-        paymentMethod: this.selectedPaymentMethod,
-        hasFinalTipSummary: !!this.finalTipSummary,
-        finalTipAmount: this.finalTipSummary?.paymentAmount,
-        cashPaymentInput: this.cashPaymentInput,
-        cashAmountMixed: this.cashAmountMixed,
-        creditAmountMixed: this.creditAmountMixed
-      });
+      // إضافة رقم المرجع
+      if (this.credit_amountt > 0) {
+        orderData.reference_number = this.referenceNumber;
+      }
 
-      if (totalEntered < cartTotal) {
-        this.amountError = true;
-        this.falseMessage = `يجب أدخال الإجمالي. ${cartTotal.toFixed(2)} ${this.currencySymbol}`;
-        console.log('❌ Entered amount less than total:', totalEntered, cartTotal);
-        this.isLoading = false;
-
-        setTimeout(() => {
-          this.amountError = false;
-          this.falseMessage = '';
-        }, 3500);
+      // التحقق من العنوان للتوصيل
+      if (this.selectedOrderType === 'Delivery' && addressId) {
+        orderData.address_id = addressId;
+      }
+      if (this.selectedOrderType === 'Delivery' && !formData) {
+        this.showError('يرجى اختيار عنوان التوصيل ');
         return;
       }
 
-      console.log('✅ Valid payment amount:', totalEntered, cartTotal);
-    }
-  }
+      // إعداد حالة الدفع
+      if (this.selectedPaymentStatus == "unpaid") {
+        orderData.credit_amount = null;
+        orderData.cash_amount = null;
+      }
 
-  // التحقق من رقم المرجع للفيزا
-  if(this.selectedPaymentStatus === 'paid' && this.credit_amountt > 0 && !this.referenceNumber) {
-  this.showError('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
-  return;
-}
+      // التحقق من العناصر
+      if (!orderData.items.length) {
+        this.showError('لا يمكن تقديم الطلب بدون عناصر صالحة.');
+        return;
+      }
 
-this.isLoading = true;
-this.loading = true;
-this.falseMessage = '';
-this.tableError = '';
-this.couponError = '';
-
-const paymentStatus = this.selectedPaymentMethod === 'cash' ? this.selectedPaymentStatus : 'paid';
-console.log(this.selectedPaymentMethod, 'selectedPaymentMethod');
-
-const orderData: any = this.prepareOrderData();
-
-// معالجة عنوان التوصيل
-let addressId = null;
-if (navigator.onLine) {
-  if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
-    addressId = localStorage.getItem('address_id');
-    if (!addressId && !this.addressRequestInProgress) {
-      this.addressRequestInProgress = true;
-      try {
-        addressId = await this.getAddressId();
-        if (addressId) {
-          localStorage.setItem('address_id', addressId.toString());
+      // إعداد الطاولة للجلوس في المطعم
+      if (this.selectedOrderType === 'dine-in' || this.selectedOrderType === 'في المطعم') {
+        if (!tableId) {
+          this.showError('يرجى اختيار طاولة.');
+          return;
         }
-      } finally {
-        this.addressRequestInProgress = false;
+        orderData.table_id = tableId;
+      }
+
+      // إعداد بيانات التوصيل
+      if (navigator.onLine && (this.selectedOrderType === 'Delivery' || this.selectedOrderType === 'توصيل')) {
+        if (!addressId) {
+          this.showError('يرجى اختيار عنوان التوصيل ');
+          return;
+        }
+        orderData.address_id = addressId;
+        orderData.client_country_code = formData.country_code?.code || "+20";
+        orderData.client_phone = formData.address_phone;
+        orderData.client_name = formData.client_name;
       }
     }
-  }
-}
 
-if (!this.currentOrderData) {
-  console.log("no current order data");
+    // معالجة حالة عدم الاتصال
+    if (!navigator.onLine) {
+      try {
+        orderData.offlineTimestamp = new Date().toISOString();
+        orderData.status = 'pending_sync';
 
-  // إضافة الكوبون
-  if (this.appliedCoupon && this.couponCode?.trim() && this.validCoupon) {
-    orderData.coupon_code = this.couponCode.trim();
-    orderData.discount_amount = this.discountAmount;
-    orderData.coupon_type = this.appliedCoupon.value_type;
-  } else {
-    orderData.coupon_code = ' ';
-  }
+        // Save to orders/pills stores (existing functionality)
+        const savedOrderId = await this.dbService.savePendingOrder(orderData);
+        console.log("Order saved to IndexedDB with ID:", savedOrderId);
 
-  // إضافة رقم المرجع
-  if (this.credit_amountt > 0) {
-    orderData.reference_number = this.referenceNumber;
-  }
+        // Save raw orderData for API sync (exact data that will be sent to API)
+        // Remove metadata fields that shouldn't be sent to API
+        const orderDataForSync = { ...orderData };
+        delete orderDataForSync.offlineTimestamp;
+        delete orderDataForSync.status;
 
-  // التحقق من العنوان للتوصيل
-  if (this.selectedOrderType === 'Delivery' && addressId) {
-    orderData.address_id = addressId;
-  }
-  if (this.selectedOrderType === 'Delivery' && !formData) {
-    this.showError('يرجى اختيار عنوان التوصيل ');
-    return;
-  }
+        await this.dbService.savePendingOrderForSync(orderDataForSync);
+        console.log("Raw orderData saved for API sync");
 
-  // إعداد حالة الدفع
-  if (this.selectedPaymentStatus == "unpaid") {
-    orderData.credit_amount = null;
-    orderData.cash_amount = null;
-  }
+        await this.releaseTableAndOrderType();
 
-  // التحقق من العناصر
-  if (!orderData.items.length) {
-    this.showError('لا يمكن تقديم الطلب بدون عناصر صالحة.');
-    return;
-  }
+        this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
+        this.clearCart();
+        this.resetLocalStorage();
 
-  // إعداد الطاولة للجلوس في المطعم
-  if (this.selectedOrderType === 'dine-in' || this.selectedOrderType === 'في المطعم') {
-    if (!tableId) {
-      this.showError('يرجى اختيار طاولة.');
+        if (this.successModal) {
+          this.successModal.show();
+        }
+
+        const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
+        const orderIdToRemove = orderData.orderId;
+        const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
+        localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
+
+      } catch (error) {
+        console.error('Error saving order to IndexedDB:', error);
+        this.showError('فشل حفظ الطلب في وضع عدم الاتصال. يرجى المحاولة مرة أخرى.');
+      } finally {
+        this.isLoading = false;
+        this.loading = false;
+      }
       return;
     }
-    orderData.table_id = tableId;
-  }
 
-  // إعداد بيانات التوصيل
-  if (navigator.onLine && (this.selectedOrderType === 'Delivery' || this.selectedOrderType === 'توصيل')) {
-    if (!addressId) {
-      this.showError('يرجى اختيار عنوان التوصيل ');
-      return;
+    // إرسال الطلب إلى API
+    console.log('Submitting order online:', orderData);
+
+    const timeoutPromise = new Promise((_, reject) => {
+      setTimeout(() => reject(new Error('Request timeout')), 30000);
+    });
+
+    try {
+      const response = await Promise.race([
+        this.plaseOrderService.placeOrder(orderData).toPromise(),
+        timeoutPromise
+      ]);
+
+      console.log('API Response:', response);
+      this.falseMessage = '';
+      this.tableError = '';
+      this.couponError = '';
+      this.cashiermachine = '';
+
+      this.pillId = (response as any).data?.invoice_id;
+      this.orderedId = (response as any).data?.order_id;
+
+      if (!(response as any).status) {
+        this.handleAPIError(response);
+        return;
+      }
+
+      await this.releaseTableAndOrderType();
+
+      // معالجة أنواع الطلبات المختلفة
+      if (this.selectedOrderType === 'Takeaway' || this.selectedOrderType === 'talabat') {
+        const dataOrderId = (response as any).data.order_id;
+        this.createdOrderId = dataOrderId;
+        await this.fetchPillsDetails(this.pillId);
+        setTimeout(() => {
+          this.printInvoice();
+        }, 200);
+        this.removeCouponFromLocalStorage();
+      }
+
+      const orderId = (response as any).data?.order_id;
+      if (!orderId) {
+        this.showError('لم يتم استلام رقم الطلب من الخادم.');
+        return;
+      }
+
+      // تنظيف البيانات
+      const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
+      const orderIdToRemove = orderData.orderId;
+      const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
+      localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
+
+      this.clearCart();
+      this.resetLocalStorage();
+      this.client = " ";
+      this.clientPhone = " ";
+      this.finalOrderId = " ";
+      this.cash_amountt = 0;
+      this.credit_amountt = 0;
+      this.selectedPaymentStatus = '';
+      this.resetAddress();
+      this.tableNumber = null;
+      this.FormDataDetails = null;
+      this.successMessage = 'تم تنفيذ طلبك بنجاح';
+
+      if (this.successModal) {
+        this.successModal.show();
+      }
+
+      setTimeout(() => {
+        this.falseMessage = '';
+      }, 1500);
+
+    } catch (error: unknown) {
+      this.handleSubmissionError(error, orderData);
+    } finally {
+      this.isLoading = false;
+      this.loading = false;
     }
-    orderData.address_id = addressId;
-    orderData.client_country_code = formData.country_code?.code || "+20";
-    orderData.client_phone = formData.address_phone;
-    orderData.client_name = formData.client_name;
-  }
-}
-
-// معالجة حالة عدم الاتصال
-if (!navigator.onLine) {
-  try {
-    orderData.offlineTimestamp = new Date().toISOString();
-    orderData.status = 'pending_sync';
-
-    // Save to orders/pills stores (existing functionality)
-    const savedOrderId = await this.dbService.savePendingOrder(orderData);
-    console.log("Order saved to IndexedDB with ID:", savedOrderId);
-
-    // Save raw orderData for API sync (exact data that will be sent to API)
-    // Remove metadata fields that shouldn't be sent to API
-    const orderDataForSync = { ...orderData };
-    delete orderDataForSync.offlineTimestamp;
-    delete orderDataForSync.status;
-
-    await this.dbService.savePendingOrderForSync(orderDataForSync);
-    console.log("Raw orderData saved for API sync");
-
-    await this.releaseTableAndOrderType();
-
-    this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
-    this.clearCart();
-    this.resetLocalStorage();
-
-    if (this.successModal) {
-      this.successModal.show();
-    }
-
-    const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
-    const orderIdToRemove = orderData.orderId;
-    const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
-    localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
-
-  } catch (error) {
-    console.error('Error saving order to IndexedDB:', error);
-    this.showError('فشل حفظ الطلب في وضع عدم الاتصال. يرجى المحاولة مرة أخرى.');
-  } finally {
-    this.isLoading = false;
-    this.loading = false;
-  }
-  return;
-}
-
-// إرسال الطلب إلى API
-console.log('Submitting order online:', orderData);
-
-const timeoutPromise = new Promise((_, reject) => {
-  setTimeout(() => reject(new Error('Request timeout')), 30000);
-});
-
-try {
-  const response = await Promise.race([
-    this.plaseOrderService.placeOrder(orderData).toPromise(),
-    timeoutPromise
-  ]);
-
-  console.log('API Response:', response);
-  this.falseMessage = '';
-  this.tableError = '';
-  this.couponError = '';
-  this.cashiermachine = '';
-
-  this.pillId = (response as any).data?.invoice_id;
-  this.orderedId = (response as any).data?.order_id;
-
-  if (!(response as any).status) {
-    this.handleAPIError(response);
-    return;
-  }
-
-  await this.releaseTableAndOrderType();
-
-  // معالجة أنواع الطلبات المختلفة
-  if (this.selectedOrderType === 'Takeaway' || this.selectedOrderType === 'talabat') {
-    const dataOrderId = (response as any).data.order_id;
-    this.createdOrderId = dataOrderId;
-    await this.fetchPillsDetails(this.pillId);
-    setTimeout(() => {
-      this.printInvoice();
-    }, 200);
-    this.removeCouponFromLocalStorage();
-  }
-
-  const orderId = (response as any).data?.order_id;
-  if (!orderId) {
-    this.showError('لم يتم استلام رقم الطلب من الخادم.');
-    return;
-  }
-
-  // تنظيف البيانات
-  const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
-  const orderIdToRemove = orderData.orderId;
-  const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
-  localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
-
-  this.clearCart();
-  this.resetLocalStorage();
-  this.client = " ";
-  this.clientPhone = " ";
-  this.finalOrderId = " ";
-  this.cash_amountt = 0;
-  this.credit_amountt = 0;
-  this.selectedPaymentStatus = '';
-  this.resetAddress();
-  this.tableNumber = null;
-  this.FormDataDetails = null;
-  this.successMessage = 'تم تنفيذ طلبك بنجاح';
-
-  if (this.successModal) {
-    this.successModal.show();
-  }
-
-  setTimeout(() => {
-    this.falseMessage = '';
-  }, 1500);
-
-} catch (error: unknown) {
-  this.handleSubmissionError(error, orderData);
-} finally {
-  this.isLoading = false;
-  this.loading = false;
-}
   }
 
   // دالة مساعدة بسيطة لعرض الأخطاء
   private showError(message: string): void {
-  this.falseMessage = message;
-  this.isLoading = false;
-  this.loading = false;
-  setTimeout(() => { this.falseMessage = ''; }, 1500);
+    this.falseMessage = message;
+    this.isLoading = false;
+    this.loading = false;
+    setTimeout(() => { this.falseMessage = ''; }, 1500);
   }
 
   // معالجة أخطاء API
   private handleAPIError(response: any): void {
-  if(response.errorData?.error?.cashier_machine_id) {
-  this.cashiermachine = response.errorData.error.cashier_machine_id[0];
-} else if (response.errorData?.coupon_code) {
-  this.couponError = response.errorData.coupon_code;
-} else if (response.errorData?.table_id) {
-  this.tableError = response.errorData.table_id;
-} else {
-  this.falseMessage = response.errorData?.error ? `${response.errorData.error}` : `${response.message || 'حدث خطأ أثناء تقديم الطلب'}`;
-}
+    if (response.errorData?.error?.cashier_machine_id) {
+      this.cashiermachine = response.errorData.error.cashier_machine_id[0];
+    } else if (response.errorData?.coupon_code) {
+      this.couponError = response.errorData.coupon_code;
+    } else if (response.errorData?.table_id) {
+      this.tableError = response.errorData.table_id;
+    } else {
+      this.falseMessage = response.errorData?.error ? `${response.errorData.error}` : `${response.message || 'حدث خطأ أثناء تقديم الطلب'}`;
+    }
 
-setTimeout(() => {
-  this.falseMessage = '';
-  this.tableError = '';
-  this.couponError = '';
-  this.cashiermachine = '';
-}, 3500);
-this.isLoading = false;
-this.loading = false;
+    setTimeout(() => {
+      this.falseMessage = '';
+      this.tableError = '';
+      this.couponError = '';
+      this.cashiermachine = '';
+    }, 3500);
+    this.isLoading = false;
+    this.loading = false;
   }
 
   // معالجة أخطاء الإرسال
-  private async handleSubmissionError(error: unknown, orderData: any): Promise < void> {
-  console.error('API Error:', error);
+  private async handleSubmissionError(error: unknown, orderData: any): Promise<void> {
+    console.error('API Error:', error);
 
-  if((error instanceof Error && error.message === 'Request timeout') ||
-  (typeof error === 'object' && error !== null && 'status' in error && (error as any).status === 504) ||
-  (typeof error === 'object' && error !== null && 'status' in error && (error as any).status === 0)) {
+    if ((error instanceof Error && error.message === 'Request timeout') ||
+      (typeof error === 'object' && error !== null && 'status' in error && (error as any).status === 504) ||
+      (typeof error === 'object' && error !== null && 'status' in error && (error as any).status === 0)) {
 
-  try {
-    orderData.offlineTimestamp = new Date().toISOString();
-    orderData.status = 'pending_sync';
-    orderData.errorReason = (error instanceof Error ? error.message : 'Gateway Timeout');
+      try {
+        orderData.offlineTimestamp = new Date().toISOString();
+        orderData.status = 'pending_sync';
+        orderData.errorReason = (error instanceof Error ? error.message : 'Gateway Timeout');
 
-    const orderId = await this.dbService.savePendingOrder(orderData);
-    console.log("Order saved to IndexedDB due to timeout/error:", orderId);
+        const orderId = await this.dbService.savePendingOrder(orderData);
+        console.log("Order saved to IndexedDB due to timeout/error:", orderId);
 
-    this.successMessage = 'تم حفظ الطلب بسبب مشكلة في الاتصال وسيتم إرساله لاحقًا';
-    this.clearCart();
-    this.resetLocalStorage();
+        this.successMessage = 'تم حفظ الطلب بسبب مشكلة في الاتصال وسيتم إرساله لاحقًا';
+        this.clearCart();
+        this.resetLocalStorage();
 
-    if (this.successModal) {
-      this.successModal.show();
+        if (this.successModal) {
+          this.successModal.show();
+        }
+
+      } catch (dbError) {
+        console.error('Error saving to IndexedDB:', dbError);
+        this.falseMessage = 'فشل في إرسال الطلب وحفظه محليًا. يرجى المحاولة مرة أخرى.';
+      }
+    } else {
+      const err = error as any;
+      if (err?.error?.errorData?.error?.coupon_code) {
+        this.couponError = err.error.errorData.error.coupon_code[0];
+      } else if (err?.error?.errorData?.error?.client_phone) {
+        this.falseMessage = err.error?.errorData?.error?.client_phone[0];
+      } else if (err?.error?.errorData?.table_id) {
+        this.tableError = err.error?.errorData?.table_id[0];
+      } else if (err?.error?.errorData?.error) {
+        this.falseMessage = `${err.error.errorData.error}`;
+      } else if (err?.error?.message) {
+        this.falseMessage = `${err.error.message}`;
+      } else {
+        this.falseMessage = 'حدث خطأ غير متوقع، يرجى المحاولة لاحقًا.';
+      }
     }
 
-  } catch (dbError) {
-    console.error('Error saving to IndexedDB:', dbError);
-    this.falseMessage = 'فشل في إرسال الطلب وحفظه محليًا. يرجى المحاولة مرة أخرى.';
-  }
-} else {
-  const err = error as any;
-  if (err?.error?.errorData?.error?.coupon_code) {
-    this.couponError = err.error.errorData.error.coupon_code[0];
-  } else if (err?.error?.errorData?.error?.client_phone) {
-    this.falseMessage = err.error?.errorData?.error?.client_phone[0];
-  } else if (err?.error?.errorData?.table_id) {
-    this.tableError = err.error?.errorData?.table_id[0];
-  } else if (err?.error?.errorData?.error) {
-    this.falseMessage = `${err.error.errorData.error}`;
-  } else if (err?.error?.message) {
-    this.falseMessage = `${err.error.message}`;
-  } else {
-    this.falseMessage = 'حدث خطأ غير متوقع، يرجى المحاولة لاحقًا.';
-  }
-}
-
-setTimeout(() => {
-  this.falseMessage = '';
-}, 2000);
+    setTimeout(() => {
+      this.falseMessage = '';
+    }, 2000);
   }
 
   // private extractDateAndTime(branch: any): void {
@@ -2840,34 +2837,34 @@ setTimeout(() => {
   // }
 
   private extractDateAndTime(branch: any): void {
-  const { created_at } = branch;
+    const { created_at } = branch;
 
-  if(created_at) {
-    const dateObj = new Date(created_at); // Automatically handles the UTC 'Z'
+    if (created_at) {
+      const dateObj = new Date(created_at); // Automatically handles the UTC 'Z'
 
-    this.date = this.datePipe.transform(dateObj, 'yyyy-MM-dd') ?? '';
-    this.time = this.datePipe.transform(dateObj, 'hh:mm a') ?? '';
+      this.date = this.datePipe.transform(dateObj, 'yyyy-MM-dd') ?? '';
+      this.time = this.datePipe.transform(dateObj, 'hh:mm a') ?? '';
+    }
   }
-}
 
-calculateSubtotal(orderItems: any[]): number {
-  let subtotal = 0;
+  calculateSubtotal(orderItems: any[]): number {
+    let subtotal = 0;
 
-  orderItems.forEach((item) => {
-    subtotal += item.total_dish_price; // Calculate total for each dish
-  });
+    orderItems.forEach((item) => {
+      subtotal += item.total_dish_price; // Calculate total for each dish
+    });
 
-  return subtotal;
-}
-setCashAmount(value: number) {
-  this.cash_amountt = Number((value ?? 0).toFixed(2)) || this.cash_amount;
-  localStorage.setItem('cash_amountt', JSON.stringify(this.credit_amountt));
-}
+    return subtotal;
+  }
+  setCashAmount(value: number) {
+    this.cash_amountt = Number((value ?? 0).toFixed(2)) || this.cash_amount;
+    localStorage.setItem('cash_amountt', JSON.stringify(this.credit_amountt));
+  }
 
-setCreditAmount(value: number) {
-  this.credit_amountt = Number((value ?? 0).toFixed(2)) || this.credit_amount;
-  localStorage.setItem('credit_amountt', JSON.stringify(this.cash_amountt));
-}
+  setCreditAmount(value: number) {
+    this.credit_amountt = Number((value ?? 0).toFixed(2)) || this.credit_amount;
+    localStorage.setItem('credit_amountt', JSON.stringify(this.cash_amountt));
+  }
   // setCashAmount(value: number | null): void {
   //   this.cash_amountt = Number((value ?? 0).toFixed(2))|| this.cash_amount;
   //   localStorage.setItem('cash_amountt', JSON.stringify(this.cash_amountt));
@@ -2991,258 +2988,259 @@ setCreditAmount(value: number) {
   //   });
   // }
 
-  async fetchPillsDetails(pillId: string): Promise < void> {
-  try {
-    const response: any = await firstValueFrom(
-      this.pillDetailsService.getPillsDetailsById(this.pillId)
-    );
+  async fetchPillsDetails(pillId: string): Promise<void> {
+    try {
+      const response: any = await firstValueFrom(
+        this.pillDetailsService.getPillsDetailsById(this.pillId)
+      );
 
-    this.invoices = response.data.invoices;
-    console.log(response, "alaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+      this.invoices = response.data.invoices;
+      console.log(response, "alaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 
-    const statusMap: { [key: string]: string } = {
-  completed: 'مكتمل',
-    pending: 'في انتظار الموافقة',
-      cancelled: 'ملغي',
+      const statusMap: { [key: string]: string } = {
+        completed: 'مكتمل',
+        pending: 'في انتظار الموافقة',
+        cancelled: 'ملغي',
         packing: 'يتم تجهيزها',
-          readyForPickup: 'جاهز للاستلام',
-            on_way: 'في الطريق',
-              in_progress: 'يتم تحضير الطلب',
-                delivered: 'تم التوصيل',
+        readyForPickup: 'جاهز للاستلام',
+        on_way: 'في الطريق',
+        in_progress: 'يتم تحضير الطلب',
+        delivered: 'تم التوصيل',
       };
 
-const trackingKey = this.invoices[0]?.['tracking-status'];
-if (trackingKey === 'completed') {
-  this.isShow = false;
-}
-this.trackingStatus = statusMap[trackingKey] || trackingKey;
-this.orderNumber = response.data.order_id;
-this.couponType = this.invoices[0].invoice_summary.coupon_type;
+      const trackingKey = this.invoices[0]?.['tracking-status'];
+      if (trackingKey === 'completed') {
+        this.isShow = false;
+      }
+      this.trackingStatus = statusMap[trackingKey] || trackingKey;
+      this.orderNumber = response.data.order_id;
+      this.couponType = this.invoices[0].invoice_summary.coupon_type;
 
-this.addresDetails = this.invoices[0]?.address_details || {};
-this.paymentStatus = this.invoices[0]?.transactions[0]?.['payment_status'];
-this.cashierLast = this.invoices[0]?.cashier_info.last_name;
-this.cashierFirst = this.invoices[0]?.cashier_info.first_name;
-this.paymentMethod = this.invoices[0]?.transactions[0]?.['payment_method'];
+      this.addresDetails = this.invoices[0]?.address_details || {};
+      this.paymentStatus = this.invoices[0]?.transactions[0]?.['payment_status'];
+      this.cashierLast = this.invoices[0]?.cashier_info.last_name;
+      this.cashierFirst = this.invoices[0]?.cashier_info.first_name;
+      this.paymentMethod = this.invoices[0]?.transactions[0]?.['payment_method'];
 
-this.isDeliveryOrder = this.invoices?.some(
-  (invoice: any) => invoice.order_type === 'Delivery'
-);
+      this.isDeliveryOrder = this.invoices?.some(
+        (invoice: any) => invoice.order_type === 'Delivery'
+      );
 
-this.branchDetails = this.invoices?.map(
-  (e: { branch_details: any }) => e.branch_details
-);
-this.orderDetails = this.invoices?.map((e: any) => e.orderDetails);
+      this.branchDetails = this.invoices?.map(
+        (e: { branch_details: any }) => e.branch_details
+      );
+      this.orderDetails = this.invoices?.map((e: any) => e.orderDetails);
 
-this.invoiceSummary = this.invoices?.map((e: any) => {
-  let summary = {
-    ...e.invoice_summary,
-    currency_symbol: e.currency_symbol,
-  };
-  return summary;
-});
+      this.invoiceSummary = this.invoices?.map((e: any) => {
+        let summary = {
+          ...e.invoice_summary,
+          currency_symbol: e.currency_symbol,
+        };
+        return summary;
+      });
 
-this.addressDetails = this.invoices?.map((e: any) => e.address_details);
+      this.addressDetails = this.invoices?.map((e: any) => e.address_details);
 
-if (this.branchDetails?.length) {
-  this.extractDateAndTime(this.branchDetails[0]);
-}
+      if (this.branchDetails?.length) {
+        this.extractDateAndTime(this.branchDetails[0]);
+      }
     } catch (error) {
-  console.error('Error fetching pill details:', error);
-}
+      console.error('Error fetching pill details:', error);
+    }
   }
 
   async printInvoice() {
-  // if (!this.invoices?.length || !this.invoiceSummary?.length) {
-  //   console.warn('Invoice data not ready.');
-  //   return;
-  // }
+    // if (!this.invoices?.length || !this.invoiceSummary?.length) {
+    //   console.warn('Invoice data not ready.');
+    //   return;
+    // }
 
-  try {
-    /*       await this.printedInvoiceService
-            .printInvoice(
-              this.orderedId,
-              this.cashier_machine_id,
-              this.selectedPaymentMethod
-            )
-            .toPromise(); */
-    // const test = await this.printedInvoiceService
-    //   .printInvoice(
-    //     this.orderedId,
-    //     this.cashier_machine_id,
-    //     this.selectedPaymentMethod
-    //   )
-    //   .toPromise();
-    // console.log(test, 'test');
-    const printContent = document.getElementById('printSection');
-    if (!printContent) {
-      console.error('Print section not found.');
-      return;
-    }
+    try {
+      /*       await this.printedInvoiceService
+              .printInvoice(
+                this.orderedId,
+                this.cashier_machine_id,
+                this.selectedPaymentMethod
+              )
+              .toPromise(); */
+      // const test = await this.printedInvoiceService
+      //   .printInvoice(
+      //     this.orderedId,
+      //     this.cashier_machine_id,
+      //     this.selectedPaymentMethod
+      //   )
+      //   .toPromise();
+      // console.log(test, 'test');
+      const printContent = document.getElementById('printSection');
+      if (!printContent) {
+        console.error('Print section not found.');
+        return;
+      }
 
-    const originalHTML = document.body.innerHTML;
+      const originalHTML = document.body.innerHTML;
 
-    const copies = this.isDeliveryOrder
-      ? [
-        { showPrices: true, test: true },
-        { showPrices: false, test: false },
-        { showPrices: true, test: true },
-      ]
-      : [
-        { showPrices: true, test: true },
-        { showPrices: false, test: false },
-      ];
+      const copies = this.isDeliveryOrder
+        ? [
+          { showPrices: true, test: true },
+          { showPrices: false, test: false },
+          { showPrices: true, test: true },
+        ]
+        : [
+          { showPrices: true, test: true },
+          { showPrices: false, test: false },
+        ];
 
-    for (const copy of copies) {
-      this.showPrices = copy.showPrices;
-      this.test = copy.test;
+      for (const copy of copies) {
+        this.showPrices = copy.showPrices;
+        this.test = copy.test;
 
-      await new Promise((resolve) => setTimeout(resolve, 300));
+        await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const singlePageHTML = `
+        const singlePageHTML = `
         <div>
           ${printContent.innerHTML}
         </div>
       `;
 
-      document.body.innerHTML = singlePageHTML;
+        document.body.innerHTML = singlePageHTML;
 
-      await new Promise((resolve) =>
-        setTimeout(() => {
-          window.print();
-          resolve(true);
-        }, 400)
-      );
+        await new Promise((resolve) =>
+          setTimeout(() => {
+            window.print();
+            resolve(true);
+          }, 400)
+        );
+      }
+
+      document.body.innerHTML = originalHTML;
+      /*       location.reload();
+       */
+      setTimeout(() => {
+        location.reload();
+      }, 200);
+    } catch (error) {
+      console.error('Error printing invoice from service:', error);
+    }
+  }
+
+  // printInvoice() {
+  //   this.printedInvoiceService
+  //     .printInvoice(this.pillId, this.cashier_machine_id)
+  //     .subscribe({
+  //       next: (response) => {
+  //         console.log('Invoice printed successfully from service:', response);
+
+  //         let printContent = document.getElementById('printSection')!.innerHTML;
+  //         let originalContent = document.body.innerHTML;
+
+  //         document.body.innerHTML = printContent;
+
+  //         window.print();
+
+  //         document.body.innerHTML = originalContent;
+  //         // location.reload();
+  //       },
+  //       error: (err) => {
+  //         console.error('Error printing invoice from service:', err);
+  //       },
+  //     });
+  // }
+
+
+
+  hasDeliveryOrDineIn(): boolean {
+    return this.invoices?.some((invoice: { order_type: string }) =>
+      ['Delivery', 'Dine-in'].includes(invoice.order_type)
+    );
+  }
+  hasDineInOrder(): boolean {
+    return this.invoices?.some(
+      (invoice: { order_type: string }) => invoice.order_type === 'Dine-in'
+    );
+  }
+  changePaymentStatus(status: string) {
+    this.paymentStatus = status;
+
+    this.cdr.detectChanges();
+  }
+  changeTrackingStatus(status: string) {
+    this.trackingStatus = status.trim();
+    console.log('تم تحديث حالة التوصيل:', this.trackingStatus);
+
+    this.cdr.detectChanges();
+  }
+  saveOrder() {
+    if (!this.paymentStatus || !this.trackingStatus) {
+      alert('يجب تحديد حالة الدفع وحالة التوصيل قبل الحفظ!');
+      return;
     }
 
-    document.body.innerHTML = originalHTML;
-    /*       location.reload();
-     */
-    setTimeout(() => {
-      location.reload();
-    }, 200);
-  } catch (error) {
-    console.error('Error printing invoice from service:', error);
+    this.orderService
+      .updateInvoiceStatus(this.orderNumber, this.paymentStatus, this.trackingStatus)
+      .subscribe({
+        next: (response) => {
+          localStorage.setItem(
+            'pill_detail_data',
+            JSON.stringify(response.data)
+          );
+          this.router.navigate(['/pills']);
+        },
+        error: (err) => {
+          console.error(' خطأ في حفظ الطلب:', err);
+        },
+      });
   }
-}
+  getDiscount(): number {
+    if (
+      !this.couponType ||
+      !this.invoices ||
+      !this.invoices[0]?.invoice_summary
+    ) {
+      return 0; // No discount if no coupon is applied or data is missing
+    }
 
-// printInvoice() {
-//   this.printedInvoiceService
-//     .printInvoice(this.pillId, this.cashier_machine_id)
-//     .subscribe({
-//       next: (response) => {
-//         console.log('Invoice printed successfully from service:', response);
+    const invoiceSummary = this.invoices[0].invoice_summary;
+    const couponValue = parseFloat(invoiceSummary.coupon_value);
 
-//         let printContent = document.getElementById('printSection')!.innerHTML;
-//         let originalContent = document.body.innerHTML;
+    if (isNaN(couponValue)) {
+      return 0; // If coupon_value is not a valid number, return 0
+    }
 
-//         document.body.innerHTML = printContent;
+    if (this.couponType === 'percentage') {
+      return (invoiceSummary.subtotal_price * couponValue) / 100;
+    } else if (this.couponType === 'fixed') {
+      return couponValue;
+    }
 
-//         window.print();
-
-//         document.body.innerHTML = originalContent;
-//         // location.reload();
-//       },
-//       error: (err) => {
-//         console.error('Error printing invoice from service:', err);
-//       },
-//     });
-// }
-
-
-
-hasDeliveryOrDineIn(): boolean {
-  return this.invoices?.some((invoice: { order_type: string }) =>
-    ['Delivery', 'Dine-in'].includes(invoice.order_type)
-  );
-}
-hasDineInOrder(): boolean {
-  return this.invoices?.some(
-    (invoice: { order_type: string }) => invoice.order_type === 'Dine-in'
-  );
-}
-changePaymentStatus(status: string) {
-  this.paymentStatus = status;
-
-  this.cdr.detectChanges();
-}
-changeTrackingStatus(status: string) {
-  this.trackingStatus = status.trim();
-  console.log('تم تحديث حالة التوصيل:', this.trackingStatus);
-
-  this.cdr.detectChanges();
-}
-saveOrder() {
-  if (!this.paymentStatus || !this.trackingStatus) {
-    alert('يجب تحديد حالة الدفع وحالة التوصيل قبل الحفظ!');
-    return;
+    return 0; // Default to 0 if no valid coupon type
   }
 
-  this.orderService
-    .updateInvoiceStatus(this.orderNumber, this.paymentStatus, this.trackingStatus)
-    .subscribe({
-      next: (response) => {
-        localStorage.setItem(
-          'pill_detail_data',
-          JSON.stringify(response.data)
-        );
-        this.router.navigate(['/pills']);
-      },
-      error: (err) => {
-        console.error(' خطأ في حفظ الطلب:', err);
-      },
-    });
-}
-getDiscount(): number {
-  if (
-    !this.couponType ||
-    !this.invoices ||
-    !this.invoices[0]?.invoice_summary
-  ) {
-    return 0; // No discount if no coupon is applied or data is missing
+  // To get final price after discount
+  getFinalPrice(): number {
+    return this.invoices[0].invoice_summary.subtotal_price - this.getDiscount();
   }
+  selectOrderType(type: string) {
+    const currentCart = [...this.cartItems];
+    this.clearOrderTypeData();
 
-  const invoiceSummary = this.invoices[0].invoice_summary;
-  const couponValue = parseFloat(invoiceSummary.coupon_value);
+    // ✅ Clear selectedOrderType from localStorage first to ensure correct pricing
+    localStorage.removeItem('selectedOrderType');
 
-  if (isNaN(couponValue)) {
-    return 0; // If coupon_value is not a valid number, return 0
-  }
+    const typeMapping: { [key: string]: string } = {
+      'في المطعم': 'dine-in',
+      'خارج المطعم': 'Takeaway',
+      توصيل: 'Delivery',
+      طلبات: 'talabat'
+    };
 
-  if (this.couponType === 'percentage') {
-    return (invoiceSummary.subtotal_price * couponValue) / 100;
-  } else if (this.couponType === 'fixed') {
-    return couponValue;
-  }
+    // استعادة العربة إذا تم مسحها بالخطأ
+    if (this.cartItems.length === 0 && currentCart.length > 0) {
+      this.cartItems = currentCart;
+      this.saveCart();
+    }
 
-  return 0; // Default to 0 if no valid coupon type
-}
+    this.selectedOrderType = typeMapping[type] || type;
 
-// To get final price after discount
-getFinalPrice(): number {
-  return this.invoices[0].invoice_summary.subtotal_price - this.getDiscount();
-}
-selectOrderType(type: string) {
-  const currentCart = [...this.cartItems];
-  this.clearOrderTypeData();
-
-  // ✅ Clear selectedOrderType from localStorage first to ensure correct pricing
-  localStorage.removeItem('selectedOrderType');
-
-  const typeMapping: { [key: string]: string } = {
-    'في المطعم': 'dine-in',
-    'خارج المطعم': 'Takeaway',
-    توصيل: 'Delivery',
-    طلبات: 'talabat'
-  };
-
-  // استعادة العربة إذا تم مسحها بالخطأ
-  if (this.cartItems.length === 0 && currentCart.length > 0) {
-    this.cartItems = currentCart;
-    this.saveCart();
-  }
-
-  this.selectedOrderType = typeMapping[type] || type;
 
   localStorage.setItem('selectedOrderType', this.selectedOrderType);
   this.isOrderTypeSelected = true; // ✅ تم اختيار نوع الطلب
@@ -3255,241 +3253,241 @@ selectOrderType(type: string) {
   // إعادة حساب الإجماليات بعد تحديث الأسعار
   this.updateTotalPrices();
 
-  // ✅ الشرط الجديد: إذا كان الطلب من طلبات وغير مدفوع، اختيار آجل تلقائياً
-  if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
-    this.selectedPaymentMethod = 'deferred';
-  }
+    // ✅ الشرط الجديد: إذا كان الطلب من طلبات وغير مدفوع، اختيار آجل تلقائياً
+    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
+      this.selectedPaymentMethod = 'deferred';
+    }
 
-  // Store in IndexedDB instead of localStorage
-  try {
-    this.dbService.saveData('selectedOrderType', {
-      id: new Date().getTime(), // or use UUID
-      value: this.selectedOrderType,
-      timestamp: new Date().toISOString()
-    });
+    // Store in IndexedDB instead of localStorage
+    try {
+      this.dbService.saveData('selectedOrderType', {
+        id: new Date().getTime(), // or use UUID
+        value: this.selectedOrderType,
+        timestamp: new Date().toISOString()
+      });
 
-    this.cdr.markForCheck(); // تحديث العرض
-  } catch (error) {
-    console.error('❌ Failed to save order type to IndexedDB:', error);
-    // Fallback to localStorage if IndexedDB fails
-    localStorage.setItem('selectedOrderType', this.selectedOrderType);
-  }
-}
-  async findCategoryByDishId(cartItem: any): Promise < void> {
-  try {
-    console.log('🔍 Searching for category by dish ID:', cartItem);
-    // ✅ فقط إذا كان نوع الطلب "طلبات" نبحث في talabat
-    if(this.selectedOrderType !== 'talabat') {
-  console.log('✅ Not talabat order type, keeping all items');
-  // return; // لا تفعل شيئاً لأنواع الطلبات الأخرى
-}
-const allCategories = await this.dbService.getAll('categories');
-let found = false; // لتتبع إذا تم العثور على الطبق
-
-for (const category of allCategories) {
-  if (category.dishes && Array.isArray(category.dishes)) {
-    for (const dishItem of category.dishes) {
-      if (
-        dishItem.dish?.id === cartItem.dish.id &&
-        dishItem.dish.Id_menus_integrations?.[0]?.name_en?.toLowerCase()?.includes('talabat')
-      ) {
-        found = true;
-
-        const converted = this.convertDish(dishItem);
-        const product = this.getProduct(converted);
-
-        console.log('✅ Found dish for update:', product);
-        this.updateCartPricesFromDish(cartItem, product);
-        break; // خلاص وجدناه، نخرج من اللوب
-      }
+      this.cdr.markForCheck(); // تحديث العرض
+    } catch (error) {
+      console.error('❌ Failed to save order type to IndexedDB:', error);
+      // Fallback to localStorage if IndexedDB fails
+      localStorage.setItem('selectedOrderType', this.selectedOrderType);
     }
   }
+  async findCategoryByDishId(cartItem: any): Promise<void> {
+    try {
+      console.log('🔍 Searching for category by dish ID:', cartItem);
+      // ✅ فقط إذا كان نوع الطلب "طلبات" نبحث في talabat
+      if (this.selectedOrderType !== 'talabat') {
+        console.log('✅ Not talabat order type, keeping all items');
+        // return; // لا تفعل شيئاً لأنواع الطلبات الأخرى
+      }
+      const allCategories = await this.dbService.getAll('categories');
+      let found = false; // لتتبع إذا تم العثور على الطبق
 
-  if (found) break; // نوقف لو وجدناه في كاتيجوري
-}
+      for (const category of allCategories) {
+        if (category.dishes && Array.isArray(category.dishes)) {
+          for (const dishItem of category.dishes) {
+            if (
+              dishItem.dish?.id === cartItem.dish.id &&
+              dishItem.dish.Id_menus_integrations?.[0]?.name_en?.toLowerCase()?.includes('talabat')
+            ) {
+              found = true;
 
-// ❌ لو مفيش dish مطابق
-if (!found && this.selectedOrderType === 'talabat') {
-  console.warn('❌ No matching dish found for cart item, removing it...');
-  this.removeCartItem(cartItem);
-}
+              const converted = this.convertDish(dishItem);
+              const product = this.getProduct(converted);
+
+              console.log('✅ Found dish for update:', product);
+              this.updateCartPricesFromDish(cartItem, product);
+              break; // خلاص وجدناه، نخرج من اللوب
+            }
+          }
+        }
+
+        if (found) break; // نوقف لو وجدناه في كاتيجوري
+      }
+
+      // ❌ لو مفيش dish مطابق
+      if (!found && this.selectedOrderType === 'talabat') {
+        console.warn('❌ No matching dish found for cart item, removing it...');
+        this.removeCartItem(cartItem);
+      }
 
     } catch (error) {
-  console.error('❌ Error finding category by dish ID:', error);
-}
-  }
-
-removeCartItem(cartItem: any) {
-  console.log('🗑️ Removing cart item:', cartItem);
-  // 🧩 قراءة الكارت الحالي من localStorage
-  const storedItems = localStorage.getItem('cart');
-  if (!storedItems) return;
-
-  let cart = JSON.parse(storedItems);
-
-  // 🗑️ حذف العنصر المطلوب بناءً على uniqueId (أو id لو ده اللي بتستخدميه)
-  cart = cart.filter((item: any) => item.uniqueId !== cartItem.uniqueId);
-
-  // 💾 تحديث localStorage بالكارت الجديد
-  localStorage.setItem('cart', JSON.stringify(cart));
-  this.dbService.removeFromCart(cartItem.cartItemId); // تحديث IndexedDB لو بتستخدميها للكارت
-  this.cartItems = cart; // تحديث المتغير المحلي لو عندك واحد
-
-  // ✅ تحديث الأسعار الإجمالية بعد الحذف (يفعل detectChanges تلقائياً)
-  this.updateTotalPrices();
-
-  console.log(`🗑️ Removed item from cart:`, cartItem.dish?.name);
-
-  // ✅ إعادة تحميل الصفحة لتحديث الكارت في الـ UI
-  setTimeout(() => {
-    window.location.reload();
-  }, 100);
-}
-updateCartPricesFromDish(cartItem: any, dishData: any) {
-  // 1. تحديث سعر الطبق الرئيسي
-  cartItem.dish.price = dishData.price;
-
-  // 2. تحديث سعر الحجم (لو موجود)
-  if (cartItem.selectedSize) {
-    const updatedSize = dishData.sizes?.find(
-      (s: any) => s.id === cartItem.selectedSize.id
-    );
-    if (updatedSize) {
-      cartItem.selectedSize.price = updatedSize.price;
-      cartItem.selectedSize.currency_symbol = updatedSize.currency_symbol || dishData.currency_symbol;
+      console.error('❌ Error finding category by dish ID:', error);
     }
   }
 
-  // 3. تحديث أسعار الإضافات (addons)
-  if (cartItem.selectedAddons?.length) {
-    cartItem.selectedAddons = cartItem.selectedAddons.map((addon: any) => {
-      // دور على الاضافة نفسها داخل dishData
-      const updatedAddon = dishData.addon_categories
-        ?.flatMap((cat: any) => cat.addons)
-        ?.find((a: any) => a.id === addon.id);
+  removeCartItem(cartItem: any) {
+    console.log('🗑️ Removing cart item:', cartItem);
+    // 🧩 قراءة الكارت الحالي من localStorage
+    const storedItems = localStorage.getItem('cart');
+    if (!storedItems) return;
 
-      if (updatedAddon) {
-        addon.price = updatedAddon.price;
-        addon.currency_symbol = updatedAddon.currency_symbol || dishData.currency_symbol;
+    let cart = JSON.parse(storedItems);
+
+    // 🗑️ حذف العنصر المطلوب بناءً على uniqueId (أو id لو ده اللي بتستخدميه)
+    cart = cart.filter((item: any) => item.uniqueId !== cartItem.uniqueId);
+
+    // 💾 تحديث localStorage بالكارت الجديد
+    localStorage.setItem('cart', JSON.stringify(cart));
+    this.dbService.removeFromCart(cartItem.cartItemId); // تحديث IndexedDB لو بتستخدميها للكارت
+    this.cartItems = cart; // تحديث المتغير المحلي لو عندك واحد
+
+    // ✅ تحديث الأسعار الإجمالية بعد الحذف (يفعل detectChanges تلقائياً)
+    this.updateTotalPrices();
+
+    console.log(`🗑️ Removed item from cart:`, cartItem.dish?.name);
+
+    // ✅ إعادة تحميل الصفحة لتحديث الكارت في الـ UI
+    setTimeout(() => {
+      window.location.reload();
+    }, 100);
+  }
+  updateCartPricesFromDish(cartItem: any, dishData: any) {
+    // 1. تحديث سعر الطبق الرئيسي
+    cartItem.dish.price = dishData.price;
+
+    // 2. تحديث سعر الحجم (لو موجود)
+    if (cartItem.selectedSize) {
+      const updatedSize = dishData.sizes?.find(
+        (s: any) => s.id === cartItem.selectedSize.id
+      );
+      if (updatedSize) {
+        cartItem.selectedSize.price = updatedSize.price;
+        cartItem.selectedSize.currency_symbol = updatedSize.currency_symbol || dishData.currency_symbol;
       }
+    }
 
-      return addon;
-    });
+    // 3. تحديث أسعار الإضافات (addons)
+    if (cartItem.selectedAddons?.length) {
+      cartItem.selectedAddons = cartItem.selectedAddons.map((addon: any) => {
+        // دور على الاضافة نفسها داخل dishData
+        const updatedAddon = dishData.addon_categories
+          ?.flatMap((cat: any) => cat.addons)
+          ?.find((a: any) => a.id === addon.id);
+
+        if (updatedAddon) {
+          addon.price = updatedAddon.price;
+          addon.currency_symbol = updatedAddon.currency_symbol || dishData.currency_symbol;
+        }
+
+        return addon;
+      });
+    }
+
+    console.log('Updated cart item after price sync:', cartItem);
+
+    // 4. إعادة حساب المجموع النهائي بعد التحديث
+    this.recalculateTotal(cartItem);
+  }
+  recalculateTotal(cartItem: any) {
+    const base = cartItem.dish.price || 0;
+    const size = cartItem.selectedSize?.price || 0;
+    const addons = cartItem.selectedAddons?.reduce((sum: number, a: any) => sum + (a.price || 0), 0) || 0;
+    const qty = cartItem.quantity || 1;
+
+    cartItem.totalPrice = (base + size + addons) * qty;
+    cartItem.finalPrice = cartItem.totalPrice;
+  }
+  convertDish(original: any) {
+    const dish = original.dish;
+
+    return {
+      id: dish.id,
+      name: dish.name,
+      description: dish.description,
+      price: dish.price,
+      currency_symbol: dish.currency_symbol,
+      image: dish.image,
+      share_link: dish.share_link,
+      has_addon: dish.addon_categories?.length > 0,
+      has_size: dish.sizes?.length > 0,
+      is_integration: true,
+      addon_categories: original.addon_categories || [],
+      sizes: original.sizes || [],
+      Id_menus_integrations: dish.Id_menus_integrations || []
+    };
   }
 
-  console.log('Updated cart item after price sync:', cartItem);
 
-  // 4. إعادة حساب المجموع النهائي بعد التحديث
-  this.recalculateTotal(cartItem);
-}
-recalculateTotal(cartItem: any) {
-  const base = cartItem.dish.price || 0;
-  const size = cartItem.selectedSize?.price || 0;
-  const addons = cartItem.selectedAddons?.reduce((sum: number, a: any) => sum + (a.price || 0), 0) || 0;
-  const qty = cartItem.quantity || 1;
+  getProduct(product: any): any {
+    console.log('Original Product:', product);
+    if (localStorage.getItem('selectedOrderType') === 'talabat') {
+      if (Array.isArray(product.Id_menus_integrations) && product.Id_menus_integrations.length > 0) {
+        for (let integration of product.Id_menus_integrations) {
+          if (integration.name_en?.toLowerCase().includes('talabat')) {
+            console.log('✅ Talabat integration found:', integration);
 
-  cartItem.totalPrice = (base + size + addons) * qty;
-  cartItem.finalPrice = cartItem.totalPrice;
-}
-convertDish(original: any) {
-  const dish = original.dish;
+            // تحديث السعر الأساسي للطبق
+            const newPrice = integration.menus_integration_dishs?.[0]?.price || product.price;
+            product.price = parseFloat(newPrice);
 
-  return {
-    id: dish.id,
-    name: dish.name,
-    description: dish.description,
-    price: dish.price,
-    currency_symbol: dish.currency_symbol,
-    image: dish.image,
-    share_link: dish.share_link,
-    has_addon: dish.addon_categories?.length > 0,
-    has_size: dish.sizes?.length > 0,
-    is_integration: true,
-    addon_categories: original.addon_categories || [],
-    sizes: original.sizes || [],
-    Id_menus_integrations: dish.Id_menus_integrations || []
-  };
-}
-
-
-getProduct(product: any): any {
-  console.log('Original Product:', product);
-  if (localStorage.getItem('selectedOrderType') === 'talabat') {
-    if (Array.isArray(product.Id_menus_integrations) && product.Id_menus_integrations.length > 0) {
-      for (let integration of product.Id_menus_integrations) {
-        if (integration.name_en?.toLowerCase().includes('talabat')) {
-          console.log('✅ Talabat integration found:', integration);
-
-          // تحديث السعر الأساسي للطبق
-          const newPrice = integration.menus_integration_dishs?.[0]?.price || product.price;
-          product.price = parseFloat(newPrice);
-
-          // تحديث الأسعار داخل الـ sizes
-          if (Array.isArray(product.sizes) && Array.isArray(integration.menus_integration_dish_sizes)) {
-            product.sizes = product.sizes.map((size: any) => {
-              const matchedSize = integration.menus_integration_dish_sizes.find(
-                (s: any) => s.branch_menu_size_id === size.id
-              );
-              if (matchedSize) {
-                return { ...size, price: parseFloat(matchedSize.price) };
-              }
-              return size;
-            });
-          }
-
-          // تحديث الأسعار داخل الـ addons
-          if (Array.isArray(product.addon_categories) && Array.isArray(integration.menus_integration_dish_addons)) {
-            product.addon_categories = product.addon_categories.map((category: any) => ({
-              ...category,
-              addons: category.addons.map((addon: any) => {
-                const matchedAddon = integration.menus_integration_dish_addons.find(
-                  (a: any) => a.branch_menu_addon_id === addon.id
+            // تحديث الأسعار داخل الـ sizes
+            if (Array.isArray(product.sizes) && Array.isArray(integration.menus_integration_dish_sizes)) {
+              product.sizes = product.sizes.map((size: any) => {
+                const matchedSize = integration.menus_integration_dish_sizes.find(
+                  (s: any) => s.branch_menu_size_id === size.id
                 );
-                if (matchedAddon) {
-                  return { ...addon, price: parseFloat(matchedAddon.price) };
+                if (matchedSize) {
+                  return { ...size, price: parseFloat(matchedSize.price) };
                 }
-                return addon;
-              }),
-            }));
+                return size;
+              });
+            }
+
+            // تحديث الأسعار داخل الـ addons
+            if (Array.isArray(product.addon_categories) && Array.isArray(integration.menus_integration_dish_addons)) {
+              product.addon_categories = product.addon_categories.map((category: any) => ({
+                ...category,
+                addons: category.addons.map((addon: any) => {
+                  const matchedAddon = integration.menus_integration_dish_addons.find(
+                    (a: any) => a.branch_menu_addon_id === addon.id
+                  );
+                  if (matchedAddon) {
+                    return { ...addon, price: parseFloat(matchedAddon.price) };
+                  }
+                  return addon;
+                }),
+              }));
+            }
           }
         }
       }
     }
+
+    return product;
   }
 
-  return product;
-}
+  clearOrderTypeData() {
+    // Clear data based on the previously selected order type
+    switch (this.selectedOrderType) {
+      case 'dine-in':
+        // Clear table number and table ID
+        this.tableNumber = null;
+        localStorage.removeItem('table_number');
+        localStorage.removeItem('table_id');
+        break;
 
-clearOrderTypeData() {
-  // Clear data based on the previously selected order type
-  switch (this.selectedOrderType) {
-    case 'dine-in':
-      // Clear table number and table ID
-      this.tableNumber = null;
-      localStorage.removeItem('table_number');
-      localStorage.removeItem('table_id');
-      break;
+      case 'Delivery':
+        // Clear delivery address, courier, and form data
+        // this.address = '';
+        // this.clientName = ' ';
+        // this.addressPhone = '';
+        // localStorage.removeItem('form_data');
 
-    case 'Delivery':
-      // Clear delivery address, courier, and form data
-      // this.address = '';
-      // this.clientName = ' ';
-      // this.addressPhone = '';
-      // localStorage.removeItem('form_data');
+        // localStorage.removeItem('address_id');
+        break;
 
-      // localStorage.removeItem('address_id');
-      break;
-
-    case 'Takeaway':
-      // No specific data to clear for Takeaway
-      break;
-    case 'talabat':
-      // No specific data to clear for talabat
-      break;
-    default:
-      break;
+      case 'Takeaway':
+        // No specific data to clear for Takeaway
+        break;
+      case 'talabat':
+        // No specific data to clear for talabat
+        break;
+      default:
+        break;
+    }
   }
-}
 
 loadOrderType() {
   const savedOrderType = localStorage.getItem('selectedOrderType');
@@ -3556,648 +3554,635 @@ applyNote(): void {
   const backdrops = document.querySelectorAll('.modal-backdrop');
   backdrops.forEach((el) => el.remove());
 
-  const noteModal = document.getElementById('noteModal');
-  if(noteModal) {
-    const modalInstance = bootstrap.Modal.getInstance(noteModal);
-    if (modalInstance) {
-      modalInstance.hide();
+    const noteModal = document.getElementById('noteModal');
+    if (noteModal) {
+      const modalInstance = bootstrap.Modal.getInstance(noteModal);
+      if (modalInstance) {
+        modalInstance.hide();
+      }
     }
-  }
     localStorage.setItem('additionalNote', this.additionalNote);
-  this.closeModal();
-}
-applyAdditionalNote() {
-  const orderNote = localStorage.getItem('additionalNote');
-  return orderNote;
-}
-removeNote() {
-  localStorage.removeItem('additionalNote');
-  this.additionalNote = ' ';
-  // Attempt to close the modal.
-  const modalEl = document.getElementById('noteModal');
-  if (modalEl) {
-    let bsModal = bootstrap.Modal.getInstance(modalEl);
-    if (!bsModal) {
-      bsModal = new bootstrap.Modal(modalEl);
-    }
-    bsModal.hide();
-
-    // ✅ Remove backdrop manually
-    const backdrop = document.querySelector('.modal-backdrop');
-    if (backdrop) {
-      backdrop.remove();
-    }
-
-    // ✅ Remove body class if still exists
-    document.body.classList.remove('modal-open');
-    document.body.style.removeProperty('padding-right');
+    this.closeModal();
   }
-  this.closeModal();
-}
-// clearSelectedCourier() {
-//   this.selectedCourier = null;
-//   localStorage.removeItem('selectedCourier');
-// }
-setCameFromSideDetails(): void {
-  localStorage.setItem('cameFromSideDetails', 'true');
-}
+  applyAdditionalNote() {
+    const orderNote = localStorage.getItem('additionalNote');
+    return orderNote;
+  }
+  removeNote() {
+    localStorage.removeItem('additionalNote');
+    this.additionalNote = ' ';
+    // Attempt to close the modal.
+    const modalEl = document.getElementById('noteModal');
+    if (modalEl) {
+      let bsModal = bootstrap.Modal.getInstance(modalEl);
+      if (!bsModal) {
+        bsModal = new bootstrap.Modal(modalEl);
+      }
+      bsModal.hide();
 
-updatePaymentOptions() {
-  // ✅ الشرط الجديد: إذا كان نوع الطلب "طلبات" وغير مدفوع، اختيار آجل تلقائياً
-  if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
-    this.selectedPaymentMethod = 'deferred';
-    return;
-  }
-  // إذا كان نوع الطلب "طلبات"، عيّن طريقة الدفع المناسبة تلقائياً
-  if (this.selectedOrderType === 'talabat') {
-    if (this.selectedPaymentStatus === 'paid') {
-      this.selectedPaymentMethod = 'cash'; // مدفوع → كاش
-    } else if (this.selectedPaymentStatus === 'unpaid') {
-      this.selectedPaymentMethod = 'deferred'; // غير مدفوع → آجل
+      // ✅ Remove backdrop manually
+      const backdrop = document.querySelector('.modal-backdrop');
+      if (backdrop) {
+        backdrop.remove();
+      }
+
+      // ✅ Remove body class if still exists
+      document.body.classList.remove('modal-open');
+      document.body.style.removeProperty('padding-right');
     }
-    return;
+    this.closeModal();
   }
-  // If Visa is selected, force "paid" as payment status
-  if (this.selectedPaymentMethod === 'credit') {
-    this.selectedPaymentStatus = 'paid';
+  // clearSelectedCourier() {
+  //   this.selectedCourier = null;
+  //   localStorage.removeItem('selectedCourier');
+  // }
+  setCameFromSideDetails(): void {
+    localStorage.setItem('cameFromSideDetails', 'true');
   }
 
-  // If switching to Dine-in, reset payment to Cash
-  if (
-    this.selectedOrderType === 'dine-in' ||
-    this.selectedOrderType === 'في المطعم'
-  ) {
-    this.selectedPaymentMethod = 'cash';
-    this.selectedPaymentStatus = 'paid'; // Default for dine-in
-  }
-}
-closeModal(_removeCoupon: boolean = false) {
-  if (_removeCoupon == true) {
-    this.removeCoupon()
-  }
-  const modals = document.querySelectorAll('.modal.show');
-  modals.forEach((modalEl: any) => {
-    const modalInstance = bootstrap.Modal.getInstance(modalEl);
-    if (modalInstance) {
-      modalInstance.hide();
+  updatePaymentOptions() {
+    // ✅ الشرط الجديد: إذا كان نوع الطلب "طلبات" وغير مدفوع، اختيار آجل تلقائياً
+    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
+      this.selectedPaymentMethod = 'deferred';
+      return;
     }
-  });
-  // إزالة أي Backdrop يدويًا
-  const backdrops = document.querySelectorAll('.modal-backdrop');
-  backdrops.forEach((backdrop) => backdrop.remove());
-}
-onPaymentStatusChange() {
-  // const savedStatus = localStorage.getItem('selectedPaymentStatus');
-  // this.selectedPaymentStatus = savedStatus || 'unpaid';
-  // ✅ الشرط الجديد: إذا كان الطلب من طلبات وغير مدفوع، اختيار آجل تلقائياً
-  if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
-    this.selectedPaymentMethod = 'deferred';
-  }
+    // إذا كان نوع الطلب "طلبات"، عيّن طريقة الدفع المناسبة تلقائياً
+    if (this.selectedOrderType === 'talabat') {
+      if (this.selectedPaymentStatus === 'paid') {
+        this.selectedPaymentMethod = 'cash'; // مدفوع → كاش
+      } else if (this.selectedPaymentStatus === 'unpaid') {
+        this.selectedPaymentMethod = 'deferred'; // غير مدفوع → آجل
+      }
+      return;
+    }
+    // If Visa is selected, force "paid" as payment status
+    if (this.selectedPaymentMethod === 'credit') {
+      this.selectedPaymentStatus = 'paid';
+    }
 
-  // إذا كان نوع الطلب "طلبات"، عيّن طريقة الدفع المناسبة
-  if (this.selectedOrderType === 'talabat') {
-    if (this.selectedPaymentStatus === 'paid') {
-      this.selectedPaymentMethod = 'cash'; // مدفوع → كاش
-    } else if (this.selectedPaymentStatus === 'unpaid') {
-      this.selectedPaymentMethod = 'deferred'; // غير مدفوع → آجل
+    // If switching to Dine-in, reset payment to Cash
+    if (
+      this.selectedOrderType === 'dine-in' ||
+      this.selectedOrderType === 'في المطعم'
+    ) {
+      this.selectedPaymentMethod = 'cash';
+      this.selectedPaymentStatus = 'paid'; // Default for dine-in
     }
   }
-  console.log('Payment Status:', this.selectedPaymentStatus); // paid or unpaid
-  if (this.selectedPaymentStatus === 'unpaid') {
-    this.cash_amountt = 0;
-    this.credit_amountt = 0;
-    this.referenceNumber = '';
-    // this.selectedPaymentMethod = '';
+  closeModal() {
+    // if (_removeCoupon == true) {
+    //   this.removeCoupon()
+    // }
+    const modals = document.querySelectorAll('.modal.show');
+    modals.forEach((modalEl: any) => {
+      const modalInstance = bootstrap.Modal.getInstance(modalEl);
+      if (modalInstance) {
+        modalInstance.hide();
+      }
+    });
+    // إزالة أي Backdrop يدويًا
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach((backdrop) => backdrop.remove());
+  }
+  onPaymentStatusChange() {
+    // const savedStatus = localStorage.getItem('selectedPaymentStatus');
+    // this.selectedPaymentStatus = savedStatus || 'unpaid';
+    // ✅ الشرط الجديد: إذا كان الطلب من طلبات وغير مدفوع، اختيار آجل تلقائياً
+    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
+      this.selectedPaymentMethod = 'deferred';
+    }
+
+    // إذا كان نوع الطلب "طلبات"، عيّن طريقة الدفع المناسبة
+    if (this.selectedOrderType === 'talabat') {
+      if (this.selectedPaymentStatus === 'paid') {
+        this.selectedPaymentMethod = 'cash'; // مدفوع → كاش
+      } else if (this.selectedPaymentStatus === 'unpaid') {
+        this.selectedPaymentMethod = 'deferred'; // غير مدفوع → آجل
+      }
+    }
+    console.log('Payment Status:', this.selectedPaymentStatus); // paid or unpaid
+    if (this.selectedPaymentStatus === 'unpaid') {
+      this.cash_amountt = 0;
+      this.credit_amountt = 0;
+      this.referenceNumber = '';
+      // this.selectedPaymentMethod = '';
+      localStorage.removeItem('cash_amountt');
+      localStorage.removeItem('credit_amountt');
+      localStorage.removeItem('referenceNumber');
+    }
+
+    localStorage.setItem('selectedPaymentStatus', this.selectedPaymentStatus);
+  }
+  sharedOrderId: any;
+
+  // saveOrderToLocalStorage() {
+  //   this.falseMessage = '';
+  //   const branchId = Number(localStorage.getItem('branch_id')) || null;
+  //   const tableId = Number(localStorage.getItem('table_id')) || null;
+  //   // ===== INVOICE SUMMARY =====
+  //   const taxEnabled = this.branchData.tax_application;
+  //   const couponEnabled = this.branchData.coupon_application;
+  //   const rawSubtotal = this.cartItems.reduce(
+  //     (sum, item) => sum + (this.getItemTotal(item) || item.price),
+  //     0
+  //   );
+  //   let subtotal = rawSubtotal;
+  //   if (this.appliedCoupon) {
+  //     if (taxEnabled && !couponEnabled) {
+  //       subtotal = this.appliedCoupon.amount_after_coupon + this.getTax();
+  //     } else {
+  //       subtotal = this.appliedCoupon.amount_after_coupon;
+  //     }
+  //   }
+  //   subtotal = Math.max(subtotal, 0);
+  //   let taxAmount = 0;
+  //   if (!taxEnabled) {
+  //     taxAmount = subtotal * (this.branchData.tax_percentage / 100);
+  //   }
+  //   let serviceFee = 0;
+  //   if (this.selectedOrderType === 'في المطعم' || this.selectedOrderType === 'dine-in') {
+  //     serviceFee = this.getServiceFeeAmount();
+  //   }
+  //   let deliveryFee = 0;
+  //   if (this.selectedOrderType === 'توصيل' || this.selectedOrderType === 'Delivery') {
+  //     deliveryFee = this.branchData.delivery_fees;
+  //   }
+  //   const total = subtotal + taxAmount + serviceFee + deliveryFee;
+  //   const authToken = localStorage.getItem('authToken');
+  //   const cashier_machine_id = localStorage.getItem('cashier_machine_id');
+  //   const paymentStatus = this.selectedPaymentMethod === 'cash' ? this.selectedPaymentStatus : 'paid';
+  //   console.log(this.selectedPaymentMethod, 'selectedPaymentMethod');
+  //   const orderData: any = {
+  //     type: this.selectedOrderType,
+  //     branch_id: branchId,
+  //     payment_method: this.selectedPaymentMethod,
+  //     payment_status: paymentStatus,
+  //     cash_amount: this.cash_amountt, ///////////////// alaa
+  //     credit_amount: this.credit_amountt,
+  //     cashier_machine_id: cashier_machine_id,
+  //     note:
+  //       this.additionalNote ||
+  //       this.savedNote ||
+  //       this.applyAdditionalNote() ||
+  //       '',
+  //     items: this.cartItems
+  //       .map((item) => ({
+  //         dish_id: item.dish?.id || null,
+  //         dish_name: item.dish?.name || '',
+  //         dish_description: item.dish?.description || '',
+  //         dish_price: item.dish?.price || 0,
+  //         currency_symbol: item.dish?.currency_symbol || '',
+  //         dish_image: item.dish?.image || null,
+  //         quantity: item.quantity || 1,
+  //         sizeId: item.selectedSize?.id || null,
+  //         size: item.size || '',
+  //         sizeName: item.selectedSize?.name || '',
+  //         sizeDescription: item.selectedSize?.description || '',
+  //         note: item.note || '',
+  //         finalPrice: item.finalPrice || 0,
+  //         selectedAddons: item.selectedAddons || [],
+  //         addon_categories: item.addon_categories
+  //           ?.map((category: { id: any; addons: { id: any }[] }) => {
+  //             const selectedAddons = category.addons?.filter((addon) =>
+  //               item.selectedAddons.some(
+  //                 (selected: { id: any }) => selected.id === addon.id
+  //               )
+  //             );
+  //             return selectedAddons.length > 0
+  //               ? {
+  //                 id: category.id,
+  //                 addon: selectedAddons.map((addon) => addon.id),
+  //               }
+  //               : null;
+  //           })
+  //           .filter((category: null) => category !== null),
+  //       }))
+  //       .filter((item) => item.dish_id),
+  //   };
+  //   if (this.appliedCoupon && this.couponCode?.trim()) {
+  //     orderData.coupon_code = this.couponCode.trim();
+  //     orderData.discount_amount = this.discountAmount;
+  //     orderData.coupon_type = this.appliedCoupon.value_type;
+  //   } else if (this.couponCode?.trim()) {
+  //     orderData.coupon_code = this.couponCode.trim();
+  //   }
+  //   const invoiceSummary = {
+  //     subtotal_price: rawSubtotal.toFixed(2),
+  //     coupon_value: (this.discountAmount || 0).toFixed(2),
+  //     delivery_fees: deliveryFee.toFixed(2),
+  //     service_fee: serviceFee.toFixed(2),
+  //     tax_application: taxEnabled ? 1 : 0,
+  //     tax_percentage: this.branchData.tax_percentage || 0,
+  //     tax_value: taxAmount.toFixed(2),
+  //     total_price: total.toFixed(2),
+  //     currency_symbol: "د.ك"
+  //   };
+  //   let addressData: any = {};
+  //   if (this.selectedOrderType.toLowerCase() === "delivery") {
+  //     const formData = JSON.parse(localStorage.getItem("form_data") || '{}');
+  //     addressData = {
+  //       client_name: formData.client_name || '',
+  //       address_phone: formData.address_phone || '',
+  //       country_code: formData.country_code || '',
+  //       apartment_number: formData.apartment_number || '',
+  //       building: formData.building || '',
+  //       address_type: formData.address_type || '',
+  //       address: formData.address || '',
+  //       propertyType: formData.propertyType || '',
+  //       buildingName: formData.buildingName || '',
+  //       note: formData.note || '',
+  //       floor_number: formData.floor_number || '',
+  //       landmark: formData.landmark || '',
+  //       villaName: formData.villaName || '',
+  //       villaNumber: formData.villaNumber || '',
+  //       companyName: formData.companyName || '',
+  //       buildingNumber: formData.buildingNumber || ''
+  //     };
+  //   }
+  //   if (!this.cartItems.length) {
+  //     this.falseMessage = 'العربة فارغة، أضف بعض العناصر.';
+  //     setTimeout(() => {
+  //       this.falseMessage = '';
+  //     }, 1500);
+  //     return;
+  //   }
+  //   if (!this.selectedOrderType) {
+  //     this.falseMessage = 'يرجى تحديد نوع الطلب قبل المتابعة.';
+  //     setTimeout(() => {
+  //       this.falseMessage = '';
+  //     }, 1500);
+  //     return;
+  //   }
+  //   if (!branchId) {
+  //     this.falseMessage = 'فشل تحديد الفرع. الرجاء إعادة تسجيل الدخول.';
+  //     setTimeout(() => {
+  //       this.falseMessage = '';
+  //     }, 1500);
+  //     this.isLoading = false;
+  //     this.loading = false;
+  //     return;
+  //   }
+  //   if (!authToken) {
+  //     this.falseMessage = 'فشل التحقق من الهوية. الرجاء تسجيل الدخول مجددًا.';
+  //     setTimeout(() => {
+  //       this.falseMessage = '';
+  //     }, 1500);
+  //     this.isLoading = false;
+  //     this.loading = false;
+  //     return;
+  //   }
+  //   if (!orderData.items.length) {
+  //     this.falseMessage = 'لا يمكن تقديم الطلب بدون عناصر صالحة.';
+  //     setTimeout(() => {
+  //       this.falseMessage = '';
+  //     }, 1500);
+  //     this.isLoading = false;
+  //     this.loading = false;
+  //     return;
+  //   }
+  //   if (!this.cartItems.length) {
+  //     this.falseMessage = "🛒 العربة فارغة، أضف بعض العناصر.";
+  //     return;
+  //   }
+  //   if (
+  //     this.selectedOrderType === 'dine-in' ||
+  //     this.selectedOrderType === 'في المطعم'
+  //   ) {
+  //     orderData.table_id = tableId;
+  //   }
+  //   // Save to local storage
+  //   let savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
+  //   if (!Array.isArray(savedOrders)) savedOrders = [];
+
+  //   savedOrders.push(orderData);
+  //   if (savedOrders.length > 10) savedOrders.shift();
+
+  //   localStorage.setItem('savedOrders', JSON.stringify(savedOrders));
+
+  //   // Cleanup
+  //   this.clearCart();
+  //   this.couponCode = '';
+  //   this.appliedCoupon = null;
+  //   this.discountAmount = 0;
+  //   this.savedNote = '';
+  //   this.updateTotalPrice();
+  //   localStorage.removeItem('form_data');
+
+  //   this.falseMessage = "✅ تم حفظ الطلب بنجاح!";
+  //   console.log("✅ Order saved:", orderData);
+  // }
+  existingOrderId: string | null = null;
+
+  saveOrderToLocalStorage() {
+    const branchId = Number(localStorage.getItem('branch_id')) || null;
+    const tableId = Number(localStorage.getItem('table_id')) || null;
+    const addressId = Number(localStorage.getItem('address_id')) || null;
+    const cashier_machine_id = localStorage.getItem('cashier_machine_id');
+
+    if (!branchId) {
+      this.falseMessage = '❌ فشل تحديد الفرع. الرجاء إعادة تسجيل الدخول.';
+      return;
+    }
+
+    if (!this.selectedOrderType) {
+      this.falseMessage = '❌ يرجى تحديد نوع الطلب.';
+      return;
+    }
+
+    if (!this.cartItems.length) {
+      this.falseMessage = '🛒 العربة فارغة، أضف بعض العناصر.';
+      return;
+    }
+    const finalOrderId = localStorage.getItem('finalOrderId');
+    const orderIdToUse =
+      finalOrderId || Math.random().toString(36).substring(2, 10);
+
+    const paymentStatus =
+      this.selectedPaymentMethod === 'cash'
+        ? this.selectedPaymentStatus
+        : 'paid';
+
+    // ===== INVOICE SUMMARY =====
+    const taxEnabled = this.branchData.tax_application;
+    const couponEnabled = this.branchData.coupon_application;
+
+    // const rawSubtotal = this.cartItems.reduce(
+    //   (sum, item) => sum + (this.getItemTotal(item) || item.price),
+    //   0
+    // );
+
+    let subtotal = this.getTotal();
+
+    if (this.appliedCoupon) {
+      if (taxEnabled && !couponEnabled) {
+        subtotal = this.appliedCoupon.amount_after_coupon + this.getTax();
+      } else {
+        subtotal = this.appliedCoupon.amount_after_coupon;
+      }
+    }
+
+    subtotal = Math.max(subtotal, 0);
+
+    let taxAmount = 0;
+    if (!taxEnabled) {
+      taxAmount = subtotal * (this.branchData.tax_percentage / 100);
+    }
+
+    let serviceFee = 0;
+    if (
+      this.selectedOrderType === 'في المطعم' ||
+      this.selectedOrderType === 'dine-in'
+    ) {
+      if (!couponEnabled && !taxEnabled
+        && this.appliedCoupon) {
+        serviceFee = this.getServiceOnAmountAfterCoupon()
+      } else {
+        serviceFee = this.getServiceFeeAmount();
+
+      }
+    }
+
+    let deliveryFee = 0;
+    if (
+      this.selectedOrderType === 'توصيل' ||
+      this.selectedOrderType === 'Delivery'
+    ) {
+      deliveryFee = this.delivery_fees;
+    }
+
+    // const total = subtotal + taxAmount + serviceFee + deliveryFee;
+
+    const invoiceSummary = {
+      subtotal_price: this.getTotal().toFixed(2),
+      coupon_value: (this.discountAmount || 0).toFixed(2),
+      delivery_fees: deliveryFee.toFixed(2),
+      service_fee: serviceFee.toFixed(2),
+      tax_application: taxEnabled ? 1 : 0,
+      tax_percentage: this.branchData.tax_percentage || 0,
+      tax_value: this.getTax(),
+      total_price: this.getCartTotal(),
+      currency_symbol: this.currencySymbol,
+    };
+    let addressData: any = {};
+    if (this.selectedOrderType.toLowerCase() === 'delivery') {
+      const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+
+      // if (Object.keys(formData).length === 0) {
+      //   this.falseMessage = "❌ لا توجد بيانات للاسترجاع.";
+      //   return;
+      // }
+
+      addressData = {
+        client_name: formData.client_name || '',
+        address_phone: formData.address_phone || '',
+        country_code: formData.country_code.code || '',
+        apartment_number: formData.apartment_number || '',
+        building: formData.building || '',
+        address_type: formData.address_type || '',
+        address: formData.address || '',
+        propertyType: formData.propertyType || '',
+        buildingName: formData.buildingName || '',
+        note: formData.note || '',
+        floor_number: formData.floor_number || '',
+        landmark: formData.landmark || '',
+        villaName: formData.villaName || '',
+        villaNumber: formData.villaNumber || '',
+        companyName: formData.companyName || '',
+        buildingNumber: formData.buildingNumber || '',
+      };
+    }
+    if (this.selectedOrderType.toLowerCase() === 'talabat') {
+      const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+    }
+    // ===== ORDER DATA =====
+    const orderData: any = {
+      orderId: orderIdToUse,
+      coupon_code: this.couponCode || null,
+      type: this.selectedOrderType,
+      branch_id: branchId,
+      payment_method: this.selectedPaymentMethod,
+      payment_status: paymentStatus,
+      cash_amount: this.cash_amountt || null,
+      credit_amount: this.credit_amountt || null,
+      cashier_machine_id: cashier_machine_id,
+      client_country_code: this.selectedCountry.code || "+20",
+      client_phone: this.clientPhone,
+      note: this.additionalNote || this.onholdOrdernote || '',
+      tableNumber: this.tableNumber || this.table_number,
+      table_id: tableId || this.table_id,
+      created_at: new Date().toISOString(),
+      order_items_count: this.getTotalItemCount(),
+      invoiceSummary,
+      addresses: addressData,
+      items: this.cartItems
+        .map((item) => ({
+          dish_name: item.dish.name,
+          dish_image: item.dish.image,
+          dish_desc: item.dish.description || null,
+          dish_price: item.dish.price ?? 0,
+          final_price: this.getItemTotal(item) ?? 0,
+          dish_id: item.dish?.id || null,
+          quantity: item.quantity || 1,
+          size_name: item.selectedSize?.name || null,
+          size_price: item.selectedSize?.price ?? 0,
+          sizeId: item.selectedSize?.id || null,
+          note: item.note || '',
+          addon_categories: item.addon_categories
+            ?.map((category: { id: any; name?: string; addons: any[] }) => {
+              const selectedAddons = category.addons?.filter((addon) =>
+                item.selectedAddons?.some(
+                  (selected: { id: any }) => selected.id === addon.id
+                )
+              );
+              return selectedAddons.length > 0
+                ? {
+                  id: category.id,
+                  name: category.name || '',
+                  addons: selectedAddons.map((addon) => ({
+                    id: addon.id,
+                    name: addon.name,
+                    price: addon.price,
+                  })),
+                }
+                : null;
+            })
+            .filter((category: any) => category !== null),
+        }))
+        .filter((item) => item.dish_id),
+    };
+
+    if (!orderData.items.length) {
+      this.falseMessage = '❌ الطلب لا يحتوي على عناصر صالحة.';
+      return;
+    }
+
+    // Save to local storage
+    let savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
+    if (!Array.isArray(savedOrders)) savedOrders = [];
+
+    const existingIndex = savedOrders.findIndex(
+      (o: any) => o.orderId === orderIdToUse
+    );
+
+    if (existingIndex !== -1) {
+      // Update existing order
+      savedOrders[existingIndex] = orderData;
+    } else {
+      // Save new order
+      savedOrders.push(orderData);
+    }
+
+    localStorage.setItem('savedOrders', JSON.stringify(savedOrders));
+
+    // Cleanup
+    this.clearCart();
+    this.couponCode = '';
+    this.appliedCoupon = null;
+    this.discountAmount = 0;
+    this.additionalNote = ''
+    this.savedNote = '';
+    this.updateTotalPrice();
+    localStorage.removeItem('form_data');
+    localStorage.removeItem('notes');
+    localStorage.removeItem('additionalNote');
+    localStorage.removeItem('selectedPaymentStatus');
     localStorage.removeItem('cash_amountt');
     localStorage.removeItem('credit_amountt');
-    localStorage.removeItem('referenceNumber');
+    localStorage.removeItem('table_number');
+    localStorage.removeItem('table_id');
+    localStorage.removeItem('address_id');
+    localStorage.removeItem('selectedHotel');
+    localStorage.removeItem('hotel_id');
+    localStorage.removeItem('selectedPaymentStatus');
+    localStorage.removeItem('delivery_fees');
+    localStorage.removeItem('selected_address');
+    localStorage.removeItem('client');
+    localStorage.removeItem('clientPhone');
+    localStorage.removeItem('holdCart');
+    localStorage.removeItem('cart');
+    this.client = " ";
+    this.clientPhone = " "
+    this.cash_amountt = 0;
+    this.credit_amountt = 0;
+    this.selectedPaymentStatus = '';
+    this.resetAddress()
+    this.tableNumber = null;
+    this.FormDataDetails = null;
+    this.successMessage = 'تم حفظ طلبك بنجاح';
+    this.successModal.show();
+    localStorage.removeItem('finalOrderId');
+    this.finalOrderId = " ";
+    console.log('✅ Order saved:', orderData);
+  }
+  resetAddress() {
+    this.clientName = undefined;
+    this.address = '';
+    this.addressPhone = '';
   }
 
-  localStorage.setItem('selectedPaymentStatus', this.selectedPaymentStatus);
-}
-sharedOrderId: any;
+  // isLoading: boolean = false;
 
-// saveOrderToLocalStorage() {
-//   this.falseMessage = '';
-//   const branchId = Number(localStorage.getItem('branch_id')) || null;
-//   const tableId = Number(localStorage.getItem('table_id')) || null;
-//   // ===== INVOICE SUMMARY =====
-//   const taxEnabled = this.branchData.tax_application;
-//   const couponEnabled = this.branchData.coupon_application;
-//   const rawSubtotal = this.cartItems.reduce(
-//     (sum, item) => sum + (this.getItemTotal(item) || item.price),
-//     0
-//   );
-//   let subtotal = rawSubtotal;
-//   if (this.appliedCoupon) {
-//     if (taxEnabled && !couponEnabled) {
-//       subtotal = this.appliedCoupon.amount_after_coupon + this.getTax();
-//     } else {
-//       subtotal = this.appliedCoupon.amount_after_coupon;
-//     }
-//   }
-//   subtotal = Math.max(subtotal, 0);
-//   let taxAmount = 0;
-//   if (!taxEnabled) {
-//     taxAmount = subtotal * (this.branchData.tax_percentage / 100);
-//   }
-//   let serviceFee = 0;
-//   if (this.selectedOrderType === 'في المطعم' || this.selectedOrderType === 'dine-in') {
-//     serviceFee = this.getServiceFeeAmount();
-//   }
-//   let deliveryFee = 0;
-//   if (this.selectedOrderType === 'توصيل' || this.selectedOrderType === 'Delivery') {
-//     deliveryFee = this.branchData.delivery_fees;
-//   }
-//   const total = subtotal + taxAmount + serviceFee + deliveryFee;
-//   const authToken = localStorage.getItem('authToken');
-//   const cashier_machine_id = localStorage.getItem('cashier_machine_id');
-//   const paymentStatus = this.selectedPaymentMethod === 'cash' ? this.selectedPaymentStatus : 'paid';
-//   console.log(this.selectedPaymentMethod, 'selectedPaymentMethod');
-//   const orderData: any = {
-//     type: this.selectedOrderType,
-//     branch_id: branchId,
-//     payment_method: this.selectedPaymentMethod,
-//     payment_status: paymentStatus,
-//     cash_amount: this.cash_amountt, ///////////////// alaa
-//     credit_amount: this.credit_amountt,
-//     cashier_machine_id: cashier_machine_id,
-//     note:
-//       this.additionalNote ||
-//       this.savedNote ||
-//       this.applyAdditionalNote() ||
-//       '',
-//     items: this.cartItems
-//       .map((item) => ({
-//         dish_id: item.dish?.id || null,
-//         dish_name: item.dish?.name || '',
-//         dish_description: item.dish?.description || '',
-//         dish_price: item.dish?.price || 0,
-//         currency_symbol: item.dish?.currency_symbol || '',
-//         dish_image: item.dish?.image || null,
-//         quantity: item.quantity || 1,
-//         sizeId: item.selectedSize?.id || null,
-//         size: item.size || '',
-//         sizeName: item.selectedSize?.name || '',
-//         sizeDescription: item.selectedSize?.description || '',
-//         note: item.note || '',
-//         finalPrice: item.finalPrice || 0,
-//         selectedAddons: item.selectedAddons || [],
-//         addon_categories: item.addon_categories
-//           ?.map((category: { id: any; addons: { id: any }[] }) => {
-//             const selectedAddons = category.addons?.filter((addon) =>
-//               item.selectedAddons.some(
-//                 (selected: { id: any }) => selected.id === addon.id
-//               )
-//             );
-//             return selectedAddons.length > 0
-//               ? {
-//                 id: category.id,
-//                 addon: selectedAddons.map((addon) => addon.id),
-//               }
-//               : null;
-//           })
-//           .filter((category: null) => category !== null),
-//       }))
-//       .filter((item) => item.dish_id),
-//   };
-//   if (this.appliedCoupon && this.couponCode?.trim()) {
-//     orderData.coupon_code = this.couponCode.trim();
-//     orderData.discount_amount = this.discountAmount;
-//     orderData.coupon_type = this.appliedCoupon.value_type;
-//   } else if (this.couponCode?.trim()) {
-//     orderData.coupon_code = this.couponCode.trim();
-//   }
-//   const invoiceSummary = {
-//     subtotal_price: rawSubtotal.toFixed(2),
-//     coupon_value: (this.discountAmount || 0).toFixed(2),
-//     delivery_fees: deliveryFee.toFixed(2),
-//     service_fee: serviceFee.toFixed(2),
-//     tax_application: taxEnabled ? 1 : 0,
-//     tax_percentage: this.branchData.tax_percentage || 0,
-//     tax_value: taxAmount.toFixed(2),
-//     total_price: total.toFixed(2),
-//     currency_symbol: "د.ك"
-//   };
-//   let addressData: any = {};
-//   if (this.selectedOrderType.toLowerCase() === "delivery") {
-//     const formData = JSON.parse(localStorage.getItem("form_data") || '{}');
-//     addressData = {
-//       client_name: formData.client_name || '',
-//       address_phone: formData.address_phone || '',
-//       country_code: formData.country_code || '',
-//       apartment_number: formData.apartment_number || '',
-//       building: formData.building || '',
-//       address_type: formData.address_type || '',
-//       address: formData.address || '',
-//       propertyType: formData.propertyType || '',
-//       buildingName: formData.buildingName || '',
-//       note: formData.note || '',
-//       floor_number: formData.floor_number || '',
-//       landmark: formData.landmark || '',
-//       villaName: formData.villaName || '',
-//       villaNumber: formData.villaNumber || '',
-//       companyName: formData.companyName || '',
-//       buildingNumber: formData.buildingNumber || ''
-//     };
-//   }
-//   if (!this.cartItems.length) {
-//     this.falseMessage = 'العربة فارغة، أضف بعض العناصر.';
-//     setTimeout(() => {
-//       this.falseMessage = '';
-//     }, 1500);
-//     return;
-//   }
-//   if (!this.selectedOrderType) {
-//     this.falseMessage = 'يرجى تحديد نوع الطلب قبل المتابعة.';
-//     setTimeout(() => {
-//       this.falseMessage = '';
-//     }, 1500);
-//     return;
-//   }
-//   if (!branchId) {
-//     this.falseMessage = 'فشل تحديد الفرع. الرجاء إعادة تسجيل الدخول.';
-//     setTimeout(() => {
-//       this.falseMessage = '';
-//     }, 1500);
-//     this.isLoading = false;
-//     this.loading = false;
-//     return;
-//   }
-//   if (!authToken) {
-//     this.falseMessage = 'فشل التحقق من الهوية. الرجاء تسجيل الدخول مجددًا.';
-//     setTimeout(() => {
-//       this.falseMessage = '';
-//     }, 1500);
-//     this.isLoading = false;
-//     this.loading = false;
-//     return;
-//   }
-//   if (!orderData.items.length) {
-//     this.falseMessage = 'لا يمكن تقديم الطلب بدون عناصر صالحة.';
-//     setTimeout(() => {
-//       this.falseMessage = '';
-//     }, 1500);
-//     this.isLoading = false;
-//     this.loading = false;
-//     return;
-//   }
-//   if (!this.cartItems.length) {
-//     this.falseMessage = "🛒 العربة فارغة، أضف بعض العناصر.";
-//     return;
-//   }
-//   if (
-//     this.selectedOrderType === 'dine-in' ||
-//     this.selectedOrderType === 'في المطعم'
-//   ) {
-//     orderData.table_id = tableId;
-//   }
-//   // Save to local storage
-//   let savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
-//   if (!Array.isArray(savedOrders)) savedOrders = [];
 
-//   savedOrders.push(orderData);
-//   if (savedOrders.length > 10) savedOrders.shift();
+  clientInfoApplied = false; // ✅ show info now
 
-//   localStorage.setItem('savedOrders', JSON.stringify(savedOrders));
+  applyClientInfo() {
+    this.isLoading = true;
 
-//   // Cleanup
-//   this.clearCart();
-//   this.couponCode = '';
-//   this.appliedCoupon = null;
-//   this.discountAmount = 0;
-//   this.savedNote = '';
-//   this.updateTotalPrice();
-//   localStorage.removeItem('form_data');
-
-//   this.falseMessage = "✅ تم حفظ الطلب بنجاح!";
-//   console.log("✅ Order saved:", orderData);
-// }
-existingOrderId: string | null = null;
-
-saveOrderToLocalStorage() {
-  const branchId = Number(localStorage.getItem('branch_id')) || null;
-  const tableId = Number(localStorage.getItem('table_id')) || null;
-  const addressId = Number(localStorage.getItem('address_id')) || null;
-  const cashier_machine_id = localStorage.getItem('cashier_machine_id');
-
-  if (!branchId) {
-    this.falseMessage = '❌ فشل تحديد الفرع. الرجاء إعادة تسجيل الدخول.';
-    return;
-  }
-
-  if (!this.selectedOrderType) {
-    this.falseMessage = '❌ يرجى تحديد نوع الطلب.';
-    return;
-  }
-
-  if (!this.cartItems.length) {
-    this.falseMessage = '🛒 العربة فارغة، أضف بعض العناصر.';
-    return;
-  }
-  const finalOrderId = localStorage.getItem('finalOrderId');
-  const orderIdToUse =
-    finalOrderId || Math.random().toString(36).substring(2, 10);
-
-  const paymentStatus =
-    this.selectedPaymentMethod === 'cash'
-      ? this.selectedPaymentStatus
-      : 'paid';
-
-  // ===== INVOICE SUMMARY =====
-  const taxEnabled = this.branchData.tax_application;
-  const couponEnabled = this.branchData.coupon_application;
-
-  // const rawSubtotal = this.cartItems.reduce(
-  //   (sum, item) => sum + (this.getItemTotal(item) || item.price),
-  //   0
-  // );
-
-  let subtotal = this.getTotal();
-
-  if (this.appliedCoupon) {
-    if (taxEnabled && !couponEnabled) {
-      subtotal = this.appliedCoupon.amount_after_coupon + this.getTax();
-    } else {
-      subtotal = this.appliedCoupon.amount_after_coupon;
-    }
-  }
-
-  subtotal = Math.max(subtotal, 0);
-
-  let taxAmount = 0;
-  if (!taxEnabled) {
-    taxAmount = subtotal * (this.branchData.tax_percentage / 100);
-  }
-
-  let serviceFee = 0;
-  if (
-    this.selectedOrderType === 'في المطعم' ||
-    this.selectedOrderType === 'dine-in'
-  ) {
-    if (!couponEnabled && !taxEnabled
-      && this.appliedCoupon) {
-      serviceFee = this.getServiceOnAmountAfterCoupon()
-    } else {
-      serviceFee = this.getServiceFeeAmount();
-
-    }
-  }
-
-  let deliveryFee = 0;
-  if (
-    this.selectedOrderType === 'توصيل' ||
-    this.selectedOrderType === 'Delivery'
-  ) {
-    deliveryFee = this.delivery_fees;
-  }
-
-  // const total = subtotal + taxAmount + serviceFee + deliveryFee;
-
-  const invoiceSummary = {
-    subtotal_price: this.getTotal().toFixed(2),
-    coupon_value: (this.discountAmount || 0).toFixed(2),
-    delivery_fees: deliveryFee.toFixed(2),
-    service_fee: serviceFee.toFixed(2),
-    tax_application: taxEnabled ? 1 : 0,
-    tax_percentage: this.branchData.tax_percentage || 0,
-    tax_value: this.getTax(),
-    total_price: this.getCartTotal(),
-    currency_symbol: this.currencySymbol,
-  };
-  let addressData: any = {};
-  if (this.selectedOrderType.toLowerCase() === 'delivery') {
-    const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
-
-    // if (Object.keys(formData).length === 0) {
-    //   this.falseMessage = "❌ لا توجد بيانات للاسترجاع.";
-    //   return;
-    // }
-
-    addressData = {
-      client_name: formData.client_name || '',
-      address_phone: formData.address_phone || '',
-      country_code: formData.country_code.code || '',
-      apartment_number: formData.apartment_number || '',
-      building: formData.building || '',
-      address_type: formData.address_type || '',
-      address: formData.address || '',
-      propertyType: formData.propertyType || '',
-      buildingName: formData.buildingName || '',
-      note: formData.note || '',
-      floor_number: formData.floor_number || '',
-      landmark: formData.landmark || '',
-      villaName: formData.villaName || '',
-      villaNumber: formData.villaNumber || '',
-      companyName: formData.companyName || '',
-      buildingNumber: formData.buildingNumber || '',
+    // Prepare client info object
+    const clientInfo = {
+      client: this.client,
+      clientPhone: this.clientPhone,
+      selectedCountryCode: this.selectedCountry.code
     };
-  }
-  if (this.selectedOrderType.toLowerCase() === 'talabat') {
-    const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
-  }
-  // ===== ORDER DATA =====
-  const orderData: any = {
-    orderId: orderIdToUse,
-    coupon_code: this.couponCode || null,
-    type: this.selectedOrderType,
-    branch_id: branchId,
-    payment_method: this.selectedPaymentMethod,
-    payment_status: paymentStatus,
-    cash_amount: this.cash_amountt || null,
-    credit_amount: this.credit_amountt || null,
-    cashier_machine_id: cashier_machine_id,
-    client_country_code: this.selectedCountry.code || "+20",
-    client_phone: this.clientPhone,
-    note: this.additionalNote || this.onholdOrdernote || '',
-    tableNumber: this.tableNumber || this.table_number,
-    table_id: tableId || this.table_id,
-    created_at: new Date().toISOString(),
-    order_items_count: this.getTotalItemCount(),
-    invoiceSummary,
-    addresses: addressData,
-    items: this.cartItems
-      .map((item) => ({
-        dish_name: item.dish.name,
-        dish_image: item.dish.image,
-        dish_desc: item.dish.description || null,
-        dish_price: item.dish.price ?? 0,
-        final_price: this.getItemTotal(item) ?? 0,
-        dish_id: item.dish?.id || null,
-        quantity: item.quantity || 1,
-        size_name: item.selectedSize?.name || null,
-        size_price: item.selectedSize?.price ?? 0,
-        sizeId: item.selectedSize?.id || null,
-        note: item.note || '',
-        addon_categories: item.addon_categories
-          ?.map((category: { id: any; name?: string; addons: any[] }) => {
-            const selectedAddons = category.addons?.filter((addon) =>
-              item.selectedAddons?.some(
-                (selected: { id: any }) => selected.id === addon.id
-              )
-            );
-            return selectedAddons.length > 0
-              ? {
-                id: category.id,
-                name: category.name || '',
-                addons: selectedAddons.map((addon) => ({
-                  id: addon.id,
-                  name: addon.name,
-                  price: addon.price,
-                })),
-              }
-              : null;
-          })
-          .filter((category: any) => category !== null),
-      }))
-      .filter((item) => item.dish_id),
-  };
+    // Save to localStorage
+    localStorage.setItem('client', this.client);
+    localStorage.setItem('clientPhone', this.clientPhone);
+    localStorage.setItem('selectedCountryCode', this.selectedCountry.code);
 
-  if (!orderData.items.length) {
-    this.falseMessage = '❌ الطلب لا يحتوي على عناصر صالحة.';
-    return;
+    // Save to IndexedDB
+    this.dbService.saveClientInfo(clientInfo).then(id => {
+      console.log('✅ Client info saved to IndexedDB with ID:', id);
+
+      this.clientStoredInLocal = this.client;
+      this.clientPhoneStoredInLocal = this.clientPhone;
+
+      // Simulate async saving
+      setTimeout(() => {
+        this.isLoading = false;
+        this.clientInfoApplied = true; // ✅ show info now
+
+        // Optionally close modal here
+        this.closeModal();
+      }, 500);
+    }).catch(err => {
+      console.error('❌ Error saving client info to IndexedDB:', err);
+
+      // Fallback: Continue even if IndexedDB fails
+      this.clientStoredInLocal = this.client;
+      this.clientPhoneStoredInLocal = this.clientPhone;
+
+      setTimeout(() => {
+        this.isLoading = false;
+        this.clientInfoApplied = true;
+        this.closeModal();
+      }, 500);
+    });
   }
 
-  // Save to local storage
-  let savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
-  if (!Array.isArray(savedOrders)) savedOrders = [];
-
-  const existingIndex = savedOrders.findIndex(
-    (o: any) => o.orderId === orderIdToUse
-  );
-
-  if (existingIndex !== -1) {
-    // Update existing order
-    savedOrders[existingIndex] = orderData;
-  } else {
-    // Save new order
-    savedOrders.push(orderData);
-  }
-
-  localStorage.setItem('savedOrders', JSON.stringify(savedOrders));
-
-  // Cleanup
-  this.clearCart();
-  this.couponCode = '';
-  this.appliedCoupon = null;
-  this.discountAmount = 0;
-  this.additionalNote = ''
-  this.savedNote = '';
-  this.updateTotalPrice();
-  localStorage.removeItem('form_data');
-  localStorage.removeItem('notes');
-  localStorage.removeItem('additionalNote');
-  localStorage.removeItem('selectedPaymentStatus');
-  localStorage.removeItem('cash_amountt');
-  localStorage.removeItem('credit_amountt');
-  localStorage.removeItem('table_number');
-  localStorage.removeItem('table_id');
-  localStorage.removeItem('address_id');
-  localStorage.removeItem('selectedHotel');
-  localStorage.removeItem('hotel_id');
-  localStorage.removeItem('selectedPaymentStatus');
-  localStorage.removeItem('delivery_fees');
-  localStorage.removeItem('selected_address');
-  localStorage.removeItem('client');
-  localStorage.removeItem('clientPhone');
-  localStorage.removeItem('holdCart');
-  localStorage.removeItem('cart');
-  this.client = " ";
-  this.clientPhone = " "
-  this.cash_amountt = 0;
-  this.credit_amountt = 0;
-  this.selectedPaymentStatus = '';
-  this.resetAddress()
-  this.tableNumber = null;
-  this.FormDataDetails = null;
-  this.successMessage = 'تم حفظ طلبك بنجاح';
-  this.successModal.show();
-  localStorage.removeItem('finalOrderId');
-  this.finalOrderId = " ";
-  console.log('✅ Order saved:', orderData);
-}
-resetAddress() {
-  this.clientName = undefined;
-  this.address = '';
-  this.addressPhone = '';
-}
-
-// isLoading: boolean = false;
-
-
-clientInfoApplied = false; // ✅ show info now
-
-applyClientInfo() {
-  this.isLoading = true;
-
-  // Prepare client info object
-  const clientInfo = {
-    client: this.client,
-    clientPhone: this.clientPhone,
-    selectedCountryCode: this.selectedCountry.code
-  };
-  // Save to localStorage
-  localStorage.setItem('client', this.client);
-  localStorage.setItem('clientPhone', this.clientPhone);
-  localStorage.setItem('selectedCountryCode', this.selectedCountry.code);
-
-  // Save to IndexedDB
-  this.dbService.saveClientInfo(clientInfo).then(id => {
-    console.log('✅ Client info saved to IndexedDB with ID:', id);
-
-    this.clientStoredInLocal = this.client;
-    this.clientPhoneStoredInLocal = this.clientPhone;
-
-    // Simulate async saving
-    setTimeout(() => {
-      this.isLoading = false;
-      this.clientInfoApplied = true; // ✅ show info now
-
-      // Optionally close modal here
-      this.closeModal();
-    }, 500);
-  }).catch(err => {
-    console.error('❌ Error saving client info to IndexedDB:', err);
-
-    // Fallback: Continue even if IndexedDB fails
-    this.clientStoredInLocal = this.client;
-    this.clientPhoneStoredInLocal = this.clientPhone;
-
-    setTimeout(() => {
-      this.isLoading = false;
-      this.clientInfoApplied = true;
-      this.closeModal();
-    }, 500);
-  });
-}
-
-clearClientInfo() {
-  // Clear values from component
-  this.client = '';
-  this.clientPhone = '';
-  this.clientStoredInLocal = null;
-  this.clientPhoneStoredInLocal = null
-  // Remove from localStorage
-  localStorage.removeItem('client');
-  localStorage.removeItem('selectedCountryCode');
-  localStorage.removeItem('clientName');
-  localStorage.removeItem('clientPhone');
-  // Clear from IndexedDB
-  this.dbService.clearClientInfo().then(() => {
-    console.log('✅ Client info cleared from IndexedDB');
-
-    // Reset component properties
+  clearClientInfo() {
+    // Clear values from component
     this.client = '';
     this.clientPhone = '';
-    this.clientStoredInLocal = '';
-    this.clientPhoneStoredInLocal = '';
-    this.clientInfoApplied = false;
-
-  }).catch(err => {
-    console.error('❌ Error clearing client info from IndexedDB:', err);
-  });
-  console.log('Client info cleared');
-}
+    this.clientStoredInLocal = null;
+    this.clientPhoneStoredInLocal = null
+    // Remove from localStorage
+    localStorage.removeItem('client');
+    localStorage.removeItem('selectedCountryCode');
+    localStorage.removeItem('clientName');
+    localStorage.removeItem('clientPhone');
+    // Clear from IndexedDB
+    this.dbService.clearClientInfo().then(() => {
+      console.log('✅ Client info cleared from IndexedDB');
 
 closeClientModal() {
   // Optional: you can reset or keep values when closing the modal
@@ -4292,22 +4277,26 @@ toggleDropdown() {
   this.dropdownOpen = !this.dropdownOpen;
 }
 
-selectCountry(country: Country) {
-  this.selectedCountry = country;
-  this.dropdownOpen = false;
-  this.searchTerm = ''; // Clear search term after selection
-  this.filteredCountries = [...this.countryList]; // Reset filtered list
-  this.selectedCountryCode = country.code;
+    this.filteredCountries = this.countryList.filter((country: any) =>
+      allowedCountryCodes.includes(
+        country.code.replace(/\s+/g, '').replace('ـ', '').replace('–', '')
+      )
+    );
+  }
+  toggleDropdown() {
+    this.dropdownOpen = !this.dropdownOpen;
+  }
 
-  localStorage.setItem('selectedCountryCode', country.code);
-  console.log('Selected country:', this.selectedCountry);
-}
+  selectCountry(country: Country) {
+    this.selectedCountry = country;
+    this.dropdownOpen = false;
+    this.searchTerm = ''; // Clear search term after selection
+    this.filteredCountries = [...this.countryList]; // Reset filtered list
+    this.selectedCountryCode = country.code;
 
-filterCountries() {
-  this.filteredCountries = this.countryList.filter((country) =>
-    country.code.toLowerCase().includes(this.searchTerm.toLowerCase())
-  );
-}
+    localStorage.setItem('selectedCountryCode', country.code);
+    console.log('Selected country:', this.selectedCountry);
+  }
 
 // hanan
 selectPaymentMethod(method: 'cash' | 'credit' | 'cash + credit' | 'deferred'): void {
@@ -4365,308 +4354,308 @@ else if (method === 'deferred') {
 }
   }
 
-getNearestAmount(amount: number, base: number): number {
-  if (amount <= 0) return base;
+  getNearestAmount(amount: number, base: number): number {
+    if (amount <= 0) return base;
 
-  // التقريب للأعلى لأقرب مضاعف للقاعدة (base)
-  const roundedAmount = Math.ceil(amount / base) * base;
-  return roundedAmount;
-}
-// تحديث دالة فتح مودال الإكرامية
-openTipModal(content: any, billAmount: number, paymentAmount: number, paymentMethod ?: string): void {
-  this.tempBillAmount = billAmount;
-  this.tempPaymentAmount = paymentAmount;
-  this.tempChangeAmount = paymentAmount - billAmount;
-
-  // تعيين طريقة الدفع إذا تم تمريرها
-  if(paymentMethod) {
-    this.selectedPaymentMethod = paymentMethod;
+    // التقريب للأعلى لأقرب مضاعف للقاعدة (base)
+    const roundedAmount = Math.ceil(amount / base) * base;
+    return roundedAmount;
   }
+  // تحديث دالة فتح مودال الإكرامية
+  openTipModal(content: any, billAmount: number, paymentAmount: number, paymentMethod?: string): void {
+    this.tempBillAmount = billAmount;
+    this.tempPaymentAmount = paymentAmount;
+    this.tempChangeAmount = paymentAmount - billAmount;
+
+    // تعيين طريقة الدفع إذا تم تمريرها
+    if (paymentMethod) {
+      this.selectedPaymentMethod = paymentMethod;
+    }
 
     this.selectedTipType = 'no_tip';
-  this.specificTipAmount = 0;
+    this.specificTipAmount = 0;
 
-  this.modalService.open(content, {
-    centered: true,
-    size: 'md'
-  }).result.then((result) => {
-    console.log('Tip Modal Closed with final result:', result);
-  }, (reason) => {
-    console.log('Tip Modal Dismissed:', reason);
-  });
-}
+    this.modalService.open(content, {
+      centered: true,
+      size: 'md'
+    }).result.then((result) => {
+      console.log('Tip Modal Closed with final result:', result);
+    }, (reason) => {
+      console.log('Tip Modal Dismissed:', reason);
+    });
+  }
 
-/**
- * لتحديد نوع الإكرامية المُختار وتحديث قيمة الإكرامية النهائية.
- * @param type نوع الإكرامية المُختار
- */
-selectTipOption(type: 'tip_the_change' | 'tip_specific_amount' | 'no_tip'): void {
-  this.selectedTipType = type;
+  /**
+   * لتحديد نوع الإكرامية المُختار وتحديث قيمة الإكرامية النهائية.
+   * @param type نوع الإكرامية المُختار
+   */
+  selectTipOption(type: 'tip_the_change' | 'tip_specific_amount' | 'no_tip'): void {
+    this.selectedTipType = type;
 
-  this.tip_aption = type; // حفظ الخيار المحدد
+    this.tip_aption = type; // حفظ الخيار المحدد
 
 
-  switch(type) {
+    switch (type) {
       case 'tip_the_change':
-  // إذا اختار العميل إكرامية الباقي بالكامل
-  this.specificTipAmount = this.tempChangeAmount;
-  break;
-  case 'no_tip':
-  // إذا اختار العميل لا إكرامية
-  this.specificTipAmount = 0;
-  break;
-  case 'tip_specific_amount':
-  // ✅ التعديل الرئيسي هنا: تقريب القيمة فور تعيينها
-  let initialTipAmount = this.tempChangeAmount > 0 ? this.tempChangeAmount : 0;
+        // إذا اختار العميل إكرامية الباقي بالكامل
+        this.specificTipAmount = this.tempChangeAmount;
+        break;
+      case 'no_tip':
+        // إذا اختار العميل لا إكرامية
+        this.specificTipAmount = 0;
+        break;
+      case 'tip_specific_amount':
+        // ✅ التعديل الرئيسي هنا: تقريب القيمة فور تعيينها
+        let initialTipAmount = this.tempChangeAmount > 0 ? this.tempChangeAmount : 0;
 
-  // 1. تقريب القيمة لأقرب منزلتين عشريتين
-  this.specificTipAmount = parseFloat(initialTipAmount.toFixed(2));
-  break;
-}
+        // 1. تقريب القيمة لأقرب منزلتين عشريتين
+        this.specificTipAmount = parseFloat(initialTipAmount.toFixed(2));
+        break;
+    }
   }
 
-/**
- * لمعالجة الإكرامية النهائية وإغلاق المودال.
- * @param modal الـ Modal Reference المُمررة من القالب
- */
-// تحديث دالة تأكيد الإكرامية
-// تحديث دالة تأكيد الإكرامية
-confirmTipAndClose(modal: any): void {
-  let finalTipAmount: number = 0;
-  let additionalPaymentRequired: number = 0;
-  let originalPaymentAmount: number = this.tempPaymentAmount;
+  /**
+   * لمعالجة الإكرامية النهائية وإغلاق المودال.
+   * @param modal الـ Modal Reference المُمررة من القالب
+   */
+  // تحديث دالة تأكيد الإكرامية
+  // تحديث دالة تأكيد الإكرامية
+  confirmTipAndClose(modal: any): void {
+    let finalTipAmount: number = 0;
+    let additionalPaymentRequired: number = 0;
+    let originalPaymentAmount: number = this.tempPaymentAmount;
 
-  if(this.selectedTipType === 'tip_the_change') {
-  finalTipAmount = this.tempChangeAmount;
-  additionalPaymentRequired = 0;
-} else if (this.selectedTipType === 'tip_specific_amount') {
-  finalTipAmount = Math.max(0, this.specificTipAmount);
+    if (this.selectedTipType === 'tip_the_change') {
+      finalTipAmount = this.tempChangeAmount;
+      additionalPaymentRequired = 0;
+    } else if (this.selectedTipType === 'tip_specific_amount') {
+      finalTipAmount = Math.max(0, this.specificTipAmount);
 
-  // ✅ حساب المبلغ الإضافي المطلوب
-  if (finalTipAmount > this.tempChangeAmount) {
-    additionalPaymentRequired = finalTipAmount - this.tempChangeAmount;
-    // تحديث المبلغ المدفوع الإجمالي
-    this.tempPaymentAmount = this.tempPaymentAmount + additionalPaymentRequired;
-  }
-}
+      // ✅ حساب المبلغ الإضافي المطلوب
+      if (finalTipAmount > this.tempChangeAmount) {
+        additionalPaymentRequired = finalTipAmount - this.tempChangeAmount;
+        // تحديث المبلغ المدفوع الإجمالي
+        this.tempPaymentAmount = this.tempPaymentAmount + additionalPaymentRequired;
+      }
+    }
 
-const changeToReturn = Math.max(0, this.tempPaymentAmount - (this.tempBillAmount + finalTipAmount));
+    const changeToReturn = Math.max(0, this.tempPaymentAmount - (this.tempBillAmount + finalTipAmount));
 
-// حساب المبالغ النهائية بناءً على طريقة الدفع
-let cashFinal = 0;
-let creditFinal = 0;
+    // حساب المبالغ النهائية بناءً على طريقة الدفع
+    let cashFinal = 0;
+    let creditFinal = 0;
 
-if (this.selectedPaymentMethod === 'cash') {
-  cashFinal = this.tempPaymentAmount;
-} else if (this.selectedPaymentMethod === 'credit') {
-  creditFinal = this.tempPaymentAmount;
-} else if (this.selectedPaymentMethod === 'cash + credit') {
-  const totalPaid = this.cashAmountMixed + this.creditAmountMixed + additionalPaymentRequired;
+    if (this.selectedPaymentMethod === 'cash') {
+      cashFinal = this.tempPaymentAmount;
+    } else if (this.selectedPaymentMethod === 'credit') {
+      creditFinal = this.tempPaymentAmount;
+    } else if (this.selectedPaymentMethod === 'cash + credit') {
+      const totalPaid = this.cashAmountMixed + this.creditAmountMixed + additionalPaymentRequired;
 
-  if (totalPaid > 0) {
-    const cashRatio = this.cashAmountMixed / (this.cashAmountMixed + this.creditAmountMixed);
-    const creditRatio = this.creditAmountMixed / (this.cashAmountMixed + this.creditAmountMixed);
+      if (totalPaid > 0) {
+        const cashRatio = this.cashAmountMixed / (this.cashAmountMixed + this.creditAmountMixed);
+        const creditRatio = this.creditAmountMixed / (this.cashAmountMixed + this.creditAmountMixed);
 
-    const totalWithTip = this.tempBillAmount + finalTipAmount;
+        const totalWithTip = this.tempBillAmount + finalTipAmount;
 
-    cashFinal = totalWithTip * cashRatio;
-    creditFinal = totalWithTip * creditRatio;
-  }
-}
+        cashFinal = totalWithTip * cashRatio;
+        creditFinal = totalWithTip * creditRatio;
+      }
+    }
 
-// إنشاء الكائن مع جميع الخصائص
-this.finalTipSummary = {
-  total: this.tempBillAmount,
-  serviceFee: 0,
-  billAmount: this.tempBillAmount,
-  paymentAmount: this.tempPaymentAmount,
-  paymentMethod: this.selectedPaymentMethod === 'cash' ? 'كاش' :
-    this.selectedPaymentMethod === 'credit' ? 'فيزا' : 'كاش + فيزا',
-  tipAmount: finalTipAmount,
-  grandTotalWithTip: this.tempBillAmount + finalTipAmount,
-  changeToReturn: changeToReturn,
-  cashAmountMixed: cashFinal,
-  creditAmountMixed: creditFinal,
-  additionalPaymentRequired: additionalPaymentRequired, // ✅ جديد
-  originalPaymentAmount: originalPaymentAmount         // ✅ جديد
-};
+    // إنشاء الكائن مع جميع الخصائص
+    this.finalTipSummary = {
+      total: this.tempBillAmount,
+      serviceFee: 0,
+      billAmount: this.tempBillAmount,
+      paymentAmount: this.tempPaymentAmount,
+      paymentMethod: this.selectedPaymentMethod === 'cash' ? 'كاش' :
+        this.selectedPaymentMethod === 'credit' ? 'فيزا' : 'كاش + فيزا',
+      tipAmount: finalTipAmount,
+      grandTotalWithTip: this.tempBillAmount + finalTipAmount,
+      changeToReturn: changeToReturn,
+      cashAmountMixed: cashFinal,
+      creditAmountMixed: creditFinal,
+      additionalPaymentRequired: additionalPaymentRequired, // ✅ جديد
+      originalPaymentAmount: originalPaymentAmount         // ✅ جديد
+    };
 
-// ✅ إذا كان هناك مبلغ إضافي مطلوب، نعرض تأكيد للمستخدم
-if (additionalPaymentRequired > 0) {
-  this.showAdditionalPaymentConfirmation(additionalPaymentRequired, modal);
-} else {
-  modal.close(this.finalTipSummary);
-}
+    // ✅ إذا كان هناك مبلغ إضافي مطلوب، نعرض تأكيد للمستخدم
+    if (additionalPaymentRequired > 0) {
+      this.showAdditionalPaymentConfirmation(additionalPaymentRequired, modal);
+    } else {
+      modal.close(this.finalTipSummary);
+    }
 
-// إعادة تعيين المتغيرات
-this.selectedTipType = 'no_tip';
-this.specificTipAmount = 0;
-  }
-showAdditionalPaymentConfirmation(additionalAmount: number, modal: any) {
-  const confirmed = confirm(
-    `لتحقيق الإكرامية المطلوبة (${this.specificTipAmount} ج.م)، تحتاج لدفع ${additionalAmount} ج.م إضافية.\n\nهل تريد المتابعة؟`
-  );
-
-  if (confirmed) {
-    modal.close(this.finalTipSummary);
-  } else {
-    // إلغاء وتراجع عن الحسابات
-    this.tempPaymentAmount = this.finalTipSummary!.originalPaymentAmount!;
-    this.finalTipSummary = null;
+    // إعادة تعيين المتغيرات
+    this.selectedTipType = 'no_tip';
     this.specificTipAmount = 0;
   }
-}
+  showAdditionalPaymentConfirmation(additionalAmount: number, modal: any) {
+    const confirmed = confirm(
+      `لتحقيق الإكرامية المطلوبة (${this.specificTipAmount} ج.م)، تحتاج لدفع ${additionalAmount} ج.م إضافية.\n\nهل تريد المتابعة؟`
+    );
 
-getChangeToReturn(changeAmount: number, tipAmount: number): number {
-  return Math.max(0, changeAmount - tipAmount);
-}
-
-selectPaymentSuggestionAndOpenModal(type: 'billAmount' | 'amount50' | 'amount100', billAmount: number, paymentAmount: number, modalContent: any): void {
-  this.selectedSuggestionType = type; // هنا يتم حفظ النوع الذي تم الضغط عليه
-  this.selectedPaymentSuggestion = paymentAmount;
-  // ✅ التحقق من أن المبلغ غير صفر أو سالب
-  if(paymentAmount <= 0) {
-  this.paymentError = 'المبلغ المقترح غير صالح';
-  return;
-}
-if (paymentAmount >= billAmount) {
-  this.cashPaymentInput = paymentAmount;
-  this.paymentError = ''; // مسح أي أخطاء
-  this.openTipModal(modalContent, billAmount, paymentAmount);
-}
-else {
-  this.paymentError = `المبلغ المقترح (${paymentAmount}) أقل من المبلغ المستحق (${billAmount})`;
-}
+    if (confirmed) {
+      modal.close(this.finalTipSummary);
+    } else {
+      // إلغاء وتراجع عن الحسابات
+      this.tempPaymentAmount = this.finalTipSummary!.originalPaymentAmount!;
+      this.finalTipSummary = null;
+      this.specificTipAmount = 0;
+    }
   }
 
-handleManualPaymentBlur(billAmount: number, modalContent: any): void {
-  this.selectedPaymentSuggestion = null; // إعادة تعيين عند الإدخال اليدوي
-
-  console.log('Bill Amount:', billAmount, 'Entered:', this.cashPaymentInput);
-  const currentPaymentInput = this.cashPaymentInput;
-  // ✅ إضافة تحقق صريح للمبلغ المدخل
-  if(currentPaymentInput <= 0) {
-  this.paymentError = 'يرجى إدخال مبلغ صحيح أكبر من الصفر';
-  return;
-}
-if (currentPaymentInput < billAmount) {
-  this.paymentError = `المبلغ المدخل (${currentPaymentInput}) أقل من المبلغ المستحق (${billAmount})`;
-  return;
-}
-// مسح أي أخطاء سابقة إذا كان المبلغ صحيحاً
-this.paymentError = '';
-if (currentPaymentInput > 0 && currentPaymentInput >= billAmount) {
-  this.openTipModal(modalContent, billAmount, currentPaymentInput);
-}
+  getChangeToReturn(changeAmount: number, tipAmount: number): number {
+    return Math.max(0, changeAmount - tipAmount);
   }
 
-// حساب مبلغ الفيزا بناءً على الكاش
-calculateCreditAmount(billAmount: number): void {
-  const remaining = billAmount - this.cashAmountMixed;
-  this.creditAmountMixed = Math.max(0, remaining);
-}
-// حساب مبلغ الكاش بناءً على الفيزا
-calculateCashAmount(billAmount: number): void {
-  const remaining = billAmount - this.creditAmountMixed;
-  this.cashAmountMixed = Math.max(0, remaining);
-}
-// حساب المبلغ المتبقي
-getRemainingAmount(billAmount: number): number {
-  const totalPaid = this.cashAmountMixed + this.creditAmountMixed;
-  return billAmount - totalPaid;
-}
-
-
-// فتح مودال الإكرامية للدفع المختلط
-openMixedPaymentTipModal(billAmount: number, modalContent: any): void {
-  const totalPaid = this.cashAmountMixed + this.creditAmountMixed;
-
-  // التحقق من أن المبلغ المدفوع كافي
-  if(totalPaid >= billAmount) {
-  this.tempBillAmount = billAmount;
-  this.tempPaymentAmount = totalPaid;
-  this.tempChangeAmount = totalPaid - billAmount;
-
-  this.openTipModal(modalContent, billAmount, totalPaid);
-} else {
-  // يمكن إضافة رسالة تنبيه هنا إذا أردت
-  console.warn('المبلغ المدفوع غير كافي لفتح مودال الإكرامية');
-}
+  selectPaymentSuggestionAndOpenModal(type: 'billAmount' | 'amount50' | 'amount100', billAmount: number, paymentAmount: number, modalContent: any): void {
+    this.selectedSuggestionType = type; // هنا يتم حفظ النوع الذي تم الضغط عليه
+    this.selectedPaymentSuggestion = paymentAmount;
+    // ✅ التحقق من أن المبلغ غير صفر أو سالب
+    if (paymentAmount <= 0) {
+      this.paymentError = 'المبلغ المقترح غير صالح';
+      return;
+    }
+    if (paymentAmount >= billAmount) {
+      this.cashPaymentInput = paymentAmount;
+      this.paymentError = ''; // مسح أي أخطاء
+      this.openTipModal(modalContent, billAmount, paymentAmount);
+    }
+    else {
+      this.paymentError = `المبلغ المقترح (${paymentAmount}) أقل من المبلغ المستحق (${billAmount})`;
+    }
   }
 
-// التحقق إذا كان المبلغ المدفوع كافي
-isPaymentSufficient(billAmount: number): boolean {
-  return this.getRemainingAmount(billAmount) <= 0;
-}
-// دالة للتحقق من وجود معلومات التوصيل
-hasDeliveryInfo(): boolean {
-  if (this.selectedOrderType !== 'Delivery') {
-    return true; // ليس طلب توصيل، لا داعي للتحقق
-  }
-  // ✅ في حالة عدم وجود اتصال، نعتبر المعلومات متوفرة
-  if (!this.isOnline) {
-    console.log('📴 Offline mode - delivery info considered available');
-    return true;
-  }
-  // التحقق من وجود البيانات الأساسية للتوصيل
-  const hasBasicInfo = this.clientName && this.address && this.addressPhone;
-  const hasFormData = this.FormDataDetails &&
-    this.FormDataDetails.client_name &&
-    this.FormDataDetails.address &&
-    this.FormDataDetails.address_phone;
+  handleManualPaymentBlur(billAmount: number, modalContent: any): void {
+    this.selectedPaymentSuggestion = null; // إعادة تعيين عند الإدخال اليدوي
 
-  return hasBasicInfo || hasFormData;
-}
-
-// دالة للتحقق من اكتمال معلومات العميل للتوصيل
-isDeliveryInfoComplete(): boolean {
-  if (this.selectedOrderType !== 'Delivery') {
-    return true;
+    console.log('Bill Amount:', billAmount, 'Entered:', this.cashPaymentInput);
+    const currentPaymentInput = this.cashPaymentInput;
+    // ✅ إضافة تحقق صريح للمبلغ المدخل
+    if (currentPaymentInput <= 0) {
+      this.paymentError = 'يرجى إدخال مبلغ صحيح أكبر من الصفر';
+      return;
+    }
+    if (currentPaymentInput < billAmount) {
+      this.paymentError = `المبلغ المدخل (${currentPaymentInput}) أقل من المبلغ المستحق (${billAmount})`;
+      return;
+    }
+    // مسح أي أخطاء سابقة إذا كان المبلغ صحيحاً
+    this.paymentError = '';
+    if (currentPaymentInput > 0 && currentPaymentInput >= billAmount) {
+      this.openTipModal(modalContent, billAmount, currentPaymentInput);
+    }
   }
 
-  return this.hasDeliveryInfo();
-}
-// دالة للتحقق من صحة رقم الهاتف
-isValidPhoneNumber(phone: string): boolean {
-  const phoneRegex = /^[0-9]{10,15}$/;
-  return phoneRegex.test(phone.replace(/\D/g, ''));
-}
+  // حساب مبلغ الفيزا بناءً على الكاش
+  calculateCreditAmount(billAmount: number): void {
+    const remaining = billAmount - this.cashAmountMixed;
+    this.creditAmountMixed = Math.max(0, remaining);
+  }
+  // حساب مبلغ الكاش بناءً على الفيزا
+  calculateCashAmount(billAmount: number): void {
+    const remaining = billAmount - this.creditAmountMixed;
+    this.cashAmountMixed = Math.max(0, remaining);
+  }
+  // حساب المبلغ المتبقي
+  getRemainingAmount(billAmount: number): number {
+    const totalPaid = this.cashAmountMixed + this.creditAmountMixed;
+    return billAmount - totalPaid;
+  }
 
-// دالة شاملة للتحقق من بيانات التوصيل
-validateDeliveryInfo(): { isValid: boolean; message: string } {
-  if (this.selectedOrderType !== 'Delivery') {
+
+  // فتح مودال الإكرامية للدفع المختلط
+  openMixedPaymentTipModal(billAmount: number, modalContent: any): void {
+    const totalPaid = this.cashAmountMixed + this.creditAmountMixed;
+
+    // التحقق من أن المبلغ المدفوع كافي
+    if (totalPaid >= billAmount) {
+      this.tempBillAmount = billAmount;
+      this.tempPaymentAmount = totalPaid;
+      this.tempChangeAmount = totalPaid - billAmount;
+
+      this.openTipModal(modalContent, billAmount, totalPaid);
+    } else {
+      // يمكن إضافة رسالة تنبيه هنا إذا أردت
+      console.warn('المبلغ المدفوع غير كافي لفتح مودال الإكرامية');
+    }
+  }
+
+  // التحقق إذا كان المبلغ المدفوع كافي
+  isPaymentSufficient(billAmount: number): boolean {
+    return this.getRemainingAmount(billAmount) <= 0;
+  }
+  // دالة للتحقق من وجود معلومات التوصيل
+  hasDeliveryInfo(): boolean {
+    if (this.selectedOrderType !== 'Delivery') {
+      return true; // ليس طلب توصيل، لا داعي للتحقق
+    }
+    // ✅ في حالة عدم وجود اتصال، نعتبر المعلومات متوفرة
+    if (!this.isOnline) {
+      console.log('📴 Offline mode - delivery info considered available');
+      return true;
+    }
+    // التحقق من وجود البيانات الأساسية للتوصيل
+    const hasBasicInfo = this.clientName && this.address && this.addressPhone;
+    const hasFormData = this.FormDataDetails &&
+      this.FormDataDetails.client_name &&
+      this.FormDataDetails.address &&
+      this.FormDataDetails.address_phone;
+
+    return hasBasicInfo || hasFormData;
+  }
+
+  // دالة للتحقق من اكتمال معلومات العميل للتوصيل
+  isDeliveryInfoComplete(): boolean {
+    if (this.selectedOrderType !== 'Delivery') {
+      return true;
+    }
+
+    return this.hasDeliveryInfo();
+  }
+  // دالة للتحقق من صحة رقم الهاتف
+  isValidPhoneNumber(phone: string): boolean {
+    const phoneRegex = /^[0-9]{10,15}$/;
+    return phoneRegex.test(phone.replace(/\D/g, ''));
+  }
+
+  // دالة شاملة للتحقق من بيانات التوصيل
+  validateDeliveryInfo(): { isValid: boolean; message: string } {
+    if (this.selectedOrderType !== 'Delivery') {
+      return { isValid: true, message: '' };
+    }
+
+    // ✅ في حالة عدم وجود اتصال، لا نطلب معلومات التوصيل
+    if (!this.isOnline) {
+      console.log('📴 Offline mode - delivery info considered available');
+      return { isValid: true, message: '' };
+    }
+
+    // التحقق من وجود البيانات الأساسية للتوصيل
+    const hasBasicInfo = this.clientName && this.address && this.addressPhone;
+    const hasFormData = this.FormDataDetails &&
+      this.FormDataDetails.client_name &&
+      this.FormDataDetails.address &&
+      this.FormDataDetails.address_phone;
+
+    if (!hasBasicInfo && !hasFormData) {
+      return { isValid: false, message: 'يرجى إدخال معلومات التوصيل' };
+    }
+
+    if (!this.clientName || this.clientName.trim().length < 2) {
+      return { isValid: false, message: 'يرجى إدخال اسم العميل' };
+    }
+
+    if (!this.address || this.address.trim().length < 5) {
+      return { isValid: false, message: 'يرجى إدخال العنوان بالكامل' };
+    }
+
+    if (!this.addressPhone || !this.isValidPhoneNumber(this.addressPhone)) {
+      return { isValid: false, message: 'يرجى إدخال رقم هاتف صحيح' };
+    }
+
     return { isValid: true, message: '' };
   }
-
-  // ✅ في حالة عدم وجود اتصال، لا نطلب معلومات التوصيل
-  if (!this.isOnline) {
-    console.log('📴 Offline mode - delivery info considered available');
-    return { isValid: true, message: '' };
-  }
-
-  // التحقق من وجود البيانات الأساسية للتوصيل
-  const hasBasicInfo = this.clientName && this.address && this.addressPhone;
-  const hasFormData = this.FormDataDetails &&
-    this.FormDataDetails.client_name &&
-    this.FormDataDetails.address &&
-    this.FormDataDetails.address_phone;
-
-  if (!hasBasicInfo && !hasFormData) {
-    return { isValid: false, message: 'يرجى إدخال معلومات التوصيل' };
-  }
-
-  if (!this.clientName || this.clientName.trim().length < 2) {
-    return { isValid: false, message: 'يرجى إدخال اسم العميل' };
-  }
-
-  if (!this.address || this.address.trim().length < 5) {
-    return { isValid: false, message: 'يرجى إدخال العنوان بالكامل' };
-  }
-
-  if (!this.addressPhone || !this.isValidPhoneNumber(this.addressPhone)) {
-    return { isValid: false, message: 'يرجى إدخال رقم هاتف صحيح' };
-  }
-
-  return { isValid: true, message: '' };
-}
 }
