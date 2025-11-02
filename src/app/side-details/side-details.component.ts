@@ -1184,7 +1184,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.applyCoupon();
     this.getTax();
     // ✅ تحديث مبلغ الدفع تلقائياً
-  this.initializePaymentAmount();
+    this.initializePaymentAmount();
     this.cdr.detectChanges();
 
   }
@@ -3242,16 +3242,16 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.selectedOrderType = typeMapping[type] || type;
 
 
-  localStorage.setItem('selectedOrderType', this.selectedOrderType);
-  this.isOrderTypeSelected = true; // ✅ تم اختيار نوع الطلب
-  this.initializePaymentAmount();
-  // ✅ تحديث الأسعار عند التبديل إلى talabat أو إلى نوع آخر
-  let i: any;
-  for (i = 0; i < this.cartItems.length; i++) {
-    this.findCategoryByDishId(this.cartItems[i]);
-  }
-  // إعادة حساب الإجماليات بعد تحديث الأسعار
-  this.updateTotalPrices();
+    localStorage.setItem('selectedOrderType', this.selectedOrderType);
+    this.isOrderTypeSelected = true; // ✅ تم اختيار نوع الطلب
+    this.initializePaymentAmount();
+    // ✅ تحديث الأسعار عند التبديل إلى talabat أو إلى نوع آخر
+    let i: any;
+    for (i = 0; i < this.cartItems.length; i++) {
+      this.findCategoryByDishId(this.cartItems[i]);
+    }
+    // إعادة حساب الإجماليات بعد تحديث الأسعار
+    this.updateTotalPrices();
 
     // ✅ الشرط الجديد: إذا كان الطلب من طلبات وغير مدفوع، اختيار آجل تلقائياً
     if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
@@ -3489,70 +3489,70 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
   }
 
-loadOrderType() {
-  const savedOrderType = localStorage.getItem('selectedOrderType');
-  if (savedOrderType) {
-    this.selectedOrderType = savedOrderType;
+  loadOrderType() {
+    const savedOrderType = localStorage.getItem('selectedOrderType');
+    if (savedOrderType) {
+      this.selectedOrderType = savedOrderType;
+    }
   }
-}
-// start hanan
-// loadOrderType() {
-//   try {
-//     this.dbService.getAll('selectedOrderType').then((savedOrderTypes) => {
-//       console.log('✅ Order selectedOrderType:', savedOrderTypes);
+  // start hanan
+  // loadOrderType() {
+  //   try {
+  //     this.dbService.getAll('selectedOrderType').then((savedOrderTypes) => {
+  //       console.log('✅ Order selectedOrderType:', savedOrderTypes);
 
-//       if (savedOrderTypes.length > 0) {
-//         // Sort by ID to get the latest one
-//         const sorted = savedOrderTypes.sort((a, b) => b.id - a.id);
-//         const last = sorted[0];
-//         this.selectedOrderType = last.value;
-//         this.isOrderTypeSelected = true; // ✅ تم تحميل نوع الطلب
+  //       if (savedOrderTypes.length > 0) {
+  //         // Sort by ID to get the latest one
+  //         const sorted = savedOrderTypes.sort((a, b) => b.id - a.id);
+  //         const last = sorted[0];
+  //         this.selectedOrderType = last.value;
+  //         this.isOrderTypeSelected = true; // ✅ تم تحميل نوع الطلب
 
-//         console.log('Last ID:', last.id); // This is the last ID
-//       } else {
-//         // Fallback to localStorage
-//         const fallbackOrderType = localStorage.getItem('selectedOrderType');
-//         if (fallbackOrderType) {
-//           this.selectedOrderType = fallbackOrderType;
-//           this.isOrderTypeSelected = true; // ✅ تم تحميل نوع الطلب
+  //         console.log('Last ID:', last.id); // This is the last ID
+  //       } else {
+  //         // Fallback to localStorage
+  //         const fallbackOrderType = localStorage.getItem('selectedOrderType');
+  //         if (fallbackOrderType) {
+  //           this.selectedOrderType = fallbackOrderType;
+  //           this.isOrderTypeSelected = true; // ✅ تم تحميل نوع الطلب
 
-//           // Migrate to IndexedDB with ID
-//           this.dbService.saveData('selectedOrderType', {
-//             id: new Date().getTime(),
-//             value: this.selectedOrderType
-//           });
-//           localStorage.removeItem('selectedOrderType');
-//         }
-//       }
-//     });
-//   } catch (error) {
-//     console.error('❌ Error loading order type from IndexedDB:', error);
-//     const fallbackOrderType = localStorage.getItem('selectedOrderType');
-//     if (fallbackOrderType) {
-//       this.selectedOrderType = fallbackOrderType;
-//       this.isOrderTypeSelected = true; // ✅ تم تحميل نوع الطلب
+  //           // Migrate to IndexedDB with ID
+  //           this.dbService.saveData('selectedOrderType', {
+  //             id: new Date().getTime(),
+  //             value: this.selectedOrderType
+  //           });
+  //           localStorage.removeItem('selectedOrderType');
+  //         }
+  //       }
+  //     });
+  //   } catch (error) {
+  //     console.error('❌ Error loading order type from IndexedDB:', error);
+  //     const fallbackOrderType = localStorage.getItem('selectedOrderType');
+  //     if (fallbackOrderType) {
+  //       this.selectedOrderType = fallbackOrderType;
+  //       this.isOrderTypeSelected = true; // ✅ تم تحميل نوع الطلب
 
-//     }
-//   }
-// }
+  //     }
+  //   }
+  // }
 
 
-// end hanan
-openCartItemsModal() {
-  const modalRef = this.modalService.open(CartItemsModalComponent, {
-    size: 'md',
-  });
-  modalRef.componentInstance.cartItems = [...this.cartItems];
-  modalRef.componentInstance.updateParentCart = (updatedCart: any[]) => {
-    this.cartItems = updatedCart;
-    this.updateTotalPrice();
-    localStorage.setItem('cart', JSON.stringify(this.cartItems));
-  };
-}
-applyNote(): void {
-  this.savedNote = this.additionalNote;
-  const backdrops = document.querySelectorAll('.modal-backdrop');
-  backdrops.forEach((el) => el.remove());
+  // end hanan
+  openCartItemsModal() {
+    const modalRef = this.modalService.open(CartItemsModalComponent, {
+      size: 'md',
+    });
+    modalRef.componentInstance.cartItems = [...this.cartItems];
+    modalRef.componentInstance.updateParentCart = (updatedCart: any[]) => {
+      this.cartItems = updatedCart;
+      this.updateTotalPrice();
+      localStorage.setItem('cart', JSON.stringify(this.cartItems));
+    };
+  }
+  applyNote(): void {
+    this.savedNote = this.additionalNote;
+    const backdrops = document.querySelectorAll('.modal-backdrop');
+    backdrops.forEach((el) => el.remove());
 
     const noteModal = document.getElementById('noteModal');
     if (noteModal) {
@@ -4180,102 +4180,93 @@ applyNote(): void {
     localStorage.removeItem('selectedCountryCode');
     localStorage.removeItem('clientName');
     localStorage.removeItem('clientPhone');
-    // Clear from IndexedDB
-    this.dbService.clearClientInfo().then(() => {
-      console.log('✅ Client info cleared from IndexedDB');
 
-closeClientModal() {
-  // Optional: you can reset or keep values when closing the modal
-  this.clearClientInfo(); // or remove this line if you want to keep input filled
-}
-fetchCountries() {
-  this.authService.getCountries().subscribe({
-    next: (response) => {
-      if (response.data && Array.isArray(response.data)) {
-        this.countryList = response.data.map(
-          (country: { phone_code: string; image: string }) => ({
-            code: country.phone_code,
-            flag: country.image,
-          })
-        );
-        const allowedCountryCodes: string[] = ['+20', '+962', '+964', '+212', '+963', '+965', '+966'];
-        this.filteredCountries = [...this.countryList]; // Initialize filteredCountries
-        this.filteredCountries = this.filteredCountries.filter((country: any) =>
-          allowedCountryCodes.includes(country.code.replace(/\s+/g, '').replace(' ', '').replace('ـ', '').replace('–', ''))
-        );
+    console.log('Client info cleared');
+  }
 
-      } else {
-        this.errorMessage = 'No country data found in the response.';
-      }
-    },
-    error: () => {
-      this.errorMessage = 'Failed to load country data.';
-    },
-  });
-}
-// fetchCountries() {
-//   try {
-//     // First, check if we already have countries stored in DB
-//     this.dbService.getAll('countries').then((storedCountries) => {
-//       if (storedCountries && storedCountries.length > 0) {
-//         console.log('✅ Loaded countries from DB:', storedCountries);
-//         this.countryList = storedCountries;
-//         this.filterAllowedCountries();
-//         return;
-//       }
+  closeClientModal() {
+    // Optional: you can reset or keep values when closing the modal
+    this.clearClientInfo(); // or remove this line if you want to keep input filled
+  }
+  fetchCountries() {
+    this.authService.getCountries().subscribe({
+      next: (response) => {
+        if (response.data && Array.isArray(response.data)) {
+          this.countryList = response.data.map(
+            (country: { phone_code: string; image: string }) => ({
+              code: country.phone_code,
+              flag: country.image,
+            })
+          );
+          const allowedCountryCodes: string[] = ['+20', '+962', '+964', '+212', '+963', '+965', '+966'];
+          this.filteredCountries = [...this.countryList]; // Initialize filteredCountries
+          this.filteredCountries = this.filteredCountries.filter((country: any) =>
+            allowedCountryCodes.includes(country.code.replace(/\s+/g, '').replace(' ', '').replace('ـ', '').replace('–', ''))
+          );
 
-//       // If no countries in DB, fetch from API
-//       this.authService.getCountries().subscribe({
-//         next: async (response) => { // ✅ أضف async هنا
-//           if (response.data && Array.isArray(response.data)) {
-//             this.countryList = response.data.map(
-//               (country: { phone_code: string; image: string }) => ({
-//                 code: country.phone_code,
-//                 flag: country.image,
-//               })
-//             );
+        } else {
+          this.errorMessage = 'No country data found in the response.';
+        }
+      },
+      error: () => {
+        this.errorMessage = 'Failed to load country data.';
+      },
+    });
+  }
 
-//             // ✅ الآن يمكن استخدام await داخل دالة async
-//             try {
-//               this.dbService.deleteFromIndexedDB('countries');
-//               for (const country of this.countryList) {
-//                 await this.dbService.saveData('countries', country);
-//               }
-//               console.log('✅ Countries saved to DB');
-//             } catch (dbError) {
-//               console.error('❌ Error saving countries to DB:', dbError);
-//             }
+  // fetchCountries() {
+  //   try {
+  //     // First, check if we already have countries stored in DB
+  //     this.dbService.getAll('countries').then((storedCountries) => {
+  //       if (storedCountries && storedCountries.length > 0) {
+  //         console.log('✅ Loaded countries from DB:', storedCountries);
+  //         this.countryList = storedCountries;
+  //         this.filterAllowedCountries();
+  //         return;
+  //       }
 
-//             this.filterAllowedCountries();
-//           } else {
-//             this.errorMessage = 'No country data found in the response.';
-//           }
-//         },
-//         error: (error) => {
-//           console.error('❌ API Error:', error);
-//           this.errorMessage = 'Failed to load country data.';
-//         },
-//       });
-//     }).catch((error) => {
-//       console.error('❌ Error loading countries from DB:', error);
-//     });
-//   } catch (error) {
-//     console.error('❌ Error handling countries:', error);
-//     this.errorMessage = 'Something went wrong while fetching countries.';
-//   }
-// }
-filterAllowedCountries() {
-  const allowedCountryCodes: string[] = ['+20', '+962', '+964', '+212', '+963', '+965', '+966'];
+  //       // If no countries in DB, fetch from API
+  //       this.authService.getCountries().subscribe({
+  //         next: async (response) => { // ✅ أضف async هنا
+  //           if (response.data && Array.isArray(response.data)) {
+  //             this.countryList = response.data.map(
+  //               (country: { phone_code: string; image: string }) => ({
+  //                 code: country.phone_code,
+  //                 flag: country.image,
+  //               })
+  //             );
 
-  this.filteredCountries = this.countryList.filter((country: any) =>
-    allowedCountryCodes.includes(
-      country.code.replace(/\s+/g, '').replace('ـ', '').replace('–', '')
-    )
-  );
-}
-toggleDropdown() {
-  this.dropdownOpen = !this.dropdownOpen;
-}
+  //             // ✅ الآن يمكن استخدام await داخل دالة async
+  //             try {
+  //               this.dbService.deleteFromIndexedDB('countries');
+  //               for (const country of this.countryList) {
+  //                 await this.dbService.saveData('countries', country);
+  //               }
+  //               console.log('✅ Countries saved to DB');
+  //             } catch (dbError) {
+  //               console.error('❌ Error saving countries to DB:', dbError);
+  //             }
+
+  //             this.filterAllowedCountries();
+  //           } else {
+  //             this.errorMessage = 'No country data found in the response.';
+  //           }
+  //         },
+  //         error: (error) => {
+  //           console.error('❌ API Error:', error);
+  //           this.errorMessage = 'Failed to load country data.';
+  //         },
+  //       });
+  //     }).catch((error) => {
+  //       console.error('❌ Error loading countries from DB:', error);
+  //     });
+  //   } catch (error) {
+  //     console.error('❌ Error handling countries:', error);
+  //     this.errorMessage = 'Something went wrong while fetching countries.';
+  //   }
+  // }
+  filterAllowedCountries() {
+    const allowedCountryCodes: string[] = ['+20', '+962', '+964', '+212', '+963', '+965', '+966'];
 
     this.filteredCountries = this.countryList.filter((country: any) =>
       allowedCountryCodes.includes(
@@ -4283,6 +4274,7 @@ toggleDropdown() {
       )
     );
   }
+
   toggleDropdown() {
     this.dropdownOpen = !this.dropdownOpen;
   }
@@ -4298,60 +4290,60 @@ toggleDropdown() {
     console.log('Selected country:', this.selectedCountry);
   }
 
-// hanan
-selectPaymentMethod(method: 'cash' | 'credit' | 'cash + credit' | 'deferred'): void {
-  this.selectedPaymentMethod = method;
-  console.log('Selected Payment Method:', this.selectedPaymentMethod);
-  if (method === 'cash') {
-    const cartTotal = this.getCartTotal();
-    this.cash_amountt = cartTotal;
-    this.credit_amountt = 0; // إعادة تعيين الفيزا
-    localStorage.setItem('cash_amountt', JSON.stringify(this.cash_amountt));
-    localStorage.setItem('credit_amountt', JSON.stringify(this.credit_amountt));
+  // hanan
+  selectPaymentMethod(method: 'cash' | 'credit' | 'cash + credit' | 'deferred'): void {
+    this.selectedPaymentMethod = method;
+    console.log('Selected Payment Method:', this.selectedPaymentMethod);
+    if (method === 'cash') {
+      const cartTotal = this.getCartTotal();
+      this.cash_amountt = cartTotal;
+      this.credit_amountt = 0; // إعادة تعيين الفيزا
+      localStorage.setItem('cash_amountt', JSON.stringify(this.cash_amountt));
+      localStorage.setItem('credit_amountt', JSON.stringify(this.credit_amountt));
 
-    console.log('💰 تم تعيين cash_amount تلقائياً:', cartTotal);
-  }
-  // إذا كان نوع الطلب "طلبات" وغير مدفوع، تأكدي أن الطريقة هي "آجل"
-  if(this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
-  this.selectedPaymentMethod = 'deferred';
-  // return;
-}
+      console.log('💰 تم تعيين cash_amount تلقائياً:', cartTotal);
+    }
+    // إذا كان نوع الطلب "طلبات" وغير مدفوع، تأكدي أن الطريقة هي "آجل"
+    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
+      this.selectedPaymentMethod = 'deferred';
+      // return;
+    }
 
-// إذا كان نوع الطلب "طلبات" ومدفوع، تأكدي أن الطريقة هي "كاش"
-if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'paid') {
-  this.selectedPaymentMethod = 'cash';
-  // return;
-}
-// إعادة تعيين القيم عند تغيير طريقة الدفع
-if (method === 'cash') {
-  this.cashAmountMixed = 0;
-  this.creditAmountMixed = 0;
-} else if (method === 'credit') {
-  this.cashAmountMixed = 0;
-  this.creditAmountMixed = 0;
-  this.cashPaymentInput = 0;
-  this.cash_amountt = 0;
-  this.credit_amountt = this.getCartTotal();
-  // فتح مودال الإكرامية مباشرة للفيزا
-  // const billAmount = this.getCartTotal();
-  // this.openTipModal(this.tipModalContent, billAmount, billAmount);
-} else if (method === 'cash + credit') {
-  this.cashPaymentInput = 0;
-  // تعيين القيم الافتراضية للدفع المختلط
-  const billAmount = this.getCartTotal();
-  this.cashAmountMixed = billAmount / 2;
-  this.creditAmountMixed = billAmount / 2;
-  this.cash_amountt = this.cashAmountMixed;
-    this.credit_amountt = this.creditAmountMixed;
-}
-else if (method === 'deferred') {
-  // إعادة تعيين القيم للدفع الآجل
-  this.cashAmountMixed = 0;
-  this.creditAmountMixed = 0;
-  this.cashPaymentInput = 0;
-  this.cash_amountt = 0;
-  this.credit_amountt = 0;
-}
+    // إذا كان نوع الطلب "طلبات" ومدفوع، تأكدي أن الطريقة هي "كاش"
+    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'paid') {
+      this.selectedPaymentMethod = 'cash';
+      // return;
+    }
+    // إعادة تعيين القيم عند تغيير طريقة الدفع
+    if (method === 'cash') {
+      this.cashAmountMixed = 0;
+      this.creditAmountMixed = 0;
+    } else if (method === 'credit') {
+      this.cashAmountMixed = 0;
+      this.creditAmountMixed = 0;
+      this.cashPaymentInput = 0;
+      this.cash_amountt = 0;
+      this.credit_amountt = this.getCartTotal();
+      // فتح مودال الإكرامية مباشرة للفيزا
+      // const billAmount = this.getCartTotal();
+      // this.openTipModal(this.tipModalContent, billAmount, billAmount);
+    } else if (method === 'cash + credit') {
+      this.cashPaymentInput = 0;
+      // تعيين القيم الافتراضية للدفع المختلط
+      const billAmount = this.getCartTotal();
+      this.cashAmountMixed = billAmount / 2;
+      this.creditAmountMixed = billAmount / 2;
+      this.cash_amountt = this.cashAmountMixed;
+      this.credit_amountt = this.creditAmountMixed;
+    }
+    else if (method === 'deferred') {
+      // إعادة تعيين القيم للدفع الآجل
+      this.cashAmountMixed = 0;
+      this.creditAmountMixed = 0;
+      this.cashPaymentInput = 0;
+      this.cash_amountt = 0;
+      this.credit_amountt = 0;
+    }
   }
 
   getNearestAmount(amount: number, base: number): number {
