@@ -359,11 +359,13 @@ selectedOrderType === 'talabat') {
     }
     @if (!currentOrderData) {
     <div class="d-flex flex-md-row flex-column justify-content-between mt-3 flex-wrap">
+      @if (selectedOrderType !== 'talabat') {
       <button class="btn reversed main-color d-flex align-items-center mx-2 mb-3" data-bs-toggle="modal"
         data-bs-target="#couponModal">
         <i class="fa fa-plus" aria-hidden="true"></i>
         <span class="mb-0 w-100"> أضف كوبون </span>
       </button>
+      }
 
       <button class="btn reversed main-color d-flex align-items-center mx-2 mb-3" data-bs-toggle="modal"
         data-bs-target="#noteModal">
@@ -563,7 +565,7 @@ selectedOrderType === 'talabat') {
               (ngModelChange)="setCashAmount($event)" step="0.01" />
           </div>
         </div> -->
-      <!-- 
+      <!--
         <div class="mb-3 row mx-0 justify-content-between align-items-start">
           <div class="col-4 text-center">
             <label class="form-check-label w-100" for="credit_amount">
@@ -579,7 +581,7 @@ selectedOrderType === 'talabat') {
                                                 <div *ngIf="ref.invalid && formSubmitted" class="text-danger">
                                                   المرجو إدخال رقم المرجع للفيزا.
                                                 </div>
-                                                } 
+                                                }
       </div>
 
   </div> -->

@@ -278,8 +278,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.setupNetworkListeners();
     this.checkPendingOrders();
 
+    // Sync pending orders if online on init
+    if (this.isOnline) {
+      this.syncPendingOrders();
+    }
+
     this.syncService.retryOrders$.subscribe(() => {
-      this.retryPendingOrders(); // 👈 دي الفانكشن اللي عندك
+      // this.retryPendingOrders(); // 👈 دي الفانكشن اللي عندك
+      // Also sync raw orderData
+      this.syncPendingOrders();
     });
 
     // Load client info from IndexedDB
@@ -431,13 +438,79 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     window.addEventListener('online', () => {
       this.isOnline = true;
       console.log('Online - attempting to sync pending orders');
-      this.retryPendingOrders();
+      // this.retryPendingOrders();
+      // Also sync raw orderData
+      this.syncPendingOrders();
     });
 
     window.addEventListener('offline', () => {
       this.isOnline = false;
       console.log('Offline - orders will be saved locally');
     });
+  }
+
+  // Sync pending orders using raw orderData saved for API
+  async syncPendingOrders(): Promise<void> {
+    if (!this.isOnline) {
+      return;
+    }
+
+    try {
+      const pendingOrders = await this.dbService.getPendingOrders();
+
+      if (pendingOrders.length === 0) {
+        console.log('✅ No pending orders to sync');
+        return;
+      }
+
+      console.log(`🔄 Syncing ${pendingOrders.length} pending order(s)...`);
+
+      for (const pendingOrder of pendingOrders) {
+        try {
+          // Remove metadata fields before sending to API
+          const orderDataForAPI = { ...pendingOrder };
+          delete orderDataForAPI.type;
+          delete orderDataForAPI.savedAt;
+          delete orderDataForAPI.isSynced;
+          delete orderDataForAPI.id;
+
+          await new Promise<void>((resolve, reject) => {
+            const timeoutPromise = new Promise((_, timeoutReject) =>
+              setTimeout(() => timeoutReject(new Error('Request timeout')), 30000)
+            );
+
+            Promise.race([
+              firstValueFrom(this.plaseOrderService.placeOrder(orderDataForAPI)),
+              timeoutPromise
+            ]).then((response: any) => {
+              if (response.status !== false && !response.errorData) {
+                // Mark as synced and delete
+                this.dbService.markPendingOrderAsSynced(pendingOrder.id)
+                  .then(() => this.dbService.deleteSyncedPendingOrder(pendingOrder.id))
+                  .then(() => {
+                    console.log(`✅ Successfully synced order ${pendingOrder.orderId || 'N/A'}`);
+                    resolve();
+                  })
+                  .catch(reject);
+              } else {
+                console.error(`❌ API returned error for order:`, response);
+                resolve(); // Continue with next order even if this one failed
+              }
+            }).catch((err) => {
+              console.error(`❌ Error syncing order:`, err);
+              resolve(); // Continue with next order even if this one failed
+            });
+          });
+        } catch (err) {
+          console.error(`❌ Error processing pending order ${pendingOrder.id}:`, err);
+          // Continue with next order
+        }
+      }
+
+      console.log('✅ Finished syncing all pending orders');
+    } catch (err) {
+      console.error('❌ Error in syncPendingOrders:', err);
+    }
   }
 
   // // Check for pending orders in IndexedDB
@@ -1691,7 +1764,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     address_phone: number;
     client_name: string;
   } | null = null;
-  // deliveryFeesWithFullCoupon:any 
+  // deliveryFeesWithFullCoupon:any
   async getAddressId(): Promise<number | null> {
     return new Promise((resolve, reject) => {
       const formValue = JSON.parse(localStorage.getItem('form_data') || '{}');
@@ -2227,7 +2300,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             changeToReturn: 0
           };
         }
-      
+
       // ✅ النظام الجديد مع الإكرامية
       if (this.finalTipSummary && this.finalTipSummary.paymentAmount > 0) {
         totalEntered = Number(this.finalTipSummary.paymentAmount.toFixed(2));
@@ -2375,8 +2448,18 @@ if (!navigator.onLine) {
     orderData.offlineTimestamp = new Date().toISOString();
     orderData.status = 'pending_sync';
 
+    // Save to orders/pills stores (existing functionality)
     const savedOrderId = await this.dbService.savePendingOrder(orderData);
     console.log("Order saved to IndexedDB with ID:", savedOrderId);
+
+    // Save raw orderData for API sync (exact data that will be sent to API)
+    // Remove metadata fields that shouldn't be sent to API
+    const orderDataForSync = { ...orderData };
+    delete orderDataForSync.offlineTimestamp;
+    delete orderDataForSync.status;
+
+    await this.dbService.savePendingOrderForSync(orderDataForSync);
+    console.log("Raw orderData saved for API sync");
 
     await this.releaseTableAndOrderType();
 
@@ -2961,6 +3044,10 @@ getFinalPrice(): number {
 selectOrderType(type: string) {
   const currentCart = [...this.cartItems];
   this.clearOrderTypeData();
+
+  // ✅ Clear selectedOrderType from localStorage first to ensure correct pricing
+  localStorage.removeItem('selectedOrderType');
+
   const typeMapping: { [key: string]: string } = {
     'في المطعم': 'dine-in',
     'خارج المطعم': 'Takeaway',
@@ -3044,7 +3131,6 @@ for (const category of allCategories) {
 if (!found && this.selectedOrderType === 'talabat') {
   console.warn('❌ No matching dish found for cart item, removing it...');
   this.removeCartItem(cartItem);
-
 }
 
     } catch (error) {
@@ -3068,7 +3154,15 @@ removeCartItem(cartItem: any) {
   this.dbService.removeFromCart(cartItem.cartItemId); // تحديث IndexedDB لو بتستخدميها للكارت
   this.cartItems = cart; // تحديث المتغير المحلي لو عندك واحد
 
+  // ✅ تحديث الأسعار الإجمالية بعد الحذف (يفعل detectChanges تلقائياً)
+  this.updateTotalPrices();
+
   console.log(`🗑️ Removed item from cart:`, cartItem.dish?.name);
+
+  // ✅ إعادة تحميل الصفحة لتحديث الكارت في الـ UI
+  setTimeout(() => {
+    window.location.reload();
+  }, 100);
 }
 updateCartPricesFromDish(cartItem: any, dishData: any) {
   // 1. تحديث سعر الطبق الرئيسي
