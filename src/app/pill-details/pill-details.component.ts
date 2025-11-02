@@ -46,7 +46,6 @@ export class PillDetailsComponent implements OnInit {
   date: string | null = null;
   time: string | null = null;
   invoiceSummary: any;
-  invoiceTips: any;
   addressDetails: any;
   isDeliveryOrder: boolean = false;
   paymentStatus: any = '';
@@ -92,17 +91,7 @@ export class PillDetailsComponent implements OnInit {
       this.pillId = params.get('id');
 
       if (this.pillId) {
-        // this.fetchPillsDetails(this.pillId);
-        if (navigator.onLine) {
-          console.log("true");
-          // ✅ Online
-          this.fetchPillsDetails(this.pillId);
-        } else {
-          // ✅ Offline
-          this.fetchPillFromIndexedDB(this.pillId);
-          console.log(this.pillId);
-
-        }
+        this.fetchPillsDetails(this.pillId);
       }
     });
     this.fetchTrackingStatus();
@@ -171,61 +160,17 @@ async fetchPillFromIndexedDB(identifier: string | number) {
     this.fetchPillsDetails(String(identifier));  // ✅ fetch online
   }
 }
-private normalizeAddons(addons: any[]): any[] {
-  if (!addons || !Array.isArray(addons)) return [];
-
-  return addons.map(addon => {
-    // إذا كانت الإضافة object تحتوي على name بدلاً من addon_name
-    if (addon && typeof addon === 'object') {
-      return {
-        addon_name: addon.addon_name || addon.name || 'Unknown Addon',
-        addon_price: addon.addon_price || addon.price || 0,
-        // احتفظي بالبيانات الأصلية أيضاً
-        ...addon
-      };
-    }
-    // إذا كانت string
-    else if (typeof addon === 'string') {
-      return {
-        addon_name: addon,
-        addon_price: 0
-      };
-    }
-    return addon;
-  });
-}
 
 
 private processPillDetails(data: any): void {
-  console.log("toqa offline", data);
-
   try {
     this.order_id = data.order_id;
+    this.invoices = Array.isArray(data.invoices.invoice_details) ? data.invoices.invoice_details : []; // ✅ fix
 
-    // ✅ لو جاية Object حطها في Array عشان تبقى زي الـ Online
-    this.invoices = Array.isArray(data.invoice_details)
-      ? data.invoice_details
-      : [data.invoice_details];
-
-    // ✅ إصلاح بيانات الكاشير للطباعة - مباشرة بدون method
-    const cashierFullName = localStorage.getItem('fullName') || 'الكاشير';
-
-    this.invoices.forEach((invoice: any) => {
-      if (!invoice.cashier_info) {
-        invoice.cashier_info = {
-          first_name: cashierFullName,
-          last_name: ''
-        };
-      } else {
-        // ✅ إذا كانت البيانات موجودة ولكنها غير مكتملة
-        if (!invoice.cashier_info.first_name || invoice.cashier_info.first_name === 'test') {
-          invoice.cashier_info.first_name = cashierFullName;
-        }
-        if (!invoice.cashier_info.last_name) {
-          invoice.cashier_info.last_name = '';
-        }
-      }
-    });
+    if (!this.invoices.length) {
+      console.warn("No invoices found in offline pill:", data);
+      return;
+    }
 
     const statusMap: { [key: string]: string } = {
       completed: 'مكتمل',
@@ -243,42 +188,21 @@ private processPillDetails(data: any): void {
       this.isShow = false;
     }
     this.trackingStatus = statusMap[trackingKey] || trackingKey;
-
     this.orderNumber = data.order_id;
     this.couponType = this.invoices[0]?.invoice_summary?.coupon_type;
 
     this.addresDetails = this.invoices[0]?.address_details || {};
-    this.paymentMethod =
-      this.invoices[0]?.transactions?.[0]?.['payment_method'];
-    this.paymentStatus =
-      this.invoices[0]?.transactions?.[0]?.['payment_status'];
+    this.paymentMethod = this.invoices[0]?.transactions?.[0]?.['payment_method'];
+    this.paymentStatus = this.invoices[0]?.transactions?.[0]?.['payment_status'];
 
     this.isDeliveryOrder = this.invoices.some(
       (invoice: any) => invoice.order_type === 'Delivery'
     );
 
-    // ✅ إصلاح: دمج table_number من البيانات الرئيسية مع branch_details
-    this.branchDetails = this.invoices.map((e: any) => {
-      const branchDetails = e.branch_details || {};
-
-      return {
-        ...branchDetails,
-        // ✅ استخدم table_number من البيانات الرئيسية إذا لم يكن موجوداً في branch_details
-        table_number: branchDetails.table_number || data.table_number || branchDetails.table_id
-      };
-    });
-
-    this.orderDetails = this.invoices.map((e: any) => {
-      if (e.orderDetails && Array.isArray(e.orderDetails)) {
-        return e.orderDetails.map((item: any) => ({
-          ...item,
-          // ✅ تطبيع هيكل الإضافات - هذا هو الجزء المهم!
-          addons: this.normalizeAddons(item.addons)
-        }));
-      }
-      return e.orderDetails || [];
-    });
-
+    this.branchDetails = this.invoices.map(
+      (e: { branch_details: any }) => e.branch_details
+    );
+    this.orderDetails = this.invoices.map((e: any) => e.orderDetails);
 
     this.invoiceSummary = this.invoices.map((e: any) => ({
       ...e.invoice_summary,
@@ -290,22 +214,8 @@ private processPillDetails(data: any): void {
     if (this.branchDetails?.length) {
       this.extractDateAndTime(this.branchDetails[0]);
     }
-    this.invoiceTips = data.invoice_tips;
-
-    console.log(" this.invoiceTips ", this.invoiceTips);
-
-    console.log(
-      this.orderNumber,
-      this.couponType,
-      this.addresDetails,
-      this.paymentMethod,
-      this.paymentStatus,
-      this.isDeliveryOrder,
-      this.branchDetails,
-      this.invoiceSummary
-    );
   } catch (error) {
-    console.error('Error processing pill details offline:', error, data);
+    console.error("Error processing pill details offline:", error, data);
   }
 }
 
@@ -338,9 +248,6 @@ private processPillDetails(data: any): void {
       });
   }
 
-
-
-
   fetchPillsDetails(pillId: string): void {
     this.loading = false
     this.pillDetailsService.getPillsDetailsById(pillId).pipe(
@@ -351,7 +258,6 @@ private processPillDetails(data: any): void {
       next: (response: any) => {
         this.order_id = response.data.order_id
         this.invoices = response.data.invoices;
-        this.invoiceTips = response.data.invoice_tips || [];
         console.log(response, 'response gggg');
 
 
@@ -401,8 +307,6 @@ private processPillDetails(data: any): void {
             ...e.invoice_summary,
             currency_symbol: e.currency_symbol,
           };
-
-
 
           // // Convert coupon_value if it's a percentage
           // if (summary.coupon_type === 'percentage') {
