@@ -2399,9 +2399,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     if (this.currentOrderData) {
       this.selectedOrderType = this.currentOrderData?.order_details?.order_type;
       localStorage.setItem('selectedOrderType', this.selectedOrderType);
-      if (this.selectedOrderType !== 'Delivery' && this.selectedOrderType !== 'توصيل') {
-        localStorage.removeItem('delivery_fees');
-      }
+      // if (this.selectedOrderType !== 'Delivery' && this.selectedOrderType !== 'توصيل') {
+      //   localStorage.removeItem('delivery_fees');
+      // }
 
     }
 
@@ -3348,6 +3348,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     // ✅ تحديث الأسعار عند التبديل إلى talabat أو إلى نوع آخر
     for (let i = 0; i < this.cartItems.length; i++) {
+      console.log('🔄 selectedOrderType:', this.selectedOrderType);
       await this.findCategoryByDishId(this.cartItems[i]);
     }
 
@@ -3494,6 +3495,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
 
     console.log('Updated cart item after price sync:', cartItem);
+    localStorage.setItem('cart', JSON.stringify(this.cartItems));
 
     // 4. إعادة حساب المجموع النهائي بعد التحديث
     this.recalculateTotal(cartItem);
