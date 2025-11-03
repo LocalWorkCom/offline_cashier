@@ -78,6 +78,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   couponError: string = ''; // Added this line
   trueMessage: string = '';
   isLoading: boolean = false;
+  isUpdatingPrices: boolean = false;
   additionalNote: string = '';
   savedNote: string = '';
   addressIdformData: any = null;
@@ -569,7 +570,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const cartTotal = this.getCartTotal();
 
     // تعيين قيمة المجموع الكلي في حقل الدفع اليدوي
-    this.cashPaymentInput = cartTotal;
+    this.cashPaymentInput = 0;
 
     // إذا كان هناك finalTipSummary، تحديثه أيضاً
     if (this.finalTipSummary) {
@@ -1395,10 +1396,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const finalTotal = total > 0 ? total : 0;
 
     // ✅ تحديث مبلغ الدفع تلقائياً عند أي تغيير في المجموع الكلي
-    setTimeout(() => {
-      this.cashPaymentInput = finalTotal;
-      this.cdr.detectChanges();
-    }, 0);
+    // setTimeout(() => {
+    //   this.cashPaymentInput = finalTotal;
+    //   this.cdr.detectChanges();
+    // }, 0);
     return finalTotal;
 
   }
@@ -2253,11 +2254,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
 
     // ... rest of your order data preparation
-    // if (this.credit_amountt) {
-    //   this.selectedPaymentMethod = "credit"
-    //   console.log(this.selectedPaymentMethod, "1");
 
-    // } else {
+    // else {
     //   this.selectedPaymentMethod = "cash"
     //   console.log(this.selectedPaymentMethod, "2");
     // }
@@ -2273,8 +2271,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       branch_id: branchId,
       payment_method: this.selectedPaymentMethod ?? 'cash',
       payment_status: this.selectedPaymentStatus,
-      cash_amount: this.selectedPaymentMethod === "cash" ? this.finalTipSummary?.billAmount ?? 0 : 0,
-      credit_amount: this.selectedPaymentMethod === "credit" ? this.finalTipSummary?.billAmount ?? 0 : 0,
+      // cash_amount: this.selectedPaymentMethod === "cash" ? this.finalTipSummary?.billAmount ?? 0 : 0,
+      // credit_amount: this.selectedPaymentMethod === "credit" ? this.finalTipSummary?.billAmount ?? 0 : 0,
+      cash_amount: this.cash_amountt,
+      credit_amount: this.credit_amountt,
       cashier_machine_id: localStorage.getItem('cashier_machine_id'),
       ...(this.clientPhoneStoredInLocal ? { client_country_code: this.selectedCountry.code || "+20" } : {}),
       ...(this.clientPhoneStoredInLocal ? { client_phone: this.clientPhoneStoredInLocal } : {}),
@@ -2398,6 +2398,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   async submitOrder() {
     if (this.currentOrderData) {
       this.selectedOrderType = this.currentOrderData?.order_details?.order_type;
+      localStorage.setItem('selectedOrderType', this.selectedOrderType);
+      if (this.selectedOrderType !== 'Delivery' && this.selectedOrderType !== 'توصيل') {
+        localStorage.removeItem('delivery_fees');
+      }
+
     }
 
     console.log(this.currentOrderData?.order_details?.order_type, "alaaaaaaaaaaaaaaaa");
@@ -2427,6 +2432,66 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const branchId = Number(localStorage.getItem('branch_id')) || null;
     const tableId = Number(localStorage.getItem('table_id')) || this.table_id || this.currentOrderData?.order_details?.table_number || null;
     const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+
+    let addressId = null;
+    console.log(this.selectedOrderType, 'gggggggggggg');
+    // if (this.selectedOrderType === 'Delivery') {
+    //   addressId = localStorage.getItem('address_id');
+    //   if (!localStorage.getItem('address_id')) {
+    //     addressId = await this.getAddressId();
+    //   }
+    // }
+    // if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
+    //   addressId = localStorage.getItem('address_id');
+
+    //   if (!addressId && !this.addressRequestInProgress) {
+    //     this.addressRequestInProgress = true;
+    //     try {
+    //       addressId = await this.getAddressId();
+    //       if (addressId) {
+    //         localStorage.setItem('address_id', addressId.toString());
+    //       }
+    //     } finally {
+    //       this.addressRequestInProgress = false;
+    //     }
+    //   }
+    // }
+
+    if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
+      addressId = localStorage.getItem('address_id');
+
+      if (!addressId && !this.addressRequestInProgress) {
+        this.addressRequestInProgress = true;
+        try {
+          addressId = await this.getAddressId();
+          if (addressId) {
+            localStorage.setItem('address_id', addressId.toString());
+          } else {
+            this.isLoading = false;
+            this.loading = false;
+
+            this.falseMessage = 'يرجى اختيار عنوان التوصيل';
+            setTimeout(() => {
+              this.falseMessage = '';
+            }, 1500);
+            return;
+          }
+        } catch (error) {
+          // ❌ API failed → show message and stop
+          this.isLoading = false;
+          this.loading = false;
+
+          this.falseMessage = 'يرجى اختيار عنوان التوصيل';
+          setTimeout(() => {
+            this.falseMessage = '';
+          }, 1500);
+
+          return;
+        } finally {
+          this.addressRequestInProgress = false;
+        }
+      }
+    }
     const authToken = localStorage.getItem('authToken');
     const cashier_machine_id = localStorage.getItem('cashier_machine_id');
     const orderId = this.currentOrderId ?? 0;
@@ -2542,8 +2607,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const orderData: any = this.prepareOrderData();
 
     // معالجة عنوان التوصيل
-    let addressId = null;
-    if (navigator.onLine) {
+    // let addressId = null;
+    // if (navigator.onLine) {
       if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
         addressId = localStorage.getItem('address_id');
         if (!addressId && !this.addressRequestInProgress) {
@@ -2558,7 +2623,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           }
         }
       }
-    }
+    // }
 
     if (!this.currentOrderData) {
       console.log("no current order data");
@@ -2586,12 +2651,42 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         return;
       }
 
-      // إعداد حالة الدفع
       if (this.selectedPaymentStatus == "unpaid") {
         orderData.credit_amount = null;
         orderData.cash_amount = null;
-      }
+      } else if (this.selectedPaymentStatus == "paid") {
+        const billAmount = this.finalTipSummary?.billAmount ?? this.getCartTotal();
 
+        // ✅ التعديل المطلوب: إذا كاش يحط في cash_amount، إذا فيزا يحط في credit_amount
+        if (this.selectedPaymentMethod === 'cash') {
+          orderData.cash_amount = billAmount;
+          orderData.credit_amount = 0;
+        } else if (this.selectedPaymentMethod === 'cash + credit') {
+          
+          // في حالة الدفع المختلط، استخدم القيم المدخلة
+          orderData.cash_amount = this.cashAmountMixed;
+          orderData.credit_amount = this.creditAmountMixed;
+          orderData.payment_method = "cash";
+
+          // const cashAmount = Number(this.cashAmountMixed) || 0;
+
+          // const creditAmount = Number(this.creditAmountMixed) || 0;
+        }
+        else if (this.selectedPaymentMethod === 'credit') {
+          orderData.credit_amount = billAmount;
+          orderData.cash_amount = 0;
+        } else if (this.selectedPaymentMethod === 'deferred') {
+          orderData.cash_amount = 0;
+          orderData.credit_amount = 0;
+        }
+
+        console.log('💰 تم تعيين مبالغ الدفع:', {
+          method: this.selectedPaymentMethod,
+          cash_amount: orderData.cash_amount,
+          credit_amount: orderData.credit_amount,
+          billAmount: billAmount
+        });
+      }
       // التحقق من العناصر
       if (!orderData.items.length) {
         this.showError('لا يمكن تقديم الطلب بدون عناصر صالحة.');
@@ -2691,7 +2786,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         return;
       }
 
-      await this.releaseTableAndOrderType();
+      // await this.releaseTableAndOrderType();
 
       // معالجة أنواع الطلبات المختلفة
       if (this.selectedOrderType === 'Takeaway' || this.selectedOrderType === 'talabat') {
@@ -3219,7 +3314,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   getFinalPrice(): number {
     return this.invoices[0].invoice_summary.subtotal_price - this.getDiscount();
   }
-  selectOrderType(type: string) {
+  async selectOrderType(type: string) {
     const currentCart = [...this.cartItems];
     this.clearOrderTypeData();
 
@@ -3245,13 +3340,24 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     localStorage.setItem('selectedOrderType', this.selectedOrderType);
     this.isOrderTypeSelected = true; // ✅ تم اختيار نوع الطلب
     this.initializePaymentAmount();
+
+    // ✅ عرض رسالة تحديث الأسعار
+    this.isUpdatingPrices = true;
+    this.cdr.detectChanges();
+
     // ✅ تحديث الأسعار عند التبديل إلى talabat أو إلى نوع آخر
-    let i: any;
-    for (i = 0; i < this.cartItems.length; i++) {
-      this.findCategoryByDishId(this.cartItems[i]);
+    for (let i = 0; i < this.cartItems.length; i++) {
+      await this.findCategoryByDishId(this.cartItems[i]);
     }
+
     // إعادة حساب الإجماليات بعد تحديث الأسعار
     this.updateTotalPrices();
+
+
+    // ✅ إخفاء رسالة تحديث الأسعار
+    this.isUpdatingPrices = false;
+
+
 
     // ✅ الشرط الجديد: إذا كان الطلب من طلبات وغير مدفوع، اختيار آجل تلقائياً
     if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
@@ -3260,17 +3366,28 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     // Store in IndexedDB instead of localStorage
     try {
-      this.dbService.saveData('selectedOrderType', {
-        id: new Date().getTime(), // or use UUID
-        value: this.selectedOrderType,
-        timestamp: new Date().toISOString()
-      });
+      // this.dbService.saveData('selectedOrderType', {
+      //   id: new Date().getTime(), // or use UUID
+      //   value: this.selectedOrderType,
+      //   timestamp: new Date().toISOString()
+      // });
 
       this.cdr.markForCheck(); // تحديث العرض
+
+      // ✅ إعادة تحميل الصفحة لتحديث product-card في categories بعد تحديث الأسعار
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
+
     } catch (error) {
       console.error('❌ Failed to save order type to IndexedDB:', error);
       // Fallback to localStorage if IndexedDB fails
       localStorage.setItem('selectedOrderType', this.selectedOrderType);
+
+      // ✅ إعادة تحميل الصفحة حتى لو فشلت حفظ IndexedDB
+      setTimeout(() => {
+        window.location.reload();
+      }, 300);
     }
   }
   async findCategoryByDishId(cartItem: any): Promise<void> {
@@ -4536,9 +4653,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
     // مسح أي أخطاء سابقة إذا كان المبلغ صحيحاً
     this.paymentError = '';
-    if (currentPaymentInput > 0 && currentPaymentInput >= billAmount) {
-      this.openTipModal(modalContent, billAmount, currentPaymentInput);
-    }
+    // if (currentPaymentInput > 0 && currentPaymentInput >= billAmount) {
+    //   this.openTipModal(modalContent, billAmount, currentPaymentInput);
+    // }
   }
 
   // حساب مبلغ الفيزا بناءً على الكاش
@@ -4568,10 +4685,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.tempPaymentAmount = totalPaid;
       this.tempChangeAmount = totalPaid - billAmount;
 
-      this.openTipModal(modalContent, billAmount, totalPaid);
+      // this.openTipModal(modalContent, billAmount, totalPaid);
     } else {
       // يمكن إضافة رسالة تنبيه هنا إذا أردت
-      console.warn('المبلغ المدفوع غير كافي لفتح مودال الإكرامية');
+      // console.warn('المبلغ المدفوع غير كافي لفتح مودال الإكرامية');
     }
   }
 
