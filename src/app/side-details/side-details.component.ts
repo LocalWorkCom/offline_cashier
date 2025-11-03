@@ -2399,9 +2399,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     if (this.currentOrderData) {
       this.selectedOrderType = this.currentOrderData?.order_details?.order_type;
       localStorage.setItem('selectedOrderType', this.selectedOrderType);
-      if (this.selectedOrderType !== 'Delivery' && this.selectedOrderType !== 'توصيل') {
-        localStorage.removeItem('delivery_fees');
-      }
+      // if (this.selectedOrderType !== 'Delivery' && this.selectedOrderType !== 'توصيل') {
+      //   localStorage.removeItem('delivery_fees');
+      // }
 
     }
 
@@ -2716,48 +2716,48 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
 
     // معالجة حالة عدم الاتصال
-    if (!navigator.onLine) {
-      try {
-        orderData.offlineTimestamp = new Date().toISOString();
-        orderData.status = 'pending_sync';
+    // if (!navigator.onLine) {
+    //   try {
+    //     orderData.offlineTimestamp = new Date().toISOString();
+    //     orderData.status = 'pending_sync';
 
-        // Save to orders/pills stores (existing functionality)
-        const savedOrderId = await this.dbService.savePendingOrder(orderData);
-        console.log("Order saved to IndexedDB with ID:", savedOrderId);
+    //     // Save to orders/pills stores (existing functionality)
+    //     const savedOrderId = await this.dbService.savePendingOrder(orderData);
+    //     console.log("Order saved to IndexedDB with ID:", savedOrderId);
 
-        // Save raw orderData for API sync (exact data that will be sent to API)
-        // Remove metadata fields that shouldn't be sent to API
-        const orderDataForSync = { ...orderData };
-        delete orderDataForSync.offlineTimestamp;
-        delete orderDataForSync.status;
+    //     // Save raw orderData for API sync (exact data that will be sent to API)
+    //     // Remove metadata fields that shouldn't be sent to API
+    //     const orderDataForSync = { ...orderData };
+    //     delete orderDataForSync.offlineTimestamp;
+    //     delete orderDataForSync.status;
 
-        await this.dbService.savePendingOrderForSync(orderDataForSync);
-        console.log("Raw orderData saved for API sync");
+    //     await this.dbService.savePendingOrderForSync(orderDataForSync);
+    //     console.log("Raw orderData saved for API sync");
 
-        await this.releaseTableAndOrderType();
+    //     await this.releaseTableAndOrderType();
 
-        this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
-        this.clearCart();
-        this.resetLocalStorage();
+    //     this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
+    //     this.clearCart();
+    //     this.resetLocalStorage();
 
-        if (this.successModal) {
-          this.successModal.show();
-        }
+    //     if (this.successModal) {
+    //       this.successModal.show();
+    //     }
 
-        const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
-        const orderIdToRemove = orderData.orderId;
-        const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
-        localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
+    //     const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
+    //     const orderIdToRemove = orderData.orderId;
+    //     const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
+    //     localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
 
-      } catch (error) {
-        console.error('Error saving order to IndexedDB:', error);
-        this.showError('فشل حفظ الطلب في وضع عدم الاتصال. يرجى المحاولة مرة أخرى.');
-      } finally {
-        this.isLoading = false;
-        this.loading = false;
-      }
-      return;
-    }
+    //   } catch (error) {
+    //     console.error('Error saving order to IndexedDB:', error);
+    //     this.showError('فشل حفظ الطلب في وضع عدم الاتصال. يرجى المحاولة مرة أخرى.');
+    //   } finally {
+    //     this.isLoading = false;
+    //     this.loading = false;
+    //   }
+    //   return;
+    // }
 
     // إرسال الطلب إلى API
     console.log('Submitting order online:', orderData);
@@ -3348,6 +3348,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     // ✅ تحديث الأسعار عند التبديل إلى talabat أو إلى نوع آخر
     for (let i = 0; i < this.cartItems.length; i++) {
+      console.log('🔄 selectedOrderType:', this.selectedOrderType);
       await this.findCategoryByDishId(this.cartItems[i]);
     }
 
@@ -3494,6 +3495,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
 
     console.log('Updated cart item after price sync:', cartItem);
+    localStorage.setItem('cart', JSON.stringify(this.cartItems));
 
     // 4. إعادة حساب المجموع النهائي بعد التحديث
     this.recalculateTotal(cartItem);
