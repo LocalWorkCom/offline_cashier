@@ -449,7 +449,7 @@ export class OrdersComponent implements OnDestroy {
     }
   }
 
-  increaseItem(item: any, index: number): void {
+   increaseItem(item: any, index: number): void {
     if (item.selectedQuantity === undefined) {
       item.selectedQuantity = item.quantity;
     }
@@ -460,8 +460,9 @@ export class OrdersComponent implements OnDestroy {
     }
 
     if (item.selectedQuantity < item.quantity) {
+      item.dish_price = item.total_dish_price
       item.selectedQuantity += 1;
-      item.total_dish_price = item.unitPrice * item.selectedQuantity;
+      item.dish_price = item.unitPrice * item.selectedQuantity;
     }
   }
 
@@ -476,8 +477,9 @@ export class OrdersComponent implements OnDestroy {
     }
 
     if (item.selectedQuantity > 0) {
+      item.dish_price = item.total_dish_price
       item.selectedQuantity -= 1;
-      item.total_dish_price = item.unitPrice * item.selectedQuantity;
+      item.dish_price = item.unitPrice * item.selectedQuantity;
     }
   }
 
@@ -1778,10 +1780,10 @@ export class OrdersComponent implements OnDestroy {
   message: string = '';
   messageType: 'success' | 'error' = 'success';
   errMsg: any;
-  removeDish(orderDetailId: number, order: any): void {
+  removeDish(orderDetailId: number, quantity: number, order: any): void {
     this.removeLoading = true;
     const url = `${this.apiUrl}api/orders/cashier/request-cancel`;
-    console.log(orderDetailId, "id to delete");
+    console.log(orderDetailId, order, "id to delete");
 
     // 1️⃣ Find dish inside this order by order_detail_id
     const dish = order.order_items.find(
@@ -1798,7 +1800,7 @@ export class OrdersComponent implements OnDestroy {
       items: [
         {
           item_id: orderDetailId, // API expects this
-          quantity: order.quantity ?? 1, // cancel this qty
+          quantity: quantity
         },
       ],
       type: 'partial',
@@ -1819,7 +1821,9 @@ export class OrdersComponent implements OnDestroy {
             order.items = order.order_items.filter(
               (d: any) => d.order_detail_id !== orderDetailId
             );
-            const modalElement = document.getElementById('deleteConfirmModal');
+            const modalElement = document.getElementById(`deleteConfirmModal${orderDetailId}`);
+            console.log(modalElement);
+
             if (modalElement) {
               const modalInstance =
                 bootstrap.Modal.getInstance(modalElement) ||
