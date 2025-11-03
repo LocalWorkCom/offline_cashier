@@ -3315,11 +3315,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     return this.invoices[0].invoice_summary.subtotal_price - this.getDiscount();
   }
   async selectOrderType(type: string) {
+    localStorage.removeItem('selectedOrderType');
     const currentCart = [...this.cartItems];
     this.clearOrderTypeData();
 
     // ✅ Clear selectedOrderType from localStorage first to ensure correct pricing
-    localStorage.removeItem('selectedOrderType');
+    
 
     const typeMapping: { [key: string]: string } = {
       'في المطعم': 'dine-in',
