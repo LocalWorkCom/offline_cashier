@@ -1,4 +1,10 @@
 @if(!currentOrderData){
+@if (isUpdatingPrices) {
+<div class="alert alert-info text-center" role="alert" style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 300px;">
+  <i class="fas fa-spinner fa-spin me-2"></i>
+  جاري تحديث الأسعار...
+</div>
+}
 @if (selectedOrderType === 'Takeaway'|| selectedOrderType === 'dine-in' ||
 selectedOrderType === 'talabat') {
 <div class="card mt-3 p-3" data-bs-toggle="modal" data-bs-target="#clientModal">
@@ -969,6 +975,13 @@ selectedOrderType === 'talabat') {
       @if (cashiermachine) {
       <div class="alert alert-danger text-center" role="alert">
         {{ cashiermachine }}</div>
+      }
+
+      @if (isUpdatingPrices) {
+      <div class="alert alert-info text-center" role="alert">
+        <i class="fas fa-spinner fa-spin me-2"></i>
+        جاري تحديث الأسعار...
+      </div>
       }
 
       <!-- <button class="btn w-100 my-3" (click)="submitOrder()">
