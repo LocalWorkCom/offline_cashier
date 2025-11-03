@@ -1886,13 +1886,20 @@ export class OrdersComponent implements OnDestroy {
 
   continueOrder(order: any): void {
      localStorage.removeItem('selectedOrderType');
-    console.log('tet');
+    console.log('tet', order);
     this.productsService.destroyCart(); // 🔥 destroy stream
 
     localStorage.removeItem('cart');
+    this.selectedOrderType = order?.order_details?.order_type;
+    console.log('selectedOrderType', this.selectedOrderType);
+    localStorage.setItem('selectedOrderType', this.selectedOrderType);
     localStorage.setItem('currentOrderId', order.order_details.order_id);
     localStorage.setItem('currentOrderData', JSON.stringify(order));
 
     this.router.navigate(['/home']);
+  //   this.router.navigate(['/home']).then(() => {
+  //   // ✅ إعادة تحميل الصفحة بعد التوجيه بنجاح
+  //   window.location.reload();
+  // });
   }
 }
