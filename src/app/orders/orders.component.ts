@@ -1885,6 +1885,7 @@ export class OrdersComponent implements OnDestroy {
   }
 
   continueOrder(order: any): void {
+     localStorage.removeItem('selectedOrderType');
     console.log('tet');
     this.productsService.destroyCart(); // 🔥 destroy stream
 
