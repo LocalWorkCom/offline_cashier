@@ -444,7 +444,7 @@
                                 لا
                               </button>
                               <button type="button" class="btn w-50 mx-3" [disabled]="removeLoading"
-                                (click)="removeDish(item.order_detail_id , order)">
+                                (click)="removeDish(item.order_detail_id , item.quantity , order)">
                                 <span *ngIf="removeLoading">جاري الحذف...</span>
                                 <span *ngIf="!removeLoading"> نعم</span>
                               </button>
