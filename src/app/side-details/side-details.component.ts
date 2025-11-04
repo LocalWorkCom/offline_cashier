@@ -1363,6 +1363,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.selectedOrderType === 'توصيل' ||
       this.selectedOrderType === 'Delivery'
     ) {
+
+      console.log("rfdewrewrwe");
       deliveryFee = this.delivery_fees;
     }
 
@@ -2397,9 +2399,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     if (this.currentOrderData) {
       this.selectedOrderType = this.currentOrderData?.order_details?.order_type;
       localStorage.setItem('selectedOrderType', this.selectedOrderType);
-      // if (this.selectedOrderType !== 'Delivery' && this.selectedOrderType !== 'توصيل') {
-      //   localStorage.removeItem('delivery_fees');
-      // }
+      if (this.selectedOrderType === 'Delivery' && this.selectedOrderType === 'توصيل') {
+        console.log("ss");
+        localStorage.removeItem('delivery_fees');
+      }
 
     }
 
@@ -2660,7 +2663,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           orderData.cash_amount = billAmount;
           orderData.credit_amount = 0;
         } else if (this.selectedPaymentMethod === 'cash + credit') {
-          
+
           // في حالة الدفع المختلط، استخدم القيم المدخلة
           orderData.cash_amount = this.cashAmountMixed;
           orderData.credit_amount = this.creditAmountMixed;
@@ -3322,7 +3325,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.clearOrderTypeData();
 
     // ✅ Clear selectedOrderType from localStorage first to ensure correct pricing
-    
+
 
     const typeMapping: { [key: string]: string } = {
       'في المطعم': 'dine-in',
