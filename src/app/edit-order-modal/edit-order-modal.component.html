@@ -48,7 +48,16 @@
         <label for="note1">من فضلك اكتب ملاحظتك</label>
       </div>
     </div>
-    <button type="button" class="btn w-100 mt-3" (click)="editItem()">تعديل</button>
+    <button type="button" class="btn w-100 mt-3" (click)="editItem()">
+      @if (isSubmitting) {
+        <span>
+          <i class="fa-solid fa-spinner fa-spin px-2"></i>
+          جاري التعديل...
+        </span>
+        } @else {
+        تعديل
+        }
+    </button>
 
     } @else {
     <h2 class="text-center mb-4">تفاصيل الوجبة</h2>
