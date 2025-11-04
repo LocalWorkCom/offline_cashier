@@ -140,6 +140,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   clientStoredInLocal: any = localStorage.getItem('client');
   clientPhoneStoredInLocal: any = localStorage.getItem('clientPhone');
   referenceNumber: any;
+  referenceNumberTouched: boolean = false;
   payment_status: any;
   credit_amount: any;
   cash_amount: any;
@@ -166,10 +167,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   tempPaymentAmount: number = 0;
   tempChangeAmount: number = 0;
   // المتغير الجديد لتخزين المبلغ الذي أدخله أو اختاره الكاشير للدفع
-  cashPaymentInput: number = 0;
+  cashPaymentInput: any = " ";
   // المتغيرات الجديدة للدفع المختلط
-  cashAmountMixed: number = 0;
-  creditAmountMixed: number = 0;
+  cashAmountMixed: any = " ";
+  creditAmountMixed: any = " ";
   tip_aption: any;
 
   Math = Math;
@@ -187,8 +188,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     tipAmount: number; // الإكرامية المعتمدة
     grandTotalWithTip: number; // المجموع الكلي مع الإكرامية
     changeToReturn: number; // المتبقي للرد
-    cashAmountMixed?: number; // المبلغ المدفوع كاش في الدفع المختلط
-    creditAmountMixed?: number; // المبلغ المدفوع فيزا في الدفع المختلط
+    cashAmountMixed?: any; // المبلغ المدفوع كاش في الدفع المختلط
+    creditAmountMixed?: any; // المبلغ المدفوع فيزا في الدفع المختلط
     additionalPaymentRequired?: number; // ✅ جديد
     originalPaymentAmount?: number;     // ✅ جديد
   } | null = null;
@@ -570,7 +571,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const cartTotal = this.getCartTotal();
 
     // تعيين قيمة المجموع الكلي في حقل الدفع اليدوي
-    this.cashPaymentInput = 0;
+    this.cashPaymentInput = " ";
 
     // إذا كان هناك finalTipSummary، تحديثه أيضاً
     if (this.finalTipSummary) {
@@ -1724,7 +1725,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             // }
             // this.discountAmount = Math.min(this.discountAmount, baseAmount);
             this.discountAmount = response.data.total_discount
-            this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount} ${response.data.currency_symbol} من الإجمالي.`;
+            this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount.toFixed(
+              2
+            )} ${response.data.currency_symbol} من الإجمالي.`;
 
             localStorage.setItem(
               'appliedCoupon',
@@ -2354,6 +2357,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     localStorage.removeItem('finalOrderId');
     localStorage.removeItem('client');
     localStorage.removeItem('clientPhone');
+    localStorage.removeItem('currentOrderData');
+    localStorage.removeItem('currentOrderId');
 
     this.client = " ";
     this.clientPhone = " ";
@@ -2396,6 +2401,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   }
 
   async submitOrder() {
+    console.log('🔍 قبل تعيين credit_amount:', {
+      credit_amountt: this.credit_amountt,
+      cashPaymentInput: this.cashPaymentInput,
+      selectedPaymentMethod: this.selectedPaymentMethod
+    });
     if (this.currentOrderData) {
       this.selectedOrderType = this.currentOrderData?.order_details?.order_type;
       localStorage.setItem('selectedOrderType', this.selectedOrderType);
@@ -2526,7 +2536,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       if (!isDelivery) {
         // استخدام النظام الجديد أولاً
         let totalEntered = 0;
-        const cartTotal = Number(this.getCartTotal());
+        const cartTotal = Number(this.getCartTotal().toFixed(2));
         // ✅ حالة خاصة لطلبات + مدفوع + كاش - استخدام الإجمالي مباشرة
         if (isTalabat && this.selectedPaymentMethod === 'cash') {
           totalEntered = cartTotal;
@@ -2555,6 +2565,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         }
         // ✅ النظام الجديد - دفع مختلط
         else if (this.selectedPaymentMethod === 'cash + credit') {
+          if (this.selectedPaymentStatus === 'paid' && this.credit_amountt > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
+      this.referenceNumberTouched = true;
+      this.showError('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
+      return;
+    }
+
           totalEntered = Number(((this.cashAmountMixed || 0) + (this.creditAmountMixed || 0)));
         }
         // ✅ النظام القديم
@@ -2575,7 +2591,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
         if (totalEntered < cartTotal) {
           this.amountError = true;
-          this.falseMessage = `يجب أدخال الإجمالي. ${cartTotal} ${this.currencySymbol}`;
+          this.falseMessage = `يجب أدخال الإجمالي. ${cartTotal.toFixed(2)} ${this.currencySymbol}`;
           console.log('❌ Entered amount less than total:', totalEntered, cartTotal);
           this.isLoading = false;
 
@@ -2591,7 +2607,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
 
     // التحقق من رقم المرجع للفيزا
-    if (this.selectedPaymentStatus === 'paid' && this.credit_amountt > 0 && !this.referenceNumber) {
+    if (this.selectedPaymentStatus === 'paid' && (this.credit_amountt > 0 ||(  this.creditAmountMixed > 0))&& !this.referenceNumber) {
       this.showError('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
       return;
     }
@@ -2610,20 +2626,20 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // معالجة عنوان التوصيل
     // let addressId = null;
     // if (navigator.onLine) {
-      if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
-        addressId = localStorage.getItem('address_id');
-        if (!addressId && !this.addressRequestInProgress) {
-          this.addressRequestInProgress = true;
-          try {
-            addressId = await this.getAddressId();
-            if (addressId) {
-              localStorage.setItem('address_id', addressId.toString());
-            }
-          } finally {
-            this.addressRequestInProgress = false;
+    if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
+      addressId = localStorage.getItem('address_id');
+      if (!addressId && !this.addressRequestInProgress) {
+        this.addressRequestInProgress = true;
+        try {
+          addressId = await this.getAddressId();
+          if (addressId) {
+            localStorage.setItem('address_id', addressId.toString());
           }
+        } finally {
+          this.addressRequestInProgress = false;
         }
       }
+    }
     // }
 
     if (!this.currentOrderData) {
@@ -2660,13 +2676,32 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
         // ✅ التعديل المطلوب: إذا كاش يحط في cash_amount، إذا فيزا يحط في credit_amount
         if (this.selectedPaymentMethod === 'cash') {
-          orderData.cash_amount = billAmount;
+          orderData.cash_amount = this.cashPaymentInput > 0 ? this.cashPaymentInput : billAmount;
           orderData.credit_amount = 0;
         } else if (this.selectedPaymentMethod === 'cash + credit') {
 
           // في حالة الدفع المختلط، استخدم القيم المدخلة
-          orderData.cash_amount = this.cashAmountMixed;
-          orderData.credit_amount = this.creditAmountMixed;
+          // أخذ القيم من cashAmountMixed و creditAmountMixed
+          const cashAmount = this.cashAmountMixed || 0;
+          const creditAmount = this.creditAmountMixed || 0;
+
+          console.log('💰 الدفع المختلط:', {
+            cashAmount: cashAmount,
+            creditAmount: creditAmount,
+            total: cashAmount + creditAmount
+          });
+
+          orderData.cash_amount = cashAmount;
+          orderData.credit_amount = creditAmount;
+
+          const totalPaid = cashAmount + creditAmount;
+          const billAmount = this.finalTipSummary?.billAmount ?? this.getCartTotal();
+
+          if (totalPaid < billAmount) {
+            this.amountError = true;
+            this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmount} ${this.currencySymbol}`;
+            return;
+          }
           orderData.payment_method = "cash";
 
           // const cashAmount = Number(this.cashAmountMixed) || 0;
@@ -2674,8 +2709,17 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           // const creditAmount = Number(this.creditAmountMixed) || 0;
         }
         else if (this.selectedPaymentMethod === 'credit') {
-          orderData.credit_amount = billAmount;
+          orderData.credit_amount = this.credit_amountt > 0 ? this.credit_amountt : billAmount;
           orderData.cash_amount = 0;
+
+          console.log('💳 تم تعيين مبالغ الدفع بالفيزا:', {
+            method: this.selectedPaymentMethod,
+            credit_amount: orderData.credit_amount,
+            cash_amount: orderData.cash_amount,
+            billAmount: billAmount,
+            credit_amountt: this.credit_amountt,
+            cashPaymentInput: this.cashPaymentInput
+          });
         } else if (this.selectedPaymentMethod === 'deferred') {
           orderData.cash_amount = 0;
           orderData.credit_amount = 0;
@@ -2833,8 +2877,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         this.falseMessage = '';
       }, 1500);
 
+
+
     } catch (error: unknown) {
-      this.handleSubmissionError(error, orderData);
+      // this.handleSubmissionError(error, orderData);
+      alert(" حدث خطأ اثناء التنفيذ");
     } finally {
       this.isLoading = false;
       this.loading = false;
@@ -2954,16 +3001,21 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   }
   setCashAmount(value: number) {
     // this.cash_amountt = Number((value ?? 0).toFixed(2)) || this.cash_amount;
-      this.cash_amountt = value || this.cash_amount;
+    this.cash_amountt = value || this.cash_amount;
 
     localStorage.setItem('cash_amountt', JSON.stringify(this.cash_amountt));
   }
 
   setCreditAmount(value: number) {
-    // this.credit_amountt = Number((value ?? 0).toFixed(2)) || this.credit_amount;
-      this.credit_amountt = value || this.credit_amount;
-
+    console.log('💰 setCreditAmount called with:', value);
+    this.credit_amountt = value;
     localStorage.setItem('credit_amountt', JSON.stringify(this.credit_amountt));
+
+    // تحديث الـ UI فوراً
+    this.cdr.detectChanges();
+
+    console.log('✅ credit_amountt after setting:', this.credit_amountt);
+
   }
   // setCashAmount(value: number | null): void {
   //   this.cash_amountt = Number((value ?? 0).toFixed(2))|| this.cash_amount;
@@ -3343,7 +3395,16 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.selectedOrderType = typeMapping[type] || type;
 
 
+
     localStorage.setItem('selectedOrderType', this.selectedOrderType);
+
+    if (localStorage.getItem('selectedOrderType') === "talabat") {
+      localStorage.removeItem('appliedCoupon');
+      localStorage.removeItem('discountAmount');
+      localStorage.removeItem('couponCode');
+      localStorage.removeItem('couponTitle');
+    }
+
     this.isOrderTypeSelected = true; // ✅ تم اختيار نوع الطلب
     this.initializePaymentAmount();
 
@@ -3790,6 +3851,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.cash_amountt = 0;
       this.credit_amountt = 0;
       this.referenceNumber = '';
+      this.referenceNumberTouched = false;
       // this.selectedPaymentMethod = '';
       localStorage.removeItem('cash_amountt');
       localStorage.removeItem('credit_amountt');
@@ -4421,17 +4483,54 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     console.log('Selected Payment Method:', this.selectedPaymentMethod);
     if (method === 'cash') {
       const cartTotal = this.getCartTotal();
-      this.cash_amountt = cartTotal;
+      if (this.cashPaymentInput === 0) {
+        this.cashPaymentInput = " ";
+      }
+
+      if (this.cash_amount === 0) {
+        this.cash_amount = this.cashPaymentInput || cartTotal;
+      }
+      if (this.credit_amountt === 0) {
+        this.credit_amountt = this.cashPaymentInput || cartTotal;
+      }
+
       this.credit_amountt = 0; // إعادة تعيين الفيزا
       localStorage.setItem('cash_amountt', JSON.stringify(this.cash_amountt));
       localStorage.setItem('credit_amountt', JSON.stringify(this.credit_amountt));
-
+      console.log('💰 تم تهيئة الدفع النقدي:', {
+        مدخل: this.cashPaymentInput,
+        محفوظ: this.cash_amount
+      });
       console.log('💰 تم تعيين cash_amount تلقائياً:', cartTotal);
     }
-    // إذا كان نوع الطلب "طلبات" وغير مدفوع، تأكدي أن الطريقة هي "آجل"
-    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
-      this.selectedPaymentMethod = 'deferred';
-      // return;
+    //
+
+    if (method === 'credit') {
+      const cartTotal = this.getCartTotal();
+      if (this.cashPaymentInput > 0 && this.cashPaymentInput !== cartTotal) {
+        this.credit_amountt = this.cashPaymentInput;
+        this.credit_amount = this.cashPaymentInput;
+      } else {
+        this.credit_amountt = cartTotal;
+      }
+
+      this.cash_amountt = 0;
+      localStorage.setItem('cash_amountt', JSON.stringify(this.cash_amountt));
+      localStorage.setItem('credit_amountt', JSON.stringify(this.credit_amountt));
+      console.log('💳 تم تعيين credit_amount:', {
+        method: 'credit',
+        credit_amountt: this.credit_amountt,
+        cashPaymentInput: this.cashPaymentInput,
+        cartTotal: this.getCartTotal()
+      });
+    }
+    //  //////
+    if (method === 'cash + credit') {
+      if (this.cashPaymentInput === 0) {
+        this.cashAmountMixed = " ";
+        this.creditAmountMixed = " ";
+      }
+
     }
 
     // إذا كان نوع الطلب "طلبات" ومدفوع، تأكدي أن الطريقة هي "كاش"
@@ -4446,9 +4545,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     } else if (method === 'credit') {
       this.cashAmountMixed = 0;
       this.creditAmountMixed = 0;
-      this.cashPaymentInput = 0;
+      this.cashPaymentInput = " ";
       this.cash_amountt = 0;
-      this.credit_amountt = this.getCartTotal();
+      // this.credit_amountt = this.getCartTotal();
       // فتح مودال الإكرامية مباشرة للفيزا
       // const billAmount = this.getCartTotal();
       // this.openTipModal(this.tipModalContent, billAmount, billAmount);
@@ -4456,8 +4555,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.cashPaymentInput = 0;
       // تعيين القيم الافتراضية للدفع المختلط
       const billAmount = this.getCartTotal();
-      this.cashAmountMixed = billAmount / 2;
-      this.creditAmountMixed = billAmount / 2;
+      this.cashAmountMixed = " ";
+      this.creditAmountMixed = " ";
       this.cash_amountt = this.cashAmountMixed;
       this.credit_amountt = this.creditAmountMixed;
     }
@@ -4661,6 +4760,22 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
     // مسح أي أخطاء سابقة إذا كان المبلغ صحيحاً
     this.paymentError = '';
+    // ✅ التصحيح: حفظ في المتغير الصحيح بناءً على طريقة الدفع
+    if (this.selectedPaymentMethod === 'cash') {
+      this.cash_amountt = currentPaymentInput;
+      this.cash_amount = currentPaymentInput;
+      console.log('💰 تم حفظ المبلغ النقدي:', this.cash_amountt);
+    } else if (this.selectedPaymentMethod === 'credit') {
+      this.credit_amountt = currentPaymentInput;
+      this.credit_amount = currentPaymentInput;
+      console.log('💳 تم حفظ المبلغ بالفيزا:', this.credit_amountt);
+    }
+    // this.cash_amount = currentPaymentInput;
+    console.log('💰 تم حفظ المبلغ المدخل:', {
+      مدخل: currentPaymentInput,
+      محفوظ: this.cash_amountt,
+      المستحق: billAmount
+    });
     // if (currentPaymentInput > 0 && currentPaymentInput >= billAmount) {
     //   this.openTipModal(modalContent, billAmount, currentPaymentInput);
     // }
