@@ -223,30 +223,30 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
   // تقريب قيمة الدفع النقدي لعدد عشريين وتحديث الحالة
   roundCashPayment(): void {
-    // try {
-    //   // إذا كان لديك حقل إدخال للنقد في القالب يربط بـ cashPaymentInput
-    //   if (typeof this.cashPaymentInput === 'number') {
-    //     this.cashPaymentInput = Number((this.cashPaymentInput || 0).toFixed(2));
-    //     // ✅ إضافة تحقق إضافي هنا
-    //     if (this.cashPaymentInput < 0) {
-    //       this.paymentError = 'لا يمكن إدخال مبلغ سالب';
-    //     } else if (this.cashPaymentInput === 0) {
-    //       this.paymentError = 'يرجى إدخال مبلغ أكبر من الصفر';
-    //     } else {
-    //       this.paymentError = ''; // مسح الخطأ إذا كان المبلغ صحيحاً
-    //     }
-    //   }
-    //   // لو كان هناك استخدام مباشر لمبلغ الكاش الرئيسي
-    //   if (typeof this.cash_amountt === 'number') {
-    //     this.cash_amountt = Number((this.cash_amountt || 0).toFixed(2));
-    //   }
-    //   // مسح رسالة الخطأ عند أي تغير صحيح
-    //   this.paymentError = '';
-    //   this.cdr.markForCheck();
-    // } catch (_) {
-    //   // تجاهل الخطأ، فقط تأكد من عدم كسر القالب
-    //   this.paymentError = 'حدث خطأ في معالجة المبلغ المدخل';
-    // }
+    try {
+      // إذا كان لديك حقل إدخال للنقد في القالب يربط بـ cashPaymentInput
+      if (typeof this.cashPaymentInput === 'number') {
+        this.cashPaymentInput = Number((this.cashPaymentInput || 0).toFixed(2));
+        // ✅ إضافة تحقق إضافي هنا
+        if (this.cashPaymentInput < 0) {
+          this.paymentError = 'لا يمكن إدخال مبلغ سالب';
+        } else if (this.cashPaymentInput === 0) {
+          this.paymentError = 'يرجى إدخال مبلغ أكبر من الصفر';
+        } else {
+          this.paymentError = ''; // مسح الخطأ إذا كان المبلغ صحيحاً
+        }
+      }
+      // لو كان هناك استخدام مباشر لمبلغ الكاش الرئيسي
+      if (typeof this.cash_amountt === 'number') {
+        this.cash_amountt = Number((this.cash_amountt || 0).toFixed(2));
+      }
+      // مسح رسالة الخطأ عند أي تغير صحيح
+      this.paymentError = '';
+      this.cdr.markForCheck();
+    } catch (_) {
+      // تجاهل الخطأ، فقط تأكد من عدم كسر القالب
+      this.paymentError = 'حدث خطأ في معالجة المبلغ المدخل';
+    }
   }
 
   private getCashierMachineId(): number {
@@ -1363,6 +1363,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.selectedOrderType === 'توصيل' ||
       this.selectedOrderType === 'Delivery'
     ) {
+
+      console.log("rfdewrewrwe");
       deliveryFee = this.delivery_fees;
     }
 
@@ -1722,7 +1724,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             // }
             // this.discountAmount = Math.min(this.discountAmount, baseAmount);
             this.discountAmount = response.data.total_discount
-            this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount} ${response.data.currency_symbol} من الإجمالي.`;
+            this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount.toFixed(
+              2
+            )} ${response.data.currency_symbol} من الإجمالي.`;
 
             localStorage.setItem(
               'appliedCoupon',
@@ -2352,6 +2356,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     localStorage.removeItem('finalOrderId');
     localStorage.removeItem('client');
     localStorage.removeItem('clientPhone');
+    localStorage.removeItem('currentOrderData');
+    localStorage.removeItem('currentOrderId');
 
     this.client = " ";
     this.clientPhone = " ";
@@ -2402,9 +2408,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     if (this.currentOrderData) {
       this.selectedOrderType = this.currentOrderData?.order_details?.order_type;
       localStorage.setItem('selectedOrderType', this.selectedOrderType);
-      // if (this.selectedOrderType !== 'Delivery' && this.selectedOrderType !== 'توصيل') {
-      //   localStorage.removeItem('delivery_fees');
-      // }
+      if (this.selectedOrderType === 'Delivery' && this.selectedOrderType === 'توصيل') {
+        console.log("ss");
+        localStorage.removeItem('delivery_fees');
+      }
 
     }
 
@@ -2528,7 +2535,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       if (!isDelivery) {
         // استخدام النظام الجديد أولاً
         let totalEntered = 0;
-        const cartTotal = Number(this.getCartTotal());
+        const cartTotal = Number(this.getCartTotal().toFixed(2));
         // ✅ حالة خاصة لطلبات + مدفوع + كاش - استخدام الإجمالي مباشرة
         if (isTalabat && this.selectedPaymentMethod === 'cash') {
           totalEntered = cartTotal;
@@ -2549,19 +2556,19 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
         // ✅ النظام الجديد مع الإكرامية
         if (this.finalTipSummary && this.finalTipSummary.paymentAmount > 0) {
-          totalEntered = Number(this.finalTipSummary.paymentAmount);
+          totalEntered = Number(this.finalTipSummary.paymentAmount.toFixed(2));
         }
         // ✅ النظام الجديد - كاش فقط
         else if (this.selectedPaymentMethod === 'cash' && this.cashPaymentInput > 0) {
-          totalEntered = Number(this.cashPaymentInput);
+          totalEntered = Number(this.cashPaymentInput.toFixed(2));
         }
         // ✅ النظام الجديد - دفع مختلط
         else if (this.selectedPaymentMethod === 'cash + credit') {
-          totalEntered = Number(((this.cashAmountMixed || 0) + (this.creditAmountMixed || 0)));
+          totalEntered = Number(((this.cashAmountMixed || 0) + (this.creditAmountMixed || 0)).toFixed(2));
         }
         // ✅ النظام القديم
         else {
-          totalEntered = Number((((Number(this.cash_amountt) || 0) + (Number(this.credit_amountt) || 0))));
+          totalEntered = Number((((Number(this.cash_amountt) || 0) + (Number(this.credit_amountt) || 0)).toFixed(2)));
         }
 
         console.log('💰 Payment validation - Fixed:', {
@@ -2577,7 +2584,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
         if (totalEntered < cartTotal) {
           this.amountError = true;
-          this.falseMessage = `يجب أدخال الإجمالي. ${cartTotal} ${this.currencySymbol}`;
+          this.falseMessage = `يجب أدخال الإجمالي. ${cartTotal.toFixed(2)} ${this.currencySymbol}`;
           console.log('❌ Entered amount less than total:', totalEntered, cartTotal);
           this.isLoading = false;
 
@@ -2863,6 +2870,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         this.falseMessage = '';
       }, 1500);
 
+
+
     } catch (error: unknown) {
       this.handleSubmissionError(error, orderData);
     } finally {
@@ -2998,6 +3007,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.cdr.detectChanges();
 
     console.log('✅ credit_amountt after setting:', this.credit_amountt);
+   
   }
   // setCashAmount(value: number | null): void {
   //   this.cash_amountt = Number((value ?? 0).toFixed(2))|| this.cash_amount;
@@ -3377,7 +3387,17 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.selectedOrderType = typeMapping[type] || type;
 
 
+
     localStorage.setItem('selectedOrderType', this.selectedOrderType);
+
+    if(localStorage.getItem('selectedOrderType') === "talabat")
+    {
+      localStorage.removeItem('appliedCoupon');
+      localStorage.removeItem('discountAmount');
+      localStorage.removeItem('couponCode');
+      localStorage.removeItem('couponTitle');
+    }
+
     this.isOrderTypeSelected = true; // ✅ تم اختيار نوع الطلب
     this.initializePaymentAmount();
 
