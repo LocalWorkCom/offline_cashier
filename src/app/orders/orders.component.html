@@ -596,8 +596,19 @@
                         }
                         <div class="my-4">
                           <label for="exampleFormControlTextarea1" class="form-label fw-bold"> اخبرنا السبب </label>
-                          <textarea class="form-control" id="exampleFormControlTextarea1" rows="3"
-                            placeholder="اخبرنا السبب" [(ngModel)]="cancelReason"></textarea>
+                          <textarea
+                            class="form-control"
+                            [class.is-invalid]="cancelReasonTouched && !cancelReason.trim()"
+                            [class.is-valid]="cancelReasonTouched && cancelReason.trim()"
+                            id="exampleFormControlTextarea1"
+                            rows="3"
+                            placeholder="اخبرنا السبب"
+                            [(ngModel)]="cancelReason"
+                            (blur)="cancelReasonTouched = true"
+                            required></textarea>
+                          <div *ngIf="cancelReasonTouched && !cancelReason.trim()" class="invalid-feedback">
+                            يرجى إدخال سبب الإرجاع
+                          </div>
                         </div>
 
                       </div>
