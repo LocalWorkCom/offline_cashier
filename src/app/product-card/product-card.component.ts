@@ -31,11 +31,12 @@ export class ProductCardComponent  {
   openModal(item: any): void {
 
     const orderType = localStorage.getItem('selectedOrderType');
-    // if localStorage.get
-    if(!localStorage.getItem('selectedOrderType')){
-      alert("يرجى تحديد نوع الطلب أولا");
-      return;
-    }
+    console.log("selected order type in product card ",orderType); 
+    // // if localStorage.get
+    // if(!localStorage.getItem('selectedOrderType')){
+    //   alert("يرجى تحديد نوع الطلب أولا");
+    //   return;
+    // }
     if(localStorage.getItem('selectedOrderType')=== 'talabat')
     {
 

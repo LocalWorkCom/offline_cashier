@@ -320,7 +320,7 @@ export class AuthService {
         this.router.navigate(['/home']);
 
         // ✅ Load categories first
-        // const productService = this.injector.get(ProductsService);
+        const productService = this.injector.get(ProductsService);
         // productService.fetchAndSave().subscribe({
         //   next: () => {
         //     console.log('✅ Categories fetched and saved after login.');
