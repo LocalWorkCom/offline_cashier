@@ -777,7 +777,7 @@ selectedOrderType === 'talabat') {
               <input type="number" class="form-control" id="cashAmountInput"
                 [(ngModel)]="cashAmountMixed"
                 [ngModelOptions]="{standalone: true}"
-                placeholder="المبلغ المدفوع كاش" min="0" step="0.01"
+                placeholder="المبلغ المدفوع كاش" min="0" 
                 (change)="openMixedPaymentTipModal(billAmount, tipModalContent)">
 
               <!-- رسالة خطأ للكاش -->
@@ -794,7 +794,7 @@ selectedOrderType === 'talabat') {
               <input type="number" class="form-control" id="creditAmountInput"
                 [(ngModel)]="creditAmountMixed"
                 [ngModelOptions]="{standalone: true}"
-                placeholder="المبلغ المدفوع فيزا" min="0" step="0.01"
+                placeholder="المبلغ المدفوع فيزا" min="0" 
                 (change)="openMixedPaymentTipModal(billAmount, tipModalContent)">
 
               <!-- رسالة خطأ للفيزا -->
