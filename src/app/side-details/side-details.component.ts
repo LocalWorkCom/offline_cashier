@@ -140,6 +140,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   clientStoredInLocal: any = localStorage.getItem('client');
   clientPhoneStoredInLocal: any = localStorage.getItem('clientPhone');
   referenceNumber: any;
+  referenceNumberTouched: boolean = false;
   payment_status: any;
   credit_amount: any;
   cash_amount: any;
@@ -2564,11 +2565,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         }
         // ✅ النظام الجديد - دفع مختلط
         else if (this.selectedPaymentMethod === 'cash + credit') {
-          if (this.selectedPaymentStatus === 'paid' && this.credit_amountt > 0 && !this.referenceNumber) {
+          if (this.selectedPaymentStatus === 'paid' && this.credit_amountt > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
+      this.referenceNumberTouched = true;
       this.showError('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
       return;
     }
-          
+
           totalEntered = Number(((this.cashAmountMixed || 0) + (this.creditAmountMixed || 0)));
         }
         // ✅ النظام القديم
@@ -2605,7 +2607,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
 
     // التحقق من رقم المرجع للفيزا
-    if (this.selectedPaymentStatus === 'paid' && this.credit_amountt > 0 && !this.referenceNumber) {
+    if (this.selectedPaymentStatus === 'paid' && (this.credit_amountt > 0 ||(  this.creditAmountMixed > 0))&& !this.referenceNumber) {
       this.showError('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
       return;
     }
@@ -3848,6 +3850,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.cash_amountt = 0;
       this.credit_amountt = 0;
       this.referenceNumber = '';
+      this.referenceNumberTouched = false;
       // this.selectedPaymentMethod = '';
       localStorage.removeItem('cash_amountt');
       localStorage.removeItem('credit_amountt');
@@ -4499,7 +4502,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       });
       console.log('💰 تم تعيين cash_amount تلقائياً:', cartTotal);
     }
-    // 
+    //
 
     if (method === 'credit') {
       const cartTotal = this.getCartTotal();
