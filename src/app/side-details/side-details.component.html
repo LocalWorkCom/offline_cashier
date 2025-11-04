@@ -434,7 +434,7 @@ selectedOrderType === 'talabat') {
         <p>المجموع</p>
         <p class="fw-bold">{{ getTotal().toFixed(2) }} {{ currencySymbol }}</p>
       </li>
-      @if (discountAmount && validCoupon) {
+      @if (discountAmount && validCoupon && selectedOrderType !== 'talabat') {
       <li class="order-list">
         <p class="main-color fw-bold">
           كوبون خصم
@@ -470,7 +470,7 @@ selectedOrderType === 'talabat') {
         </p>
         }
       </li>
-      } @if (selectedOrderType === 'توصيل' || selectedOrderType === 'Delivery')
+      } @if ((selectedOrderType === 'توصيل' || selectedOrderType === 'Delivery') && !currentOrderData )
       {
       <li class="order-list fw-bold">
         <p>رسوم التوصيل</p>

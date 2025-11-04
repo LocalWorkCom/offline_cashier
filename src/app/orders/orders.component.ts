@@ -1292,6 +1292,7 @@ export class OrdersComponent implements OnDestroy {
     this.selectedOrderIdToDelete = null;
   }
   cancelReason: string = '';
+  cancelReasonTouched: boolean = false;
   cancelErrorMessage: string = '';
   cancelSuccessMessage: string = '';
   cancelMessage: any;
@@ -1395,6 +1396,7 @@ export class OrdersComponent implements OnDestroy {
             this.cancelSuccessMessage = 'تم إرسال طلب المرتجع بنجاح';
             this.cancelErrorMessage = '';
             this.cancelReason = '';
+            this.cancelReasonTouched = false;
             const modal_id = `modal-${order.order_details.order_id}`;
             const currentModal = document.getElementById(modal_id);
             console.log(currentModal);
@@ -1412,6 +1414,7 @@ export class OrdersComponent implements OnDestroy {
                     item.selectedQuantity = item.quantity; // أو null لو  المدخل يبقى فاضي
                   });
                   this.cancelReason = '';
+                  this.cancelReasonTouched = false;
                 },
                 { once: true }
               );
@@ -1521,6 +1524,18 @@ export class OrdersComponent implements OnDestroy {
       return;
     }
 
+    // Validate cancelReason
+    this.cancelReasonTouched = true;
+    if (!this.cancelReason || !this.cancelReason.trim()) {
+      this.cancelErrorMessage = 'يرجى إدخال سبب الإرجاع';
+      this.cancelSuccessMessage = '';
+      this.isSubmitting = false;
+      setTimeout(() => {
+        this.cancelErrorMessage = '';
+      }, 4000);
+      return;
+    }
+
     if (
       order.order_details.status !== 'cancelled' &&
       !(
@@ -1597,6 +1612,7 @@ export class OrdersComponent implements OnDestroy {
             this.cancelSuccessMessage = 'تم إرسال طلب المرتجع بنجاح';
             this.cancelErrorMessage = '';
             this.cancelReason = '';
+            this.cancelReasonTouched = false;
             const modal_id = `modal-${order.order_details.order_id}`;
             const currentModal = document.getElementById(modal_id);
             console.log(currentModal);
@@ -1613,6 +1629,7 @@ export class OrdersComponent implements OnDestroy {
                     item.selectedQuantity = item.quantity;
                   });
                   this.cancelReason = '';
+                  this.cancelReasonTouched = false;
                 },
                 { once: true }
               );
