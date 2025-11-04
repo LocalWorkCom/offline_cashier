@@ -2880,7 +2880,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
 
     } catch (error: unknown) {
-      this.handleSubmissionError(error, orderData);
+      // this.handleSubmissionError(error, orderData);
+      alert(" حدث خطأ اثناء التنفيذ");
     } finally {
       this.isLoading = false;
       this.loading = false;
