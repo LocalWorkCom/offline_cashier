@@ -2356,6 +2356,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     localStorage.removeItem('finalOrderId');
     localStorage.removeItem('client');
     localStorage.removeItem('clientPhone');
+    localStorage.removeItem('currentOrderData');
+    localStorage.removeItem('currentOrderId');
 
     this.client = " ";
     this.clientPhone = " ";
@@ -2834,6 +2836,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       setTimeout(() => {
         this.falseMessage = '';
       }, 1500);
+
+
 
     } catch (error: unknown) {
       this.handleSubmissionError(error, orderData);
