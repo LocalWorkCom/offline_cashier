@@ -470,7 +470,7 @@ selectedOrderType === 'talabat') {
         </p>
         }
       </li>
-      } @if (selectedOrderType === 'توصيل' || selectedOrderType === 'Delivery')
+      } @if ((selectedOrderType === 'توصيل' || selectedOrderType === 'Delivery') && !currentOrderData )
       {
       <li class="order-list fw-bold">
         <p>رسوم التوصيل</p>
