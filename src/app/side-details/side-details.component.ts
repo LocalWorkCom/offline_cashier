@@ -223,30 +223,30 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
   // تقريب قيمة الدفع النقدي لعدد عشريين وتحديث الحالة
   roundCashPayment(): void {
-    try {
-      // إذا كان لديك حقل إدخال للنقد في القالب يربط بـ cashPaymentInput
-      if (typeof this.cashPaymentInput === 'number') {
-        this.cashPaymentInput = Number((this.cashPaymentInput || 0).toFixed(2));
-        // ✅ إضافة تحقق إضافي هنا
-        if (this.cashPaymentInput < 0) {
-          this.paymentError = 'لا يمكن إدخال مبلغ سالب';
-        } else if (this.cashPaymentInput === 0) {
-          this.paymentError = 'يرجى إدخال مبلغ أكبر من الصفر';
-        } else {
-          this.paymentError = ''; // مسح الخطأ إذا كان المبلغ صحيحاً
-        }
-      }
-      // لو كان هناك استخدام مباشر لمبلغ الكاش الرئيسي
-      if (typeof this.cash_amountt === 'number') {
-        this.cash_amountt = Number((this.cash_amountt || 0).toFixed(2));
-      }
-      // مسح رسالة الخطأ عند أي تغير صحيح
-      this.paymentError = '';
-      this.cdr.markForCheck();
-    } catch (_) {
-      // تجاهل الخطأ، فقط تأكد من عدم كسر القالب
-      this.paymentError = 'حدث خطأ في معالجة المبلغ المدخل';
-    }
+    // try {
+    //   // إذا كان لديك حقل إدخال للنقد في القالب يربط بـ cashPaymentInput
+    //   if (typeof this.cashPaymentInput === 'number') {
+    //     this.cashPaymentInput = Number((this.cashPaymentInput || 0).toFixed(2));
+    //     // ✅ إضافة تحقق إضافي هنا
+    //     if (this.cashPaymentInput < 0) {
+    //       this.paymentError = 'لا يمكن إدخال مبلغ سالب';
+    //     } else if (this.cashPaymentInput === 0) {
+    //       this.paymentError = 'يرجى إدخال مبلغ أكبر من الصفر';
+    //     } else {
+    //       this.paymentError = ''; // مسح الخطأ إذا كان المبلغ صحيحاً
+    //     }
+    //   }
+    //   // لو كان هناك استخدام مباشر لمبلغ الكاش الرئيسي
+    //   if (typeof this.cash_amountt === 'number') {
+    //     this.cash_amountt = Number((this.cash_amountt || 0).toFixed(2));
+    //   }
+    //   // مسح رسالة الخطأ عند أي تغير صحيح
+    //   this.paymentError = '';
+    //   this.cdr.markForCheck();
+    // } catch (_) {
+    //   // تجاهل الخطأ، فقط تأكد من عدم كسر القالب
+    //   this.paymentError = 'حدث خطأ في معالجة المبلغ المدخل';
+    // }
   }
 
   private getCashierMachineId(): number {
@@ -1722,9 +1722,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             // }
             // this.discountAmount = Math.min(this.discountAmount, baseAmount);
             this.discountAmount = response.data.total_discount
-            this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount.toFixed(
-              2
-            )} ${response.data.currency_symbol} من الإجمالي.`;
+            this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount} ${response.data.currency_symbol} من الإجمالي.`;
 
             localStorage.setItem(
               'appliedCoupon',
@@ -2399,9 +2397,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     if (this.currentOrderData) {
       this.selectedOrderType = this.currentOrderData?.order_details?.order_type;
       localStorage.setItem('selectedOrderType', this.selectedOrderType);
-      if (this.selectedOrderType !== 'Delivery' && this.selectedOrderType !== 'توصيل') {
-        localStorage.removeItem('delivery_fees');
-      }
+      // if (this.selectedOrderType !== 'Delivery' && this.selectedOrderType !== 'توصيل') {
+      //   localStorage.removeItem('delivery_fees');
+      // }
 
     }
 
@@ -2525,7 +2523,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       if (!isDelivery) {
         // استخدام النظام الجديد أولاً
         let totalEntered = 0;
-        const cartTotal = Number(this.getCartTotal().toFixed(2));
+        const cartTotal = Number(this.getCartTotal());
         // ✅ حالة خاصة لطلبات + مدفوع + كاش - استخدام الإجمالي مباشرة
         if (isTalabat && this.selectedPaymentMethod === 'cash') {
           totalEntered = cartTotal;
@@ -2546,19 +2544,19 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
         // ✅ النظام الجديد مع الإكرامية
         if (this.finalTipSummary && this.finalTipSummary.paymentAmount > 0) {
-          totalEntered = Number(this.finalTipSummary.paymentAmount.toFixed(2));
+          totalEntered = Number(this.finalTipSummary.paymentAmount);
         }
         // ✅ النظام الجديد - كاش فقط
         else if (this.selectedPaymentMethod === 'cash' && this.cashPaymentInput > 0) {
-          totalEntered = Number(this.cashPaymentInput.toFixed(2));
+          totalEntered = Number(this.cashPaymentInput);
         }
         // ✅ النظام الجديد - دفع مختلط
         else if (this.selectedPaymentMethod === 'cash + credit') {
-          totalEntered = Number(((this.cashAmountMixed || 0) + (this.creditAmountMixed || 0)).toFixed(2));
+          totalEntered = Number(((this.cashAmountMixed || 0) + (this.creditAmountMixed || 0)));
         }
         // ✅ النظام القديم
         else {
-          totalEntered = Number((((Number(this.cash_amountt) || 0) + (Number(this.credit_amountt) || 0)).toFixed(2)));
+          totalEntered = Number((((Number(this.cash_amountt) || 0) + (Number(this.credit_amountt) || 0))));
         }
 
         console.log('💰 Payment validation - Fixed:', {
@@ -2574,7 +2572,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
         if (totalEntered < cartTotal) {
           this.amountError = true;
-          this.falseMessage = `يجب أدخال الإجمالي. ${cartTotal.toFixed(2)} ${this.currencySymbol}`;
+          this.falseMessage = `يجب أدخال الإجمالي. ${cartTotal} ${this.currencySymbol}`;
           console.log('❌ Entered amount less than total:', totalEntered, cartTotal);
           this.isLoading = false;
 
@@ -2716,48 +2714,48 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
 
     // معالجة حالة عدم الاتصال
-    if (!navigator.onLine) {
-      try {
-        orderData.offlineTimestamp = new Date().toISOString();
-        orderData.status = 'pending_sync';
+    // if (!navigator.onLine) {
+    //   try {
+    //     orderData.offlineTimestamp = new Date().toISOString();
+    //     orderData.status = 'pending_sync';
 
-        // Save to orders/pills stores (existing functionality)
-        const savedOrderId = await this.dbService.savePendingOrder(orderData);
-        console.log("Order saved to IndexedDB with ID:", savedOrderId);
+    //     // Save to orders/pills stores (existing functionality)
+    //     const savedOrderId = await this.dbService.savePendingOrder(orderData);
+    //     console.log("Order saved to IndexedDB with ID:", savedOrderId);
 
-        // Save raw orderData for API sync (exact data that will be sent to API)
-        // Remove metadata fields that shouldn't be sent to API
-        const orderDataForSync = { ...orderData };
-        delete orderDataForSync.offlineTimestamp;
-        delete orderDataForSync.status;
+    //     // Save raw orderData for API sync (exact data that will be sent to API)
+    //     // Remove metadata fields that shouldn't be sent to API
+    //     const orderDataForSync = { ...orderData };
+    //     delete orderDataForSync.offlineTimestamp;
+    //     delete orderDataForSync.status;
 
-        await this.dbService.savePendingOrderForSync(orderDataForSync);
-        console.log("Raw orderData saved for API sync");
+    //     await this.dbService.savePendingOrderForSync(orderDataForSync);
+    //     console.log("Raw orderData saved for API sync");
 
-        await this.releaseTableAndOrderType();
+    //     await this.releaseTableAndOrderType();
 
-        this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
-        this.clearCart();
-        this.resetLocalStorage();
+    //     this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
+    //     this.clearCart();
+    //     this.resetLocalStorage();
 
-        if (this.successModal) {
-          this.successModal.show();
-        }
+    //     if (this.successModal) {
+    //       this.successModal.show();
+    //     }
 
-        const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
-        const orderIdToRemove = orderData.orderId;
-        const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
-        localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
+    //     const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
+    //     const orderIdToRemove = orderData.orderId;
+    //     const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
+    //     localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
 
-      } catch (error) {
-        console.error('Error saving order to IndexedDB:', error);
-        this.showError('فشل حفظ الطلب في وضع عدم الاتصال. يرجى المحاولة مرة أخرى.');
-      } finally {
-        this.isLoading = false;
-        this.loading = false;
-      }
-      return;
-    }
+    //   } catch (error) {
+    //     console.error('Error saving order to IndexedDB:', error);
+    //     this.showError('فشل حفظ الطلب في وضع عدم الاتصال. يرجى المحاولة مرة أخرى.');
+    //   } finally {
+    //     this.isLoading = false;
+    //     this.loading = false;
+    //   }
+    //   return;
+    // }
 
     // إرسال الطلب إلى API
     console.log('Submitting order online:', orderData);
@@ -2952,13 +2950,17 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     return subtotal;
   }
   setCashAmount(value: number) {
-    this.cash_amountt = Number((value ?? 0).toFixed(2)) || this.cash_amount;
-    localStorage.setItem('cash_amountt', JSON.stringify(this.credit_amountt));
+    // this.cash_amountt = Number((value ?? 0).toFixed(2)) || this.cash_amount;
+      this.cash_amountt = value || this.cash_amount;
+
+    localStorage.setItem('cash_amountt', JSON.stringify(this.cash_amountt));
   }
 
   setCreditAmount(value: number) {
-    this.credit_amountt = Number((value ?? 0).toFixed(2)) || this.credit_amount;
-    localStorage.setItem('credit_amountt', JSON.stringify(this.cash_amountt));
+    // this.credit_amountt = Number((value ?? 0).toFixed(2)) || this.credit_amount;
+      this.credit_amountt = value || this.credit_amount;
+
+    localStorage.setItem('credit_amountt', JSON.stringify(this.credit_amountt));
   }
   // setCashAmount(value: number | null): void {
   //   this.cash_amountt = Number((value ?? 0).toFixed(2))|| this.cash_amount;
@@ -3315,11 +3317,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     return this.invoices[0].invoice_summary.subtotal_price - this.getDiscount();
   }
   async selectOrderType(type: string) {
+    localStorage.removeItem('selectedOrderType');
     const currentCart = [...this.cartItems];
     this.clearOrderTypeData();
 
     // ✅ Clear selectedOrderType from localStorage first to ensure correct pricing
-    localStorage.removeItem('selectedOrderType');
+    
 
     const typeMapping: { [key: string]: string } = {
       'في المطعم': 'dine-in',
@@ -3347,6 +3350,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     // ✅ تحديث الأسعار عند التبديل إلى talabat أو إلى نوع آخر
     for (let i = 0; i < this.cartItems.length; i++) {
+      console.log('🔄 selectedOrderType:', this.selectedOrderType);
       await this.findCategoryByDishId(this.cartItems[i]);
     }
 
@@ -3493,6 +3497,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
 
     console.log('Updated cart item after price sync:', cartItem);
+    localStorage.setItem('cart', JSON.stringify(this.cartItems));
 
     // 4. إعادة حساب المجموع النهائي بعد التحديث
     this.recalculateTotal(cartItem);

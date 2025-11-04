@@ -17,6 +17,8 @@ declare var bootstrap: any;
   styleUrl: './edit-order-modal.component.css',
 })
 export class EditOrderModalComponent implements OnInit {
+    isSubmitting: boolean = false;
+
   @Input() itemId!: number;
   apiUrl = `${baseUrl}`;
   @Input() public selectedItem: any;
@@ -90,7 +92,7 @@ export class EditOrderModalComponent implements OnInit {
       .get(url)
       .pipe(
         finalize(() => {
-          this.loading = false; 
+          this.loading = false;
         })
       )
       .subscribe({
@@ -277,6 +279,11 @@ export class EditOrderModalComponent implements OnInit {
   }
 
   editItem(): void {
+    // 🔑 منع الضغط المتعدد
+    if (this.isSubmitting) {
+      return;
+    }
+
     if (!this.selectedItem?.dish) return;
 
     const url = `${this.apiUrl}api/orders/cashier/order-edit-item/api`;
@@ -300,6 +307,8 @@ export class EditOrderModalComponent implements OnInit {
       addon_categories: addon_categories,
     };
 
+    this.isSubmitting = true;
+
     this.isLoading = true;
     this.http.post(url, body).subscribe({
       next: (res: any) => {
@@ -321,6 +330,7 @@ export class EditOrderModalComponent implements OnInit {
         }
       },
       error: (err) => {
+        this.isSubmitting = false; 
         this.isLoading = false;
         console.error('❌ API error', err);
 
