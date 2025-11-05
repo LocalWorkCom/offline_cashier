@@ -2880,8 +2880,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
 
     } catch (error: unknown) {
-      // this.handleSubmissionError(error, orderData);
-      alert(" حدث خطأ اثناء التنفيذ");
+      this.handleSubmissionError(error, orderData);
+      // alert(" حدث خطأ اثناء التنفيذ");
     } finally {
       this.isLoading = false;
       this.loading = false;
@@ -2931,16 +2931,16 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         orderData.status = 'pending_sync';
         orderData.errorReason = (error instanceof Error ? error.message : 'Gateway Timeout');
 
-        const orderId = await this.dbService.savePendingOrder(orderData);
-        console.log("Order saved to IndexedDB due to timeout/error:", orderId);
+        // const orderId = await this.dbService.savePendingOrder(orderData);
+        // console.log("Order saved to IndexedDB due to timeout/error:", orderId);
 
-        this.successMessage = 'تم حفظ الطلب بسبب مشكلة في الاتصال وسيتم إرساله لاحقًا';
+        // this.successMessage = 'تم حفظ الطلب بسبب مشكلة في الاتصال وسيتم إرساله لاحقًا';
         this.clearCart();
         this.resetLocalStorage();
 
-        if (this.successModal) {
-          this.successModal.show();
-        }
+        // if (this.successModal) {
+        //   this.successModal.show();
+        // }
 
       } catch (dbError) {
         console.error('Error saving to IndexedDB:', dbError);
