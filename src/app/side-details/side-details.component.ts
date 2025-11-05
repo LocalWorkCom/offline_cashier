@@ -2270,6 +2270,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       ...(continuedOrderId ? { order_id: continuedOrderId } : {}),
       order_id: continuedOrderId ?? null,
       table_number: table_number ?? null,
+      table_id: table_number ?? null,
       type: this.selectedOrderType,
       branch_id: branchId,
       payment_method: this.selectedPaymentMethod ?? 'cash',
