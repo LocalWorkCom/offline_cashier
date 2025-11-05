@@ -2938,9 +2938,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         this.clearCart();
         this.resetLocalStorage();
 
-        // if (this.successModal) {
-        //   this.successModal.show();
-        // }
+        if (this.successModal) {
+          this.successModal.show();
+        }
 
       } catch (dbError) {
         console.error('Error saving to IndexedDB:', dbError);
