@@ -2949,8 +2949,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       }
     } else {
       const err = error as any;
-      if (err?.error?.errorData?.error?.coupon_code) {
-        this.couponError = err.error.errorData.error.coupon_code[0];
+      if (err?.error?.errorData?.coupon_code) {
+        this.couponError = err.error.errorData.coupon_code[0];
       } else if (err?.error?.errorData?.error?.client_phone) {
         this.falseMessage = err.error?.errorData?.error?.client_phone[0];
       } else if (err?.error?.errorData?.table_id) {
