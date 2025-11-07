@@ -1236,6 +1236,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // مسح البيانات من localStorage
     localStorage.removeItem('cart');
     localStorage.removeItem('holdCart');
+    localStorage.removeItem('savedOrders');
+    // مسح من IndexedDB إذا كنت تستخدمه
+    this.dbService.clearCart().catch(err =>
+      console.error('Error clearing cart from IndexedDB:', err)
+    );
     this.clearCart();
     localStorage.removeItem('finalOrderId');
     this.finalOrderId = " ";
@@ -2570,10 +2575,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         // ✅ النظام الجديد - دفع مختلط
         else if (this.selectedPaymentMethod === 'cash + credit') {
           if (this.selectedPaymentStatus === 'paid' && this.credit_amountt > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
-      this.referenceNumberTouched = true;
-      this.showError('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
-      return;
-    }
+            this.referenceNumberTouched = true;
+            this.showError('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
+            return;
+          }
 
           totalEntered = Number(((this.cashAmountMixed || 0) + (this.creditAmountMixed || 0)));
         }
@@ -2611,7 +2616,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
 
     // التحقق من رقم المرجع للفيزا
-    if (this.selectedPaymentStatus === 'paid' && (this.credit_amountt > 0 ||(  this.creditAmountMixed > 0))&& !this.referenceNumber) {
+    if (this.selectedPaymentStatus === 'paid' && (this.credit_amountt > 0 || (this.creditAmountMixed > 0)) && !this.referenceNumber) {
       this.showError('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
       return;
     }
