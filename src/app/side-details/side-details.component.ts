@@ -1233,6 +1233,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
   }
   cancelOrder(): void {
+    // مسح البيانات من localStorage
+    localStorage.removeItem('cart');
+    localStorage.removeItem('holdCart');
     this.clearCart();
     localStorage.removeItem('finalOrderId');
     this.finalOrderId = " ";
