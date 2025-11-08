@@ -665,7 +665,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       console.error('❌ Error in syncPendingOrders:', err);
     }
   }
-
   // // Check for pending orders in IndexedDB
   private async checkPendingOrders(): Promise<void> {
     try {
