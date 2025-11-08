@@ -2943,7 +2943,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         // const orderId = await this.dbService.savePendingOrder(orderData);
         // console.log("Order saved to IndexedDB due to timeout/error:", orderId);
 
-        // this.successMessage = 'تم حفظ الطلب بسبب مشكلة في الاتصال وسيتم إرساله لاحقًا';
+        this.successMessage = 'مشكلة في الاتصال يرجى المحاوله مرة اخرى ';
         this.clearCart();
         this.resetLocalStorage();
 

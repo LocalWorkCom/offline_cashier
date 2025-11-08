@@ -49,7 +49,7 @@ export class CategoriesComponent implements OnInit, OnDestroy {
     window.addEventListener('online', this.handleOnlineStatus.bind(this));
     window.addEventListener('offline', this.handleOnlineStatus.bind(this));
 
-    this.dbService.init();
+    // this.dbService.init();
     //end dalia
     this.fetchMenuData();
     this.listenTonewDish()
@@ -110,11 +110,11 @@ export class CategoriesComponent implements OnInit, OnDestroy {
       } else {
         console.error("Invalid response format", response);
         // Fallback to offline data if API returns invalid response
-        this.loadFromIndexedDB();
+        // this.loadFromIndexedDB();
       }
     }, (error) => {
       console.error('API fetch failed, trying offline data:', error);
-      this.loadFromIndexedDB();
+      // this.loadFromIndexedDB();
     });
   }
 
