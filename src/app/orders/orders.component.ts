@@ -32,7 +32,7 @@ import { baseUrl } from '../environment';
 import { EditOrderModalComponent } from '../edit-order-modal/edit-order-modal.component';
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ProductsService } from '../services/products.service';
-import { IndexeddbService } from '../services/indexeddb.service';
+// import { IndexeddbService } from '../services/indexeddb.service';
 
 @Component({
   selector: 'app-orders',
@@ -120,7 +120,7 @@ export class OrdersComponent implements OnDestroy {
     //   this.loadOrdersFromIndexedDB();
     // }
     // else {
-      this.fetchOrdersFromAPI();
+    this.fetchOrdersFromAPI();
     // }
 
     this.loadCartItems();
@@ -449,7 +449,7 @@ export class OrdersComponent implements OnDestroy {
     }
   }
 
-   increaseItem(item: any, index: number): void {
+  increaseItem(item: any, index: number): void {
     if (item.selectedQuantity === undefined) {
       item.selectedQuantity = item.quantity;
     }
@@ -1906,7 +1906,7 @@ export class OrdersComponent implements OnDestroy {
   }
 
   continueOrder(order: any): void {
-     localStorage.removeItem('selectedOrderType');
+    localStorage.removeItem('selectedOrderType');
     console.log('tet', order);
     this.productsService.destroyCart(); // 🔥 destroy stream
 
@@ -1918,9 +1918,9 @@ export class OrdersComponent implements OnDestroy {
     localStorage.setItem('currentOrderData', JSON.stringify(order));
 
     this.router.navigate(['/home']);
-  //   this.router.navigate(['/home']).then(() => {
-  //   // ✅ إعادة تحميل الصفحة بعد التوجيه بنجاح
-  //   window.location.reload();
-  // });
+    //   this.router.navigate(['/home']).then(() => {
+    //   // ✅ إعادة تحميل الصفحة بعد التوجيه بنجاح
+    //   window.location.reload();
+    // });
   }
 }
