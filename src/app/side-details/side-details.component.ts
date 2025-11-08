@@ -1010,7 +1010,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               if (holdItems && holdItems.length > 0) {
                 this.cartItems = holdItems;
                 // حفظ في IndexedDB للاستخدام المستقبلي
-                this.saveHoldCartToIndexedDB(holdItems);
+                // this.saveHoldCartToIndexedDB(holdItems);
                 console.log('✅ Cart loaded from holdCart (localStorage):', this.cartItems.length, 'items');
               } else {
                 // جرب cart
@@ -1233,6 +1233,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
   }
   cancelOrder(): void {
+    // مسح البيانات من localStorage
+    localStorage.removeItem('cart');
+    localStorage.removeItem('holdCart');
     this.clearCart();
     localStorage.removeItem('finalOrderId');
     this.finalOrderId = " ";
@@ -2371,11 +2374,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.FormDataDetails = null;
 
 
-    this.dbService.deleteFromIndexedDB('clientInfo');
-    this.dbService.deleteFromIndexedDB('formData');
-    this.dbService.deleteFromIndexedDB('selectedOrderType');
-    this.dbService.deleteFromIndexedDB('selectedTable');
-    this.dbService.deleteFromIndexedDB('form_delivery');
+    // this.dbService.deleteFromIndexedDB('clientInfo');
+    // this.dbService.deleteFromIndexedDB('formData');
+    // this.dbService.deleteFromIndexedDB('selectedOrderType');
+    // this.dbService.deleteFromIndexedDB('selectedTable');
+    // this.dbService.deleteFromIndexedDB('form_delivery');
 
     // ✅ Release table locally (mark available) if exists
     if (this.table_id) {
@@ -2567,10 +2570,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         // ✅ النظام الجديد - دفع مختلط
         else if (this.selectedPaymentMethod === 'cash + credit') {
           if (this.selectedPaymentStatus === 'paid' && this.credit_amountt > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
-      this.referenceNumberTouched = true;
-      this.showError('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
-      return;
-    }
+            this.referenceNumberTouched = true;
+            this.showError('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
+            return;
+          }
 
           totalEntered = Number(((this.cashAmountMixed || 0) + (this.creditAmountMixed || 0)));
         }
@@ -2608,7 +2611,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
 
     // التحقق من رقم المرجع للفيزا
-    if (this.selectedPaymentStatus === 'paid' && (this.credit_amountt > 0 ||(  this.creditAmountMixed > 0))&& !this.referenceNumber) {
+    if (this.selectedPaymentStatus === 'paid' && (this.credit_amountt > 0 || (this.creditAmountMixed > 0)) && !this.referenceNumber) {
       this.showError('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
       return;
     }
@@ -3516,7 +3519,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     // 💾 تحديث localStorage بالكارت الجديد
     localStorage.setItem('cart', JSON.stringify(cart));
-    this.dbService.removeFromCart(cartItem.cartItemId); // تحديث IndexedDB لو بتستخدميها للكارت
+    // this.dbService.removeFromCart(cartItem.cartItemId); // تحديث IndexedDB لو بتستخدميها للكارت
     this.cartItems = cart; // تحديث المتغير المحلي لو عندك واحد
 
     // ✅ تحديث الأسعار الإجمالية بعد الحذف (يفعل detectChanges تلقائياً)
@@ -4328,33 +4331,33 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     localStorage.setItem('selectedCountryCode', this.selectedCountry.code);
 
     // Save to IndexedDB
-    this.dbService.saveClientInfo(clientInfo).then(id => {
-      console.log('✅ Client info saved to IndexedDB with ID:', id);
+    // this.dbService.saveClientInfo(clientInfo).then(id => {
+    //   console.log('✅ Client info saved to IndexedDB with ID:', id);
 
-      this.clientStoredInLocal = this.client;
-      this.clientPhoneStoredInLocal = this.clientPhone;
+    //   this.clientStoredInLocal = this.client;
+    //   this.clientPhoneStoredInLocal = this.clientPhone;
 
-      // Simulate async saving
-      setTimeout(() => {
-        this.isLoading = false;
-        this.clientInfoApplied = true; // ✅ show info now
+    //   // Simulate async saving
+    //   setTimeout(() => {
+    //     this.isLoading = false;
+    //     this.clientInfoApplied = true; // ✅ show info now
 
-        // Optionally close modal here
-        this.closeModal();
-      }, 500);
-    }).catch(err => {
-      console.error('❌ Error saving client info to IndexedDB:', err);
+    //     // Optionally close modal here
+    //     this.closeModal();
+    //   }, 500);
+    // }).catch(err => {
+    //   console.error('❌ Error saving client info to IndexedDB:', err);
 
-      // Fallback: Continue even if IndexedDB fails
-      this.clientStoredInLocal = this.client;
-      this.clientPhoneStoredInLocal = this.clientPhone;
+    //   // Fallback: Continue even if IndexedDB fails
+    //   this.clientStoredInLocal = this.client;
+    //   this.clientPhoneStoredInLocal = this.clientPhone;
 
-      setTimeout(() => {
-        this.isLoading = false;
-        this.clientInfoApplied = true;
-        this.closeModal();
-      }, 500);
-    });
+    //   setTimeout(() => {
+    //     this.isLoading = false;
+    //     this.clientInfoApplied = true;
+    //     this.closeModal();
+    //   }, 500);
+    // });
   }
 
   clearClientInfo() {
