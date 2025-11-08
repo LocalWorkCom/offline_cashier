@@ -36,6 +36,7 @@ export class CategoriesComponent implements OnInit, OnDestroy {
   isAllLoading: boolean = true;
   isOnline: boolean = navigator.onLine;
   usingOfflineData: boolean = false;
+  errorMessage: string = '';
   @Input() item: any;
   @Input() offer: any;
   @ViewChild('closebutton') closebutton: any;
@@ -88,11 +89,13 @@ export class CategoriesComponent implements OnInit, OnDestroy {
     if (this.isOnline) {
       this.fetchFromAPI();
     } else {
-      this.loadFromIndexedDB();
+      // this.loadFromIndexedDB();
+      this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
     }
   }
 
     private fetchFromAPI() {
+    this.errorMessage = '';
     this.productsRequestService.getMenuDishes().pipe(
       finalize(() => {
         this.isAllLoading = true;
@@ -107,18 +110,23 @@ export class CategoriesComponent implements OnInit, OnDestroy {
           .catch(error => console.error('Error saving to IndexedDB:', error));
 
         this.usingOfflineData = false;
+        this.errorMessage = '';
       } else {
         console.error("Invalid response format", response);
-        // Fallback to offline data if API returns invalid response
-        this.loadFromIndexedDB();
+        // this.errorMessage = 'Failed to fetch data from server. Please try again.';
+      this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+
       }
     }, (error) => {
       console.error('API fetch failed, trying offline data:', error);
-      this.loadFromIndexedDB();
+      // this.errorMessage = 'Failed to fetch data from server. Please try again.';
+      this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+
     });
   }
 
   private loadFromIndexedDB() {
+    this.errorMessage = '';
     this.dbService.getAll('categories')
       .then(categories => {
         if (categories && categories.length > 0) {
