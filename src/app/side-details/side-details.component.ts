@@ -16,7 +16,7 @@ import {
 import { ProductsService } from '../services/products.service';
 import { PlaceOrderService } from '../services/place-order.service';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { catchError, finalize, firstValueFrom, Observable, of, Subject, tap } from 'rxjs';
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { RouterLink, RouterLinkActive } from '@angular/router';
@@ -436,6 +436,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   // }
 
   ngOnInit(): void {
+
+    // console.log(navigator.onLine);
     // Subscribe to cart changes
     this.productsService.cart$.subscribe(cart => {
       this.cartItems = cart;
@@ -2926,25 +2928,40 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   private async handleSubmissionError(error: unknown, orderData: any): Promise<void> {
     console.error('API Error:', error);
 
+    console.log(navigator.onLine);
+
+    if (navigator.onLine == false) {
+      this.falseMessage = 'يوجد خطأ فى الاتصال يرجى المحاولة مره اخرى';
+      setTimeout(() => {
+        this.falseMessage = '';
+      }, 3500);
+      return;
+    }
+
+    if (error instanceof HttpErrorResponse && error.status === 0) {
+      this.falseMessage = 'يوجد خطأ فى الاتصال يرجى المحاولة مره اخرى';
+      setTimeout(() => {
+        this.falseMessage = '';
+      }, 3500);
+      return;
+    }
+
     if ((error instanceof Error && error.message === 'Request timeout') ||
-      (typeof error === 'object' && error !== null && 'status' in error && (error as any).status === 504) ||
-      (typeof error === 'object' && error !== null && 'status' in error && (error as any).status === 0)) {
+      (typeof error === 'object' && error !== null && 'status' in error && (error as any).status === 504)) {
 
       try {
-        orderData.offlineTimestamp = new Date().toISOString();
-        orderData.status = 'pending_sync';
-        orderData.errorReason = (error instanceof Error ? error.message : 'Gateway Timeout');
+        // orderData.offlineTimestamp = new Date().toISOString();
+        // orderData.status = 'pending_sync';
+        // orderData.errorReason = (error instanceof Error ? error.message : 'Gateway Timeout');
 
         // const orderId = await this.dbService.savePendingOrder(orderData);
         // console.log("Order saved to IndexedDB due to timeout/error:", orderId);
 
-        // this.successMessage = 'تم حفظ الطلب بسبب مشكلة في الاتصال وسيتم إرساله لاحقًا';
+        this.falseMessage = 'تم حفظ الطلب بسبب مشكلة في الاتصال وسيتم إرساله لاحقًا';
         this.clearCart();
         this.resetLocalStorage();
 
-        if (this.successModal) {
-          this.successModal.show();
-        }
+
 
       } catch (dbError) {
         console.error('Error saving to IndexedDB:', dbError);

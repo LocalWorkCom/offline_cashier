@@ -213,6 +213,7 @@ export class OrdersComponent implements OnDestroy {
       error: (err) => {
         console.error('Error fetching orders from API:', err);
         this.loading = true;
+        this.showMessageModal('حدث خطأ فى الاتصال يرجى المحاولة مره اخرى', 'error');
 
         // If we're online but API failed, try to use IndexedDB data as fallback
         // if (this.isOnline) {
