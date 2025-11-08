@@ -37,7 +37,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { NgxCountriesDropdownModule } from 'ngx-countries-dropdown';
 import { baseUrl } from '../environment';
 //start hanan
-import { IndexeddbService } from '../services/indexeddb.service';
+// import { IndexeddbService } from '../services/indexeddb.service';
 import { SyncService } from '../services/sync.service';
 //end hanan
 
@@ -213,7 +213,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     private formDataService: AddAddressService,
     public authService: AuthService,
     // start hanan
-    private dbService: IndexeddbService,
+    // private dbService: IndexeddbService,
     private syncService: SyncService
     // end hanan
   ) {
@@ -607,56 +607,56 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
 
     try {
-      const pendingOrders = await this.dbService.getPendingOrders();
+      // const pendingOrders = await this.dbService.getPendingOrders();
 
-      if (pendingOrders.length === 0) {
-        console.log('✅ No pending orders to sync');
-        return;
-      }
+      // if (pendingOrders.length === 0) {
+      //   console.log('✅ No pending orders to sync');
+      //   return;
+      // }
 
-      console.log(`🔄 Syncing ${pendingOrders.length} pending order(s)...`);
+      // console.log(`🔄 Syncing ${pendingOrders.length} pending order(s)...`);
 
-      for (const pendingOrder of pendingOrders) {
-        try {
-          // Remove metadata fields before sending to API
-          const orderDataForAPI = { ...pendingOrder };
-          delete orderDataForAPI.type;
-          delete orderDataForAPI.savedAt;
-          delete orderDataForAPI.isSynced;
-          delete orderDataForAPI.id;
+      // for (const pendingOrder of pendingOrders) {
+      //   try {
+      //     // Remove metadata fields before sending to API
+      //     const orderDataForAPI = { ...pendingOrder };
+      //     delete orderDataForAPI.type;
+      //     delete orderDataForAPI.savedAt;
+      //     delete orderDataForAPI.isSynced;
+      //     delete orderDataForAPI.id;
 
-          await new Promise<void>((resolve, reject) => {
-            const timeoutPromise = new Promise((_, timeoutReject) =>
-              setTimeout(() => timeoutReject(new Error('Request timeout')), 30000)
-            );
+      //     await new Promise<void>((resolve, reject) => {
+      //       const timeoutPromise = new Promise((_, timeoutReject) =>
+      //         setTimeout(() => timeoutReject(new Error('Request timeout')), 30000)
+      //       );
 
-            Promise.race([
-              firstValueFrom(this.plaseOrderService.placeOrder(orderDataForAPI)),
-              timeoutPromise
-            ]).then((response: any) => {
-              if (response.status !== false && !response.errorData) {
-                // Mark as synced and delete
-                this.dbService.markPendingOrderAsSynced(pendingOrder.id)
-                  .then(() => this.dbService.deleteSyncedPendingOrder(pendingOrder.id))
-                  .then(() => {
-                    console.log(`✅ Successfully synced order ${pendingOrder.orderId || 'N/A'}`);
-                    resolve();
-                  })
-                  .catch(reject);
-              } else {
-                console.error(`❌ API returned error for order:`, response);
-                resolve(); // Continue with next order even if this one failed
-              }
-            }).catch((err) => {
-              console.error(`❌ Error syncing order:`, err);
-              resolve(); // Continue with next order even if this one failed
-            });
-          });
-        } catch (err) {
-          console.error(`❌ Error processing pending order ${pendingOrder.id}:`, err);
-          // Continue with next order
-        }
-      }
+      //       Promise.race([
+      //         firstValueFrom(this.plaseOrderService.placeOrder(orderDataForAPI)),
+      //         timeoutPromise
+      //       ]).then((response: any) => {
+      //         if (response.status !== false && !response.errorData) {
+      //           // Mark as synced and delete
+      //           this.dbService.markPendingOrderAsSynced(pendingOrder.id)
+      //             .then(() => this.dbService.deleteSyncedPendingOrder(pendingOrder.id))
+      //             .then(() => {
+      //               console.log(`✅ Successfully synced order ${pendingOrder.orderId || 'N/A'}`);
+      //               resolve();
+      //             })
+      //             .catch(reject);
+      //         } else {
+      //           console.error(`❌ API returned error for order:`, response);
+      //           resolve(); // Continue with next order even if this one failed
+      //         }
+      //       }).catch((err) => {
+      //         console.error(`❌ Error syncing order:`, err);
+      //         resolve(); // Continue with next order even if this one failed
+      //       });
+      //     });
+      //   } catch (err) {
+      //     console.error(`❌ Error processing pending order ${pendingOrder.id}:`, err);
+      //     // Continue with next order
+      //   }
+      // }
 
       console.log('✅ Finished syncing all pending orders');
     } catch (err) {
@@ -667,10 +667,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   // // Check for pending orders in IndexedDB
   private async checkPendingOrders(): Promise<void> {
     try {
-      const allOrders = await this.dbService.getOrders();
-      this.pendingOrdersCount = allOrders.filter(order =>
-        order.isOffline && order.status === 'pending'
-      ).length;
+      // const allOrders = await this.dbService.getOrders();
+      // this.pendingOrdersCount = allOrders.filter(order =>
+      //   order.isOffline && order.status === 'pending'
+      // ).length;
     } catch (error) {
       console.error('Error checking pending orders:', error);
     }
@@ -678,214 +678,214 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
   // // Retry pending orders when online
   async retryPendingOrders(): Promise<void> {
-    try {
-      // Get all offline orders from IndexedDB
-      const allOrders = await this.dbService.getOrders();
+    // try {
+    // Get all offline orders from IndexedDB
+    // const allOrders = await this.dbService.getOrders();
 
-      // const allOrders = await this.dbService.getOrders();
+    // const allOrders = await this.dbService.getOrders();
 
-      const pendingOrders1 = (allOrders || []).filter(order => order.isOffline);
-      console.log("Pending:", pendingOrders1);
-      const pendingOrders = allOrders.filter(
-        order => order.isOffline == true && order.status === 'pending'
-      );
+    // const pendingOrders1 = (allOrders || []).filter(order => order.isOffline);
+    // console.log("Pending:", pendingOrders1);
+    // const pendingOrders = allOrders.filter(
+    //   order => order.isOffline == true && order.status === 'pending'
+    // );
 
-      console.log(`Retrying ${pendingOrders.length} offline orders`);
+    //   console.log(`Retrying ${pendingOrders.length} offline orders`);
 
-      for (const order of pendingOrders) {
-        try {
-          console.log("order:", order);
-          // Increment attempt count
-          const attempts = (order.attempts || 0) + 1;
+    //   for (const order of pendingOrders) {
+    //     try {
+    //       console.log("order:", order);
+    //       // Increment attempt count
+    //       const attempts = (order.attempts || 0) + 1;
 
-          // ✅ Ensure address_id exists
-          this.addressIdformData = null;
-          let addressId = null;
-          if (order.order_details.order_type === 'توصيل' || order.order_details.order_type === 'Delivery') {
-            this.addressIdformData = order.formdata_delivery;
-            if (this.addressIdformData) {
-              console.log("ℹ️ No address_id in order, trying to fetch...");
-              console.log("Fetched addressId:", this.addressIdformData);
-              addressId = await this.getAddressId();
-            }
+    //       // ✅ Ensure address_id exists
+    //       this.addressIdformData = null;
+    //       let addressId = null;
+    //       if (order.order_details.order_type === 'توصيل' || order.order_details.order_type === 'Delivery') {
+    //         this.addressIdformData = order.formdata_delivery;
+    //         if (this.addressIdformData) {
+    //           console.log("ℹ️ No address_id in order, trying to fetch...");
+    //           console.log("Fetched addressId:", this.addressIdformData);
+    //           addressId = await this.getAddressId();
+    //         }
 
-            if (!addressId) {
-              console.warn(`⚠️ Skipping order ${order.orderId}, missing address_id`);
-              await this.dbService.savePendingOrder({
-                ...order,
-                status: 'pending',
-                lastError: 'Missing address_id',
-                attempts,
-                updatedAt: new Date().toISOString()
-              });
-              continue; // skip sending this order until address is available
-            }
-          }
-          // if (attempts > 3) {
-          //   // Mark as failed if too many attempts
-          //   await this.dbService.savePendingOrder({
-          //     ...order,
-          //     status: 'failed',
-          //     attempts,
-          //     updatedAt: new Date().toISOString()
-          //   });
-          //   console.warn(`Offline order ${order.orderId} marked as failed after 3 attempts`);
-          //   continue;
-          // }
+    //         if (!addressId) {
+    //           console.warn(`⚠️ Skipping order ${order.orderId}, missing address_id`);
+    //           await this.dbService.savePendingOrder({
+    //             ...order,
+    //             status: 'pending',
+    //             lastError: 'Missing address_id',
+    //             attempts,
+    //             updatedAt: new Date().toISOString()
+    //           });
+    //           continue; // skip sending this order until address is available
+    //         }
+    //       }
+    //       // if (attempts > 3) {
+    //       //   // Mark as failed if too many attempts
+    //       //   await this.dbService.savePendingOrder({
+    //       //     ...order,
+    //       //     status: 'failed',
+    //       //     attempts,
+    //       //     updatedAt: new Date().toISOString()
+    //       //   });
+    //       //   console.warn(`Offline order ${order.orderId} marked as failed after 3 attempts`);
+    //       //   continue;
+    //       // }
 
-          // Update order status to 'processing'
-          // await this.dbService.savePendingOrder({
-          //   ...order,
-          //   status: 'processing',
-          //   attempts,
-          //   updatedAt: new Date().toISOString()
-          // });
+    //       // Update order status to 'processing'
+    //       // await this.dbService.savePendingOrder({
+    //       //   ...order,
+    //       //   status: 'processing',
+    //       //   attempts,
+    //       //   updatedAt: new Date().toISOString()
+    //       // });
 
-          // Submit the order to API
-          const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Request timeout')), 30000)
-          );
-
-
-          const payload = {
-            isOnline: false,
-            order_id: order.order_id == order.order_number ? null : order.order_id,
-            // table_id: order.table_number || null,
-            type: order.order_details.order_type,
-            client_name: order.order_details.client_name || null,
-            client_phone: order.order_details.client_phone || null,
-            address_id: addressId || order.order_details.address_id,
-            cashier_machine_id: order.order_details.cashier_machine_id || localStorage.getItem('cashier_machine_id'),
-            branch_id: order.order_details.branch_id,
-            table_id: order.order_details.table_id || null,
-            payment_method: order.order_details.payment_method == "deferred" ? "credit" : order.order_details.payment_method,
-            payment_status: order.order_details.payment_status,
-            cash_amount: order.order_details.cash_amount,
-            credit_amount: order.order_details.credit_amount,
-            coupon_code: order.order_details.coupon_code || null,
-            reference_number: order.order_details.reference_number || null,
-            items: order.order_items.map((i: { dish_id: any; dish_name: any; dish_price: any; quantity: any; final_price: any; note: any; addon_categories: any; sizeId: any; size_name: any; }) => ({
-              dish_id: i.dish_id,
-              dish_name: i.dish_name,
-              dish_price: i.dish_price,
-              quantity: i.quantity,
-              final_price: i.final_price,
-              note: i.note,
-              addon_categories: i.addon_categories || null,
-              sizeId: i.sizeId || null,
-              size_name: i.size_name
-            })),
-
-            // dalia start tips
-            // tip_amount: this.tipAmount || 0,
-            change_amount: order.change_amount || 0,
-            // tips_aption : this.selectedTipType ?? "tip_the_change" ,                  //'tip_the_change', 'tip_specific_amount','no_tip'
-            tips_aption: order.tips_aption ?? "no_tip",                  //'tip_the_change', 'tip_specific_amount','no_tip'
-
-            tip_amount: order.tip_amount ?? 0,
-            tip_specific_amount: order.tip_specific_amount ?? 0,
-            payment_amount: order.payment_amount ?? 0,
-            bill_amount: order.bill_amount ?? 0,
-            total_with_tip: order.total_with_tip ?? 0,
-            returned_amount: order.returned_amount ?? 0,
-            menu_integration: order.menu_integration === 'talabat' ? true : false,
-            payment_status_menu_integration: order.payment_status_menu_integration,
-            payment_method_menu_integration: order.payment_method_menu_integration,
-            edit_invoice: order.edit_invoice,
+    //       // Submit the order to API
+    //       const timeoutPromise = new Promise((_, reject) =>
+    //         setTimeout(() => reject(new Error('Request timeout')), 30000)
+    //       );
 
 
-            // dalia end tips
+    //       const payload = {
+    //         isOnline: false,
+    //         order_id: order.order_id == order.order_number ? null : order.order_id,
+    //         // table_id: order.table_number || null,
+    //         type: order.order_details.order_type,
+    //         client_name: order.order_details.client_name || null,
+    //         client_phone: order.order_details.client_phone || null,
+    //         address_id: addressId || order.order_details.address_id,
+    //         cashier_machine_id: order.order_details.cashier_machine_id || localStorage.getItem('cashier_machine_id'),
+    //         branch_id: order.order_details.branch_id,
+    //         table_id: order.order_details.table_id || null,
+    //         payment_method: order.order_details.payment_method == "deferred" ? "credit" : order.order_details.payment_method,
+    //         payment_status: order.order_details.payment_status,
+    //         cash_amount: order.order_details.cash_amount,
+    //         credit_amount: order.order_details.credit_amount,
+    //         coupon_code: order.order_details.coupon_code || null,
+    //         reference_number: order.order_details.reference_number || null,
+    //         items: order.order_items.map((i: { dish_id: any; dish_name: any; dish_price: any; quantity: any; final_price: any; note: any; addon_categories: any; sizeId: any; size_name: any; }) => ({
+    //           dish_id: i.dish_id,
+    //           dish_name: i.dish_name,
+    //           dish_price: i.dish_price,
+    //           quantity: i.quantity,
+    //           final_price: i.final_price,
+    //           note: i.note,
+    //           addon_categories: i.addon_categories || null,
+    //           sizeId: i.sizeId || null,
+    //           size_name: i.size_name
+    //         })),
+
+    //         // dalia start tips
+    //         // tip_amount: this.tipAmount || 0,
+    //         change_amount: order.change_amount || 0,
+    //         // tips_aption : this.selectedTipType ?? "tip_the_change" ,                  //'tip_the_change', 'tip_specific_amount','no_tip'
+    //         tips_aption: order.tips_aption ?? "no_tip",                  //'tip_the_change', 'tip_specific_amount','no_tip'
+
+    //         tip_amount: order.tip_amount ?? 0,
+    //         tip_specific_amount: order.tip_specific_amount ?? 0,
+    //         payment_amount: order.payment_amount ?? 0,
+    //         bill_amount: order.bill_amount ?? 0,
+    //         total_with_tip: order.total_with_tip ?? 0,
+    //         returned_amount: order.returned_amount ?? 0,
+    //         menu_integration: order.menu_integration === 'talabat' ? true : false,
+    //         payment_status_menu_integration: order.payment_status_menu_integration,
+    //         payment_method_menu_integration: order.payment_method_menu_integration,
+    //         edit_invoice: order.edit_invoice,
 
 
-          };
-          console.log('Submitting offline order payload:', payload);
-          try {
-            const response: any = await Promise.race([
-              firstValueFrom(this.plaseOrderService.placeOrder(payload)),
-              timeoutPromise
-            ]);
-
-            if (response.status) {
-              console.log("order.order_details.orderId:", order.order_details.order_id);
-              await this.dbService.deleteOrder(order.order_details.order_id);
-              console.log(`Offline order ${order.orderId} submitted successfully`);
-              this.dbService.deleteFromIndexedDB('formData');
-            } else {
-
-              // await this.dbService.deleteOrder(order.order_details.order_id);
-              await this.dbService.savePendingOrder({ ...order, status: 'pending', lastError: response.errorData || response.message, attempts, updatedAt: new Date().toISOString() });
-              console.warn(`Order ${order.orderId} submission failed:`, response.errorData);
-            }
-
-          } catch (error: any) {
-            console.error(`Error submitting offline order ${order.orderId}:`, error);
-            await this.dbService.savePendingOrder({ ...order, status: 'pending', lastError: error.message, attempts, updatedAt: new Date().toISOString() });
-          }
+    //         // dalia end tips
 
 
-          // const response: any = await Promise.race([
-          //   this.plaseOrderService.placeOrder(payload).toPromise(),
-          //   timeoutPromise
-          // ]);
+    //       };
+    //       console.log('Submitting offline order payload:', payload);
+    //       try {
+    //         const response: any = await Promise.race([
+    //           firstValueFrom(this.plaseOrderService.placeOrder(payload)),
+    //           timeoutPromise
+    //         ]);
 
-          // if (response.status) {
-          //   // Successfully submitted: remove from IndexedDB
-          //   await this.dbService.deleteOrder(order.orderId);
-          //   console.log(`Offline order ${order.orderId} submitted successfully`);
-          // } else {
-          //   // Validation errors: mark back as pending and save errors
-          //   await this.dbService.savePendingOrder({
-          //     ...order,
-          //     status: 'pending',
-          //     lastError: response.errorData || response.message || 'Unknown error',
-          //     attempts,
-          //     updatedAt: new Date().toISOString()
-          //   });
-          //   console.warn(`Offline order ${order.orderId} submission failed:`, response.errorData);
-          // }
+    //         if (response.status) {
+    //           console.log("order.order_details.orderId:", order.order_details.order_id);
+    //           await this.dbService.deleteOrder(order.order_details.order_id);
+    //           console.log(`Offline order ${order.orderId} submitted successfully`);
+    //           this.dbService.deleteFromIndexedDB('formData');
+    //         } else {
 
-        } catch (error: any) {
-          console.error(`Error submitting offline order ${order.orderId}:`, error);
+    //           // await this.dbService.deleteOrder(order.order_details.order_id);
+    //           await this.dbService.savePendingOrder({ ...order, status: 'pending', lastError: response.errorData || response.message, attempts, updatedAt: new Date().toISOString() });
+    //           console.warn(`Order ${order.orderId} submission failed:`, response.errorData);
+    //         }
 
-          // Update order back to pending for retry later
-          await this.dbService.savePendingOrder({
-            ...order,
-            status: 'pending',
-            lastError: error.message || 'Unknown error',
-            attempts: (order.attempts || 0) + 1,
-            updatedAt: new Date().toISOString()
-          });
-        }
-      }
-    } catch (error) {
-      console.error('Error retrieving offline orders:', error);
-    }
+    //       } catch (error: any) {
+    //         console.error(`Error submitting offline order ${order.orderId}:`, error);
+    //         await this.dbService.savePendingOrder({ ...order, status: 'pending', lastError: error.message, attempts, updatedAt: new Date().toISOString() });
+    //       }
+
+
+    //       // const response: any = await Promise.race([
+    //       //   this.plaseOrderService.placeOrder(payload).toPromise(),
+    //       //   timeoutPromise
+    //       // ]);
+
+    //       // if (response.status) {
+    //       //   // Successfully submitted: remove from IndexedDB
+    //       //   await this.dbService.deleteOrder(order.orderId);
+    //       //   console.log(`Offline order ${order.orderId} submitted successfully`);
+    //       // } else {
+    //       //   // Validation errors: mark back as pending and save errors
+    //       //   await this.dbService.savePendingOrder({
+    //       //     ...order,
+    //       //     status: 'pending',
+    //       //     lastError: response.errorData || response.message || 'Unknown error',
+    //       //     attempts,
+    //       //     updatedAt: new Date().toISOString()
+    //       //   });
+    //       //   console.warn(`Offline order ${order.orderId} submission failed:`, response.errorData);
+    //       // }
+
+    //     } catch (error: any) {
+    //       console.error(`Error submitting offline order ${order.orderId}:`, error);
+
+    //       // Update order back to pending for retry later
+    //       await this.dbService.savePendingOrder({
+    //         ...order,
+    //         status: 'pending',
+    //         lastError: error.message || 'Unknown error',
+    //         attempts: (order.attempts || 0) + 1,
+    //         updatedAt: new Date().toISOString()
+    //       });
+    //     }
+    //   }
+    // } catch (error) {
+    //   console.error('Error retrieving offline orders:', error);
+    // }
   }
 
   private loadClientInfoFromIndexedDB() {
-    this.dbService.getLatestClientInfo().then(clientInfo => {
-      if (clientInfo) {
-        console.log('Client info loaded from IndexedDB:', clientInfo);
+    // this.dbService.getLatestClientInfo().then(clientInfo => {
+    //   if (clientInfo) {
+    //     console.log('Client info loaded from IndexedDB:', clientInfo);
 
-        // Set the component properties with the loaded data
-        this.clientStoredInLocal = clientInfo.client || '';
-        this.clientPhoneStoredInLocal = clientInfo.clientPhone || '';
-        this.client = clientInfo.client || '';
-        this.clientPhone = clientInfo.clientPhone || '';
-        // Find and set the country code if available
-        if (clientInfo.selectedCountryCode && this.countryList.length > 0) {
-          const country = this.countryList.find(c => c.code === clientInfo.selectedCountryCode);
-          if (country) {
-            this.selectedCountry = country;
-          }
-        }
+    //     // Set the component properties with the loaded data
+    //     this.clientStoredInLocal = clientInfo.client || '';
+    //     this.clientPhoneStoredInLocal = clientInfo.clientPhone || '';
+    //     this.client = clientInfo.client || '';
+    //     this.clientPhone = clientInfo.clientPhone || '';
+    //     // Find and set the country code if available
+    //     if (clientInfo.selectedCountryCode && this.countryList.length > 0) {
+    //       const country = this.countryList.find(c => c.code === clientInfo.selectedCountryCode);
+    //       if (country) {
+    //         this.selectedCountry = country;
+    //       }
+    //     }
 
-        this.clientStoredInLocal = this.client;
-        this.clientPhoneStoredInLocal = this.clientPhone;
-      }
-    }).catch(err => {
-      console.error('Error loading client info from IndexedDB:', err);
-    });
+    //     this.clientStoredInLocal = this.client;
+    //     this.clientPhoneStoredInLocal = this.clientPhone;
+    //   }
+    // }).catch(err => {
+    //   console.error('Error loading client info from IndexedDB:', err);
+    // });
   }
 
   // end hanan
@@ -977,103 +977,103 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   //   this.updateTotalPrice();
   // }
 
-  // loadCart() {
-  //   const storedCart = localStorage.getItem('cart');
-  //   this.cartItems = storedCart ? JSON.parse(storedCart) : [];
+  loadCart() {
+    const storedCart = localStorage.getItem('cart');
+    this.cartItems = storedCart ? JSON.parse(storedCart) : [];
 
-  //   const holdCart = localStorage.getItem('holdCart');
-  //   if (holdCart) {
-  //     const holdItems = JSON.parse(holdCart);
+    const holdCart = localStorage.getItem('holdCart');
+    if (holdCart) {
+      const holdItems = JSON.parse(holdCart);
 
-  //     this.cartItems = [...this.cartItems, ...holdItems];
-  //   }
+      this.cartItems = [...this.cartItems, ...holdItems];
+    }
 
-  //   localStorage.setItem('cart', JSON.stringify(this.cartItems));
+    localStorage.setItem('cart', JSON.stringify(this.cartItems));
 
-  //   this.updateTotalPrice();
-  // }
+    this.updateTotalPrice();
+  }
   // start hanan
 
-  loadCart() {
-    this.dbService.getCartItems()
-      .then((cartItems: any[]) => {
-        if (cartItems && cartItems.length > 0) {
-          this.cartItems = cartItems;
-          console.log('✅ Cart loaded from IndexedDB:', this.cartItems.length, 'items');
-        } else {
-          // Fallback إلى localStorage إذا لزم الأمر
-          // أولاً: جرب holdCart (لطلبات معلقة)
-          const holdCart = localStorage.getItem('holdCart');
-          if (holdCart) {
-            try {
-              const holdItems = JSON.parse(holdCart);
-              if (holdItems && holdItems.length > 0) {
-                this.cartItems = holdItems;
-                // حفظ في IndexedDB للاستخدام المستقبلي
-                // this.saveHoldCartToIndexedDB(holdItems);
-                console.log('✅ Cart loaded from holdCart (localStorage):', this.cartItems.length, 'items');
-              } else {
-                // جرب cart
-                const storedCart = localStorage.getItem('cart');
-                this.cartItems = storedCart ? JSON.parse(storedCart) : [];
-                console.log('✅ Cart loaded from cart (localStorage):', this.cartItems.length, 'items');
-              }
-            } catch (error) {
-              console.error('❌ Error parsing holdCart:', error);
-              const storedCart = localStorage.getItem('cart');
-              this.cartItems = storedCart ? JSON.parse(storedCart) : [];
-            }
-          } else {
-            // جرب cart العادي
-            const storedCart = localStorage.getItem('cart');
-            this.cartItems = storedCart ? JSON.parse(storedCart) : [];
-            console.log('✅ Cart loaded from cart (localStorage):', this.cartItems.length, 'items');
-          }
-        }
-        this.updateTotalPrice();
-        this.cdr.detectChanges();
-      })
-      .catch((error: any) => {
-        console.error('❌ Error loading cart from IndexedDB:', error);
-        // Fallback إلى localStorage
-        const holdCart = localStorage.getItem('holdCart');
-        if (holdCart) {
-          try {
-            const holdItems = JSON.parse(holdCart);
-            if (holdItems && holdItems.length > 0) {
-              this.cartItems = holdItems;
-              console.log('✅ Cart loaded from holdCart (fallback):', this.cartItems.length, 'items');
-            } else {
-              const storedCart = localStorage.getItem('cart');
-              this.cartItems = storedCart ? JSON.parse(storedCart) : [];
-            }
-          } catch (parseError) {
-            console.error('❌ Error parsing holdCart in fallback:', parseError);
-            const storedCart = localStorage.getItem('cart');
-            this.cartItems = storedCart ? JSON.parse(storedCart) : [];
-          }
-        } else {
-          const storedCart = localStorage.getItem('cart');
-          this.cartItems = storedCart ? JSON.parse(storedCart) : [];
-        }
-        this.updateTotalPrice();
-        this.cdr.detectChanges();
-      });
+  // loadCart() {
+  //   this.dbService.getCartItems()
+  //     .then((cartItems: any[]) => {
+  //       if (cartItems && cartItems.length > 0) {
+  //         this.cartItems = cartItems;
+  //         console.log('✅ Cart loaded from IndexedDB:', this.cartItems.length, 'items');
+  //       } else {
+  //         // Fallback إلى localStorage إذا لزم الأمر
+  //         // أولاً: جرب holdCart (لطلبات معلقة)
+  //         const holdCart = localStorage.getItem('holdCart');
+  //         if (holdCart) {
+  //           try {
+  //             const holdItems = JSON.parse(holdCart);
+  //             if (holdItems && holdItems.length > 0) {
+  //               this.cartItems = holdItems;
+  //               // حفظ في IndexedDB للاستخدام المستقبلي
+  //               // this.saveHoldCartToIndexedDB(holdItems);
+  //               console.log('✅ Cart loaded from holdCart (localStorage):', this.cartItems.length, 'items');
+  //             } else {
+  //               // جرب cart
+  //               const storedCart = localStorage.getItem('cart');
+  //               this.cartItems = storedCart ? JSON.parse(storedCart) : [];
+  //               console.log('✅ Cart loaded from cart (localStorage):', this.cartItems.length, 'items');
+  //             }
+  //           } catch (error) {
+  //             console.error('❌ Error parsing holdCart:', error);
+  //             const storedCart = localStorage.getItem('cart');
+  //             this.cartItems = storedCart ? JSON.parse(storedCart) : [];
+  //           }
+  //         } else {
+  //           // جرب cart العادي
+  //           const storedCart = localStorage.getItem('cart');
+  //           this.cartItems = storedCart ? JSON.parse(storedCart) : [];
+  //           console.log('✅ Cart loaded from cart (localStorage):', this.cartItems.length, 'items');
+  //         }
+  //       }
+  //       this.updateTotalPrice();
+  //       this.cdr.detectChanges();
+  //     })
+  //     .catch((error: any) => {
+  //       console.error('❌ Error loading cart from IndexedDB:', error);
+  //       // Fallback إلى localStorage
+  //       const holdCart = localStorage.getItem('holdCart');
+  //       if (holdCart) {
+  //         try {
+  //           const holdItems = JSON.parse(holdCart);
+  //           if (holdItems && holdItems.length > 0) {
+  //             this.cartItems = holdItems;
+  //             console.log('✅ Cart loaded from holdCart (fallback):', this.cartItems.length, 'items');
+  //           } else {
+  //             const storedCart = localStorage.getItem('cart');
+  //             this.cartItems = storedCart ? JSON.parse(storedCart) : [];
+  //           }
+  //         } catch (parseError) {
+  //           console.error('❌ Error parsing holdCart in fallback:', parseError);
+  //           const storedCart = localStorage.getItem('cart');
+  //           this.cartItems = storedCart ? JSON.parse(storedCart) : [];
+  //         }
+  //       } else {
+  //         const storedCart = localStorage.getItem('cart');
+  //         this.cartItems = storedCart ? JSON.parse(storedCart) : [];
+  //       }
+  //       this.updateTotalPrice();
+  //       this.cdr.detectChanges();
+  //     });
 
-  }
+  // }
 
   // حفظ holdCart في IndexedDB
   private async saveHoldCartToIndexedDB(items: any[]): Promise<void> {
-    try {
-      await this.dbService.init();
-      await this.dbService.clearCart();
-      for (const item of items) {
-        await this.dbService.addToCart(item);
-      }
-      console.log('✅ holdCart saved to IndexedDB:', items.length, 'items');
-    } catch (error) {
-      console.warn('⚠️ Error saving holdCart to IndexedDB:', error);
-    }
+    // try {
+    //   await this.dbService.init();
+    //   await this.dbService.clearCart();
+    //   for (const item of items) {
+    //     await this.dbService.addToCart(item);
+    //   }
+    //   console.log('✅ holdCart saved to IndexedDB:', items.length, 'items');
+    // } catch (error) {
+    //   console.warn('⚠️ Error saving holdCart to IndexedDB:', error);
+    // }
   }
   // end hanan
   // start hanan
@@ -1200,7 +1200,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.cartItems[index].quantity--;
     } else {
       this.cartItems.splice(index, 1);
-      this.dbService.removeFromCart(index);
+      // this.dbService.removeFromCart(index);
       localStorage.setItem('cart', JSON.stringify(this.cartItems));
       // If the cart is empty, clear coupon, note, and messages
       if (this.cartItems.length === 0) {
@@ -2382,7 +2382,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     // ✅ Release table locally (mark available) if exists
     if (this.table_id) {
-      this.dbService.updateTableStatus(this.table_id, 1);
+      // this.dbService.updateTableStatus(this.table_id, 1);
     }
   }
 
@@ -2390,7 +2390,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     try {
       const tableId = this.table_id || Number(localStorage.getItem('table_id')) || null;
       if (tableId) {
-        await this.dbService.updateTableStatus(tableId, 1);
+        // await this.dbService.updateTableStatus(tableId, 1);
       }
     } catch (e) {
       console.warn('Failed to update table status to available:', e);
@@ -3470,30 +3470,30 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         console.log('✅ Not talabat order type, keeping all items');
         // return; // لا تفعل شيئاً لأنواع الطلبات الأخرى
       }
-      const allCategories = await this.dbService.getAll('categories');
+      // const allCategories = await this.dbService.getAll('categories');
       let found = false; // لتتبع إذا تم العثور على الطبق
 
-      for (const category of allCategories) {
-        if (category.dishes && Array.isArray(category.dishes)) {
-          for (const dishItem of category.dishes) {
-            if (
-              dishItem.dish?.id === cartItem.dish.id &&
-              dishItem.dish.Id_menus_integrations?.[0]?.name_en?.toLowerCase()?.includes('talabat')
-            ) {
-              found = true;
+      // for (const category of allCategories) {
+      //   if (category.dishes && Array.isArray(category.dishes)) {
+      //     for (const dishItem of category.dishes) {
+      //       if (
+      //         dishItem.dish?.id === cartItem.dish.id &&
+      //         dishItem.dish.Id_menus_integrations?.[0]?.name_en?.toLowerCase()?.includes('talabat')
+      //       ) {
+      //         found = true;
 
-              const converted = this.convertDish(dishItem);
-              const product = this.getProduct(converted);
+      //         const converted = this.convertDish(dishItem);
+      //         const product = this.getProduct(converted);
 
-              console.log('✅ Found dish for update:', product);
-              this.updateCartPricesFromDish(cartItem, product);
-              break; // خلاص وجدناه، نخرج من اللوب
-            }
-          }
-        }
+      //         console.log('✅ Found dish for update:', product);
+      //         this.updateCartPricesFromDish(cartItem, product);
+      //         break; // خلاص وجدناه، نخرج من اللوب
+      //       }
+      //     }
+      //   }
 
-        if (found) break; // نوقف لو وجدناه في كاتيجوري
-      }
+      //   if (found) break; // نوقف لو وجدناه في كاتيجوري
+      // }
 
       // ❌ لو مفيش dish مطابق
       if (!found && this.selectedOrderType === 'talabat') {
