@@ -139,7 +139,7 @@ export class PillsComponent implements OnInit, OnDestroy {
       this.fetchPillsData();
     } else if (!this.isOnline) {
       // When going offline, load from IndexedDB
-      this.loadFromIndexedDB();
+      // this.loadFromIndexedDB();
     }
     this.cdr.detectChanges();
   }
