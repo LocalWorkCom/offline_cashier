@@ -1,6 +1,7 @@
 import { Component, OnInit, Inject, PLATFORM_ID, OnDestroy, HostListener } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
-import { CategoriesComponent } from "../categories/categories.component";
+// import { CategoriesComponent } from "../categories/categories.component";
+import { CategoriesLiteComponent } from "../categoriesLite/categoriesLite.component";
 import { OrdersCardComponent } from '../orders-card/orders-card.component';
 import { SideDetailsComponent } from "../side-details/side-details.component";
 import { Router } from '@angular/router';
@@ -19,7 +20,8 @@ import { TotalsCardComponent } from "../totals-card/totals-card.component";
   imports: [
     CommonModule,
     FormsModule,
-    CategoriesComponent,
+    // CategoriesComponent,
+    CategoriesLiteComponent,
     SideDetailsComponent,
     TotalsCardComponent
 ]
@@ -55,7 +57,7 @@ visaTotal: number = 0;
     private authService: AuthService,
     private router: Router,
     private balanceService: BalanceService,
-     
+
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
@@ -64,7 +66,7 @@ ngOnInit() {
     this.initializeUserData();
 
     // First check localStorage directly
-    const isBalanceOpened = localStorage.getItem('isBalanceOpened') === 'true' || 
+    const isBalanceOpened = localStorage.getItem('isBalanceOpened') === 'true' ||
                            localStorage.getItem('is_open_balance') === 'true';
 
     // Then subscribe to auth service
@@ -187,13 +189,13 @@ fetchCurrentBalance(): void {
     console.log('Modal element found, fetching data...'); // Debug log
     this.fetchBalanceInfo();
     this.fetchCurrentBalance(); // Make sure this line exists
-    
+
     const modalInstance = new Modal(modalElement, {
       backdrop: 'static',
       keyboard: false
     });
     modalInstance.show();
-    
+
     modalElement.addEventListener('hidden.bs.modal', () => {
       this.onModalHidden();
     });
@@ -421,15 +423,15 @@ this.enteredVisa= this.currentBalance?.visa
   }
     private buildDeficitMessage(): void {
     let messages = [];
-    
+
     if (this.deficitCash !== 0) {
       messages.push(`فارق نقدي بقيمة ${this.deficitCash} ${this.currency_Symbol}`);
     }
-    
+
     if (this.deficitVisa !== 0) {
       messages.push(`فارق في البطاقات بقيمة ${this.deficitVisa} ${this.currency_Symbol}`);
     }
-    
+
     this.deficitMessage = messages.join(' و ');
   }
 
