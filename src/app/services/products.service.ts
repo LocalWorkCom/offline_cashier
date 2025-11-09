@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
-import { Observable, BehaviorSubject, throwError, interval, Subject } from 'rxjs';
-import { switchMap } from 'rxjs/operators';
+import { Observable, BehaviorSubject, throwError, interval, Subject, forkJoin, of } from 'rxjs';
+import { switchMap, map, catchError } from 'rxjs/operators';
 import { baseUrl } from '../environment';
 import { IndexeddbService } from './indexeddb.service';
 
@@ -34,18 +34,18 @@ export class ProductsService {
     this.productSubject.next(product);
   }
 
-  getMenuDishes(): Observable<any> {
+  private buildAuthContext(): { headers: HttpHeaders; branchId: string } | null {
     const token = localStorage.getItem('authToken');
     const branchId = localStorage.getItem('branch_id');
 
     if (!token) {
       console.error('No auth token found!');
-      return throwError(() => new Error('Authentication token missing.'));
+      return null;
     }
 
     if (!branchId) {
       console.error('No branch ID found!');
-      return throwError(() => new Error('Branch ID missing.'));
+      return null;
     }
 
     const headers = new HttpHeaders({
@@ -53,9 +53,78 @@ export class ProductsService {
       'Content-Type': 'application/json'
     });
 
-    const url = `${this.apiUrl}/menu-dishes?branchId=${branchId}`;
+    return { headers, branchId };
+  }
 
-    return this.http.get<any[]>(url, { headers });
+  getMenuDishes(): Observable<any> {
+    const authContext = this.buildAuthContext();
+
+    if (!authContext) {
+      return throwError(() => new Error('Authentication context missing.'));
+    }
+
+    const url = `${this.apiUrl}/menu-dishes?branchId=${authContext.branchId}`;
+
+    return this.http.get<any[]>(url, { headers: authContext.headers });
+  }
+
+  getMenuCategoriesLite(): Observable<any> {
+    const authContext = this.buildAuthContext();
+
+    if (!authContext) {
+      return throwError(() => new Error('Authentication context missing.'));
+    }
+
+    const url = `${this.apiUrl}/menu-categories-lite?branchId=${authContext.branchId}`;
+
+    return this.http.get<any>(url, { headers: authContext.headers });
+  }
+
+  getMenuDishesLite(categoryId: number | string): Observable<any> {
+    const authContext = this.buildAuthContext();
+
+    if (!authContext) {
+      return throwError(() => new Error('Authentication context missing.'));
+    }
+
+    const url = `${this.apiUrl}/menu-dishes-lite?categoryId=${categoryId}&branchId=${authContext.branchId}`;
+
+    return this.http.get<any>(url, { headers: authContext.headers });
+  }
+
+  getMenuDataLite(): Observable<any> {
+    return this.getMenuCategoriesLite().pipe(
+      switchMap((categoriesResponse: any) => {
+        if (!categoriesResponse?.status || !Array.isArray(categoriesResponse.data)) {
+          return throwError(() => new Error('Invalid categories response format.'));
+        }
+
+        const categories = categoriesResponse.data;
+        const status = categoriesResponse.status;
+
+        if (categories.length === 0) {
+          return of({ status, data: [] });
+        }
+
+        const categoriesWithDishes$ = categories.map((category: any) =>
+          this.getMenuDishesLite(category.id).pipe(
+            map((dishesResponse: any) => ({
+              ...category,
+              dishes: dishesResponse?.data ?? []
+            })),
+            catchError((error) => {
+              console.error(`Failed to fetch dishes for category ${category.id}`, error);
+              return of({
+                ...category,
+                dishes: []
+              });
+            })
+          )
+        );
+
+        return forkJoin(categoriesWithDishes$).pipe(map((data) => ({ status, data })));
+      })
+    );
   }
 
   fetchMenuDishes(): void {
