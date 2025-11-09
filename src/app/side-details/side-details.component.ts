@@ -979,19 +979,66 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   // }
 
   loadCart() {
+    // مسح الكارت الحالي أولاً
+    this.cartItems = [];
+
+    // جلب الكارت من localStorage أولاً
     const storedCart = localStorage.getItem('cart');
-    this.cartItems = storedCart ? JSON.parse(storedCart) : [];
-
-    const holdCart = localStorage.getItem('holdCart');
-    if (holdCart) {
-      const holdItems = JSON.parse(holdCart);
-
-      this.cartItems = [...this.cartItems, ...holdItems];
+    if (storedCart) {
+      try {
+        const parsedCart = JSON.parse(storedCart);
+        if (Array.isArray(parsedCart) && parsedCart.length > 0) {
+          this.cartItems = [...parsedCart];
+        }
+      } catch (error) {
+        console.error('❌ Error parsing cart from localStorage:', error);
+        this.cartItems = [];
+      }
     }
 
-    localStorage.setItem('cart', JSON.stringify(this.cartItems));
+    // جلب العناصر من holdCart مع منع التكرار
+    const holdCart = localStorage.getItem('holdCart');
+    if (holdCart) {
+      try {
+        const holdItems = JSON.parse(holdCart);
+        if (Array.isArray(holdItems) && holdItems.length > 0) {
 
+          // منع التكرار بناءً على uniqueId أو dish.id + sizeId
+          holdItems.forEach(holdItem => {
+            const isDuplicate = this.cartItems.some(cartItem =>
+              this.isSameCartItem(cartItem, holdItem)
+            );
+
+            if (!isDuplicate) {
+              this.cartItems.push(holdItem);
+            }
+          });
+        }
+      } catch (error) {
+        console.error('❌ Error parsing holdCart:', error);
+      }
+    }
+
+    // حفظ الكارت المدمج في localStorage
+    localStorage.setItem('cart', JSON.stringify(this.cartItems));
     this.updateTotalPrice();
+  }
+  // دالة مساعدة للتحقق من تكرار العناصر
+  private isSameCartItem(item1: any, item2: any): boolean {
+    // إذا كان لديك uniqueId
+    if (item1.uniqueId && item2.uniqueId) {
+      return item1.uniqueId === item2.uniqueId;
+    }
+
+    // التحقق بناءً على dish.id و sizeId
+    const sameDish = item1.dish?.id === item2.dish?.id;
+    const sameSize = item1.selectedSize?.id === item2.selectedSize?.id;
+
+    // التحقق من الإضافات إذا كانت موجودة
+    const sameAddons = JSON.stringify(item1.selectedAddons || []) ===
+      JSON.stringify(item2.selectedAddons || []);
+
+    return sameDish && sameSize && sameAddons;
   }
   // start hanan
 
@@ -2816,7 +2863,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Request timeout')), 30000);
     });
-
+    localStorage.removeItem('cart');
+    localStorage.removeItem('holdCart');
+    localStorage.removeItem('savedOrders');
     try {
       const response = await Promise.race([
         this.plaseOrderService.placeOrder(orderData).toPromise(),
