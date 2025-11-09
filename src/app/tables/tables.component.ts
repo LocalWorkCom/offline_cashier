@@ -23,15 +23,22 @@ export class TablesComponent implements OnInit, OnDestroy {
   clickedTableId: number | null = null;
   searchText: string = '';
   loading: boolean = true;
+  errorMessage: any;
+
   constructor(
     private tablesRequestService: TablesService,
     private router: Router,
     private location: Location,
     private tableOperation: TableCrudOperationService
-  ) {}
+  ) { }
 
   ngOnInit(): void {
-    this.fetchTablesData(); 
+    if (navigator.onLine) {
+      this.fetchTablesData();
+    }
+    else {
+      this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+    }
     this.loadClickedTable();
     this.listenToNewTable();
     this.listenOnTableChangeStatus();
@@ -111,35 +118,35 @@ export class TablesComponent implements OnInit, OnDestroy {
         ...group,
         tables: [...group.tables],
       })),
-    ]; 
+    ];
   }
   listenOnTableChangeStatus() {
     this.tableOperation.listenToTable();
 
-  this.tableOperation.tableChanged$.subscribe((changedTable) => {
-  const table = changedTable.table;
-  const index = this.tables.findIndex((t) => t.id === table.id);
-  console.log('changed table',changedTable);
-  if (index !== -1) {
-    if (changedTable.status === 'updated') {
-      this.tables = [
-        ...this.tables.slice(0, index),
-        { ...table },
-        ...this.tables.slice(index + 1),
-      ];
-    } else if (changedTable.status === 'delete') {
-      this.tables = this.tables.filter((t) => t.id !== table.id);
-    }
-    this.tabless=[...this.tables] 
-  } else {
-    // Add
-    this.tables = [...this.tables, table];
-    this.tabless=[...this.tables] 
-  }
+    this.tableOperation.tableChanged$.subscribe((changedTable) => {
+      const table = changedTable.table;
+      const index = this.tables.findIndex((t) => t.id === table.id);
+      console.log('changed table', changedTable);
+      if (index !== -1) {
+        if (changedTable.status === 'updated') {
+          this.tables = [
+            ...this.tables.slice(0, index),
+            { ...table },
+            ...this.tables.slice(index + 1),
+          ];
+        } else if (changedTable.status === 'delete') {
+          this.tables = this.tables.filter((t) => t.id !== table.id);
+        }
+        this.tabless = [...this.tables]
+      } else {
+        // Add
+        this.tables = [...this.tables, table];
+        this.tabless = [...this.tables]
+      }
 
-  // 🔥 Recompute derived arrays
-  this.updateTableStatusLists();
-});
+      // 🔥 Recompute derived arrays
+      this.updateTableStatusLists();
+    });
 
   }
   loadClickedTable(): void {
@@ -216,16 +223,16 @@ export class TablesComponent implements OnInit, OnDestroy {
     this.tableOperation.stopListeningForNewTable();
   }
 
-get activeTables() {
-  return this.selectedStatus === -1
-    ? this.tabless
-    : this.filteredTablesByStatus[this.selectedStatus]?.tables || [];
-}
+  get activeTables() {
+    return this.selectedStatus === -1
+      ? this.tabless
+      : this.filteredTablesByStatus[this.selectedStatus]?.tables || [];
+  }
 
 
 
-trackByTableId(index: number, table: any) {
-  return table.id;
-}
+  trackByTableId(index: number, table: any) {
+    return table.id;
+  }
 
 }
