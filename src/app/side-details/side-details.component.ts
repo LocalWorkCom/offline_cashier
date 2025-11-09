@@ -37,7 +37,7 @@ import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { NgxCountriesDropdownModule } from 'ngx-countries-dropdown';
 import { baseUrl } from '../environment';
 //start hanan
-// import { IndexeddbService } from '../services/indexeddb.service';
+import { IndexeddbService } from '../services/indexeddb.service';
 import { SyncService } from '../services/sync.service';
 //end hanan
 
@@ -213,7 +213,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     private formDataService: AddAddressService,
     public authService: AuthService,
     // start hanan
-    // private dbService: IndexeddbService,
+    private dbService: IndexeddbService,
     private syncService: SyncService
     // end hanan
   ) {
@@ -3514,7 +3514,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       this.cdr.markForCheck(); // تحديث العرض
 
-      if(previousOrderType == 'talabat') {
+      if(previousOrderType === 'talabat') {
             setTimeout(() => {
               window.location.reload();
             }, 300);
@@ -3539,30 +3539,30 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         console.log('✅ Not talabat order type, keeping all items');
         // return; // لا تفعل شيئاً لأنواع الطلبات الأخرى
       }
-      // const allCategories = await this.dbService.getAll('categories');
+      const allCategories = await this.dbService.getAll('categories');
       let found = false; // لتتبع إذا تم العثور على الطبق
 
-      // for (const category of allCategories) {
-      //   if (category.dishes && Array.isArray(category.dishes)) {
-      //     for (const dishItem of category.dishes) {
-      //       if (
-      //         dishItem.dish?.id === cartItem.dish.id &&
-      //         dishItem.dish.Id_menus_integrations?.[0]?.name_en?.toLowerCase()?.includes('talabat')
-      //       ) {
-      //         found = true;
+      for (const category of allCategories) {
+        if (category.dishes && Array.isArray(category.dishes)) {
+          for (const dishItem of category.dishes) {
+            if (
+              dishItem.dish?.id === cartItem.dish.id &&
+              dishItem.dish.Id_menus_integrations?.[0]?.name_en?.toLowerCase()?.includes('talabat')
+            ) {
+              found = true;
 
-      //         const converted = this.convertDish(dishItem);
-      //         const product = this.getProduct(converted);
+              const converted = this.convertDish(dishItem);
+              const product = this.getProduct(converted);
 
-      //         console.log('✅ Found dish for update:', product);
-      //         this.updateCartPricesFromDish(cartItem, product);
-      //         break; // خلاص وجدناه، نخرج من اللوب
-      //       }
-      //     }
-      //   }
+              console.log('✅ Found dish for update:', product);
+              this.updateCartPricesFromDish(cartItem, product);
+              break; // خلاص وجدناه، نخرج من اللوب
+            }
+          }
+        }
 
-      //   if (found) break; // نوقف لو وجدناه في كاتيجوري
-      // }
+        if (found) break; // نوقف لو وجدناه في كاتيجوري
+      }
 
       // ❌ لو مفيش dish مطابق
       if (!found && this.selectedOrderType === 'talabat') {
