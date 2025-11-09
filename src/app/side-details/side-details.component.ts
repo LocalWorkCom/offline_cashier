@@ -3442,6 +3442,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     return this.invoices[0].invoice_summary.subtotal_price - this.getDiscount();
   }
   async selectOrderType(type: string) {
+
+    let previousOrderType = localStorage.getItem('selectedOrderType');
     localStorage.removeItem('selectedOrderType');
     const currentCart = [...this.cartItems];
     this.clearOrderTypeData();
@@ -3512,10 +3514,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       this.cdr.markForCheck(); // تحديث العرض
 
-      // ✅ إعادة تحميل الصفحة لتحديث product-card في categories بعد تحديث الأسعار
-      setTimeout(() => {
-        window.location.reload();
-      }, 300);
+      if(previousOrderType == 'talabat') {
+            setTimeout(() => {
+              window.location.reload();
+            }, 300);
+          }
 
     } catch (error) {
       console.error('❌ Failed to save order type to IndexedDB:', error);
@@ -3523,9 +3526,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       localStorage.setItem('selectedOrderType', this.selectedOrderType);
 
       // ✅ إعادة تحميل الصفحة حتى لو فشلت حفظ IndexedDB
-      setTimeout(() => {
-        window.location.reload();
-      }, 300);
+      // setTimeout(() => {
+      //   window.location.reload();
+      // }, 300);
     }
   }
   async findCategoryByDishId(cartItem: any): Promise<void> {
@@ -3594,9 +3597,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     console.log(`🗑️ Removed item from cart:`, cartItem.dish?.name);
 
     // ✅ إعادة تحميل الصفحة لتحديث الكارت في الـ UI
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
+    // setTimeout(() => {
+    //   window.location.reload();
+    // }, 100);
   }
   updateCartPricesFromDish(cartItem: any, dishData: any) {
     // 1. تحديث سعر الطبق الرئيسي

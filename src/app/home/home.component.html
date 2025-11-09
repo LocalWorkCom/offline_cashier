@@ -2,7 +2,8 @@
   <div class="col-md-8">
     <app-totals-card></app-totals-card>
     <!-- <app-orders-card></app-orders-card> -->
-    <app-categories></app-categories>
+    <!-- <app-categories></app-categories> -->
+    <app-categoriesLite></app-categoriesLite>
   </div>
   <app-side-details class="col-md-4"></app-side-details>
 </div>
@@ -19,7 +20,7 @@
         </div>
         <h5 class="text-dark fw-bold text-center">مرحبا</h5>
         <h5 class="main-color fw-bold text-center">فرع <span>{{ branch || 'الفرع' }} </span></h5>
-        
+
         <div class="card p-3 my-2">
           <div class="row">
             <div class="col-12">
@@ -28,7 +29,7 @@
                 <span>{{ shiftData?.time || 'التوقيت' }}</span>
               </p>
             </div>
-            <div class="col-6 user d-flex justify-content-start"> 
+            <div class="col-6 user d-flex justify-content-start">
               <img [src]="imageUrl" (error)="imageUrl = 'assets/images/user.png'" alt="User Image" class="user-img-modal">
               <div class="user-info">
                 <h6>{{ fullName || 'الاسم' }}</h6>
@@ -77,7 +78,7 @@
         <div  class="data p-2">
           <h5>من فضلك أدخل البيانات التالية</h5>
           <h6 class="text-danger">برجاء ادخال المبلغ الموجود في الدرج حاليا لفتح الوردية</h6>
-          
+
           <!-- Cash Input -->
           <h6><small><i class="fa-solid fa-money-bill main-color ms-1"></i>المبلغ النقدي الحالي</small></h6>
           <div class="input-group position-relative mb-3">
@@ -89,7 +90,7 @@
                    required
                    min="0">
           </div>
-          
+
           <!-- Visa Input -->
           <h6><small><i class="fa-solid fa-credit-card main-color ms-1"></i>إجمالي مدفوعات البطاقة</small></h6>
           <!-- <div class="input-group position-relative mb-3">
@@ -109,20 +110,20 @@
           </div>
         </div>
       </div>
-      
+
       <div class="modal-footer border-0">
         <!-- Start Shift Button (shown when deficit exists) -->
-        <button *ngIf="showDeficitMessage" 
-                type="button" 
-                class="btn btn-primary w-100 py-2" 
+        <button *ngIf="showDeficitMessage"
+                type="button"
+                class="btn btn-primary w-100 py-2"
                 (click)="startShift()">
           <i class="fas fa-play-circle me-2"></i>بدء الوردية
         </button>
-        
+
         <!-- Save Button (shown when no deficit) -->
-        <button *ngIf="!showDeficitMessage" 
-                type="button" 
-                class="btn btn-primary w-100 py-2" 
+        <button *ngIf="!showDeficitMessage"
+                type="button"
+                class="btn btn-primary w-100 py-2"
                 (click)="validateAndSave()">
           <i class="fas fa-save me-2"></i>حفظ
         </button>
