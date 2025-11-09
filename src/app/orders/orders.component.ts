@@ -116,11 +116,14 @@ export class OrdersComponent implements OnDestroy {
   ngOnInit(): void {
     // console.log("this.isOnline", this.isOnline);
     this.selectedOrderTypeStatus = 'All';
+    this.fetchOrdersData();
     // if (this.isOnline == false) {
-    //   this.loadOrdersFromIndexedDB();
+    //   // this.loadOrdersFromIndexedDB();
+    //         this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+
     // }
     // else {
-    this.fetchOrdersFromAPI();
+    // this.fetchOrdersFromAPI();
     // }
 
     this.loadCartItems();
@@ -144,7 +147,15 @@ export class OrdersComponent implements OnDestroy {
     // 'pusher'
     this.listenToNewOrder();
   }
-
+  fetchOrdersData() {
+    this.loading = false;
+    if (this.isOnline) {
+      this.fetchOrdersFromAPI();
+    } else {
+      // this.loadFromIndexedDB();
+      this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+    }
+  }
   //start dalia
 
   // Load orders from IndexedDB
@@ -207,11 +218,13 @@ export class OrdersComponent implements OnDestroy {
           // });
         } else {
           console.warn('No orders found in API response.');
+          this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+
           this.loading = true;
         }
       },
       error: (err) => {
-        console.error('Error fetching orders from API:', err);
+        this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
         this.loading = true;
         this.showMessageModal('حدث خطأ فى الاتصال يرجى المحاولة مره اخرى', 'error');
 

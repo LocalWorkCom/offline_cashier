@@ -1,3 +1,10 @@
+@if (errorMessage) {
+<div class="alert alert-danger text-center my-3">
+  {{ errorMessage }}
+</div>
+}
+
+
 <div class="" appShowLoaderUntilPageLoaded [isReady]="loading">
   <div class="requests p-3" *ngIf="ordersStatus && ordersStatus.length > 0">
     <!-- Connection Status Indicator -->
