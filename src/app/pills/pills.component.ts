@@ -34,10 +34,11 @@ export class PillsComponent implements OnInit, OnDestroy {
   orderType: any
   orderTypeFilter: string = "dine-in"
   highlightedPillId: string | null = null;
+  errorMessage: any;
 
   private destroy$ = new Subject<void>();
   loading: boolean = true;
-  constructor(private pillRequestService: PillsService, private newOrder: NewOrderService, private newInvoice: NewInvoiceService,private dbService: IndexeddbService,
+  constructor(private pillRequestService: PillsService, private newOrder: NewOrderService, private newInvoice: NewInvoiceService, private dbService: IndexeddbService,
     private cdr: ChangeDetectorRef) { }
   ngOnDestroy(): void {
     this.destroy$.next();
@@ -58,11 +59,13 @@ export class PillsComponent implements OnInit, OnDestroy {
 
     this.fetchPillsData();
     // this.dbService.init().then(() => {
-    //   if (navigator.onLine) {
-    //     this.fetchPillsData(); // جلب وحفظ البيانات في IndexedDB
-    //   } else {
-    //     this.loadFromIndexedDB(); // جلب البيانات من IndexedDB عند العمل offline
-    //   }
+      if (navigator.onLine) {
+        this.fetchPillsData(); // جلب وحفظ البيانات في IndexedDB
+      } else {
+        // this.loadFromIndexedDB(); // جلب البيانات من IndexedDB عند العمل offline
+              this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+
+      }
     // }).catch(error => {
     //   console.error('Error initializing IndexedDB:', error);
     //   this.loading = true;
@@ -151,19 +154,19 @@ export class PillsComponent implements OnInit, OnDestroy {
       next: (response) => {
         if (response.status) {
           // Ensure all pills have an invoice_number before saving
-         this.pills = response.data.invoices
-          // 1️⃣ Remove cancelled (filter first)
-          .filter((pill: any) => !(pill.order_items_count === 0 && pill.payment_status === "unpaid"))
-          // 2️⃣ Transform credit notes to "returned"
-          .map((pill: any) => {
-            if (pill.invoice_type === 'credit_note') {
-              return {
-                ...pill,
-                invoice_print_status: 'returned'
-              };
-            }
-            return pill;
-          });
+          this.pills = response.data.invoices
+            // 1️⃣ Remove cancelled (filter first)
+            .filter((pill: any) => !(pill.order_items_count === 0 && pill.payment_status === "unpaid"))
+            // 2️⃣ Transform credit notes to "returned"
+            .map((pill: any) => {
+              if (pill.invoice_type === 'credit_note') {
+                return {
+                  ...pill,
+                  invoice_print_status: 'returned'
+                };
+              }
+              return pill;
+            });
 
           // ✅ حفظ الفواتير في IndexedDB عند العمل online
           // First clear existing pills, then save new ones
@@ -180,10 +183,13 @@ export class PillsComponent implements OnInit, OnDestroy {
           this.usingOfflineData = false;
         }
       },
+
       error: (error) => {
         console.error('Error fetching pills data:', error);
         // If online but API fails, try to load from IndexedDB
-        this.loadFromIndexedDB();
+        // this.loadFromIndexedDB();
+        this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+
         this.loading = true;
       }
     });
@@ -278,73 +284,73 @@ export class PillsComponent implements OnInit, OnDestroy {
   //     }
   //   });
   // }
-/* fetchPillsData(): void {
-  this.loading = false;
-  this.pillRequestService.getPills().pipe(
-    finalize(() => {
-      this.loading = true;
-    })
-  ).subscribe((response) => {
-    if (response.status) {
-      this.pills = response.data.invoices
-        // 1️⃣ Remove cancelled
-        // .filter((pill: any) => (pill.order_items_count == 0 && pill.payment_status == "unpaid"))
-        // 2️⃣ Transform credit notes to "returned"
-        .map((pill: any) => {
-          if (pill.invoice_type === 'credit_note') {
-            return {
-              ...pill,
-              invoice_print_status: 'returned'
-            };
-          }
-          return pill;
-        });
+  /* fetchPillsData(): void {
+    this.loading = false;
+    this.pillRequestService.getPills().pipe(
+      finalize(() => {
+        this.loading = true;
+      })
+    ).subscribe((response) => {
+      if (response.status) {
+        this.pills = response.data.invoices
+          // 1️⃣ Remove cancelled
+          // .filter((pill: any) => (pill.order_items_count == 0 && pill.payment_status == "unpaid"))
+          // 2️⃣ Transform credit notes to "returned"
+          .map((pill: any) => {
+            if (pill.invoice_type === 'credit_note') {
+              return {
+                ...pill,
+                invoice_print_status: 'returned'
+              };
+            }
+            return pill;
+          });
+  
+        // ✅ Console returned invoices
+        const returnedInvoices = this.pills.filter(
+          (pill: any) => pill.invoice_print_status === 'returned'
+        );
+        console.log('Returned invoices:', returnedInvoices);
+  
+        this.updatePillsByStatus();
+      }
+    });
+  } */
 
-      // ✅ Console returned invoices
-      const returnedInvoices = this.pills.filter(
-        (pill: any) => pill.invoice_print_status === 'returned'
-      );
-      console.log('Returned invoices:', returnedInvoices);
-
-      this.updatePillsByStatus();
-    }
-  });
-} */
 
 
+  // fetchPillsData(): void {
+  //   this.loading = false;
+  //   this.pillRequestService.getPills().pipe(
+  //     finalize(() => {
+  //       this.loading = true;
+  //     })
+  //   ).subscribe((response) => {
+  //     if (response.status) {
+  //       this.pills = response.data.invoices
+  //         // 1️⃣ Remove cancelled (filter first)
+  //         .filter((pill: any) => !(pill.order_items_count === 0 && pill.payment_status === "unpaid"))
+  //         // 2️⃣ Transform credit notes to "returned"
+  //         .map((pill: any) => {
+  //           if (pill.invoice_type === 'credit_note') {
+  //             return {
+  //               ...pill,
+  //               invoice_print_status: 'returned'
+  //             };
+  //           }
+  //           return pill;
+  //         });
 
-// fetchPillsData(): void {
-//   this.loading = false;
-//   this.pillRequestService.getPills().pipe(
-//     finalize(() => {
-//       this.loading = true;
-//     })
-//   ).subscribe((response) => {
-//     if (response.status) {
-//       this.pills = response.data.invoices
-//         // 1️⃣ Remove cancelled (filter first)
-//         .filter((pill: any) => !(pill.order_items_count === 0 && pill.payment_status === "unpaid"))
-//         // 2️⃣ Transform credit notes to "returned"
-//         .map((pill: any) => {
-//           if (pill.invoice_type === 'credit_note') {
-//             return {
-//               ...pill,
-//               invoice_print_status: 'returned'
-//             };
-//           }
-//           return pill;
-//         });
+  //       // ✅ Console returned invoices
+  //       const returnedInvoices = this.pills.filter(
+  //         (pill: any) => pill.invoice_print_status === 'returned'
+  //       );
+  //       console.log('Returned invoices:', returnedInvoices);
 
-//       // ✅ Console returned invoices
-//       const returnedInvoices = this.pills.filter(
-//         (pill: any) => pill.invoice_print_status === 'returned'
-//       );
-//       console.log('Returned invoices:', returnedInvoices);
-
-//       this.updatePillsByStatus();
-//     }
-//   });
-// }
+  //       this.updatePillsByStatus();
+  //     }
+  //   });
+  // }
 
   // private updatePillsByStatus(): void {
   //   const allStatuses = ['hold', 'urgent', 'done'];
@@ -363,30 +369,30 @@ export class PillsComponent implements OnInit, OnDestroy {
 
   //   this.filterPills();
   // }
-private updatePillsByStatus(): void {
-  const allStatuses = ['hold', 'urgent', 'done', 'cancelled', 'returned'];
-  const fetchedStatuses = Array.from(
-    new Set(this.pills.map((pill) => pill.invoice_print_status))
-  );
-  const mergedStatuses = Array.from(new Set([...allStatuses, ...fetchedStatuses]));
+  private updatePillsByStatus(): void {
+    const allStatuses = ['hold', 'urgent', 'done', 'cancelled', 'returned'];
+    const fetchedStatuses = Array.from(
+      new Set(this.pills.map((pill) => pill.invoice_print_status))
+    );
+    const mergedStatuses = Array.from(new Set([...allStatuses, ...fetchedStatuses]));
 
-  this.pillsByStatus = mergedStatuses.map((status) => {
-    let pillsForStatus = this.pills.filter(pill => pill.invoice_print_status === status);
+    this.pillsByStatus = mergedStatuses.map((status) => {
+      let pillsForStatus = this.pills.filter(pill => pill.invoice_print_status === status);
 
-    // Ensure returned tab only has credit notes
-    if (status === 'returned') {
-      pillsForStatus = pillsForStatus.filter(pill => pill.invoice_type === 'credit_note');
-    }
+      // Ensure returned tab only has credit notes
+      if (status === 'returned') {
+        pillsForStatus = pillsForStatus.filter(pill => pill.invoice_type === 'credit_note');
+      }
 
-    return {
-      status,
-      pills: pillsForStatus
-    };
-  });
+      return {
+        status,
+        pills: pillsForStatus
+      };
+    });
 
-  this.filteredPillsByStatus = [...this.pillsByStatus];
-  this.filterPills();
-}
+    this.filteredPillsByStatus = [...this.pillsByStatus];
+    this.filterPills();
+  }
 
 
 
