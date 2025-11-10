@@ -428,8 +428,8 @@ export class OrdersComponent implements OnDestroy {
       return;
     }
 
-    // Find the order that matches the search
-    const foundOrders = this.orders.find((order) =>
+    // Find all orders that match the search
+    const foundOrders = this.orders.filter((order) =>
       order.order_details?.order_number
         ?.toString()
         .toLowerCase()
