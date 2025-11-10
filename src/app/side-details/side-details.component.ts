@@ -2889,7 +2889,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       // await this.releaseTableAndOrderType();
 
       // معالجة أنواع الطلبات المختلفة
-      if (this.selectedOrderType === 'Takeaway' || this.selectedOrderType === 'talabat') {
+      if (this.selectedOrderType === 'Takeaway' ) {
         const dataOrderId = (response as any).data.order_id;
         this.createdOrderId = dataOrderId;
         await this.fetchPillsDetails(this.pillId);
