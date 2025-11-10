@@ -286,15 +286,27 @@ export class EditOrderModalComponent implements OnInit {
 
     if (!this.selectedItem?.dish) return;
 
+    console.log(this.selectedItem, 'selectedItem');
+
     const url = `${this.apiUrl}api/orders/cashier/order-edit-item/api`;
 
     // ✅ build addons in correct format
-    const addon_categories = Object.keys(this.selectedAddonsByCategory).map(
-      (catId: string) => ({
-        id: Number(catId),
-        addon: this.selectedAddonsByCategory[catId].map((a: any) => a.id),
-      })
-    );
+    // const addon_categorie = Object.keys(this.selectedAddonsByCategory).map(
+    //   (catId: string) => ({
+    //     id: Number(catId),
+    //     // addon: this.selectedAddonsByCategory[catId].map((a: any) => a.id),
+    //   })
+    // );
+
+    const addon_categorie = this.selectedItem.addon_categories.map((category: any) => ({
+      id: category.id,
+      addon: category.addons
+        .filter((addon: any) => addon.checked) // pick only selected ones
+        .map((addon: any) => addon.id)         // extract only the IDs
+    }));
+
+
+    console.log('before sending', addon_categorie);
 
     const body = {
       order_id: this.selectedItem.order_id,
@@ -304,7 +316,7 @@ export class EditOrderModalComponent implements OnInit {
       size_id: this.selectedSize?.id ?? null,
       quantity: this.selectedItem.dish.quantity ?? 1,
       note: this.note || '',
-      addon_categories: addon_categories,
+      addon_categories: addon_categorie,
     };
 
     this.isSubmitting = true;
@@ -330,7 +342,7 @@ export class EditOrderModalComponent implements OnInit {
         }
       },
       error: (err) => {
-        this.isSubmitting = false; 
+        this.isSubmitting = false;
         this.isLoading = false;
         console.error('❌ API error', err);
 
