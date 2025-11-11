@@ -4,14 +4,21 @@ import { PillsService } from '../services/pills.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NewOrderService } from '../services/pusher/newOrder';
-import { finalize, Subject, takeUntil } from 'rxjs';
+import { finalize, Subject, switchMap, takeUntil, timer } from 'rxjs';
 import { NewInvoiceService } from '../services/pusher/newInvoice';
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
 import { IndexeddbService } from '../services/indexeddb.service';
 import { ChangeDetectorRef } from '@angular/core';
+import { OrderListDetailsService } from '../services/order-list-details.service';
 @Component({
   selector: 'app-pills',
-  imports: [RouterLink, ShowLoaderUntilPageLoadedDirective, RouterLinkActive, CommonModule, FormsModule],
+  imports: [
+    RouterLink,
+    ShowLoaderUntilPageLoadedDirective,
+    RouterLinkActive,
+    CommonModule,
+    FormsModule,
+  ],
   templateUrl: './pills.component.html',
   styleUrl: './pills.component.css',
 })
@@ -31,15 +38,21 @@ export class PillsComponent implements OnInit, OnDestroy {
   searchOrderNumber: string = '';
   searchText: any;
   filteredPillsByStatus: any[] | undefined;
-  orderType: any
-  orderTypeFilter: string = "dine-in"
+  orderType: any;
+  orderTypeFilter: string = 'dine-in';
   highlightedPillId: string | null = null;
   errorMessage: any;
 
   private destroy$ = new Subject<void>();
   loading: boolean = true;
-  constructor(private pillRequestService: PillsService, private newOrder: NewOrderService, private newInvoice: NewInvoiceService, private dbService: IndexeddbService,
-    private cdr: ChangeDetectorRef) { }
+  constructor(
+    private pillRequestService: PillsService,
+    private newOrder: NewOrderService,
+    private newInvoice: NewInvoiceService,
+    private dbService: IndexeddbService,
+    private _OrderListDetailsService: OrderListDetailsService,
+    private cdr: ChangeDetectorRef
+  ) {}
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
@@ -59,13 +72,12 @@ export class PillsComponent implements OnInit, OnDestroy {
 
     this.fetchPillsData();
     // this.dbService.init().then(() => {
-      if (navigator.onLine) {
-        this.fetchPillsData(); // جلب وحفظ البيانات في IndexedDB
-      } else {
-        // this.loadFromIndexedDB(); // جلب البيانات من IndexedDB عند العمل offline
-              this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
-
-      }
+    if (navigator.onLine) {
+      this.fetchPillsData(); // جلب وحفظ البيانات في IndexedDB
+    } else {
+      // this.loadFromIndexedDB(); // جلب البيانات من IndexedDB عند العمل offline
+      this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+    }
     // }).catch(error => {
     //   console.error('Error initializing IndexedDB:', error);
     //   this.loading = true;
@@ -77,10 +89,88 @@ export class PillsComponent implements OnInit, OnDestroy {
   listenToNewInvoice() {
     this.newOrder.listenToNewOrder();
     this.newInvoice.listenToNewInvoice();
+
+    this.newOrder.orderAdded$
+      .pipe(
+        takeUntil(this.destroy$),
+        switchMap((newOrder) =>
+          timer(2000).pipe(
+            switchMap(() =>
+              this._OrderListDetailsService.NewgetOrderById(newOrder.order_id)
+            )
+          )
+        )
+      )
+      .subscribe((newOrder) => {
+        if (!this.isOnline) return; // Don't process real-time updates when offline
+        console.log(newOrder);
+
+        const data = newOrder.data.order;
+        console.log(data);
+        const invoice = {
+          invoice_number: data.order_details.invoice.invoice_number,
+          invoice_id: data.order_details.invoice.invoice_id,
+          invoice_print_status: data.order_details.invoice.invoice_print_status,
+          order_id: data.order_details.order_id,
+          order_type: data.order_details.order_type,
+          order_number: data.order_details.order_number,
+          order_items_count: data.order_details.order_items_count,
+          order_time: data.order_details.invoice.order_time,
+          payment_status:data.order_details.payment_status,
+          table_number:data.order_details.table_number,
+          // "invoice_type": data.Order.invoice.invoice_type || 'invoice'
+        };
+        console.log(invoice, 'invoice');
+        this.pills = [invoice,...this.pills];
+        console.log(this.pills, 'this.pills');
+
+        this.updatePillsByStatus();
+        this.cdr.detectChanges();
+
+        // Save to IndexedDB for offline access
+        // this.dbService.saveData('pills', this.pills)
+        //   .catch(error => console.error('Error saving to IndexedDB:', error));
+      });
+
+    this.newInvoice.invoiceAdded$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((newInvoice) => {
+        if (!this.isOnline) return; // Don't process real-time updates when offline
+
+        const data = newInvoice.data;
+        const invoice = {
+          invoice_number: data.invoice_number,
+          invoice_print_status: data.invoice_print_status,
+          order_id: data.order_id,
+          order_type: data.order_type,
+          order_number: data.order_number,
+          order_items_count: data.order_items_count,
+          order_time: data.order_time,
+          // "invoice_type": data.invoice_type || 'invoice'
+        };
+
+        // Remove any existing pill with the same invoice_number
+        this.pills = this.pills.filter(
+          (p) => p.invoice_number !== data.invoice_number
+        );
+        this.pills = [invoice, ...this.pills];
+        this.updatePillsByStatus();
+
+        // Save to IndexedDB for offline access
+        // this.dbService.saveData('pills', this.pills)
+        //   .catch(error => console.error('Error saving to IndexedDB:', error));
+      });
+       this.cdr.detectChanges();
+  }
+  /*   listenToNewInvoice() {
+    this.newOrder.listenToNewOrder();
+    this.newInvoice.listenToNewInvoice();
+
     this.newOrder.orderAdded$
       .pipe(takeUntil(this.destroy$))
       .subscribe((newOrder) => {
         if (!this.isOnline) return; // Don't process real-time updates when offline
+console.log(newOrder);
 
         const data = newOrder.data;
         const invoice = {
@@ -129,7 +219,7 @@ export class PillsComponent implements OnInit, OnDestroy {
         //   .catch(error => console.error('Error saving to IndexedDB:', error));
       });
   }
-
+ */
   private handleOnlineStatus() {
     this.isOnline = navigator.onLine;
     // console.log('Network status changed:', this.isOnline ? 'Online' : 'Offline');
@@ -146,58 +236,68 @@ export class PillsComponent implements OnInit, OnDestroy {
 
   fetchPillsData(): void {
     this.loading = false;
-    this.pillRequestService.getPills().pipe(
-      finalize(() => {
-        this.loading = true;
-      })
-    ).subscribe({
-      next: (response) => {
-        if (response.status) {
-          // Ensure all pills have an invoice_number before saving
-          this.pills = response.data.invoices
-            // 1️⃣ Remove cancelled (filter first)
-            .filter((pill: any) => !(pill.order_items_count === 0 && pill.payment_status === "unpaid"))
-            // 2️⃣ Transform credit notes to "returned"
-            .map((pill: any) => {
-              if (pill.invoice_type === 'credit_note') {
-                return {
-                  ...pill,
-                  invoice_print_status: 'returned'
-                };
-              }
-              return pill;
-            });
+    this.pillRequestService
+      .getPills()
+      .pipe(
+        finalize(() => {
+          this.loading = true;
+        })
+      )
+      .subscribe({
+        next: (response) => {
+          if (response.status) {
+            // Ensure all pills have an invoice_number before saving
+            this.pills = response.data.invoices
+              // 1️⃣ Remove cancelled (filter first)
+              .filter(
+                (pill: any) =>
+                  !(
+                    pill.order_items_count === 0 &&
+                    pill.payment_status === 'unpaid'
+                  )
+              )
+              // 2️⃣ Transform credit notes to "returned"
+              .map((pill: any) => {
+                if (pill.invoice_type === 'credit_note') {
+                  return {
+                    ...pill,
+                    invoice_print_status: 'returned',
+                  };
+                }
+                return pill;
+              });
 
-          // ✅ حفظ الفواتير في IndexedDB عند العمل online
-          // First clear existing pills, then save new ones
-          // this.dbService.clearPills()
-          //   .then(() => {
-          //     return this.dbService.saveData('pills', this.pills);
-          //   })
-          //   .then(() => {
-          //     console.log('Pills data saved to IndexedDB');
-          //   })
-          //   .catch(error => console.error('Error clearing and saving pills:', error));
+            // ✅ حفظ الفواتير في IndexedDB عند العمل online
+            // First clear existing pills, then save new ones
+            // this.dbService.clearPills()
+            //   .then(() => {
+            //     return this.dbService.saveData('pills', this.pills);
+            //   })
+            //   .then(() => {
+            //     console.log('Pills data saved to IndexedDB');
+            //   })
+            //   .catch(error => console.error('Error clearing and saving pills:', error));
 
-          this.updatePillsByStatus();
-          this.usingOfflineData = false;
-        }
-      },
+            this.updatePillsByStatus();
+            this.usingOfflineData = false;
+          }
+        },
 
-      error: (error) => {
-        console.error('Error fetching pills data:', error);
-        // If online but API fails, try to load from IndexedDB
-        // this.loadFromIndexedDB();
-        this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+        error: (error) => {
+          console.error('Error fetching pills data:', error);
+          // If online but API fails, try to load from IndexedDB
+          // this.loadFromIndexedDB();
+          this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
 
-        this.loading = true;
-      }
-    });
+          this.loading = true;
+        },
+      });
   }
 
   private loadFromIndexedDB() {
-    this.dbService.getAll('pills')
-      .then(pills => {
+    this.dbService
+      .getAll('pills')
+      .then((pills) => {
         if (pills && pills.length > 0) {
           this.pills = pills;
           this.usingOfflineData = true;
@@ -212,7 +312,7 @@ export class PillsComponent implements OnInit, OnDestroy {
         this.loading = true;
         this.cdr.detectChanges();
       })
-      .catch(error => {
+      .catch((error) => {
         console.error('Error loading from IndexedDB:', error);
         this.pills = [];
         this.usingOfflineData = false;
@@ -220,7 +320,6 @@ export class PillsComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       });
   }
-
 
   //end dalia
   // listenToNewInvoice() {
@@ -267,7 +366,6 @@ export class PillsComponent implements OnInit, OnDestroy {
 
   // }
   selectStatusGroup(index: number): void {
-
     this.selectedStatus = index;
   }
   // fetchPillsData(): void {
@@ -316,8 +414,6 @@ export class PillsComponent implements OnInit, OnDestroy {
       }
     });
   } */
-
-
 
   // fetchPillsData(): void {
   //   this.loading = false;
@@ -374,27 +470,31 @@ export class PillsComponent implements OnInit, OnDestroy {
     const fetchedStatuses = Array.from(
       new Set(this.pills.map((pill) => pill.invoice_print_status))
     );
-    const mergedStatuses = Array.from(new Set([...allStatuses, ...fetchedStatuses]));
+    const mergedStatuses = Array.from(
+      new Set([...allStatuses, ...fetchedStatuses])
+    );
 
     this.pillsByStatus = mergedStatuses.map((status) => {
-      let pillsForStatus = this.pills.filter(pill => pill.invoice_print_status === status);
+      let pillsForStatus = this.pills.filter(
+        (pill) => pill.invoice_print_status === status
+      );
 
       // Ensure returned tab only has credit notes
       if (status === 'returned') {
-        pillsForStatus = pillsForStatus.filter(pill => pill.invoice_type === 'credit_note');
+        pillsForStatus = pillsForStatus.filter(
+          (pill) => pill.invoice_type === 'credit_note'
+        );
       }
 
       return {
         status,
-        pills: pillsForStatus
+        pills: pillsForStatus,
       };
     });
 
     this.filteredPillsByStatus = [...this.pillsByStatus];
     this.filterPills();
   }
-
-
 
   getTranslatedStatus(status: string): string {
     const statusTranslations: { [key: string]: string } = {
@@ -403,7 +503,6 @@ export class PillsComponent implements OnInit, OnDestroy {
       done: 'مكتملة',
       returned: 'مرتجعة',
       cancelled: 'ملغية',
-
     };
 
     return statusTranslations[status] || status;
@@ -413,24 +512,28 @@ export class PillsComponent implements OnInit, OnDestroy {
 
     const search = this.searchText?.trim().toLowerCase() || '';
 
-    this.filteredPillsByStatus = this.pillsByStatus.map((statusGroup: { status: string, pills: any[] }) => {
-      let pills = statusGroup.pills;
+    this.filteredPillsByStatus = this.pillsByStatus.map(
+      (statusGroup: { status: string; pills: any[] }) => {
+        let pills = statusGroup.pills;
 
-      pills = pills.filter(pill => pill.order_type === this.orderTypeFilter);
-      if (search) {
-        pills = pills.filter(pill =>
-          pill.order_number?.toString().toLowerCase().includes(search)
+        pills = pills.filter(
+          (pill) => pill.order_type === this.orderTypeFilter
         );
-      }
+        if (search) {
+          pills = pills.filter((pill) =>
+            pill.order_number?.toString().toLowerCase().includes(search)
+          );
+        }
 
-      return {
-        status: statusGroup.status,
-        pills,
-      };
-    });
+        return {
+          status: statusGroup.status,
+          pills,
+        };
+      }
+    );
 
     if (search) {
-      const match = this.pills.find(pill =>
+      const match = this.pills.find((pill) =>
         pill.order_number?.toString().toLowerCase().includes(search)
       );
 
@@ -441,27 +544,36 @@ export class PillsComponent implements OnInit, OnDestroy {
         this.orderTypeFilter = match.order_type;
 
         // 👇 Re-filter pills again now that the tab changed
-        this.filteredPillsByStatus = this.pillsByStatus.map((statusGroup: { status: string, pills: any[] }) => {
-          let pills = statusGroup.pills;
-          pills = pills.filter(pill => pill.order_type === this.orderTypeFilter);
-          pills = pills.filter(pill =>
-            pill.order_number?.toString().toLowerCase().includes(search)
-          );
-          return {
-            status: statusGroup.status,
-            pills,
-          };
-        });
+        this.filteredPillsByStatus = this.pillsByStatus.map(
+          (statusGroup: { status: string; pills: any[] }) => {
+            let pills = statusGroup.pills;
+            pills = pills.filter(
+              (pill) => pill.order_type === this.orderTypeFilter
+            );
+            pills = pills.filter((pill) =>
+              pill.order_number?.toString().toLowerCase().includes(search)
+            );
+            return {
+              status: statusGroup.status,
+              pills,
+            };
+          }
+        );
 
         // 👇 Set the correct status group tab (hold, urgent, done)
-        const statusIndex = this.pillsByStatus.findIndex((group: { status: any; }) => group.status === match.invoice_print_status);
+        const statusIndex = this.pillsByStatus.findIndex(
+          (group: { status: any }) =>
+            group.status === match.invoice_print_status
+        );
         if (statusIndex !== -1) {
           this.selectedStatus = statusIndex;
         }
 
         // 👇 Scroll into view
         setTimeout(() => {
-          const pillElement = document.getElementById(`pill-${match.order_number}`);
+          const pillElement = document.getElementById(
+            `pill-${match.order_number}`
+          );
           if (pillElement) {
             pillElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
             pillElement.classList.add('highlight-order');
@@ -470,11 +582,4 @@ export class PillsComponent implements OnInit, OnDestroy {
       }
     }
   }
-
-
-
-
-
-
-
 }
