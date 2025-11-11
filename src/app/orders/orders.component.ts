@@ -32,8 +32,10 @@ import { baseUrl } from '../environment';
 import { EditOrderModalComponent } from '../edit-order-modal/edit-order-modal.component';
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ProductsService } from '../services/products.service';
+import { OrderListDetailsService } from '../services/order-list-details.service';
 // import { IndexeddbService } from '../services/indexeddb.service';
-
+import { timer } from 'rxjs';
+import { switchMap } from 'rxjs/operators';
 @Component({
   selector: 'app-orders',
   standalone: true,
@@ -105,7 +107,7 @@ export class OrdersComponent implements OnDestroy {
     private http: HttpClient,
     private NgbModal: NgbModal,
     private productsService: ProductsService,
-    // private dbService: IndexeddbService
+    private _OrderListDetailsService: OrderListDetailsService // private dbService: IndexeddbService
   ) {
     // const navigation = this.router.getCurrentNavigation();
     // this.orderDetails = navigation?.extras.state?.['orderData'];
@@ -198,55 +200,65 @@ export class OrdersComponent implements OnDestroy {
   // Fetch orders from API
   private fetchOrdersFromAPI(): void {
     this.loading = false;
-    this.ordersListService.getOrdersList().pipe(
-      finalize(() => {
-        this.loading = true;
-      }),
-      takeUntil(this.destroy$)
-    ).subscribe({
-      next: (response) => {
-        if (response.status && response.data.orders) {
-          console.log('Orders fetched from API:', response.data.orders.length);
-          this.processOrders(response.data.orders);
-
-          // Save to IndexedDB
-          // this.dbService.saveOrders(response.data.orders).then(() => {
-          //   console.log('Orders saved to IndexedDB');
-          //   return this.dbService.setOrdersLastSync(Date.now());
-          // }).catch(err => {
-          //   console.error('Error saving orders to IndexedDB:', err);
-          // });
-        } else {
-          console.warn('No orders found in API response.');
-          this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
-
+    this.ordersListService
+      .getOrdersList()
+      .pipe(
+        finalize(() => {
           this.loading = true;
-        }
-      },
-      error: (err) => {
-        this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
-        this.loading = true;
-        this.showMessageModal('حدث خطأ فى الاتصال يرجى المحاولة مره اخرى', 'error');
+        }),
+        takeUntil(this.destroy$)
+      )
+      .subscribe({
+        next: (response) => {
+          if (response.status && response.data.orders) {
+            console.log(
+              'Orders fetched from API:',
+              response.data.orders.length
+            );
+            this.processOrders(response.data.orders);
 
-        // If we're online but API failed, try to use IndexedDB data as fallback
-        // if (this.isOnline) {
-        //   this.dbService.getOrders().then(orders => {
-        //     if (orders && orders.length > 0) {
-        //       console.log('Using IndexedDB data as fallback:', orders.length);
-        //       this.processOrders(orders);
-        //     }
-        //   });
-        // }
-      },
-    });
+            // Save to IndexedDB
+            // this.dbService.saveOrders(response.data.orders).then(() => {
+            //   console.log('Orders saved to IndexedDB');
+            //   return this.dbService.setOrdersLastSync(Date.now());
+            // }).catch(err => {
+            //   console.error('Error saving orders to IndexedDB:', err);
+            // });
+          } else {
+            console.warn('No orders found in API response.');
+            this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+
+            this.loading = true;
+          }
+        },
+        error: (err) => {
+          this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+          this.loading = true;
+          this.showMessageModal(
+            'حدث خطأ فى الاتصال يرجى المحاولة مره اخرى',
+            'error'
+          );
+
+          // If we're online but API failed, try to use IndexedDB data as fallback
+          // if (this.isOnline) {
+          //   this.dbService.getOrders().then(orders => {
+          //     if (orders && orders.length > 0) {
+          //       console.log('Using IndexedDB data as fallback:', orders.length);
+          //       this.processOrders(orders);
+          //     }
+          //   });
+          // }
+        },
+      });
   }
   // Process orders (common method for both API and IndexedDB data)
   private processOrders(orders: any[]): void {
     this.currencySymbol = orders[0]?.currency_symbol;
     this.orders = orders
-      .filter((order: any) =>
-        this.allowedOrderTypes.includes(order.order_details?.order_type) &&
-        this.allowedStatuses.includes(order.order_details?.status)
+      .filter(
+        (order: any) =>
+          this.allowedOrderTypes.includes(order.order_details?.order_type) &&
+          this.allowedStatuses.includes(order.order_details?.status)
       )
       .map((order: any) => ({
         ...order,
@@ -254,8 +266,8 @@ export class OrdersComponent implements OnDestroy {
       }));
 
     this.ordersStatus = Array.from(
-      new Set(this.orders.map(order => order.order_details?.status || ""))
-    ).filter(status => this.allowedStatuses.includes(status));
+      new Set(this.orders.map((order) => order.order_details?.status || ''))
+    ).filter((status) => this.allowedStatuses.includes(status));
 
     if (this.ordersStatus.length > 0) this.ordersStatus.unshift('all');
 
@@ -263,48 +275,102 @@ export class OrdersComponent implements OnDestroy {
     this.loading = true;
   }
   //end dalia
-
-  listenToNewOrder() {
+  newOrderFromPusher: any;
+  /*   listenToNewOrder() {
     this.newOrder.listenToNewOrder();
     this.newOrder.orderAdded$
       .pipe(takeUntil(this.destroy$))
       .subscribe((newOrder) => {
-        this.orders = [newOrder.data.Order, ...this.orders];
-        console.log(
-          this.selectedOrderTypeStatus,
-          'new selectedOrderTypeStatus arrived'
-        );
-        const orderType =
-          newOrder.data.Order.order_details.order_type?.toLowerCase();
-        const status = newOrder.data.Order.order_details.status?.toLowerCase();
+        console.log(newOrder, 'new order');
+        setTimeout(()=>{
+        return this._OrderListDetailsService
+          .NewgetOrderById(newOrder.order_id)
+          .subscribe({
+            next: (res: any) => {
+              console.log(res.data);
+              this.newOrderFromPusher = res?.data?.orderDetails[0];
+              this.orders = [this.newOrderFromPusher, ...this.orders]; 
 
-        const isAllOrderTypes =
-          this.selectedOrderTypeStatus?.toLowerCase() === 'all';
-        const isAllStatuses = this.selectedStatus?.toLowerCase() === 'all';
+              console.log(this.newOrderFromPusher, 'this.newOrderFromPusher,');
+              /* const orderType = this.newOrderFromPusher.order_type?.toLowerCase();
+              const status = this.newOrderFromPusher.status?.toLowerCase();
 
-        const matchesOrderType =
-          isAllOrderTypes ||
-          orderType === this.selectedOrderTypeStatus?.toLowerCase();
+              const isAllOrderTypes =
+                this.selectedOrderTypeStatus?.toLowerCase() === 'all';
+              const isAllStatuses =
+                this.selectedStatus?.toLowerCase() === 'all';
+              console.log(
+                this.selectedOrderTypeStatus,
+                'new selectedOrderTypeStatus arrived'
+              );
+              const matchesOrderType =
+                isAllOrderTypes ||
+                orderType === this.selectedOrderTypeStatus?.toLowerCase();
 
-        const matchesStatus =
-          isAllStatuses || status === this.selectedStatus?.toLowerCase();
+              const matchesStatus =
+                isAllStatuses || status === this.selectedStatus?.toLowerCase();
 
-        if (matchesOrderType && matchesStatus) {
-          this.filteredOrders = [...this.orders];
-        }
+              if (matchesOrderType && matchesStatus) {
+                this.filteredOrders = [...this.orders];
+              }  
+            },
+            error: (res: any) => {
+              console.log(res.data);
+            },
+          });
+        },4000)
+    
 
-        // if (this.selectedOrderTypeStatus.toLowerCase()=='all'||
-        //   (this.selectedOrderTypeStatus == 'dine-in' ||
-        //   (newOrder.data.Order.order_details.order_type.toLowerCase() ==
-        //     this.selectedOrderTypeStatus.toLowerCase() &&
-        //     (this.selectedStatus == 'all' ||
-        //       newOrder.data.Order.order_details.status.toLowerCase() ==
-        //         this.selectedStatus.toLocaleLowerCase())))
-        // ) {
-        //   console.log('fatema new order added to list');
+      });
+  } */
 
-        //   this.filteredOrders = [...this.orders];
-        // }
+  listenToNewOrder() {
+    // Start listening to new orders
+    this.newOrder.listenToNewOrder();
+
+    this.newOrder.orderAdded$
+      .pipe(
+        takeUntil(this.destroy$),
+        // Wait 4 seconds before calling the API
+        switchMap((newOrder) =>
+          timer(2000).pipe(
+            switchMap(() =>
+              this._OrderListDetailsService.NewgetOrderById(newOrder.order_id)
+            )
+          )
+        )
+      )
+      .subscribe({
+        next: (res: any) => {
+          console.log(res.data);
+          this.newOrderFromPusher = res?.data.order;
+          this.orders = [this.newOrderFromPusher, ...this.orders];
+
+          console.log(this.newOrderFromPusher, 'this.newOrderFromPusher,');
+          const orderType = this.newOrderFromPusher.order_details.order_type?.toLowerCase();
+          const status = this.newOrderFromPusher.order_details.status?.toLowerCase();
+
+          const isAllOrderTypes =
+            this.selectedOrderTypeStatus?.toLowerCase() === 'all';
+          const isAllStatuses = this.selectedStatus?.toLowerCase() === 'all';
+          console.log(
+            this.selectedOrderTypeStatus,
+            'new selectedOrderTypeStatus arrived'
+          );
+          const matchesOrderType =
+            isAllOrderTypes ||
+            orderType === this.selectedOrderTypeStatus?.toLowerCase();
+
+          const matchesStatus =
+            isAllStatuses || status === this.selectedStatus?.toLowerCase();
+
+          if (matchesOrderType && matchesStatus) {
+            this.filteredOrders = [...this.orders];
+          }
+        },
+        error: (err) => {
+          console.error('Error fetching order:', err);
+        },
       });
   }
   // listenToOrderChangeStatus(orders:any){
@@ -328,6 +394,19 @@ export class OrdersComponent implements OnDestroy {
 
   //   const channelName = `order-status-${orderId}`;
   //   this.activeOrderChannels.delete(orderId);
+
+  // if (this.selectedOrderTypeStatus.toLowerCase()=='all'||
+  //   (this.selectedOrderTypeStatus == 'dine-in' ||
+  //   (newOrder.data.Order.order_details.order_type.toLowerCase() ==
+  //     this.selectedOrderTypeStatus.toLowerCase() &&
+  //     (this.selectedStatus == 'all' ||
+  //       newOrder.data.Order.order_details.status.toLowerCase() ==
+  //         this.selectedStatus.toLocaleLowerCase())))
+  // ) {
+  //   console.log('fatema new order added to list');
+
+  //   this.filteredOrders = [...this.orders];
+  // }
   // }
 
   private handleOrderStatusUpdate(data: any): void {
@@ -352,7 +431,8 @@ export class OrdersComponent implements OnDestroy {
 
       // Show notification
       this.showUpdateNotification(
-        `تم تحديث حالة الطلب #${updatedOrder.order_number
+        `تم تحديث حالة الطلب #${
+          updatedOrder.order_number
         } إلى ${this.getStatusText(newStatus)}`,
         'info'
       );
@@ -474,7 +554,7 @@ export class OrdersComponent implements OnDestroy {
     }
 
     if (item.selectedQuantity < item.quantity) {
-      item.dish_price = item.total_dish_price
+      item.dish_price = item.total_dish_price;
       item.selectedQuantity += 1;
       item.dish_price = item.unitPrice * item.selectedQuantity;
     }
@@ -491,7 +571,7 @@ export class OrdersComponent implements OnDestroy {
     }
 
     if (item.selectedQuantity > 0) {
-      item.dish_price = item.total_dish_price
+      item.dish_price = item.total_dish_price;
       item.selectedQuantity -= 1;
       item.dish_price = item.unitPrice * item.selectedQuantity;
     }
@@ -856,7 +936,7 @@ export class OrdersComponent implements OnDestroy {
       Takeaway: 'assets/images/out.png',
       Delivery: 'assets/images/delivery.png',
       'dine-in': 'assets/images/in.png',
-      'talabat': 'assets/images/in.png',
+      talabat: 'assets/images/in.png',
     };
 
     return (
@@ -1047,7 +1127,7 @@ export class OrdersComponent implements OnDestroy {
       Takeaway: ' إستلام',
       Delivery: 'توصيل',
       'dine-in': 'فى المطعم',
-      'talabat': 'طلبات',
+      talabat: 'طلبات',
     };
     return translations[orderType] || orderType;
   }
@@ -1220,11 +1300,9 @@ export class OrdersComponent implements OnDestroy {
         if (orderIndex !== -1) {
           const currentOrder = this.orders[orderIndex];
 
-
           const updatedOrder = {
             ...currentOrder,
             ...dishChanged,
-
           };
 
           this.orders.splice(orderIndex, 1, updatedOrder);
@@ -1765,7 +1843,6 @@ export class OrdersComponent implements OnDestroy {
     this.successMessageModal = new bootstrap.Modal(
       document.getElementById('successMessageModal')
     );
-
   }
   getStatus(dish: any): string {
     const status = dish?.dish_status || dish?.status;
@@ -1814,7 +1891,7 @@ export class OrdersComponent implements OnDestroy {
   removeDish(orderDetailId: number, quantity: number, order: any): void {
     this.removeLoading = true;
     const url = `${this.apiUrl}api/orders/cashier/request-cancel`;
-    console.log(orderDetailId, order, "id to delete");
+    console.log(orderDetailId, order, 'id to delete');
 
     // 1️⃣ Find dish inside this order by order_detail_id
     const dish = order.order_items.find(
@@ -1831,7 +1908,7 @@ export class OrdersComponent implements OnDestroy {
       items: [
         {
           item_id: orderDetailId, // API expects this
-          quantity: quantity
+          quantity: quantity,
         },
       ],
       type: 'partial',
@@ -1852,7 +1929,9 @@ export class OrdersComponent implements OnDestroy {
             order.items = order.order_items.filter(
               (d: any) => d.order_detail_id !== orderDetailId
             );
-            const modalElement = document.getElementById(`deleteConfirmModal${orderDetailId}`);
+            const modalElement = document.getElementById(
+              `deleteConfirmModal${orderDetailId}`
+            );
             console.log(modalElement);
 
             if (modalElement) {
@@ -1869,8 +1948,8 @@ export class OrdersComponent implements OnDestroy {
             // ✅ ناخد كل الرسائل من errorData (بغض النظر عن المفتاح)
             const errors = res.errorData
               ? Object.values(res.errorData)
-                .flat()
-                .map((e: any) => String(e))
+                  .flat()
+                  .map((e: any) => String(e))
               : [];
             this.errMsg = errors.length
               ? errors.join(' \n ')
@@ -1886,8 +1965,8 @@ export class OrdersComponent implements OnDestroy {
         error: (err) => {
           const errors = err.error?.errorData
             ? Object.values(err.error.errorData)
-              .flat()
-              .map((e: any) => String(e))
+                .flat()
+                .map((e: any) => String(e))
             : [];
           this.errMsg = errors.length
             ? errors.join(' \n ')

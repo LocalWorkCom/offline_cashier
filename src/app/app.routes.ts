@@ -15,8 +15,13 @@ import { CartComponent } from './cart/cart.component';
 import { PillEditComponent } from './pill-edit/pill-edit.component';
 import { OnholdOrderComponent } from './onhold-order/onhold-order.component';
 import { ReturnedInvoiceComponent } from './returned-invoice/returned-invoice.component';
+import { TestComponent } from './testWebSocket/test/test.component';
 
 export const routes: Routes = [
+  {
+    path:"tessttt",
+    component:TestComponent
+  },
   {
     path: '',
     component: AuthLayoutComponent,
