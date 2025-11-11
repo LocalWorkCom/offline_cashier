@@ -1,7 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { baseUrl } from '../environment'; 
+import { baseUrl, baseUrl2 } from '../environment'; 
 
 @Injectable({
   providedIn: 'root',
@@ -28,7 +28,7 @@ export class OrderListDetailsService {
       `Bearer ${this.token}`
     );
 
-    return this.http.get(`${baseUrl}/orders/listnew/${orderId}`, {
+    return this.http.get(`${baseUrl2}/orders/listnew/${orderId}`, {
       headers,
     });
   }
