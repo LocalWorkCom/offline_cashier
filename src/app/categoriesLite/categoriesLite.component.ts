@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, DoCheck, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ProductCardComponent } from '../product-card/product-card.component';
 import { ProductsService } from '../services/products.service';
@@ -10,6 +10,7 @@ import { NewDishService } from '../services/pusher/newDish';
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
 import { finalize } from 'rxjs';
 import { IndexeddbService } from '../services/indexeddb.service';
+
 import { ChangeDetectorRef } from '@angular/core';
 
 @Component({
@@ -24,9 +25,6 @@ import { ChangeDetectorRef } from '@angular/core';
   styleUrls: ['./categoriesLite.component.css'],
 })
 export class CategoriesLiteComponent implements OnInit, OnDestroy {
-  private readonly CATEGORIES_CACHE_KEY = 'menuCategoriesLiteCache';
-  private readonly CATEGORY_DISHES_CACHE_PREFIX = 'menuDishesLiteCache_';
-
   products: any;
   offers: any;
   categories: any[] = [];
@@ -40,13 +38,12 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
   isAllLoading: boolean = true;
   isCategoryLoading: boolean = false;
   isOnline: boolean = navigator.onLine;
-  usingOfflineData: boolean = false;
   errorMessage: string = '';
   @Input() item: any;
   @Input() offer: any;
   @ViewChild('closebutton') closebutton: any;
   constructor(private productsRequestService: ProductsService, private modalService: NgbModal,
-    private newDish: NewDishService, private dbService: IndexeddbService,
+    private newDish: NewDishService,private dbService: IndexeddbService,
     private cdr: ChangeDetectorRef) { }
 
   ngOnInit(): void {
@@ -66,7 +63,7 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
   //   this.fetchMenuData();
   // }
   ngOnChanges(): void {
-    this.fetchMenuData(this.categories.length > 0);
+    this.fetchMenuData();
   }
 
   // start dalia
@@ -91,72 +88,13 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
 
   // }
 
-  fetchMenuData(hasCachedData: boolean = false) {
+  fetchMenuData() {
     if (!this.isOnline) {
       this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
-      // this.loadFromIndexedDB();
       return;
     }
 
-    // if (!hasCachedData) {
-    //   this.isAllLoading = false;
-    // }
-
     this.fetchFromAPILite();
-  }
-
-  private loadCategoriesFromCache(): boolean {
-    try {
-      const cachedValue = localStorage.getItem(this.CATEGORIES_CACHE_KEY);
-      if (!cachedValue) {
-        return false;
-      }
-
-      const cachedCategories = JSON.parse(cachedValue);
-      if (Array.isArray(cachedCategories) && cachedCategories.length > 0) {
-        this.categories = cachedCategories;
-        this.isAllLoading = true;
-        this.processCategories(true);
-        return true;
-      }
-    } catch (error) {
-      console.error('Failed to load categories cache', error);
-    }
-    return false;
-  }
-
-  private saveCategoriesToCache(categories: any[]): void {
-    try {
-      localStorage.setItem(this.CATEGORIES_CACHE_KEY, JSON.stringify(categories));
-    } catch (error) {
-      console.error('Failed to save categories cache', error);
-    }
-  }
-
-  private getCachedCategoryDishes(categoryId: number | string): any[] | null {
-    try {
-      const cachedValue = localStorage.getItem(`${this.CATEGORY_DISHES_CACHE_PREFIX}${categoryId}`);
-      if (!cachedValue) {
-        return null;
-      }
-
-      const cachedDishes = JSON.parse(cachedValue);
-      return Array.isArray(cachedDishes) ? cachedDishes : null;
-    } catch (error) {
-      console.error(`Failed to load cached dishes for category ${categoryId}`, error);
-      return null;
-    }
-  }
-
-  private saveCategoryDishesToCache(categoryId: number | string, dishes: any[]): void {
-    try {
-      localStorage.setItem(
-        `${this.CATEGORY_DISHES_CACHE_PREFIX}${categoryId}`,
-        JSON.stringify(dishes)
-      );
-    } catch (error) {
-      console.error(`Failed to cache dishes for category ${categoryId}`, error);
-    }
   }
 
     private fetchFromAPI() {
@@ -168,9 +106,7 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
     ).subscribe((response: any) => {
       if (response && response.status && response.data) {
         this.categories = response.data;
-        this.processCategories(true);
-
-        this.usingOfflineData = false;
+        this.processCategories();
         this.errorMessage = '';
       } else {
         console.error("Invalid response format", response);
@@ -196,9 +132,7 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
     ).subscribe((response: any) => {
       if (response && response.status && Array.isArray(response.data)) {
         this.categories = response.data;
-        this.saveCategoriesToCache(this.categories);
         this.processCategories();
-        this.usingOfflineData = false;
         this.errorMessage = '';
       } else {
         console.error("Invalid response format", response);
@@ -209,34 +143,7 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
       this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
     });
   }
-  private loadFromIndexedDB(): Promise<boolean> {
-    this.errorMessage = '';
-    return this.dbService.getAll('categories')
-      .then(categories => {
-        if (categories && categories.length > 0) {
-          this.categories = categories;
-          this.processCategories(true);
-          this.usingOfflineData = true;
-          console.log('Loaded from offline storage');
-        } else {
-          this.categories = [];
-          this.selectedCategory = null;
-          this.filteredOrders = [];
-          this.usingOfflineData = false;
-        }
-        this.isAllLoading = true;
-        this.cdr.detectChanges();
-        return !!(categories && categories.length > 0);
-      })
-      .catch(error => {
-        console.error('Error loading from IndexedDB:', error);
-        this.isAllLoading = true;
-        this.cdr.detectChanges();
-        return false;
-      });
-  }
-
-  private processCategories(preferCachedDishes: boolean = false) {
+  private processCategories() {
     this.filterCategories = [...this.categories];
     this.filteredOrders = [];
 
@@ -247,25 +154,24 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
         : this.categories[0];
 
       if (categoryToSelect) {
-        this.onCategorySelect(categoryToSelect, true, preferCachedDishes);
+        this.onCategorySelect(categoryToSelect, true);
       } else {
-        this.onCategorySelect(this.categories[0], true, preferCachedDishes);
+        this.onCategorySelect(this.categories[0], true);
       }
     }
   }
 
   private handleOnlineStatus() {
     this.isOnline = navigator.onLine;
-    // Optional: automatically refresh data when coming back online
-    if (this.isOnline && this.usingOfflineData) {
-      this.fetchMenuData(this.categories.length > 0);
+    if (this.isOnline) {
+      this.fetchMenuData();
     }
     this.cdr.detectChanges();
   }
   //end dalia
 
 
-  onCategorySelect(category: any, skipModalClose: boolean = false, preferCachedDishes: boolean = false): void {
+  onCategorySelect(category: any, skipModalClose: boolean = false): void {
     if (!category) {
       this.selectedCategory = null;
       this.selectedCategoryProducts = [];
@@ -275,22 +181,11 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
 
     this.selectedCategory = category;
 
-    let appliedFromCache = false;
-
-    if (preferCachedDishes) {
-      const cachedDishes = this.getCachedCategoryDishes(category.id);
-      if (cachedDishes && cachedDishes.length > 0) {
-        this.applyCategoryDishes(category, cachedDishes, skipModalClose, true);
-        appliedFromCache = true;
-      }
+    if (Array.isArray(category.dishes) && category.dishes.length > 0) {
+      this.applyCategoryDishes(category, category.dishes, skipModalClose);
     }
 
-    if (!appliedFromCache && Array.isArray(category.dishes) && category.dishes.length > 0) {
-      this.applyCategoryDishes(category, category.dishes, skipModalClose, true);
-      appliedFromCache = true;
-    }
-
-    if (!appliedFromCache) {
+    if (!Array.isArray(category.dishes) || category.dishes.length === 0) {
       this.selectedCategoryProducts = [];
       this.filteredOrders = [];
     }
@@ -301,11 +196,6 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
   private fetchCategoryDishes(category: any, skipModalClose: boolean): void {
     if (!category?.id || !this.isOnline) {
       return;
-    }
-
-    const cachedDishes = this.getCachedCategoryDishes(category.id);
-    if (cachedDishes && cachedDishes.length > 0) {
-      this.applyCategoryDishes(category, cachedDishes, skipModalClose, true);
     }
 
     this.isCategoryLoading = true;
@@ -324,10 +214,7 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
             : Array.isArray(data?.items)
               ? data.items
               : [];
-
-        this.dbService.saveData('categories', data);
-        // this.dbService.saveData('category', category);
-
+              this.dbService.saveData('categories', data);
         if (Array.isArray(dishesPayload)) {
           this.applyCategoryDishes(category, dishesPayload, skipModalClose);
           return;
@@ -342,17 +229,13 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
     });
   }
 
-  private applyCategoryDishes(category: any, dishesPayload: any[], skipModalClose: boolean, fromCache: boolean = false): void {
+  private applyCategoryDishes(category: any, dishesPayload: any[], skipModalClose: boolean): void {
     const normalizedDishes = this.normalizeDishesPayload(dishesPayload);
 
     this.selectedCategoryProducts = normalizedDishes;
     this.filteredOrders = [...this.selectedCategoryProducts];
     this.filterCategories = [...this.categories];
     category.dishes = normalizedDishes;
-
-    if (!fromCache) {
-      this.saveCategoryDishesToCache(category.id, normalizedDishes);
-    }
 
     if (!skipModalClose && this.closebutton?.nativeElement) {
       this.closebutton.nativeElement.click();
