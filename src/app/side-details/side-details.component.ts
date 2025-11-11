@@ -981,7 +981,24 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   loadCart() {
     // مسح الكارت الحالي أولاً
     this.cartItems = [];
+    const holdCart = localStorage.getItem('holdCart');
 
+    if (holdCart) {
+      try {
+        const holdItems = JSON.parse(holdCart);
+        if (Array.isArray(holdItems) && holdItems.length > 0) {
+          this.cartItems = [...holdItems];
+          console.log('✅ Loaded from holdCart:', this.cartItems.length, 'items');
+
+          // 🔥 حفظ في localStorage للكارت العادي
+          localStorage.setItem('cart', JSON.stringify(this.cartItems));
+          this.updateTotalPrice();
+          return; // 🔥 نخرج من الدالة هنا - لا ندمج مع الكارت العادي
+        }
+      } catch (error) {
+        console.error('❌ Error parsing holdCart:', error);
+      }
+    }
     // جلب الكارت من localStorage أولاً
     const storedCart = localStorage.getItem('cart');
     if (storedCart) {
@@ -997,27 +1014,26 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
 
     // جلب العناصر من holdCart مع منع التكرار
-    const holdCart = localStorage.getItem('holdCart');
-    if (holdCart) {
-      try {
-        const holdItems = JSON.parse(holdCart);
-        if (Array.isArray(holdItems) && holdItems.length > 0) {
+    // if (holdCart) {
+    //   try {
+    //     const holdItems = JSON.parse(holdCart);
+    //     if (Array.isArray(holdItems) && holdItems.length > 0) {
 
-          // منع التكرار بناءً على uniqueId أو dish.id + sizeId
-          holdItems.forEach(holdItem => {
-            const isDuplicate = this.cartItems.some(cartItem =>
-              this.isSameCartItem(cartItem, holdItem)
-            );
+    //       // منع التكرار بناءً على uniqueId أو dish.id + sizeId
+    //       holdItems.forEach(holdItem => {
+    //         const isDuplicate = this.cartItems.some(cartItem =>
+    //           this.isSameCartItem(cartItem, holdItem)
+    //         );
 
-            if (!isDuplicate) {
-              this.cartItems.push(holdItem);
-            }
-          });
-        }
-      } catch (error) {
-        console.error('❌ Error parsing holdCart:', error);
-      }
-    }
+    //         if (!isDuplicate) {
+    //           this.cartItems.push(holdItem);
+    //         }
+    //       });
+    //     }
+    //   } catch (error) {
+    //     console.error('❌ Error parsing holdCart:', error);
+    //   }
+    // }
 
     // حفظ الكارت المدمج في localStorage
     localStorage.setItem('cart', JSON.stringify(this.cartItems));
@@ -1401,9 +1417,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     let serviceFee = 0;
     if (
       this.selectedOrderType === 'في المطعم' ||
-      this.selectedOrderType === 'dine-in'
+      this.selectedOrderType === 'dine-in' ||
+      this.currentOrderData?.order_details?.order_type === 'dine-in'
     ) {
-      if (!couponEnabled && !taxEnabled && this.appliedCoupon) {
+      if (!couponEnabled  && !taxEnabled && this.appliedCoupon) {
         serviceFee = this.getServiceOnAmountAfterCoupon();
       } else {
         serviceFee = this.getServiceFeeAmount();
@@ -1414,7 +1431,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     let deliveryFee = 0;
     if (
       this.selectedOrderType === 'توصيل' ||
-      this.selectedOrderType === 'Delivery'
+      this.selectedOrderType === 'Delivery' ||
+      this.currentOrderData?.order_details?.order_type === 'Delivery'
     ) {
 
       console.log("rfdewrewrwe");
@@ -1544,10 +1562,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const taxPercentage = this.branchData.tax_percentage ?? 10;
     const isDineIn =
       this.selectedOrderType === 'في المطعم' ||
-      this.selectedOrderType === 'dine-in';
+      this.selectedOrderType === 'dine-in' ||
+      this.currentOrderData?.order_details?.order_type === 'dine-in';
     const isDeliveryOrder =
       this.selectedOrderType === 'توصيل' ||
-      this.selectedOrderType === 'Delivery';
+      this.selectedOrderType === 'Delivery' ||
+      this.currentOrderData?.order_details?.order_type === 'Delivery';
 
     let subtotal;
     if (this.appliedCoupon && this.validCoupon) {
@@ -3485,10 +3505,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.cdr.detectChanges();
 
     // ✅ تحديث الأسعار عند التبديل إلى talabat أو إلى نوع آخر
+
     for (let i = 0; i < this.cartItems.length; i++) {
       console.log('🔄 selectedOrderType:', this.selectedOrderType);
       await this.findCategoryByDishId(this.cartItems[i]);
-    }
+    
+  }
 
     // إعادة حساب الإجماليات بعد تحديث الأسعار
     this.updateTotalPrices();
