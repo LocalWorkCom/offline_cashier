@@ -34,6 +34,7 @@
 
 
 export const baseUrl='https://productowner.testdomain100.online/'
+
  export const environment = {  
    production: true,
    pusher: {
@@ -41,14 +42,9 @@ export const baseUrl='https://productowner.testdomain100.online/'
      cluster: 'mt1',
    }
  }; 
-
-
-
-
-
  
 export const environment2 = {
-  production: false,
+  production: true,
   pusher: {
     key: 'localkey', 
     wsHost: 'erpfortest.testdomain100.online',
