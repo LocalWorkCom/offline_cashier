@@ -232,16 +232,20 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
   private applyCategoryDishes(category: any, dishesPayload: any[], skipModalClose: boolean): void {
     const normalizedDishes = this.normalizeDishesPayload(dishesPayload);
 
+    category.dishes = normalizedDishes;
+    this.errorMessage = '';
+
+    if (this.selectedCategory?.id !== category.id) {
+      return;
+    }
+
     this.selectedCategoryProducts = normalizedDishes;
     this.filteredOrders = [...this.selectedCategoryProducts];
     this.filterCategories = [...this.categories];
-    category.dishes = normalizedDishes;
 
     if (!skipModalClose && this.closebutton?.nativeElement) {
       this.closebutton.nativeElement.click();
     }
-
-    this.errorMessage = '';
   }
 
   private normalizeDishesPayload(dishesPayload: any[]): any[] {
