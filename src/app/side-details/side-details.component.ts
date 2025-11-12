@@ -981,6 +981,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   loadCart() {
     // مسح الكارت الحالي أولاً
     this.cartItems = [];
+    localStorage.removeItem('table_id');
+    localStorage.removeItem('table_number');
+    localStorage.removeItem('appliedCoupon');
+    localStorage.removeItem('couponCode');
+    localStorage.removeItem('discountAmount');
+
     const holdCart = localStorage.getItem('holdCart');
 
     if (holdCart) {
@@ -1246,7 +1252,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       0
     );
     // this.loadCouponFromLocalStorage()
-    if (this.appliedCoupon)
+    if (this.appliedCoupon && localStorage.getItem('selectedOrderType') !== 'talabat')
       this.applyCoupon();
     this.getTax();
     // ✅ تحديث مبلغ الدفع تلقائياً
@@ -1399,7 +1405,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     //   }
     // }
     // Step 3: Apply coupon
-    if (this.appliedCoupon && this.validCoupon) {
+    if (this.appliedCoupon && this.validCoupon && localStorage.getItem('selectedOrderType') !== 'talabat') {
       if (taxEnabled && !couponEnabled && couponPercentage === 'percentage') {
         subtotal = this.appliedCoupon.amount_after_coupon + this.getTax(); // getTax already includes tax
       } else {
@@ -1467,6 +1473,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       // console.log(total, 'third', subtotal, taxAmount, serviceFee, deliveryFee);
     }
     if ((this.selectedOrderType === 'talabat' || this.selectedOrderType === 'طلبات')) {
+      console.log(this.selectedOrderType, "talabat");
+      console.log(subtotal, "subtotal");
       total = subtotal;
     }
     const finalTotal = total > 0 ? total : 0;
