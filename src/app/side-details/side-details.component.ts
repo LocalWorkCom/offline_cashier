@@ -1303,11 +1303,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     localStorage.removeItem('savedOrders');
     this.clearCart();
     localStorage.removeItem('finalOrderId');
-    this.finalOrderId = " ";
+    this.finalOrderId = '';
     localStorage.removeItem('currentOrderData');
     this.currentOrderData = null;
     localStorage.removeItem('currentOrderId');
-    this.currentOrderId = " ";
+    this.currentOrderId = null;
+    this.clearOrderType();
+    this.selectedPaymentMethod = null;
+    this.selectedPaymentStatus = 'unpaid';
     this.falseMessage = 'تم إلغاء الطلب بنجاح.';
     setTimeout(() => {
       this.falseMessage = '';
@@ -2433,14 +2436,29 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     localStorage.removeItem('currentOrderData');
     localStorage.removeItem('currentOrderId');
 
-    this.client = " ";
-    this.clientPhone = " ";
-    this.finalOrderId = " ";
+    const tableIdToRelease = this.table_id;
+
+    this.client = '';
+    this.clientPhone = '';
+    this.finalOrderId = '';
+    this.currentOrderData = null;
+    this.currentOrderId = null;
     this.cash_amountt = 0;
     this.credit_amountt = 0;
-    this.selectedPaymentStatus = '';
+    this.selectedPaymentStatus = 'unpaid';
+    this.selectedPaymentMethod = null;
     this.tableNumber = null;
+    this.table_id = null;
     this.FormDataDetails = null;
+    this.onholdOrdernote = '';
+    this.referenceNumber = '';
+    this.referenceNumberTouched = false;
+    this.cashPaymentInput = '';
+    this.cashAmountMixed = '';
+    this.creditAmountMixed = '';
+    this.finalTipSummary = null;
+    this.clearOrderType();
+    this.cdr.detectChanges();
 
 
     // this.dbService.deleteFromIndexedDB('clientInfo');
@@ -2450,8 +2468,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // this.dbService.deleteFromIndexedDB('form_delivery');
 
     // ✅ Release table locally (mark available) if exists
-    if (this.table_id) {
-      // this.dbService.updateTableStatus(this.table_id, 1);
+    if (tableIdToRelease) {
+      // this.dbService.updateTableStatus(tableIdToRelease, 1);
     }
   }
 
@@ -2933,15 +2951,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       this.clearCart();
       this.resetLocalStorage();
-      this.client = " ";
-      this.clientPhone = " ";
-      this.finalOrderId = " ";
-      this.cash_amountt = 0;
-      this.credit_amountt = 0;
-      this.selectedPaymentStatus = '';
       this.resetAddress();
-      this.tableNumber = null;
-      this.FormDataDetails = null;
+      this.loadCart();
+      this.cdr.detectChanges();
       this.successMessage = 'تم تنفيذ طلبك بنجاح';
 
       if (this.successModal) {
@@ -4382,18 +4394,21 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     localStorage.removeItem('clientPhone');
     localStorage.removeItem('holdCart');
     localStorage.removeItem('cart');
-    this.client = " ";
-    this.clientPhone = " "
+    this.client = '';
+    this.clientPhone = '';
     this.cash_amountt = 0;
     this.credit_amountt = 0;
-    this.selectedPaymentStatus = '';
+    this.selectedPaymentStatus = 'unpaid';
     this.resetAddress()
     this.tableNumber = null;
     this.FormDataDetails = null;
     this.successMessage = 'تم حفظ طلبك بنجاح';
     this.successModal.show();
     localStorage.removeItem('finalOrderId');
-    this.finalOrderId = " ";
+    this.finalOrderId = '';
+    this.currentOrderData = null;
+    this.currentOrderId = null;
+    this.selectedPaymentMethod = null;
     console.log('✅ Order saved:', orderData);
   }
   resetAddress() {
