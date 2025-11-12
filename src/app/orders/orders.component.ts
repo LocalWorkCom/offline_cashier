@@ -674,6 +674,17 @@ export class OrdersComponent implements OnDestroy {
     }
   }
   loadOrderToCart(orderId: number) {
+      // ✅ مسح بيانات الكوبون أولاً قبل تحميل الطلب
+  localStorage.removeItem('appliedCoupon');
+  localStorage.removeItem('validCoupon');
+  localStorage.removeItem('couponTitle');
+  localStorage.removeItem('couponCode');
+  localStorage.removeItem('discountAmount');
+  localStorage.removeItem('client');
+  localStorage.removeItem('clientPhone');
+  localStorage.removeItem('country_code');
+  localStorage.removeItem('table_id');
+    localStorage.removeItem('table_number');
     localStorage.setItem('holdCart', JSON.stringify([]));
 
     const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
