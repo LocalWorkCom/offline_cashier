@@ -227,9 +227,9 @@ selectedOrderType === 'talabat') {
     <!-- dine-in -->
     <li class="nav-item mb-2">
       <button
-        class="nav-link sub {{ currentOrderData.order_details?.order_type === 'dine-in' ? 'active' : '' }}"
+        class="nav-link sub {{ currentOrderData?.order_details?.order_type === 'dine-in' ? 'active' : '' }}"
         type="button"
-        [disabled]="currentOrderData.order_details?.order_type !== 'dine-in'">
+        [disabled]="currentOrderData?.order_details?.order_type !== 'dine-in'">
         <figure class="mb-0">
           <img src="assets/images/in.png" alt />
         </figure>
@@ -240,9 +240,9 @@ selectedOrderType === 'talabat') {
     <!-- takeaway -->
     <li class="nav-item mb-2">
       <button
-        class="nav-link sub {{ currentOrderData.order_details?.order_type === 'Takeaway' ? 'active' : '' }}"
+        class="nav-link sub {{ currentOrderData?.order_details?.order_type === 'Takeaway' ? 'active' : '' }}"
         type="button"
-        [disabled]="currentOrderData.order_details?.order_type !== 'Takeaway'">
+        [disabled]="currentOrderData?.order_details?.order_type !== 'Takeaway'">
         <figure class="mb-0">
           <img src="assets/images/out.png" alt />
         </figure>
@@ -253,9 +253,9 @@ selectedOrderType === 'talabat') {
     <!-- delivery -->
     <li class="nav-item mb-2">
       <button
-        class="nav-link sub {{ currentOrderData.order_details?.order_type === 'Delivery' ? 'active' : '' }}"
+        class="nav-link sub {{ currentOrderData?.order_details?.order_type === 'Delivery' ? 'active' : '' }}"
         type="button"
-        [disabled]="currentOrderData.order_details?.order_type !== 'Delivery'">
+        [disabled]="currentOrderData?.order_details?.order_type !== 'Delivery'">
         <figure class="mb-0">
           <img src="assets/images/delivery.png" alt />
         </figure>
@@ -266,9 +266,9 @@ selectedOrderType === 'talabat') {
     <!-- talabat -->
     <li class="nav-item mb-2">
       <button
-        class="nav-link sub {{ currentOrderData.order_details?.order_type === 'talabat' ? 'active' : '' }}"
+        class="nav-link sub {{ currentOrderData?.order_details?.order_type === 'talabat' ? 'active' : '' }}"
         type="button"
-        [disabled]="currentOrderData.order_details?.order_type !== 'talabat'">
+        [disabled]="currentOrderData?.order_details?.order_type !== 'talabat'">
         <figure class="mb-0">
           <img src="assets/images/out.png" alt />
         </figure>
@@ -278,27 +278,27 @@ selectedOrderType === 'talabat') {
   </ul>
 
   <div class="tab-content py-2">
-    @if (currentOrderData.order_details?.order_type === 'dine-in') {
+    @if (currentOrderData?.order_details?.order_type === 'dine-in') {
     <div class="text-muted fw-bold">
       الطاولة المختارة :
-      <small class="fw-medium">{{ currentOrderData.order_details?.table_number
+      <small class="fw-medium">{{ currentOrderData?.order_details?.table_number
         }}</small>
     </div>
     }
-    @if (currentOrderData.order_type === 'Delivery') {
+    @if (currentOrderData?.order_type === 'Delivery') {
     <div>
       <small class="fw-bold text-muted">الاسم : </small>
-      <small class="text-muted">{{ currentOrderData.order_details?.client_name
+      <small class="text-muted">{{ currentOrderData?.order_details?.client_name
         }}</small>
     </div>
     <div>
       <small class="fw-bold text-muted">العنوان : </small>
-      <small class="text-muted">{{ currentOrderData.order_details?.address
+      <small class="text-muted">{{ currentOrderData?.order_details?.address
         }}</small>
     </div>
     <div>
       <small class="fw-bold text-muted">رقم الهاتف : </small>
-      <small class="text-muted">{{ currentOrderData.order_details?.client_phone
+      <small class="text-muted">{{ currentOrderData?.order_details?.client_phone
         }}</small>
     </div>
     }
@@ -314,7 +314,7 @@ selectedOrderType === 'talabat') {
     <a class="text-decoration-underline main-color" data-bs-toggle="modal"
       data-bs-target="#cancelModal"
       (click)="cancelMessagefn()">
-      إلغاء
+      حذف
     </a>
   </div>
   @if(finalOrderId){
@@ -329,7 +329,7 @@ selectedOrderType === 'talabat') {
   <div class="d-flex justify-content-between mb-1">
     <div class="d-flex">
       <p>رقم الطلب</p>
-      <p class="text-muted me-2">{{ currentOrderData.order_details.order_number
+      <p class="text-muted me-2">{{ currentOrderData?.order_details?.order_number
         }}</p>
     </div>
     <p>{{ getTotalItemCount() }} عناصر</p>
@@ -338,7 +338,7 @@ selectedOrderType === 'talabat') {
   <div class="d-flex justify-content-end mb-1">
     <!-- <div class="d-flex">
       <p>رقم الطلب</p>
-      <p class="text-muted me-2">{{ currentOrderData.order_details.order_number }}</p>
+      <p class="text-muted me-2">{{ currentOrderData?.order_details?.order_number }}</p>
     </div> -->
     <p>{{ getTotalItemCount() }} عناصر</p>
   </div>}
@@ -1016,12 +1016,12 @@ selectedOrderType === 'talabat') {
 
   } @else {
   @if(currentOrderData){
-  @if(currentOrderData.order_details.order_number){
+  @if(currentOrderData?.order_details?.order_number){
   <div class="d-flex justify-content-between mb-1">
     <div class="d-flex">
       <p> رقم الطلب </p>
       <p
-        class="text-muted me-2">{{currentOrderData.order_details.order_number}}</p>
+        class="text-muted me-2">{{currentOrderData?.order_details?.order_number}}</p>
     </div>
     <a class="text-decoration-underline main-color" data-bs-toggle="modal"
       data-bs-target="#cancelModal"
