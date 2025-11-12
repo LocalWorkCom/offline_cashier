@@ -14,18 +14,32 @@ export class NewOrderService {
 
   listenToNewOrder(a:string='string') {
     const branchId = localStorage.getItem('branch_id');
+    const empId =  localStorage.getItem('employee_id');;      
+    console.log('Received new order event:');
+
+    this.channelName = `newOrder2-${empId}-branch-${branchId}`;
+
+    this.pusherService.subscribe(this.channelName, 'new-order-added2', (res: any) => {
+      console.log('Received new order event:', res.data);
+      console.log('test where event listen',a);
+      this.orderAdded$.next(res.data);
+
+    });
+  }
+/*   listenToNewOrder(a:string='string') {
+    const branchId = localStorage.getItem('branch_id');
     const empId =  localStorage.getItem('employee_id');;
 
     this.channelName = `newOrder-${empId}-branch-${branchId}`;
 
     this.pusherService.subscribe(this.channelName, 'new-order-added', (res: any) => {
       console.log('Received new order event:', res);
-    console.log('test where event listen',a);
+      console.log('test where event listen',a);
 
       this.orderAdded$.next(res);
 
     });
-  }
+  } */
 
   stopListening() {
     if (this.channelName) {
