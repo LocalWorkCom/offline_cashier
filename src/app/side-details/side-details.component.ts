@@ -981,6 +981,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   loadCart() {
     // مسح الكارت الحالي أولاً
     this.cartItems = [];
+    localStorage.removeItem('table_id');
+    localStorage.removeItem('table_number');
+    localStorage.removeItem('appliedCoupon');
+    localStorage.removeItem('couponCode');
+    localStorage.removeItem('discountAmount');
+
     const holdCart = localStorage.getItem('holdCart');
 
     if (holdCart) {
