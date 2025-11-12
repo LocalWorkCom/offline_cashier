@@ -984,12 +984,20 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     localStorage.removeItem('table_id');
     localStorage.removeItem('table_number');
     localStorage.removeItem('appliedCoupon');
+    localStorage.removeItem('validCoupon');
+    localStorage.removeItem('couponTitle');
     localStorage.removeItem('couponCode');
     localStorage.removeItem('discountAmount');
     localStorage.removeItem('client');
     localStorage.removeItem('clientPhone');
     localStorage.removeItem('country_code');
 
+    // ✅ إعادة تعيين متغيرات الكوبون في الكومبوننت
+    this.appliedCoupon = null;
+    this.couponCode = '';
+    this.discountAmount = 0;
+    this.validCoupon = false;
+    this.couponTitle = '';
 
     const holdCart = localStorage.getItem('holdCart');
 
@@ -1433,7 +1441,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.selectedOrderType === 'dine-in' ||
       this.currentOrderData?.order_details?.order_type === 'dine-in'
     ) {
-      if (!couponEnabled  && !taxEnabled && this.appliedCoupon) {
+      if (!couponEnabled && !taxEnabled && this.appliedCoupon) {
         serviceFee = this.getServiceOnAmountAfterCoupon();
       } else {
         serviceFee = this.getServiceFeeAmount();
@@ -2939,7 +2947,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       // await this.releaseTableAndOrderType();
 
       // معالجة أنواع الطلبات المختلفة
-      if (this.selectedOrderType === 'Takeaway' ) {
+      if (this.selectedOrderType === 'Takeaway') {
         const dataOrderId = (response as any).data.order_id;
         this.createdOrderId = dataOrderId;
         await this.fetchPillsDetails(this.pillId);
@@ -3533,8 +3541,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     for (let i = 0; i < this.cartItems.length; i++) {
       console.log('🔄 selectedOrderType:', this.selectedOrderType);
       await this.findCategoryByDishId(this.cartItems[i]);
-    
-  }
+
+    }
 
     // إعادة حساب الإجماليات بعد تحديث الأسعار
     this.updateTotalPrices();
@@ -3560,11 +3568,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       this.cdr.markForCheck(); // تحديث العرض
 
-      if(previousOrderType === 'talabat') {
-            setTimeout(() => {
-              window.location.reload();
-            }, 300);
-          }
+      if (previousOrderType === 'talabat') {
+        setTimeout(() => {
+          window.location.reload();
+        }, 300);
+      }
 
     } catch (error) {
       console.error('❌ Failed to save order type to IndexedDB:', error);
