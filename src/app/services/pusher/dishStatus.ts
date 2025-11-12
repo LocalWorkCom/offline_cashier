@@ -38,8 +38,8 @@ export class DishStatusService implements OnDestroy {
   private dishChangedSubject = new Subject<any>();
   dishChanged$: Observable<any> = this.dishChangedSubject.asObservable();
    
-  channelName = 'dish-order-statuses-changed';
-  private readonly EVENT_NAME = 'Dish-status';
+  channelName = 'dish-order-statuses-changed2';
+  private readonly EVENT_NAME = 'Dish-status2';
   private isListening = false;
 
   constructor(private pusherService: PusherService) {}

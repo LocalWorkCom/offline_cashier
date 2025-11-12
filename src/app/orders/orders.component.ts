@@ -1283,7 +1283,7 @@ export class OrdersComponent implements OnDestroy {
   //   console.log('Order status updated or inserted:', this.filteredOrder);
   // }
 
-  listenToDishChange() {
+/*   listenToDishChange() {
     this.orderChange.listenToDishStatusInOrder();
     this.orderChange.dishChanged$
       .pipe(takeUntil(this.destroy$))
@@ -1298,7 +1298,8 @@ export class OrdersComponent implements OnDestroy {
         );
 
         if (orderIndex !== -1) {
-          const currentOrder = this.orders[orderIndex];
+          console.warn(' Order found :', targetOrderId);
+     /*      const currentOrder = this.orders[orderIndex];
 
           const updatedOrder = {
             ...currentOrder,
@@ -1310,12 +1311,52 @@ export class OrdersComponent implements OnDestroy {
           this.filterOrders();
 
           this.cdr.detectChanges();
-          console.log(' Order status updated:', updatedOrder);
+          console.log(' Order status updated:', updatedOrder); 
         } else {
           console.warn(' Order not found for update:', targetOrderId);
         }
       });
-  }
+  } */
+
+      listenToDishChange() {
+  this.orderChange.listenToDishStatusInOrder();
+  this.orderChange.dishChanged$
+    .pipe(takeUntil(this.destroy$))
+    .subscribe((dishChanged) => {
+      console.log('Incoming dish update:', dishChanged);
+
+      const targetOrderId = Number(dishChanged?.data.order_id);
+
+      const orderIndex = this.orders.findIndex(
+        (order) => Number(order.order_details?.order_id) === targetOrderId
+      );
+
+      if (orderIndex !== -1) {
+        console.warn('Order found:', targetOrderId);
+        setTimeout(() => {
+          this._OrderListDetailsService.NewgetOrderById(targetOrderId).pipe(takeUntil(this.destroy$))
+            .subscribe({
+              next: (res: any) => {
+                console.log('API', res.data);
+                this.orders[orderIndex] = {
+                  ...this.orders[orderIndex],
+                  ...res.data.order
+                };
+                this.orders = [...this.orders];
+                this.filterOrders();
+                this.cdr.detectChanges();
+              },
+              error: (err) => {
+                console.error('API', err);
+              }
+            });
+        }, 2000); 
+      } else {
+        console.warn('Order not found for update:', targetOrderId);
+      }
+    });
+}
+
   filterOrders(): void {
     this.isFilterdFromClientSide = false;
 
