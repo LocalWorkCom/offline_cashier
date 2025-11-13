@@ -1512,6 +1512,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     } else {
       serviceFee = serviceValue;
     }
+    // ✅ إضافة الـ Round هنا أيضاً
+    serviceFee = Math.round(serviceFee * 100) / 100;
+
     return serviceFee;
   }
   getServiceFeeAmount(): number {
