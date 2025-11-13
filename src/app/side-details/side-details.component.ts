@@ -993,11 +993,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     localStorage.removeItem('country_code');
 
     // ✅ إعادة تعيين متغيرات الكوبون في الكومبوننت
-    this.appliedCoupon = null;
-    this.couponCode = '';
-    this.discountAmount = 0;
-    this.validCoupon = false;
-    this.couponTitle = '';
+    // this.appliedCoupon = null;
+    // this.couponCode = '';
+    // this.discountAmount = 0;
+    // this.validCoupon = false;
+    // this.couponTitle = '';
 
     const holdCart = localStorage.getItem('holdCart');
 
