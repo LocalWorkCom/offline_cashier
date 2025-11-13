@@ -289,7 +289,7 @@ export class OrdersComponent implements OnDestroy {
             next: (res: any) => {
               console.log(res.data);
               this.newOrderFromPusher = res?.data?.orderDetails[0];
-              this.orders = [this.newOrderFromPusher, ...this.orders]; 
+              this.orders = [this.newOrderFromPusher, ...this.orders];
 
               console.log(this.newOrderFromPusher, 'this.newOrderFromPusher,');
               /* const orderType = this.newOrderFromPusher.order_type?.toLowerCase();
@@ -312,14 +312,14 @@ export class OrdersComponent implements OnDestroy {
 
               if (matchesOrderType && matchesStatus) {
                 this.filteredOrders = [...this.orders];
-              }  
+              }
             },
             error: (res: any) => {
               console.log(res.data);
             },
           });
         },4000)
-    
+
 
       });
   } */
@@ -1322,7 +1322,7 @@ export class OrdersComponent implements OnDestroy {
           this.filterOrders();
 
           this.cdr.detectChanges();
-          console.log(' Order status updated:', updatedOrder); 
+          console.log(' Order status updated:', updatedOrder);
         } else {
           console.warn(' Order not found for update:', targetOrderId);
         }
@@ -1361,7 +1361,7 @@ export class OrdersComponent implements OnDestroy {
                 console.error('API', err);
               }
             });
-        }, 2000); 
+        }, 2000);
       } else {
         console.warn('Order not found for update:', targetOrderId);
       }
@@ -2051,7 +2051,25 @@ export class OrdersComponent implements OnDestroy {
   }
 
   continueOrder(order: any): void {
+     // ✅ مسح بيانات الكوبون أولاً قبل تحميل الطلب
+  localStorage.removeItem('appliedCoupon');
+  localStorage.removeItem('validCoupon');
+  localStorage.removeItem('couponTitle');
+  localStorage.removeItem('couponCode');
+  localStorage.removeItem('discountAmount');
+  localStorage.removeItem('client');
+  localStorage.removeItem('clientPhone');
+  localStorage.removeItem('country_code');
+  localStorage.removeItem('table_id');
+  localStorage.removeItem('table_number');
     localStorage.removeItem('selectedOrderType');
+    localStorage.removeItem('currentOrderId');
+  localStorage.removeItem('currentOrderData');
+  localStorage.removeItem('finalOrderId');
+  localStorage.removeItem('cart');
+  localStorage.removeItem('selectedPaymentStatus');
+  localStorage.removeItem('holdCart');
+
     console.log('tet', order);
     this.productsService.destroyCart(); // 🔥 destroy stream
 
