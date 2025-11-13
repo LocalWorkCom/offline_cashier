@@ -981,13 +981,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   loadCart() {
     // مسح الكارت الحالي أولاً
     this.cartItems = [];
-    localStorage.removeItem('table_id');
-    localStorage.removeItem('table_number');
-    localStorage.removeItem('appliedCoupon');
-    localStorage.removeItem('validCoupon');
-    localStorage.removeItem('couponTitle');
-    localStorage.removeItem('couponCode');
-    localStorage.removeItem('discountAmount');
+    // localStorage.removeItem('table_id');
+    // localStorage.removeItem('table_number');
+    // localStorage.removeItem('appliedCoupon');
+    // localStorage.removeItem('validCoupon');
+    // localStorage.removeItem('couponTitle');
+    // localStorage.removeItem('couponCode');
+    // localStorage.removeItem('discountAmount');
     localStorage.removeItem('client');
     localStorage.removeItem('clientPhone');
     localStorage.removeItem('country_code');
@@ -1433,7 +1433,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
     // Step 4: Ensure subtotal is not negative
     // subtotal = Math.max(subtotal, 0);
-
+    subtotal = parseFloat(subtotal.toFixed(2));
     // Step 5: Calculate service fee (based on raw subtotal only)
     let serviceFee = 0;
     if (
@@ -1447,6 +1447,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         serviceFee = this.getServiceFeeAmount();
       }
     }
+    serviceFee = parseFloat(serviceFee.toFixed(2));
 
     // Step 6: Delivery fee
     let deliveryFee = 0;
@@ -1459,6 +1460,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       console.log("rfdewrewrwe");
       deliveryFee = this.delivery_fees;
     }
+    deliveryFee = parseFloat(deliveryFee.toFixed(2));
 
     if ((this.selectedOrderType === 'توصيل' || this.selectedOrderType === 'Delivery') && (this.appliedCoupon) && (this.appliedCoupon.coupon_value == '100.00' && this.appliedCoupon.value_type == 'percentage') && (this.appliedCoupon.coupon_apply_type == 'order')
     ) {
@@ -1489,7 +1491,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       console.log(subtotal, "subtotal");
       total = subtotal;
     }
-    const finalTotal = total > 0 ? total : 0;
+    const finalTotal = total > 0 ? parseFloat(total.toFixed(2)) : 0;
 
     // ✅ تحديث مبلغ الدفع تلقائياً عند أي تغيير في المجموع الكلي
     // setTimeout(() => {
@@ -1544,7 +1546,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     } else {
       serviceFee = serviceValue;
     }
-
+    serviceFee = Math.round(serviceFee * 100) / 100;
     return serviceFee;
   }
 
@@ -1620,7 +1622,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       /*       console.log(taxAmount, 'here');
        */
     }
-    return taxAmount;
+    return parseFloat(taxAmount.toFixed(2));
   }
 
   getTotalItemCount(): number {
@@ -2005,12 +2007,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     if (this._cachedTotal !== null && this._cachedCartItemsHash === itemsHash) {
       return this._cachedTotal;
     }
-    return this.cartItems.reduce(
+    const total = this.cartItems.reduce(
       (sum, item) => sum + this.getItemTotal(item),
       0
     );
     this._cachedCartItemsHash = itemsHash;
-    return this._cachedTotal || 0;
+    this._cachedTotal = total;
+
+    // ✅ تقريب المجموع الكلي
+    return parseFloat(total.toFixed(2));
   }
   getItemTotal(item: any): number {
     let basePrice = 0;
@@ -2024,12 +2029,18 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         0
       ) ?? 0;
       basePrice = sizePrice || dishPrice;
-      return (basePrice + addonsTotal) * (Number(item.quantity) || 1);
+      const itemTotal = (basePrice + addonsTotal) * (Number(item.quantity) || 1);
+
+      // ✅ تقريب سعر كل عنصر
+      return parseFloat(itemTotal.toFixed(2));
     }
 
     // Case 2: older/test item structure (with final_price or dish_price)
     const fallbackPrice = Number(item.final_price ?? item.dish_price ?? 0);
-    return fallbackPrice * (Number(item.quantity) || 1);
+    const fallbackTotal = fallbackPrice * (Number(item.quantity) || 1);
+
+    // ✅ تقريب السعر البديل أيضاً
+    return parseFloat(fallbackTotal.toFixed(2));
   }
 
   clearMessage() {
