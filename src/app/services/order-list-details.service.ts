@@ -22,7 +22,7 @@ export class OrderListDetailsService {
       headers,
     });
   }
-  NewgetOrderById(orderId: string): Observable<any> {
+  NewgetOrderById(orderId: any): Observable<any> {
     const headers = new HttpHeaders().set(
       'Authorization',
       `Bearer ${this.token}`
