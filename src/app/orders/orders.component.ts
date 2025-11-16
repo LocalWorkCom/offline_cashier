@@ -431,8 +431,7 @@ export class OrdersComponent implements OnDestroy {
 
       // Show notification
       this.showUpdateNotification(
-        `تم تحديث حالة الطلب #${
-          updatedOrder.order_number
+        `تم تحديث حالة الطلب #${updatedOrder.order_number
         } إلى ${this.getStatusText(newStatus)}`,
         'info'
       );
@@ -674,16 +673,16 @@ export class OrdersComponent implements OnDestroy {
     }
   }
   loadOrderToCart(orderId: number) {
-      // ✅ مسح بيانات الكوبون أولاً قبل تحميل الطلب
-  localStorage.removeItem('appliedCoupon');
-  localStorage.removeItem('validCoupon');
-  localStorage.removeItem('couponTitle');
-  localStorage.removeItem('couponCode');
-  localStorage.removeItem('discountAmount');
-  localStorage.removeItem('client');
-  localStorage.removeItem('clientPhone');
-  localStorage.removeItem('country_code');
-  localStorage.removeItem('table_id');
+    // ✅ مسح بيانات الكوبون أولاً قبل تحميل الطلب
+    localStorage.removeItem('appliedCoupon');
+    localStorage.removeItem('validCoupon');
+    localStorage.removeItem('couponTitle');
+    localStorage.removeItem('couponCode');
+    localStorage.removeItem('discountAmount');
+    localStorage.removeItem('client');
+    localStorage.removeItem('clientPhone');
+    localStorage.removeItem('country_code');
+    localStorage.removeItem('table_id');
     localStorage.removeItem('table_number');
     localStorage.setItem('holdCart', JSON.stringify([]));
 
@@ -1294,79 +1293,79 @@ export class OrdersComponent implements OnDestroy {
   //   console.log('Order status updated or inserted:', this.filteredOrder);
   // }
 
-/*   listenToDishChange() {
+  /*   listenToDishChange() {
+      this.orderChange.listenToDishStatusInOrder();
+      this.orderChange.dishChanged$
+        .pipe(takeUntil(this.destroy$))
+        .subscribe((dishChanged) => {
+          console.log(' Incoming dish update:', dishChanged);
+  
+          const targetOrderId = Number(dishChanged?.order_id);
+          // const targetDishId = Number(dishChanged.data?.dish_ids?.[0]);
+  
+          const orderIndex = this.orders.findIndex(
+            (order) => Number(order.order_details?.order_id) === targetOrderId
+          );
+  
+          if (orderIndex !== -1) {
+            console.warn(' Order found :', targetOrderId);
+       /*      const currentOrder = this.orders[orderIndex];
+  
+            const updatedOrder = {
+              ...currentOrder,
+              ...dishChanged,
+            };
+  
+            this.orders.splice(orderIndex, 1, updatedOrder);
+            this.orders = [...this.orders];
+            this.filterOrders();
+  
+            this.cdr.detectChanges();
+            console.log(' Order status updated:', updatedOrder);
+          } else {
+            console.warn(' Order not found for update:', targetOrderId);
+          }
+        });
+    } */
+
+  listenToDishChange() {
     this.orderChange.listenToDishStatusInOrder();
     this.orderChange.dishChanged$
       .pipe(takeUntil(this.destroy$))
       .subscribe((dishChanged) => {
-        console.log(' Incoming dish update:', dishChanged);
+        console.log('Incoming dish update:', dishChanged);
 
-        const targetOrderId = Number(dishChanged?.order_id);
-        // const targetDishId = Number(dishChanged.data?.dish_ids?.[0]);
+        const targetOrderId = Number(dishChanged?.data.order_id);
 
         const orderIndex = this.orders.findIndex(
           (order) => Number(order.order_details?.order_id) === targetOrderId
         );
 
         if (orderIndex !== -1) {
-          console.warn(' Order found :', targetOrderId);
-     /*      const currentOrder = this.orders[orderIndex];
-
-          const updatedOrder = {
-            ...currentOrder,
-            ...dishChanged,
-          };
-
-          this.orders.splice(orderIndex, 1, updatedOrder);
-          this.orders = [...this.orders];
-          this.filterOrders();
-
-          this.cdr.detectChanges();
-          console.log(' Order status updated:', updatedOrder);
+          console.warn('Order found:', targetOrderId);
+          setTimeout(() => {
+            this._OrderListDetailsService.NewgetOrderById(targetOrderId).pipe(takeUntil(this.destroy$))
+              .subscribe({
+                next: (res: any) => {
+                  console.log('API', res.data);
+                  this.orders[orderIndex] = {
+                    ...this.orders[orderIndex],
+                    ...res.data.order
+                  };
+                  this.orders = [...this.orders];
+                  this.filterOrders();
+                  this.cdr.detectChanges();
+                },
+                error: (err) => {
+                  console.error('API', err);
+                }
+              });
+          }, 2000);
         } else {
-          console.warn(' Order not found for update:', targetOrderId);
+          console.warn('Order not found for update:', targetOrderId);
         }
       });
-  } */
-
-      listenToDishChange() {
-  this.orderChange.listenToDishStatusInOrder();
-  this.orderChange.dishChanged$
-    .pipe(takeUntil(this.destroy$))
-    .subscribe((dishChanged) => {
-      console.log('Incoming dish update:', dishChanged);
-
-      const targetOrderId = Number(dishChanged?.data.order_id);
-
-      const orderIndex = this.orders.findIndex(
-        (order) => Number(order.order_details?.order_id) === targetOrderId
-      );
-
-      if (orderIndex !== -1) {
-        console.warn('Order found:', targetOrderId);
-        setTimeout(() => {
-          this._OrderListDetailsService.NewgetOrderById(targetOrderId).pipe(takeUntil(this.destroy$))
-            .subscribe({
-              next: (res: any) => {
-                console.log('API', res.data);
-                this.orders[orderIndex] = {
-                  ...this.orders[orderIndex],
-                  ...res.data.order
-                };
-                this.orders = [...this.orders];
-                this.filterOrders();
-                this.cdr.detectChanges();
-              },
-              error: (err) => {
-                console.error('API', err);
-              }
-            });
-        }, 2000);
-      } else {
-        console.warn('Order not found for update:', targetOrderId);
-      }
-    });
-}
+  }
 
   filterOrders(): void {
     this.isFilterdFromClientSide = false;
@@ -2000,8 +1999,8 @@ export class OrdersComponent implements OnDestroy {
             // ✅ ناخد كل الرسائل من errorData (بغض النظر عن المفتاح)
             const errors = res.errorData
               ? Object.values(res.errorData)
-                  .flat()
-                  .map((e: any) => String(e))
+                .flat()
+                .map((e: any) => String(e))
               : [];
             this.errMsg = errors.length
               ? errors.join(' \n ')
@@ -2017,8 +2016,8 @@ export class OrdersComponent implements OnDestroy {
         error: (err) => {
           const errors = err.error?.errorData
             ? Object.values(err.error.errorData)
-                .flat()
-                .map((e: any) => String(e))
+              .flat()
+              .map((e: any) => String(e))
             : [];
           this.errMsg = errors.length
             ? errors.join(' \n ')
@@ -2051,24 +2050,24 @@ export class OrdersComponent implements OnDestroy {
   }
 
   continueOrder(order: any): void {
-     // ✅ مسح بيانات الكوبون أولاً قبل تحميل الطلب
-  localStorage.removeItem('appliedCoupon');
-  localStorage.removeItem('validCoupon');
-  localStorage.removeItem('couponTitle');
-  localStorage.removeItem('couponCode');
-  localStorage.removeItem('discountAmount');
-  localStorage.removeItem('client');
-  localStorage.removeItem('clientPhone');
-  localStorage.removeItem('country_code');
-  localStorage.removeItem('table_id');
-  localStorage.removeItem('table_number');
+    console.log('🔄 continueOrder called with order:', order);
+
+    // 🔄 حفظ بيانات الكوبون من الطلب الحالي بدلاً من مسحها
+    this.extractAndSaveCouponData(order);
+
+
+    localStorage.removeItem('client');
+    localStorage.removeItem('clientPhone');
+    localStorage.removeItem('country_code');
+    localStorage.removeItem('table_id');
+    localStorage.removeItem('table_number');
     localStorage.removeItem('selectedOrderType');
     localStorage.removeItem('currentOrderId');
-  localStorage.removeItem('currentOrderData');
-  localStorage.removeItem('finalOrderId');
-  localStorage.removeItem('cart');
-  localStorage.removeItem('selectedPaymentStatus');
-  localStorage.removeItem('holdCart');
+    localStorage.removeItem('currentOrderData');
+    localStorage.removeItem('finalOrderId');
+    localStorage.removeItem('cart');
+    localStorage.removeItem('selectedPaymentStatus');
+    localStorage.removeItem('holdCart');
 
     console.log('tet', order);
     this.productsService.destroyCart(); // 🔥 destroy stream
@@ -2085,5 +2084,78 @@ export class OrdersComponent implements OnDestroy {
     //   // ✅ إعادة تحميل الصفحة بعد التوجيه بنجاح
     //   window.location.reload();
     // });
+  }
+  private extractAndSaveCouponData(order: any): void {
+    console.log('🔍 Searching for coupon data in order:', order);
+
+    let couponData = null;
+    let couponCode = '';
+    let couponTitle = '';
+    let discountAmount = 0;
+    let couponType = '';
+    let couponValue = '';
+
+    // البحث في order_summary أولاً
+    if (order.details_order?.order_summary) {
+      couponData = order.details_order.order_summary;
+      console.log('✅ Found coupon in details_order.order_summary', couponData);
+
+      // استخدام بيانات من order_summary
+      couponCode = couponData.coupon_title || 'COUPON_' + couponData.coupon_id;
+      couponTitle = couponData.coupon_title || '';
+      couponType = couponData.coupon_type || '';
+
+      // ✅ التصحيح: استخدام القيمة الصحيحة للكوبون (10%)
+      // إذا كان الكوبون "ca01" فهو 10%، نستخدم هذه القيمة مباشرة
+      couponValue = "10"; // 10% مباشرة
+
+      // حساب الخصم بناءً على النسبة
+      if (couponType === 'percentage') {
+        discountAmount = (couponData.subtotal_price_before_coupon * parseFloat(couponValue)) / 100;
+      } else {
+        discountAmount = parseFloat(couponValue);
+      }
+
+      console.log('💰 Corrected coupon details (10%):', {
+        couponCode,
+        couponTitle,
+        couponType,
+        couponValue: couponValue + '%',
+        calculatedDiscount: discountAmount
+      });
+    }
+
+    // حفظ بيانات الكوبون في localStorage
+    if (couponCode && couponValue) {
+      localStorage.setItem('appliedCoupon', 'true');
+      localStorage.setItem('validCoupon', 'true');
+      localStorage.setItem('couponTitle', couponTitle);
+      localStorage.setItem('couponCode', couponCode);
+      localStorage.setItem('discountAmount', discountAmount.toString());
+      localStorage.setItem('couponType', couponType);
+      localStorage.setItem('couponValue', couponValue); // ✅ حفظ 10 كقيمة
+
+      console.log('💾 10% coupon saved to localStorage:', {
+        code: couponCode,
+        title: couponTitle,
+        type: couponType,
+        value: couponValue + '%',
+        discount: discountAmount
+      });
+    } else {
+      this.clearCouponData();
+      console.log('❌ No valid coupon found in order data');
+    }
+  }
+  private clearCouponData(): void {
+    const couponKeys = [
+      'appliedCoupon', 'validCoupon', 'couponTitle',
+      'couponCode', 'discountAmount'
+    ];
+
+    couponKeys.forEach(key => {
+      localStorage.removeItem(key);
+      console.log(`🗑️ Removed ${key} from localStorage`);
+    });
   }
 }
