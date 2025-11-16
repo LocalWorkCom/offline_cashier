@@ -2771,7 +2771,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       console.log("no current order data");
 
       // إضافة الكوبون
-      if (this.appliedCoupon && this.couponCode?.trim() && this.validCoupon) {
+      if (this.appliedCoupon && this.couponCode?.trim() && this.validCoupon && localStorage.getItem('selectedOrderType') !== 'talabat') {
         orderData.coupon_code = this.couponCode.trim();
         orderData.discount_amount = this.discountAmount;
         orderData.coupon_type = this.appliedCoupon.value_type;
