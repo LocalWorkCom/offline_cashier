@@ -3582,7 +3582,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       this.cdr.markForCheck(); // تحديث العرض
 
-      if (previousOrderType === 'talabat') {
+      if (previousOrderType === 'talabat' || this.selectedOrderType === 'talabat') {
         setTimeout(() => {
           window.location.reload();
         }, 300);

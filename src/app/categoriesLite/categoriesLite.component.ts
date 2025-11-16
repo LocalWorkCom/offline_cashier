@@ -144,7 +144,14 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
     });
   }
   private processCategories() {
+
+
+    if(localStorage.getItem('selectedOrderType') === 'talabat'){
+      this.categories = this.categories.filter(cat => cat.is_integration === true);
+    }
     this.filterCategories = [...this.categories];
+
+    console.log('Fetched Categories:', this.categories);
     this.filteredOrders = [];
 
     if (this.categories.length > 0) {
@@ -239,7 +246,15 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
       return;
     }
 
+
     this.selectedCategoryProducts = normalizedDishes;
+    if(localStorage.getItem('selectedOrderType') === 'talabat'){
+      this.selectedCategoryProducts = this.selectedCategoryProducts.filter(dish => dish.is_integration === true);
+    }
+
+    console.log('Selected Category Products:', this.selectedCategoryProducts);
+
+
     this.filteredOrders = [...this.selectedCategoryProducts];
     this.filterCategories = [...this.categories];
 
