@@ -566,7 +566,40 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     this.updateTotalPrice();
     this.cdr.detectChanges();
+    this.loadSavedCoupon();
 
+  }
+  private loadSavedCoupon(): void {
+    const hasAppliedCoupon = localStorage.getItem('appliedCoupon') === 'true';
+    const couponCode = localStorage.getItem('couponCode');
+    const discountAmount = localStorage.getItem('discountAmount');
+    const couponType = localStorage.getItem('couponType');
+
+    console.log('🔄 Loading saved coupon:', {
+      hasAppliedCoupon,
+      couponCode,
+      discountAmount,
+      couponType
+    });
+
+    if (hasAppliedCoupon && couponCode) {
+      this.validCoupon = true;
+      this.couponCode = couponCode;
+      this.discountAmount = parseFloat(discountAmount || '0');
+      this.couponType = couponType || '';
+
+      console.log('✅ Restored coupon from localStorage:', {
+        code: this.couponCode,
+        discount: this.discountAmount,
+        type: this.couponType
+      });
+
+      // 🔥 التعديل المهم: تطبيق الكوبون فوراً بعد تحميل الكارت
+      setTimeout(() => {
+        console.log('🔄 Applying restored coupon...');
+        this.applyCoupon();
+      }, 1000);
+    }
   }
   // start hanan
   private initializePaymentAmount(): void {
@@ -1709,81 +1742,124 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   //     })
   //   ).subscribe(() => this.isLoading = false);
   // }
-  applyCoupon() {
+  applyCoupon(): void {
+    // ✅ أولاً: تحقق إذا كان هناك كوبون محفوظ في localStorage ونفس الكود
+    const hasStoredCoupon = localStorage.getItem('appliedCoupon') === 'true';
+    const storedCouponCode = localStorage.getItem('couponCode');
+    const storedDiscountAmount = localStorage.getItem('discountAmount');
+    const storedCouponType = localStorage.getItem('couponType');
+    const storedCouponValue = localStorage.getItem('couponValue'); // نحتاج تخزين قيمة الكوبون الأصلية
 
+    if (hasStoredCoupon && storedCouponCode && storedCouponType && this.couponCode === storedCouponCode) {
+      console.log('🎯 Applying stored coupon without API call');
+
+      // حساب الخصم بناءً على نوع الكوبون والعناصر الحالية فقط
+      let discountAmount = 0;
+      const currentCartTotal = this.getTotal();
+
+      if (storedCouponType === 'percentage') {
+        // تطبيق النسبة المئوية على المجموع الحالي
+        const couponPercentage = parseFloat(storedCouponValue || '10');
+        discountAmount = (currentCartTotal * couponPercentage) / 100;
+        console.log('💰 10% coupon calculation:', {
+          percentage: couponPercentage + '%',
+          currentTotal: currentCartTotal,
+          discount: discountAmount,
+          finalPrice: currentCartTotal - discountAmount
+        });
+      } else {
+        // للكوبون الثابت، استخدام القيمة المحفوظة
+        const fixedDiscount = parseFloat(storedCouponValue || '0');
+        discountAmount = Math.min(fixedDiscount, currentCartTotal);
+      }
+
+      this.validCoupon = true;
+      this.appliedCoupon = {
+        code: storedCouponCode,
+        coupon_title: localStorage.getItem('couponTitle') || storedCouponCode,
+        coupon_value: storedCouponValue,
+        value_type: storedCouponType,
+        amount_after_coupon: currentCartTotal - discountAmount,
+        total_discount: discountAmount,
+        currency_symbol: this.currencySymbol
+      };
+
+      this.discountAmount = discountAmount;
+      this.couponTitle = localStorage.getItem('couponTitle') || '';
+
+      this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount.toFixed(2)} ${this.currencySymbol} من الإجمالي.`;
+
+      console.log('✅ Stored coupon applied with new calculation:', {
+        type: storedCouponType,
+        value: storedCouponValue + '%',
+        originalValue: storedCouponValue,
+        currentTotal: currentCartTotal,
+        discount: discountAmount,
+        finalTotal: currentCartTotal - discountAmount
+
+      });
+
+      this.updateTotalPrice();
+      // this.closeCouponModal();
+      this.initializePaymentAmount();
+      this.isLoading = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
+    // ✅ إذا لا يوجد كوبون محفوظ، اتصل بالـ API كالمعتاد
     const token = localStorage.getItem('authToken');
     if (!token) {
       this.errorMessage = 'يجب تسجيل الدخول لتطبيق الكوبون.';
+      this.isLoading = false;
       return;
     }
+
     if (!this.couponCode.trim()) {
-
       this.errorMessage = 'يرجى إدخال الكوبون.';
+      this.isLoading = false;
       return;
     }
 
-    // ✅ Track start time for minimum 1 second duration
-    const startTime = Date.now();
-    const minDuration = 1000; // 1 second
     this.errorMessage = '';
     this.successMessage = '';
     this.isLoading = true;
-    this.cdr.markForCheck(); // Trigger change detection immediately
+    this.cdr.markForCheck();
 
-    // Prepare HTTP headers and API endpoint.
     const headers = new HttpHeaders({
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     });
+
     const branchId = localStorage.getItem('branch_id');
     const apiUrl = `${baseUrl}api/coupons/check-coupon`;
-    // Ensure branchData exists; otherwise, default values.
-    const taxEnabled: boolean = this.branchData?.tax_application ?? false;
-    const couponOnTotalAfterTax: boolean =
-      this.branchData?.coupon_application ?? false;
-    const taxPercentage: number =
-      parseFloat(this.branchData?.tax_percentage) || 0;
-    let baseAmount = 0;
-    // Log settings for debugging
-    // console.log('Applying coupon with settings:', {
-    //   taxEnabled,
-    //   couponOnTotalAfterTax,
-    //   taxPercentage,
-    // });
 
-    // CASE 1: Tax enabled and coupon applies before tax
+    const taxEnabled: boolean = this.branchData?.tax_application ?? false;
+    const couponOnTotalAfterTax: boolean = this.branchData?.coupon_application ?? false;
+    const taxPercentage: number = parseFloat(this.branchData?.tax_percentage) || 0;
+
+    let baseAmount = 0;
+
     if (taxEnabled && !couponOnTotalAfterTax) {
       baseAmount = this.cartItems.reduce((total, item) => {
-        const priceBeforeTax =
-          this.getItemTotal(item) / (1 + taxPercentage / 100);
+        const priceBeforeTax = this.getItemTotal(item) / (1 + taxPercentage / 100);
         return total + priceBeforeTax;
       }, 0);
-      // console.log("copon", baseAmount);
-    }
-    // CASE 2: Tax disabled but coupon applies after tax
-    else if (!taxEnabled && couponOnTotalAfterTax) {
-      // Using getTotal() plus getTax() ensures correct total with tax included.
+    } else if (!taxEnabled && couponOnTotalAfterTax) {
       baseAmount = this.getTotal() + this.getTax();
       console.log(baseAmount, 'cashier3');
-    }
-    // CASE 3: Tax enabled and coupon applies after tax
-    else if (taxEnabled && couponOnTotalAfterTax) {
-      // Apply coupon on cart total calculated by getTotal()
+    } else if (taxEnabled && couponOnTotalAfterTax) {
+      baseAmount = this.getTotal();
+    } else {
       baseAmount = this.getTotal();
     }
-    // CASE 4: Tax disabled and coupon applies on cart total (default)
-    else {
-      baseAmount = this.getTotal();
-      // console.log(baseAmount, 'coupon');
-    }
-    // Log computed base amount for debugging.
-    // console.log('Computed baseAmount:', baseAmount);
-    // Validate computed baseAmount.
+
     if (!baseAmount || isNaN(baseAmount)) {
       this.errorMessage = 'فشل حساب إجمالي الطلب. تحقق من الأسعار والكميات.';
       this.isLoading = false;
       return;
     }
+
     const requestData = {
       code: this.couponCode,
       amount: baseAmount,
@@ -1807,39 +1883,21 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       .pipe(
         tap((response: any) => {
           if (response.status) {
-            this.validCoupon = true
+            this.validCoupon = true;
             this.appliedCoupon = response.data;
-            this.couponTitle = response.data.coupon_title
-            // if(response.data.value_type == "percentage" && response.data.coupon_value == "100.00"){
-            //   localStorage.setItem("delivery_fees" , "0")
-            //   this.deliveryFeesWithFullCoupon = 0
-            //   console.log(this.delivery_fees ,"88")
-            // }
-            // if (response.data.value_type === 'percentage') {
-            //   this.discountAmount =
-            //     (baseAmount * parseFloat(response.data.coupon_value)) / 100;
-            //   console.log(this.discountAmount, 'coupon');
-            // } else if (response.data.value_type === 'fixed') {
-            //   this.discountAmount = parseFloat(response.data.coupon_value);
-            //   console.log(this.discountAmount, 'fixed');
-            // }
-            // this.discountAmount = Math.min(this.discountAmount, baseAmount);
-            this.discountAmount = response.data.total_discount
-            this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount.toFixed(
-              2
-            )} ${response.data.currency_symbol} من الإجمالي.`;
+            this.couponTitle = response.data.coupon_title;
+            this.discountAmount = response.data.total_discount;
 
-            localStorage.setItem(
-              'appliedCoupon',
-              JSON.stringify(response.data)
-            );
-            localStorage.setItem(
-              'discountAmount',
-              this.discountAmount.toString()
-            );
+            this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount.toFixed(2)} ${response.data.currency_symbol} من الإجمالي.`;
 
-            localStorage.setItem('couponCode', this.couponCode);
+            // حفظ بيانات الكوبون في localStorage بما فيها القيمة الأصلية
+            localStorage.setItem('appliedCoupon', 'true');
+            localStorage.setItem('validCoupon', 'true');
             localStorage.setItem('couponTitle', this.couponTitle);
+            localStorage.setItem('couponCode', this.couponCode);
+            localStorage.setItem('discountAmount', this.discountAmount.toString());
+            localStorage.setItem('couponType', response.data.value_type || '');
+            localStorage.setItem('couponValue', response.data.coupon_value || this.discountAmount.toString());
 
             this.updateTotalPrice();
 
@@ -1860,29 +1918,37 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             this.initializePaymentAmount();
 
           } else {
-
-            baseAmount = baseAmount
             this.validCoupon = false;
-            this.removeCouponFromLocalStorage()
-            this.couponCode = null;
+            this.removeCouponFromLocalStorage();
+            this.couponCode = '';
+
             if (response.errorData?.error) {
               this.errorMessage = response.errorData.error;
             }
 
             this.getTax();
             this.initializePaymentAmount();
-
           }
         }),
         catchError((error) => {
+          this.validCoupon = false;
+          this.removeCouponFromLocalStorage();
+          this.couponCode = '';
+
           if (error.error?.errorData?.error) {
             this.errorMessage = error.error?.errorData.error;
+          } else {
+            this.errorMessage = 'حدث خطأ أثناء التحقق من الكوبون.';
           }
 
+          this.getTax();
+          this.initializePaymentAmount();
           return of(null);
         })
       )
-      .subscribe(() => (this.isLoading = false));
+      .subscribe(() => {
+        this.isLoading = false;
+      });
   }
   restoreCoupon() {
     const storedCoupon = localStorage.getItem('appliedCoupon');
@@ -2001,9 +2067,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   }
 
   removeCouponFromLocalStorage() {
-    localStorage.removeItem('couponCode');
-    localStorage.removeItem('discountAmount');
-    localStorage.removeItem('appliedCoupon');
+    const couponKeys = [
+      'couponCode', 'discountAmount', 'appliedCoupon',
+      'validCoupon', 'couponTitle', 'couponType', 'couponValue'
+    ];
+
+    couponKeys.forEach(key => localStorage.removeItem(key));
   }
   getTotal(): number {
     const itemsHash = JSON.stringify(this.cartItems);
