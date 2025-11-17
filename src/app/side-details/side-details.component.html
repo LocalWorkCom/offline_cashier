@@ -697,7 +697,7 @@ selectedOrderType === 'talabat') {
 
               <ng-container *ngIf="getCartTotal() as billAmount">
                 <!-- اقتراحات المبالغ -->
-                <!-- <div class="d-flex justify-content-between flex-wrap gap-2 payment-suggestions-container">
+                <div class="d-flex justify-content-between flex-wrap gap-2 payment-suggestions-container">
 
                   <label class="payment-suggestion-label"
                     [class.active-payment-suggestion]="selectedSuggestionType === 'billAmount'"
@@ -720,7 +720,7 @@ selectedOrderType === 'talabat') {
                       <strong>{{ amount100 | number:'1.0-0' }} ج.م</strong>
                     </label>
                   </ng-container>
-                </div> -->
+                </div>
 
                 <!-- إدخال مبلغ يدوي -->
                 <div class="card p-3 mb-3">
@@ -873,7 +873,7 @@ selectedOrderType === 'talabat') {
         <div
           *ngIf="finalTipSummary.additionalPaymentRequired && finalTipSummary.additionalPaymentRequired > 0"
           class="alert alert-warning mb-3">
-          <!-- <div class="d-flex align-items-center">
+          <div class="d-flex align-items-center">
             <i class="fas fa-exclamation-triangle me-2"></i>
             <div>
               <strong>مبلغ إضافي مطلوب:</strong>
@@ -882,9 +882,9 @@ selectedOrderType === 'talabat') {
               <br>
               <small>لتحقيق الإكرامية المطلوبة</small>
             </div>
-          </div> -->
+          </div>
         </div>
-        <!-- <div class="summary-line sub-total">
+        <div class="summary-line sub-total">
           <span>المجموع الفرعي (المستحق):</span>
           <span class="summary-value">{{ finalTipSummary.billAmount |
             number:'1.2-2' }} ج.م</span>
@@ -921,7 +921,7 @@ selectedOrderType === 'talabat') {
           <span>المتبقي للرد:</span>
           <span class="fw-bolder">{{ finalTipSummary.changeToReturn |
             number:'1.2-2' }} ج.م</span>
-        </div> -->
+        </div>
       </div>
       }
       <!-- في حالة غير مدفوع -->
