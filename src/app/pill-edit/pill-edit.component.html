@@ -700,7 +700,6 @@
             <span style="font-size: 10px;">{{ addressDetails?.[0]?.address_notes ?? 'لا يوجد' }}</span>
           </h6>
 
-      </div>
     </ng-container>
 
     <table class="table table-bordered">
@@ -841,7 +840,7 @@
             </div>
           </div>
           <!-- Cash - visa -->
-        </div>
+        </ng-container>
         <ng-container *ngIf="test && (!showPrices || showPrices)">
           <div class="total-price my-2" *ngFor="let item of invoiceSummary">
             <div
