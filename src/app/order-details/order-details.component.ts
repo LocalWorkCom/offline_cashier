@@ -17,6 +17,7 @@ import { IndexeddbService } from '../services/indexeddb.service';
   imports: [CommonModule, ShowLoaderUntilPageLoadedDirective],
 })
 export class OrderDetailsComponent implements OnInit, OnDestroy {
+  private isOnline: boolean = navigator.onLine;
   orderId: any;
   orderDetails: any = {};
   orderSummary: any = {};
@@ -78,24 +79,28 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       this.loading = false;
       return;
     }
-    this.dbService.getOrderById(numericOrderId).then(order => {
-      if (order) {
-        console.log('Order found in IndexedDB:', order);
-        this.displayOrderDetails(order);
-      } else {
-        console.log('Order not found in IndexedDB, fetching from API');
-        // this.fetchOrderDetailsFromAPI();
-        this.fetchOrderDetails();
-      }
-    }).catch(err => {
-      console.error('Error searching order in IndexedDB:', err);
-      this.fetchOrderDetailsFromAPI();
-    });
+    if(this.isOnline == false)
+    {
+      this.dbService.getOrderById(numericOrderId).then(order => {
+        if (order) {
+          console.log('Order found in IndexedDB:', order);
+          this.displayOrderDetails(order);
+        } else {
+          console.log('Order not found in IndexedDB, fetching from API');
+          // this.fetchOrderDetailsFromAPI();
+          this.fetchOrderDetails();
+        }
+      });
+    }
+    else
+    {
+      this.fetchOrderDetails();
+    }
+
   }
 
   // Display order details from IndexedDB
   private displayOrderDetails(order: any): void {
-
 
     try {
       // Extract order details

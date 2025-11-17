@@ -33,6 +33,7 @@ fetchAndSaveOrders(): Observable<any> {
       next: async (response: any) => {
         if (response.status && response.data.orders) {
           try {
+            console.log('orders saved to IndexedDB');
             await this.db.saveOrders(response.data.orders);
             await this.db.setOrdersLastSync(Date.now());
             console.log('✅ Orders saved to IndexedDB:', response.data.orders.length);
