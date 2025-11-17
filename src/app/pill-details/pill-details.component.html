@@ -512,11 +512,11 @@
               item.coupon_value !== '0.00' &&
               item.coupon_value !== 0
             ">
-            <h6>تخفيض:
-              <span class="btn-static-secondary p-1 rounded">{{ invoices[0].invoice_summary.coupon_title
+            <h6 class="bg_black">تخفيض:
+              <span class="btn-static-secondary p-1 rounded bg_black">{{ invoices[0].invoice_summary.coupon_title
                 }} </span>
             </h6>
-            <span>-{{ item.coupon_value }} {{ item.currency_symbol }}</span>
+            <span class="bg_black">-{{ item.coupon_value }} {{ item.currency_symbol }}</span>
           </div>
           <div class="d-flex justify-content-between fw-bold bg_black" *ngIf="item.service_percentage"
             style="font-size: 13px;">
