@@ -5109,4 +5109,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       country.code.toLowerCase().includes(this.searchTerm.toLowerCase())
     );
   }
+   getOrderTypeLabel(type: string): string {
+  const map: any = {
+    'dine-in': 'في المطعم',
+    'Takeaway': 'استلام',
+    'talabat': 'طلبات',
+    'Delivery': 'توصيل'
+  };
+
+  return map[type] || type;
+}
+
 }

@@ -103,7 +103,7 @@ export class PillsComponent implements OnInit, OnDestroy {
       )
       .subscribe((newOrder) => {
         if (!this.isOnline) return; // Don't process real-time updates when offline
-        console.log(newOrder);
+        console.log(newOrder,"alaaaaaaaaaaaaaaa");
 
         const data = newOrder.data.order;
         console.log(data);
