@@ -258,7 +258,7 @@ private processPillDetails(data: any): void {
       next: (response: any) => {
         this.order_id = response.data.order_id
         this.invoices = response.data.invoices;
-        console.log(response, 'response gggg');
+        console.log(this.invoices, 'response gggg');
 
 
         const statusMap: { [key: string]: string } = {
@@ -515,4 +515,16 @@ private processPillDetails(data: any): void {
   onPrintButtonClick() {
     this.confirmationDialog.confirm();
   }
+  getOrderTypeLabel(type: string): string {
+  const map: any = {
+    'dine-in': 'في المطعم',
+    'Takeaway': 'استلام',
+    'talabat': 'طلبات',
+    'Delivery': 'توصيل'
+  };
+
+  return map[type] || type;
+}
+
+
 }
