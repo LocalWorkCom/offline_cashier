@@ -555,3 +555,21 @@ color: #198754 !important;
 .text-danger {
 color: #dc3545 !important;
 }
+.table {
+  width: 100%;
+  border: 1px solid black;
+}
+small,.bg_black{
+  color:black;
+  font-weight: bold;
+}
+
+.printSection hr {
+    margin: 0.5rem 0 !important;
+    color: inherit;
+    border: 0;
+    border-top: 2px solid black !important
+    ;
+    opacity: 1 !important;
+
+}

@@ -576,4 +576,16 @@ export class PillDetailsComponent implements OnInit {
   onPrintButtonClick() {
     this.confirmationDialog.confirm();
   }
+  getOrderTypeLabel(type: string): string {
+  const map: any = {
+    'dine-in': 'في المطعم',
+    'Takeaway': 'استلام',
+    'talabat': 'طلبات',
+    'Delivery': 'توصيل'
+  };
+
+  return map[type] || type;
+}
+
+
 }

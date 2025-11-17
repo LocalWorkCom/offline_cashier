@@ -619,14 +619,17 @@
   </div>
 </div>
 
-<div id="printSection" class="d-none printSection p-0">
+
+
+
+<div id="printSection" class="bg_black printSection p-0 d-none">
   <div class="px-4 py-2 my-2" *ngFor="let item of branchDetails">
     <div class="text-center border-bottom-dotted mb-4">
       <div class="card-img mb-3">
         <img src="assets/images/logo-with-white-bg.png" alt="مطعم الكوت"
           class="img-fluid" />
         @if (isFinal) {
-        <p class="final mt-1">نهائي</p>
+        <p class="final bg_black">نهائي</p>
         }
       </div>
       <h6>
@@ -661,15 +664,15 @@
           <span class="fw-bold">رقم الطلب:</span> {{ item?.order_number }}
         </h6> -->
 
-        <h6>
-          <span class="fw-bold">رقم الطاولة:</span> {{ item.table_number }}
+        <h6 style="font-size: 10px;" class="bg_black">
+          <span class="fw-bold" >رقم الطاولة:</span> {{ item.table_number }}
         </h6>
       </div>
     </div>
 
     <!-- Conditionally display client data for delivery orders -->
     <ng-container *ngIf="test && (!showPrices || showPrices)">
-      <div class="client-data mb-3" *ngIf="isDeliveryOrder">
+      <div class="client-data" *ngIf="isDeliveryOrder">
         <!-- <h6>
     رقم الطلب: <span>{{ branchDetails?.[0]?.order_number ?? 'لا يوجد' }}</span>
   </h6> -->
@@ -688,15 +691,15 @@
             :
             'لا يوجد' }}</span>
         </h6>
+       
+        </div>
 
-        <h6>
-          عنوان التوصيل:
-          <span>{{ addressDetails?.[0]?.client_address ?? 'لا يوجد' }}</span>
-        </h6>
-        <h6>
-          تعليمات التوصيل:
-          <span>{{ addressDetails?.[0]?.address_notes ?? 'لا يوجد' }}</span>
-        </h6>
+      
+   <h6 style="font-size: 10px;">
+            تعليمات التوصيل:
+            <span style="font-size: 10px;">{{ addressDetails?.[0]?.address_notes ?? 'لا يوجد' }}</span>
+          </h6>
+
       </div>
     </ng-container>
 
@@ -723,46 +726,22 @@
                 <small class="text-muted fst-italic fw-semibold">- {{
                   addon.addon_name }}</small>
               </div>
+
             </div>
           </td>
-          <td>{{ item.quantity }}</td>
-          <td *ngIf="test && (!showPrices || showPrices)">
+          <td class="fw-bold">{{ item.quantity }}</td>
+          <td class="fw-bold" *ngIf="test && (!showPrices || showPrices)">
             {{ item.total_dish_price / item.quantity | number }}
             {{ invoiceSummary[0].currency_symbol }}
           </td>
-          <td *ngIf="test && (!showPrices || showPrices)">
+          <td class="fw-bold" *ngIf="test && (!showPrices || showPrices)">
             {{ item.total_dish_price | number }}
             {{ invoiceSummary[0].currency_symbol }}
           </td>
         </tr>
       </tbody>
     </table>
-    <!-- <table class="table table-bordered pill-content mb-4">
-      <thead>
-        <tr>
-          <th scope="col">الإضافات</th>
-          <th scope="col">ملاحظات</th>
-          <th scope="col">الاجمالي</th>
-          <th scope="col">الحجم</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of orderDetails[0]">
-          <td class="addons">
-            <small>{{ item.addons.length > 0 ? item.addons.join(', ') : 'لا توجد اضافات' }}</small>
-          </td>
-          <td class="note">
-            <small>{{ item.note ? item.note : 'لا توجد ملاحظات' }}</small>
-          </td>
-          <td class="price-total">
-            {{ item.quantity * item.total_dish_price | number }} {{ invoiceSummary[0].currency_symbol }}
-          </td>
-          <td class="size">
-            <small>{{ item.size ? item.size : 'لا يوجد حجم' }}</small>
-          </td>
-        </tr>
-      </tbody>
-    </table> -->
+
     <ng-container>
       <div class="total-data border-bottom-dotted mb-3"
         *ngFor="let item of invoiceSummary">
@@ -772,7 +751,7 @@
             <span class="fw-bold fs-5">{{ item.subtotal_price_before_coupon }}
               {{ item.currency_symbol }}</span>
           </div>
-          <div class="d-flex justify-content-between mb-1 fw-bold" *ngIf="
+          <div class="d-flex justify-content-between  fw-bold" style="font-size: 13px;" *ngIf="
               item.tax_application !== 0 &&
               item.coupon_value !== '0.00' &&
               item.coupon_value !== 0
@@ -782,7 +761,7 @@
                 invoices[0].invoice_summary.coupon_title
                 }} </span>
             </h6>
-            <span>-{{ item.coupon_value }} {{ item.currency_symbol }}</span>
+            <span class="bg_black" style="font-size: 13px;">{{ item.service_fees }} {{ item.currency_symbol }}</span>
           </div>
           <div class="d-flex justify-content-between fw-bold mb-1"
             *ngIf="item.service_percentage">
@@ -790,6 +769,15 @@
                 {{item.service_percentage}} % </span></h6>
             <span>{{ item.service_fees }} {{ item.currency_symbol }}</span>
           </div>
+          <!-- Total price -->
+          <ng-container *ngIf="test && (!showPrices || showPrices)">
+            <div class=" bg_black total-price my-0" *ngFor="let item of invoiceSummary">
+              <div class=" fw-bold  d-flex justify-content-between align-items-center">
+                <h6 class="fw-bold" style="font-size: 14px;">المجموع الكلي:</h6>
+                <p class="mt-2" style="font-size: 14px;">{{ item.total_price }} {{ item.currency_symbol }}</p>
+              </div>
+            </div>
+          </ng-container>
         </div>
         <ng-container *ngIf="test && (!showPrices || showPrices)">
           <div *ngIf="hasDeliveryOrDineIn()"
@@ -840,7 +828,7 @@
             </p>
           </div>
           <!-- Cash - visa -->
-          <div *ngIf="invoices[0].transactions.length>1" class="ps-2">
+          <div *ngIf="invoices[0].transactions.length > 1">
             <div *ngFor="let inv of invoices[0].transactions">
               <div
                 class="d-flex justify-content-between align-items-center my-1 fw-bold"
@@ -850,14 +838,10 @@
                 </div>
                 <div>{{ inv.paid }} {{invoices[0].currency_symbol}}</div>
               </div>
-
             </div>
           </div>
           <!-- Cash - visa -->
-          <hr />
-        </ng-container>
-
-        <!-- Total price -->
+        </div>
         <ng-container *ngIf="test && (!showPrices || showPrices)">
           <div class="total-price my-2" *ngFor="let item of invoiceSummary">
             <div
@@ -867,6 +851,13 @@
             </div>
           </div>
         </ng-container>
+        <hr style="  margin: 0.5rem 0 !important;
+    color: inherit;
+    border: 0;
+    border-top: 2px solid black !important
+    ;
+    opacity: 1 !important;" />
+
 
         <!-- Payment Status -->
 
@@ -933,7 +924,7 @@
       <img src="assets/images/qrcode.png" alt="مطعم الكوت" class="img-fluid" />
     </div>
 
-    <div class="tax-num text-start">
+    <div class="tax-num text-center bg_black">
       <h6>الرقم الضريبي <span>675170532</span></h6>
     </div>
   </div>
