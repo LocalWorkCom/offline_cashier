@@ -823,6 +823,14 @@ export class PillEditComponent {
     console.log('جاري طباعة الفاتورة...');
     this.isFinal = isfinal;
     this.isPrinting = true;
+    // تأكد من أن بيانات الإكرامية جاهزة
+    if (this.invoiceTips && this.invoiceTips.length > 0) {
+      console.log('بيانات الإكرامية متاحة للطباعة:', this.invoiceTips);
+    }
+
+    if (this.finalTipSummary) {
+      console.log('بيانات الإكرامية النهائية متاحة:', this.finalTipSummary);
+    }
     // إغلاق الـ modal فورًا بعد بدء الطباعة
     this.closeConfirmationDialog();
     if (!this.invoices?.length || !this.invoiceSummary?.length) {
