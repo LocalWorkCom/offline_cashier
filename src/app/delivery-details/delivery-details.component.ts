@@ -845,7 +845,7 @@ private phonePatternValidator(): ValidatorFn {
 
     try {
       // حفظ في IndexedDB
-      await this.dbService.savePendingAddress(formData);
+      // await this.dbService.savePendingAddress(formData);
 
       // حفظ في localStorage كنسخة احتياطية
       localStorage.setItem('form_data', JSON.stringify(formData));
@@ -879,7 +879,7 @@ private phonePatternValidator(): ValidatorFn {
       console.warn('⚠️ Failed to submit to server, saving offline:', error);
 
       // إذا فشل الإرسال، احفظ محلياً
-      await this.dbService.savePendingAddress(formData);
+      // await this.dbService.savePendingAddress(formData);
       this.pendingSyncCount++;
     }
   }

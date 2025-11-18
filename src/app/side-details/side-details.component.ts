@@ -668,6 +668,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       for (const pendingOrder of pendingOrders) {
         try {
 
+          localStorage.setItem('form_data', pendingOrder.formData);
+          let addressId = await this.getAddressId();
+          if (addressId) {
+            localStorage.setItem('address_id', addressId.toString());
+          }
+
           console.log('pendingOrder', pendingOrder);
           // Remove metadata fields before sending to API
           const orderDataForAPI = { ...pendingOrder };
@@ -2687,17 +2693,30 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     //     }
     //   }
     // }
+    if (navigator.onLine) {
+      if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
+        addressId = localStorage.getItem('address_id');
 
-    if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
-      addressId = localStorage.getItem('address_id');
+        if (!addressId && !this.addressRequestInProgress) {
+          this.addressRequestInProgress = true;
+          try {
 
-      if (!addressId && !this.addressRequestInProgress) {
-        this.addressRequestInProgress = true;
-        try {
-          addressId = await this.getAddressId();
-          if (addressId) {
-            localStorage.setItem('address_id', addressId.toString());
-          } else {
+            addressId = await this.getAddressId();
+            if (addressId) {
+              localStorage.setItem('address_id', addressId.toString());
+            } else {
+              this.isLoading = false;
+              this.loading = false;
+
+              this.falseMessage = 'يرجى اختيار عنوان التوصيل';
+              setTimeout(() => {
+                this.falseMessage = '';
+              }, 1500);
+              return;
+            }
+
+          } catch (error) {
+            // ❌ API failed → show message and stop
             this.isLoading = false;
             this.loading = false;
 
@@ -2705,21 +2724,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             setTimeout(() => {
               this.falseMessage = '';
             }, 1500);
+
             return;
+          } finally {
+            this.addressRequestInProgress = false;
           }
-        } catch (error) {
-          // ❌ API failed → show message and stop
-          this.isLoading = false;
-          this.loading = false;
-
-          this.falseMessage = 'يرجى اختيار عنوان التوصيل';
-          setTimeout(() => {
-            this.falseMessage = '';
-          }, 1500);
-
-          return;
-        } finally {
-          this.addressRequestInProgress = false;
         }
       }
     }
@@ -2982,16 +2991,74 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     // معالجة حالة عدم الاتصال
     if (!navigator.onLine) {
+      // ✅ التحقق من معلومات التوصيل في وضع Offline - بدون دالة مساعدة
+      if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
+        const hasFormData = localStorage.getItem('form_data');
+        const hasClientInfo = this.clientName && this.clientPhone && this.address;
+
+        console.log('📋 Offline delivery info check:', {
+          hasFormData: !!hasFormData,
+          clientName: this.clientName,
+          clientPhone: this.clientPhone,
+          address: this.address
+        });
+
+        if (!hasFormData && !hasClientInfo) {
+          this.isLoading = false;
+          this.loading = false;
+          this.falseMessage = 'يرجى إدخال معلومات التوصيل أولاً';
+          setTimeout(() => { this.falseMessage = ''; }, 3000);
+          return;
+        }
+      }
+
       try {
         console.log('📴 Offline mode: Saving order to IndexedDB', orderData);
+
+        // ✅ إضافة بيانات التوصيل للطلب في وضع Offline
+        if (this.selectedOrderType === 'Delivery') {
+          const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+
+          // إضافة معلومات التوصيل للطلب
+          orderData.delivery_info = {
+            client_name: formData.client_name || this.clientName,
+            client_phone: formData.address_phone || this.clientPhone,
+            address: formData.address || this.address,
+            country_code: formData.country_code?.code || formData.country_code || this.selectedCountry.code,
+            apartment_number: formData.apartment_number || '',
+            building: formData.building || '',
+            address_type: formData.address_type || '',
+            propertyType: formData.propertyType || '',
+            buildingName: formData.buildingName || '',
+            note: formData.note || '',
+            floor_number: formData.floor_number || '',
+            landmark: formData.landmark || '',
+            villaName: formData.villaName || '',
+            villaNumber: formData.villaNumber || '',
+            companyName: formData.companyName || '',
+            buildingNumber: formData.buildingNumber || ''
+          };
+
+          // استخدام عنوان مؤقت للـ Offline
+          orderData.address_id = 9999; // أو أي قيمة مؤقتة
+
+          // أيضاً إضافة معلومات العميل للطلب
+          orderData.client_name = formData.client_name || this.clientName;
+          orderData.client_phone = formData.address_phone || this.clientPhone;
+          orderData.client_country_code = formData.country_code?.code || formData.country_code || this.selectedCountry.code;
+        }
 
         // Save to orders/pills stores (existing functionality) - preserves full structure
         await this.dbService.savePendingOrder(orderData);
         console.log("✅ Order saved to IndexedDB with full structure");
 
         // Save raw orderData for API sync (exact data that will be sent to API)
-        // Keep the complete orderData structure for sync
-        const orderDataForSync = { ...orderData };
+        const formData = localStorage.getItem('form_data');
+        const orderDataForSync = {
+          ...orderData,
+          formdata_delivery: formData ? JSON.parse(formData) : null
+        };
+
         await this.dbService.savePendingOrderForSync(orderDataForSync);
         console.log("✅ Raw orderData saved for API sync");
 
