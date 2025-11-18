@@ -16,7 +16,7 @@ export class PillDetailsService {
   ) { }
   payload: any;
   getPillsDetailsById(pillId: any): Observable<any> {
-    // const token = this.authService.getToken();
+    // const token = this.authService.getToken(); 
     const token = localStorage.getItem('authToken');
     if (!token) {
       throw new Error('No token found. User is not authenticated.');

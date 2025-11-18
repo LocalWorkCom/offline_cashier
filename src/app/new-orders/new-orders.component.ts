@@ -89,7 +89,7 @@ export class NewOrdersComponent implements OnDestroy {
   isFilterdFromClientSide: boolean = true;
   private activeOrderChannels: Set<string> = new Set();
   order: any;
-  errorMessage: any;
+  errorMessage: string = '';
   apiUrl = `${baseUrl}`;
   removeLoading: boolean = false;
 
@@ -253,9 +253,9 @@ export class NewOrdersComponent implements OnDestroy {
           this.dbService.getOrdersLastSync().then(lastSync => {
             // const fiveMinutesAgo = Date.now() - (1 * 60 * 1000);
             // if (lastSync < fiveMinutesAgo) {
-              // Fetch fresh data in background without blocking
-              this.fetchOrdersFromAPI();
-              // this.errorMessage = 'جارى التحميل';
+            // Fetch fresh data in background without blocking
+            this.fetchOrdersFromAPI();
+            // this.errorMessage = 'جارى التحميل';
 
             // }
           }).catch(err => {
