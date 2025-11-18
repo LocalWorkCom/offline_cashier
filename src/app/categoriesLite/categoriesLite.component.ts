@@ -91,10 +91,24 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
   fetchMenuData() {
     if (!this.isOnline) {
       this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
-      return;
+      this.loadCategoriesFromIndexedDB();
+      // return;
     }
-
-    this.fetchFromAPILite();
+    else{
+      this.fetchFromAPILite();
+    }
+  }
+  private loadCategoriesFromIndexedDB() {
+    this.dbService.getAll('categories')
+      .then(categories => {
+        if (categories && categories.length > 0) {
+          this.categories = categories;
+          this.processCategories();
+        }
+      })
+      .catch(error => {
+        console.error('Error loading categories from IndexedDB:', error);
+      });
   }
 
     private fetchFromAPI() {
@@ -144,8 +158,6 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
     });
   }
   private processCategories() {
-
-
     if(localStorage.getItem('selectedOrderType') === 'talabat'){
       this.categories = this.categories.filter(cat => cat.is_integration === true);
     }
@@ -188,6 +200,8 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
 
     this.selectedCategory = category;
 
+    console.log("cat ddd" ,category);
+
     if (Array.isArray(category.dishes) && category.dishes.length > 0) {
       this.applyCategoryDishes(category, category.dishes, skipModalClose);
     }
@@ -221,7 +235,7 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
             : Array.isArray(data?.items)
               ? data.items
               : [];
-              this.dbService.saveData('categories', data);
+              // this.dbService.saveData('categories', data);
         if (Array.isArray(dishesPayload)) {
           this.applyCategoryDishes(category, dishesPayload, skipModalClose);
           return;
@@ -245,6 +259,7 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
     if (this.selectedCategory?.id !== category.id) {
       return;
     }
+
 
 
     this.selectedCategoryProducts = normalizedDishes;

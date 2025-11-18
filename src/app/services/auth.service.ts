@@ -321,35 +321,35 @@ export class AuthService {
 
         // ✅ Load categories first
         const productService = this.injector.get(ProductsService);
-        // productService.fetchAndSave().subscribe({
-        //   next: () => {
-        //     console.log('✅ Categories fetched and saved after login.');
+        productService.fetchAndSave().subscribe({
+          next: () => {
+            console.log('✅ Categories fetched and saved after login.');
 
         //     // ✅ After categories → load all other data in background
-        //     const tablesService = this.injector.get(TablesService);
-        //     const addAddressService = this.injector.get(AddAddressService);
-        //     const orderListService = this.injector.get(OrderListService);
-        //     const pillService = this.injector.get(PillsService);
+            const tablesService = this.injector.get(TablesService);
+            const addAddressService = this.injector.get(AddAddressService);
+            const orderListService = this.injector.get(OrderListService);
+            const pillService = this.injector.get(PillsService);
 
-        //     forkJoin({
-        //       tables: tablesService.fetchAndSave(),
-        //       hotels: addAddressService.fetchAndSave(),
-        //       areas: addAddressService.fetchAndSaveAreas(),
-        //       orders: orderListService.fetchAndSaveOrders(),
-        //       pills: pillService.fetchAndSave(),
-        //     }).subscribe({
-        //       next: () => {
-        //         console.log('✅ All background data fetched successfully.');
-        //       },
-        //       error: (err: any) => {
-        //         console.error('❌ Error fetching background data:', err);
-        //       },
-        //     });
-        //   },
-        //   error: (err: any) => {
-        //     console.error('❌ Error fetching categories after login:', err);
-        //   },
-        // });
+            forkJoin({
+              tables: tablesService.fetchAndSave(),
+              hotels: addAddressService.fetchAndSave(),
+              areas: addAddressService.fetchAndSaveAreas(),
+              orders: orderListService.fetchAndSaveOrders(),
+              pills: pillService.fetchAndSave(),
+            }).subscribe({
+              next: () => {
+                console.log('✅ All background data fetched successfully.');
+              },
+              error: (err: any) => {
+                console.error('❌ Error fetching background data:', err);
+              },
+            });
+          },
+          error: (err: any) => {
+            console.error('❌ Error fetching categories after login:', err);
+          },
+        });
         // ==========================
         // 🚀 END DALIA
         // ==========================

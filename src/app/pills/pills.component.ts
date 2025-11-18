@@ -45,6 +45,9 @@ export class PillsComponent implements OnInit, OnDestroy {
 
   private destroy$ = new Subject<void>();
   loading: boolean = true;
+  private onlineHandler = this.handleOnlineStatus.bind(this);
+  private offlineHandler = this.handleOnlineStatus.bind(this);
+
   constructor(
     private pillRequestService: PillsService,
     private newOrder: NewOrderService,
@@ -54,6 +57,10 @@ export class PillsComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef
   ) {}
   ngOnDestroy(): void {
+    // Remove event listeners
+    window.removeEventListener('online', this.onlineHandler);
+    window.removeEventListener('offline', this.offlineHandler);
+
     this.destroy$.next();
     this.destroy$.complete();
     this.newOrder.stopListening();
@@ -67,21 +74,25 @@ export class PillsComponent implements OnInit, OnDestroy {
 
   // start dalia
   ngOnInit() {
-    // window.addEventListener('online', this.handleOnlineStatus.bind(this));
-    // window.addEventListener('offline', this.handleOnlineStatus.bind(this));
+    // Enable online/offline event listeners
+    window.addEventListener('online', this.onlineHandler);
+    window.addEventListener('offline', this.offlineHandler);
 
-    this.fetchPillsData();
-    // this.dbService.init().then(() => {
-    if (navigator.onLine) {
-      this.fetchPillsData(); // جلب وحفظ البيانات في IndexedDB
-    } else {
-      // this.loadFromIndexedDB(); // جلب البيانات من IndexedDB عند العمل offline
-      this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
-    }
-    // }).catch(error => {
-    //   console.error('Error initializing IndexedDB:', error);
-    //   this.loading = true;
-    // });
+    // Initialize IndexedDB and then fetch data
+    this.dbService.init().then(() => {
+      if (navigator.onLine) {
+        this.fetchPillsData(); // جلب وحفظ البيانات في IndexedDB
+      } else {
+        this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+        this.loadFromIndexedDB(); // جلب البيانات من IndexedDB عند العمل offline
+      }
+    }).catch(error => {
+      console.error('Error initializing IndexedDB:', error);
+      this.loading = true;
+      if (!navigator.onLine) {
+        this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+      }
+    });
 
     this.listenToNewInvoice();
   }
@@ -128,8 +139,10 @@ export class PillsComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
 
         // Save to IndexedDB for offline access
-        // this.dbService.saveData('pills', this.pills)
-        //   .catch(error => console.error('Error saving to IndexedDB:', error));
+        if (this.isOnline) {
+          this.dbService.saveData('pills', this.pills)
+            .catch(error => console.error('Error saving to IndexedDB:', error));
+        }
       });
 
     this.newInvoice.invoiceAdded$
@@ -155,12 +168,14 @@ export class PillsComponent implements OnInit, OnDestroy {
         );
         this.pills = [invoice, ...this.pills];
         this.updatePillsByStatus();
+        this.cdr.detectChanges();
 
         // Save to IndexedDB for offline access
-        // this.dbService.saveData('pills', this.pills)
-        //   .catch(error => console.error('Error saving to IndexedDB:', error));
+        if (this.isOnline) {
+          this.dbService.saveData('pills', this.pills)
+            .catch(error => console.error('Error saving to IndexedDB:', error));
+        }
       });
-       this.cdr.detectChanges();
   }
   /*   listenToNewInvoice() {
     this.newOrder.listenToNewOrder();
@@ -221,15 +236,22 @@ console.log(newOrder);
   }
  */
   private handleOnlineStatus() {
+    const wasOffline = !this.isOnline;
     this.isOnline = navigator.onLine;
-    // console.log('Network status changed:', this.isOnline ? 'Online' : 'Offline');
-    if (this.isOnline && this.usingOfflineData) {
-      // When coming back online, refresh data from server
-      this.usingOfflineData = false;
-      this.fetchPillsData();
+    console.log('Network status changed:', this.isOnline ? 'Online' : 'Offline');
+
+    if (this.isOnline) {
+      // When coming back online, clear error message and refresh data
+      this.errorMessage = '';
+
+      if (wasOffline || this.usingOfflineData) {
+        // When coming back online, refresh data from server
+        this.usingOfflineData = false;
+        this.fetchPillsData();
+      }
     } else if (!this.isOnline) {
       // When going offline, load from IndexedDB
-      // this.loadFromIndexedDB();
+      this.loadFromIndexedDB();
     }
     this.cdr.detectChanges();
   }
@@ -269,40 +291,68 @@ console.log(newOrder);
 
             // ✅ حفظ الفواتير في IndexedDB عند العمل online
             // First clear existing pills, then save new ones
-            // this.dbService.clearPills()
-            //   .then(() => {
-            //     return this.dbService.saveData('pills', this.pills);
-            //   })
-            //   .then(() => {
-            //     console.log('Pills data saved to IndexedDB');
-            //   })
-            //   .catch(error => console.error('Error clearing and saving pills:', error));
+            if (this.isOnline) {
+              this.dbService.clearPills()
+                .then(() => {
+                  return this.dbService.saveData('pills', this.pills);
+                })
+                .then(() => {
+                  console.log('Pills data saved to IndexedDB');
+                })
+                .catch(error => console.error('Error clearing and saving pills:', error));
+            }
 
             this.updatePillsByStatus();
             this.usingOfflineData = false;
+            this.errorMessage = '';
           }
         },
 
         error: (error) => {
           console.error('Error fetching pills data:', error);
           // If online but API fails, try to load from IndexedDB
-          // this.loadFromIndexedDB();
+          if (this.isOnline) {
+            // API failed but we're online, try loading from IndexedDB as fallback
+            this.loadFromIndexedDB();
+          } else {
+            // We're offline, load from IndexedDB
+            this.loadFromIndexedDB();
+          }
           this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
-
-          this.loading = true;
         },
       });
   }
 
   private loadFromIndexedDB() {
+    this.loading = false;
     this.dbService
       .getAll('pills')
       .then((pills) => {
         if (pills && pills.length > 0) {
-          this.pills = pills;
+          // Apply the same filtering and transformation logic as fetchPillsData
+          this.pills = pills
+            // 1️⃣ Remove cancelled (filter first)
+            .filter(
+              (pill: any) =>
+                !(
+                  pill.order_items_count === 0 &&
+                  pill.payment_status === 'unpaid'
+                )
+            )
+            // 2️⃣ Transform credit notes to "returned"
+            .map((pill: any) => {
+              if (pill.invoice_type === 'credit_note') {
+                return {
+                  ...pill,
+                  invoice_print_status: 'returned',
+                };
+              }
+              return pill;
+            });
+
           this.usingOfflineData = true;
           this.updatePillsByStatus();
-          console.log('Loaded from offline storage:', pills.length, 'pills');
+          console.log('Loaded from offline storage:', this.pills.length, 'pills');
         } else {
           this.pills = [];
           this.usingOfflineData = false;
@@ -317,6 +367,7 @@ console.log(newOrder);
         this.pills = [];
         this.usingOfflineData = false;
         this.loading = true;
+        this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
         this.cdr.detectChanges();
       });
   }
@@ -403,13 +454,13 @@ console.log(newOrder);
             }
             return pill;
           });
-  
+
         // ✅ Console returned invoices
         const returnedInvoices = this.pills.filter(
           (pill: any) => pill.invoice_print_status === 'returned'
         );
         console.log('Returned invoices:', returnedInvoices);
-  
+
         this.updatePillsByStatus();
       }
     });

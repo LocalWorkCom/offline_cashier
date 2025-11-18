@@ -424,15 +424,43 @@ export class IndexeddbService {
     });
   }
 
-  // Get orders from IndexedDB
+  // Get orders from IndexedDB - Optimized for performance
   getOrders(): Promise<any[]> {
+    // Skip ensureInit if already initialized for faster access
+    if (this.isInitialized && this.db) {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('orders', 'readonly');
+        const store = tx.objectStore('orders');
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+          const result = request.result;
+          // Only reverse if we have items (optimization)
+          if (result && result.length > 0) {
+            resolve(result.reverse());
+          } else {
+            resolve([]);
+          }
+        };
+        request.onerror = (e) => reject(e);
+      });
+    }
+
+    // Fallback to ensureInit if not initialized
     return this.ensureInit().then(() => {
       return new Promise((resolve, reject) => {
         const tx = this.db.transaction('orders', 'readonly');
         const store = tx.objectStore('orders');
         const request = store.getAll();
 
-        request.onsuccess = () => resolve(request.result.reverse());
+        request.onsuccess = () => {
+          const result = request.result;
+          if (result && result.length > 0) {
+            resolve(result.reverse());
+          } else {
+            resolve([]);
+          }
+        };
         request.onerror = (e) => reject(e);
       });
     });
