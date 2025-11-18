@@ -622,42 +622,62 @@
 
 
 
-<div id="printSection" class="bg_black printSection p-0 d-none">
+<div id="printSectionn" class="bg_black printSection p-0 d-none">
   <div class="px-4 py-2 my-2" *ngFor="let item of branchDetails">
-    <div class="text-center border-bottom-dotted mb-4">
-      <div class="card-img mb-3">
-        <img src="assets/images/logo-with-white-bg.png" alt="مطعم الكوت"
-          class="img-fluid" />
+    <div class="text-center border-bottom-dotted mb-2">
+      <div class="card-img">
+        <img src="assets/images/logo.png" alt="مطعم الكوت" class="img-fluid" />
         @if (isFinal) {
         <p class="final bg_black">نهائي</p>
         }
       </div>
-      <h6>
-        <small>
-          الفرع: <span>{{ item.branch_name }}</span></small>
-      </h6>
-      <h6>
-        <small>العنوان: <span>{{ item.branch_address }}</span></small>
-      </h6>
-      <h6>
-        <small>رقم التليفون: <span>{{ item.branch_phone }}</span></small>
-      </h6>
-      <h6>
-        <small>التاريخ و الوقت: <span>{{ date }} / {{ time }}</span></small>
-      </h6>
-      <h6>
-        <small>رقم الفاتورة: <span>{{ item.invoice_number }}</span></small>
-      </h6>
-      <h6>
-        <small> اسم الكاشير:
-          <span>{{ invoices[0].cashier_info.first_name }} &nbsp; {{
-            invoices[0].cashier_info.last_name }}</span>
-        </small>
-      </h6>
-      <hr />
-      <p>
-        <small class="fw-bold">رقم الطلب :{{ item.order_number }}</small>
-      </p>
+
+      <div class="d-flex justify-content-between align-items-center mb-0">
+        <h6 style="font-size: 10px;">
+          <small>
+            الفرع: <span>{{ item.branch_name }}</span></small>
+        </h6>
+        <h6 style="font-size: 10px;">
+          <small> <span>{{ date }} / {{ time }}</span></small>
+        </h6>
+      </div>
+      <div class="d-flex justify-content-between align-items-center mb-0">
+        <h6 style="font-size: 10px;">
+          <small><span><i class="fa-solid fa-map-pin ps-1"></i></span> <span>{{ item.branch_address }}</span></small>
+        </h6>
+        <h6 style="font-size: 10px;">
+          <small><span><i class="fa-solid fa-phone-flip px-1"></i></span> <span>{{ item.branch_phone }}</span></small>
+        </h6>
+
+      </div>
+      <div class="d-flex justify-content-between align-items-center mb-0  ">
+        <h6 style="font-size: 10px;">
+          <small>رقم الفاتورة: <span>{{ item.invoice_number }}</span></small>
+        </h6>
+        <h6 style="font-size: 10px;">
+          <small>
+            اسم الكاشير:
+            <span><span class="px-1">{{ invoices[0].cashier_info.first_name }} </span>
+              {{ invoices[0].cashier_info.last_name }}
+            </span></small>
+        </h6>
+      </div>
+      <hr style="  margin: 0.5rem 0 !important;
+    color: inherit;
+    border: 0;
+    border-top: 2px solid black !important
+    ;
+    opacity: 1 !important;" />
+
+      <div class="d-flex justify-content-between align-items-center">
+        <p class="mb-0 mt-0" style="font-size: 10px;">
+          <span class="fw-bold bg_black">رقم الطلب :{{ item.order_number }}</span>
+        </p>
+        <p class="mb-0 mt-0 fw-bold bg_black" style="font-size: 10px;">
+          <span class="fw-bold bg_black">نوع الطلب : {{ getOrderTypeLabel(invoices[0].order_type) }}</span>
+        </p>
+
+      </div>
 
       <div *ngIf="hasDineInOrder()">
         <!-- <h6>
@@ -676,30 +696,37 @@
         <!-- <h6>
     رقم الطلب: <span>{{ branchDetails?.[0]?.order_number ?? 'لا يوجد' }}</span>
   </h6> -->
-        <h6>
-          اسم العميل:
-          <span>{{ addressDetails?.[0]?.client_name ?? 'لا يوجد' }}</span>
-        </h6>
-        <h6>
-          رقم التليفون:
-          <span>{{ addressDetails?.[0]?.address_phone ?? 'لا يوجد' }}</span>
-        </h6>
-        <h6>
-          اسم السائق:
-          <span>{{ invoices?.[0]?.delivery_name &&
-            invoices[0].delivery_name.trim() !== '' ? invoices[0].delivery_name
-            :
+        <div class="d-flex justify-content-between align-items-center mb-0 bg_black" style="font-size: 10px;">
+          <h6 style="font-size: 10px;">
+            اسم العميل:
+            <span>{{ addressDetails?.[0]?.client_name ?? 'لا يوجد' }}</span>
+          </h6>
+          <h6 style="font-size: 10px;">
+            رقم التليفون:
+            <span>{{ addressDetails?.[0]?.address_phone ?? 'لا يوجد' }}</span>
+          </h6>
+        </div>
+        <div class="d-flex justify-content-between align-items-center mb-0 bg_black" style="font-size: 10px;">
+
+          <h6 style="font-size: 10px;">
+            عنوان التوصيل:
+            <span>{{ addressDetails?.[0]?.client_address ?? 'لا يوجد' }}</span>
+          </h6>
+       
+            <h6 style="font-size: 10px;">
+          اسم الطيار:
+          <span>{{ invoices?.[0]?.delivery_name && invoices[0].delivery_name.trim() !== '' ? invoices[0].delivery_name :
             'لا يوجد' }}</span>
         </h6>
-       
         </div>
 
       
-   <h6 style="font-size: 10px;">
+   <h6 style="font-size: 10px;" class="bg_black">
             تعليمات التوصيل:
-            <span style="font-size: 10px;">{{ addressDetails?.[0]?.address_notes ?? 'لا يوجد' }}</span>
+            <span>{{ addressDetails?.[0]?.address_notes ?? 'لا يوجد' }}</span>
           </h6>
 
+      </div>
     </ng-container>
 
     <table class="table table-bordered">
@@ -714,6 +741,10 @@
         </tr>
       </thead>
       <tbody>
+
+
+
+
         <tr *ngFor="let item of orderDetails[0]">
           <td>
             <div>
@@ -722,8 +753,7 @@
               </div>
               <div class="pe-2">{{ item.size }}</div>
               <div class="pe-2" *ngFor="let addon of item.addons">
-                <small class="text-muted fst-italic fw-semibold">- {{
-                  addon.addon_name }}</small>
+                <small class="text-black fst-italic fw-semibold">- {{ addon.addon_name }}</small>
               </div>
 
             </div>
@@ -742,31 +772,41 @@
     </table>
 
     <ng-container>
-      <div class="total-data border-bottom-dotted mb-3"
-        *ngFor="let item of invoiceSummary">
+      <div class="total-data border-bottom-dotted mb-3" *ngFor="let item of invoiceSummary">
         <div *ngIf="showPrices && test">
-          <div class="d-flex justify-content-between align-items-center mb-2">
-            <h6 class="fw-bold">الاجمالي:</h6>
-            <span class="fw-bold fs-5">{{ item.subtotal_price_before_coupon }}
-              {{ item.currency_symbol }}</span>
+          <div class="d-flex justify-content-between align-items-center bg_black" style="font-size: 13px;">
+            <h6 class="fw-bold bg_black" style="font-size: 13px;">الاجمالي:</h6>
+            <span class="fw-bold bg_black">{{ item.subtotal_price_before_coupon }} {{ item.currency_symbol }}</span>
           </div>
           <div class="d-flex justify-content-between  fw-bold" style="font-size: 13px;" *ngIf="
               item.tax_application !== 0 &&
               item.coupon_value !== '0.00' &&
               item.coupon_value !== 0
             ">
-            <h6>تخفيض:
-              <span class="btn-static-secondary p-1 rounded">{{
-                invoices[0].invoice_summary.coupon_title
+            <h6 class="bg_black">تخفيض:
+              <span class="btn-static-secondary p-1 rounded bg_black">{{ invoices[0].invoice_summary.coupon_title
                 }} </span>
+            </h6>
+            <span class="bg_black">-{{ item.coupon_value }} {{ item.currency_symbol }}</span>
+          </div>
+          <div class="d-flex justify-content-between fw-bold bg_black" *ngIf="item.service_percentage"
+            style="font-size: 13px;">
+            <h6 style="font-size: 13px;">
+              الخدمة
+              <span class=" bg_black " style="font-size: 13px;">
+                ( {{ item.service_percentage }} % ) :
+              </span>
             </h6>
             <span class="bg_black" style="font-size: 13px;">{{ item.service_fees }} {{ item.currency_symbol }}</span>
           </div>
-          <div class="d-flex justify-content-between fw-bold mb-1"
-            *ngIf="item.service_percentage">
-            <h6> رسوم الخدمة <span class="main-color"> بنسبة
-                {{item.service_percentage}} % </span></h6>
-            <span>{{ item.service_fees }} {{ item.currency_symbol }}</span>
+          <div class="bg_black d-flex justify-content-between fw-bold mb-0" *ngIf="!item.tax_application"
+            style="font-size: 13px;">
+            <h6 style="font-size: 13px;">
+              الضريبة
+              <span class=" bg_black"> ({{ item.tax_percentage }}% ) :</span>
+
+            </h6>
+            <p class="bg_black" style="font-size: 13px;">{{ item.tax_value }} {{ item.currency_symbol }}</p>
           </div>
           <!-- Total price -->
           <ng-container *ngIf="test && (!showPrices || showPrices)">
@@ -779,13 +819,51 @@
           </ng-container>
         </div>
         <ng-container *ngIf="test && (!showPrices || showPrices)">
-          <div *ngIf="hasDeliveryOrDineIn()"
-            class="d-flex justify-content-between fw-bold">
+          <div *ngIf="hasDeliveryOrDineIn()" class="d-flex justify-content-between fw-bold bg_black">
             <h6>التوصيل:</h6>
             <span>{{ item.delivery_fees }} {{ item.currency_symbol }}</span>
           </div>
         </ng-container>
 
+        <!-- Payment Method -->
+        <ng-container *ngIf="test && (!showPrices || showPrices)">
+          <div class="d-flex justify-content-between align-items-center fw-bold bg_black ">
+            <div style="font-size: 12px;">
+              <span class="mb-0">طريقة الدفع:</span>
+              <span class="mb-0">
+                {{
+                invoices[0]?.transactions[0].payment_method === "credit"
+                ? "أونلاين"
+                : "كاش"
+                }}
+              </span>
+            </div>
+            <ng-container *ngIf="test && (!showPrices || showPrices)">
+              <div style="font-size: 12px;">
+                <span class="mb-0 fw-bold">حالة الدفع:</span>
+                <span class="mb-0 fw-bold">
+                  {{ paymentStatus === "paid" ? "مدفوعة" : "غير مدفوعة" }}
+                </span>
+              </div>
+            </ng-container>
+          </div>
+        </ng-container>
+
+        <div class="d-flex justify-content-between align-items-center">
+
+          <!-- Cash - visa -->
+          <div *ngIf="invoices[0].transactions.length > 1">
+            <div *ngFor="let inv of invoices[0].transactions">
+              <div class=" fw-bold" *ngIf="invoices[0].transactions[0].payment_status == 'paid'">
+                <span style="font-size: 12px;" class="bg_black">
+                  {{ inv.payment_method === "cash" ? " الكاش" : " الفيزا" }}
+                </span>
+                <span style="font-size: 12px;" class="bg_black">{{ inv.paid }} {{ invoices[0].currency_symbol }}</span>
+              </div>
+            </div>
+          </div>
+          <!-- Cash - visa -->
+        </div>
         <ng-container *ngIf="test && (!showPrices || showPrices)">
           <!-- <div class="px-2 mb-1" *ngIf="!item.tax_application">
             <h6>
@@ -794,80 +872,9 @@
               اخر {{ item.tax_value }} {{ item.currency_symbol }}
             </h6>
           </div> -->
-          <div class="px-2 mb-1" *ngIf="!item.tax_application">
-            <h6>
-              تضاف ضريبة القيمة المضافة
-              <span class="main-color"> بنسبة {{ item.tax_percentage }}% </span>
-              بمعني اخر
-              {{ item.tax_value }} {{ item.currency_symbol }}
-            </h6>
-          </div>
-        </ng-container>
-        <!-- Payment Method -->
-        <ng-container *ngIf="test && (!showPrices || showPrices)">
-          <div
-            class="d-flex justify-content-between align-items-center fw-bold py-2">
-            <h6 class="mb-0">طريقة الدفع:</h6>
-            <p class="mb-0">
-              {{ invoices[0].transactions[0].payment_method === "credit" ?
-              "أونلاين" : "كاش" }}
-            </p>
-          </div>
-        </ng-container>
-        <ng-container *ngIf="test && (!showPrices || showPrices)">
-          <div class="d-flex justify-content-between align-items-center py-2">
-            <!--   *ngIf="
-              invoices[0].order_type === 'Delivery' ||
-              invoices[0].order_type === 'Takeaway'
-            " -->
-            <h6 class="mb-0 fw-bold">حالة الدفع:</h6>
-            <p class="mb-0 fw-bold">
-              {{ invoices[0].transactions[0].payment_status=== "paid" ? "مدفوعة"
-              : "غير مدفوعة" }}
-            </p>
-          </div>
-          <!-- Cash - visa -->
-          <div *ngIf="invoices[0].transactions.length > 1">
-            <div *ngFor="let inv of invoices[0].transactions">
-              <div
-                class="d-flex justify-content-between align-items-center my-1 fw-bold"
-                *ngIf="invoices[0].transactions[0].payment_status == 'paid'">
-                <div>
-                  {{ inv.payment_method === 'cash' ? ' الكاش' : ' الفيزا' }}
-                </div>
-                <div>{{ inv.paid }} {{invoices[0].currency_symbol}}</div>
-              </div>
-            </div>
-          </div>
-          <!-- Cash - visa -->
-        </ng-container>
-        <ng-container *ngIf="test && (!showPrices || showPrices)">
-          <div class="total-price my-2" *ngFor="let item of invoiceSummary">
-            <div
-              class="d-flex justify-content-between align-items-center fw-bold">
-              <h6 class="fw-bold">المجموع الكلي:</h6>
-              <span>{{ item.total_price }} {{ item.currency_symbol }}</span>
-            </div>
-          </div>
-        </ng-container>
-        <hr style="  margin: 0.5rem 0 !important;
-    color: inherit;
-    border: 0;
-    border-top: 2px solid black !important
-    ;
-    opacity: 1 !important;" />
 
-
-        <!-- Payment Status -->
-
-        <div *ngIf="item.tax_application"
-          class="include-tax d-flex justify-content-between fw-bold">
-          <small> سعر الوجبات يشتمل على ضريبة القيمة المضافة </small>
-        </div>
-      </div>
-    </ng-container>
-
-    <!-- dalia start -->
+        </ng-container>
+            <!-- dalia start -->
     <!-- قسم التيبس -->
     <div class="tips-section" *ngIf="invoiceTips.length > 0">
       <hr />
@@ -915,11 +922,25 @@
       <!-- dalia end -->
     </div>
     <!-- dalia end -->
+        <hr style="  margin: 0.5rem 0 !important;
+    color: inherit;
+    border: 0;
+    border-top: 2px solid black !important
+    ;
+    opacity: 1 !important;" />
 
-    <h6 class="text-center my-3">شكرا لثقتكم بخدمتنا</h6>
 
-    <div
-      class="card-img-qr d-flex justify-content-center align-items-center mb-3">
+        <!-- Payment Status -->
+
+        <div *ngIf="item.tax_application" class="include-tax d-flex justify-content-between fw-bold">
+          <small> سعر الوجبات يشتمل على ضريبة القيمة المضافة </small>
+        </div>
+      </div>
+    </ng-container>
+
+    <h6 class="text-center my-3 bg_black">شكرا لثقتكم بخدمتنا</h6>
+
+    <div class="card-img-qr d-flex justify-content-center align-items-center mb-3">
       <img src="assets/images/qrcode.png" alt="مطعم الكوت" class="img-fluid" />
     </div>
 
@@ -1045,3 +1066,6 @@
   [header]="'تأكيد'"
   message='هل هذه الطباعة النهائية؟' [acceptLabel]="'نعم'"
   [rejectLabel]="'لا'"></app-confirm-dialog>
+
+
+  

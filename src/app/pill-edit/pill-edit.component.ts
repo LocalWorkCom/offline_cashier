@@ -872,47 +872,92 @@ export class PillEditComponent {
     }
   }
   // دورة الطباعة المحلية
+  // private async performLocalPrint(): Promise<void> {
+  //   const printContent = document.getElementById('printSectionn');
+  //   if (!printContent) {
+  //     console.error('قسم الطباعة غير موجود.');
+  //     return;
+  //   }
+  //   const originalHTML = document.body.innerHTML;
+  //   const copies = this.isDeliveryOrder
+  //     ? [
+  //       { showPrices: true, test: true },
+  //       { showPrices: false, test: false },
+  //       { showPrices: true, test: true },
+  //     ]
+  //     : [
+  //       { showPrices: true, test: true },
+  //       { showPrices: false, test: false },
+  //     ];
+  //   for (let i = 0; i < copies.length; i++) {
+  //     this.showPrices = copies[i].showPrices;
+  //     this.test = copies[i].test;
+  //     await new Promise((resolve) => setTimeout(resolve, 300));
+  //     // const singlePageHTML = `
+  //     //   <div>
+  //     //     ${printContent.innerHTML}
+  //     //     ${!this.isOnline ? '<div style="text-align: center; color: red; margin-top: 10px;">:red_circle: طباعة محلية - غير متصل بالإنترنت</div>' : ''}
+  //     //   </div>
+  //     // `;
+  //     // document.body.innerHTML = singlePageHTML;
+  //     await new Promise((resolve) =>
+  //       setTimeout(() => {
+  //         window.print();
+  //         resolve(true);
+  //       }, 200)
+  //     );
+  //   }
+  //   document.body.innerHTML = originalHTML;
+  //   // إعادة تحميل الصفحة فقط إذا كان هناك اتصال
+  //   // if (this.isOnline) {
+  //   //   location.reload();
+  //   // }
+  // }
   private async performLocalPrint(): Promise<void> {
-    const printContent = document.getElementById('printSection');
-    if (!printContent) {
-      console.error('قسم الطباعة غير موجود.');
-      return;
-    }
-    const originalHTML = document.body.innerHTML;
-    const copies = this.isDeliveryOrder
-      ? [
+  const printContent = document.getElementById('printSectionn');
+  if (!printContent) {
+    console.error('قسم الطباعة غير موجود.');
+    return;
+  }
+
+  const originalHTML = document.body.innerHTML;
+
+  const copies = this.isDeliveryOrder
+    ? [
         { showPrices: true, test: true },
         { showPrices: false, test: false },
         { showPrices: true, test: true },
       ]
-      : [
+    : [
         { showPrices: true, test: true },
         { showPrices: false, test: false },
       ];
-    for (let i = 0; i < copies.length; i++) {
-      this.showPrices = copies[i].showPrices;
-      this.test = copies[i].test;
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      // const singlePageHTML = `
-      //   <div>
-      //     ${printContent.innerHTML}
-      //     ${!this.isOnline ? '<div style="text-align: center; color: red; margin-top: 10px;">:red_circle: طباعة محلية - غير متصل بالإنترنت</div>' : ''}
-      //   </div>
-      // `;
-      // document.body.innerHTML = singlePageHTML;
-      await new Promise((resolve) =>
-        setTimeout(() => {
-          window.print();
-          resolve(true);
-        }, 200)
-      );
-    }
-    document.body.innerHTML = originalHTML;
-    // إعادة تحميل الصفحة فقط إذا كان هناك اتصال
-    // if (this.isOnline) {
-    //   location.reload();
-    // }
+
+  for (let i = 0; i < copies.length; i++) {
+    this.showPrices = copies[i].showPrices;
+    this.test = copies[i].test;
+
+    await new Promise((resolve) => setTimeout(resolve, 300));
+
+    // 👉 IMPORTANT: replace whole body with only the print section
+    document.body.innerHTML = `
+      <div>
+        ${printContent.innerHTML}
+      </div>
+    `;
+
+    await new Promise((resolve) =>
+      setTimeout(() => {
+        window.print();
+        resolve(true);
+      }, 200)
+    );
   }
+
+  // 👉 Restore the full page after printing
+  document.body.innerHTML = originalHTML;
+}
+
   private closeConfirmationDialog(): void {
     if (this.confirmationDialog) {
       // إغلاق الـ modal يدويًا
@@ -1269,4 +1314,15 @@ export class PillEditComponent {
   isPaymentSufficient(billAmount: number): boolean {
     return this.getRemainingAmount(billAmount) <= 0;
   }
+    getOrderTypeLabel(type: string): string {
+  const map: any = {
+    'dine-in': 'في المطعم',
+    'Takeaway': 'استلام',
+    'talabat': 'طلبات',
+    'Delivery': 'توصيل'
+  };
+
+  return map[type] || type;
+}
+
 }
