@@ -544,9 +544,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.setupNetworkListeners();
 
     // If already online, try to sync any pending orders
-    if (this.isOnline) {
+    // if (this.isOnline) {
+    //   this.syncPendingOrders();
+
+    // }
+    this.syncService.retryOrders$.subscribe(() => {
+      // this.retryPendingOrders(); // 👈 دي الفانكشن اللي عندك
+      // Also sync raw orderData
       this.syncPendingOrders();
-    }
+    });
 
 
     // Load initial cart from localStorage
@@ -668,11 +674,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       for (const pendingOrder of pendingOrders) {
         try {
 
-          localStorage.setItem('form_data', pendingOrder.formData);
-          let addressId = await this.getAddressId();
-          if (addressId) {
-            localStorage.setItem('address_id', addressId.toString());
-          }
+          // localStorage.setItem('form_data', pendingOrder.formData);
+          // let addressId = await this.getAddressId();
+          // if (addressId) {
+          //   localStorage.setItem('address_id', addressId.toString());
+          // }
 
           console.log('pendingOrder', pendingOrder);
           // Remove metadata fields before sending to API
@@ -3053,11 +3059,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         console.log("✅ Order saved to IndexedDB with full structure");
 
         // Save raw orderData for API sync (exact data that will be sent to API)
-        const formData = localStorage.getItem('form_data');
-        const orderDataForSync = {
-          ...orderData,
-          formdata_delivery: formData ? JSON.parse(formData) : null
-        };
+        // const formData = localStorage.getItem('form_data');
+        const orderDataForSync = {...orderData };
 
         await this.dbService.savePendingOrderForSync(orderDataForSync);
         console.log("✅ Raw orderData saved for API sync");
