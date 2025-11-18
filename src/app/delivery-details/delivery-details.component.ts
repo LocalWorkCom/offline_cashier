@@ -25,6 +25,7 @@ import { ConfirmDialogComponent } from '../shared/ui/component/confirm-dialog/co
 import { finalize } from 'rxjs';
 import { ChangeDetectorRef } from '@angular/core';
 import { baseUrl } from '../environment';
+import { IndexeddbService } from '../services/indexeddb.service';
 
 @Component({
   selector: 'app-delivery-details',
@@ -90,7 +91,8 @@ export class DeliveryDetailsComponent implements OnInit {
     private location: Location,
     private http: HttpClient,
     private checkPhoneNum: PhoneCheckService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private dbService: IndexeddbService
   ) {
     console.log(this.selectedCountry);
   }
@@ -128,7 +130,7 @@ export class DeliveryDetailsComponent implements OnInit {
   }
   //
   ngOnInit() {
-    
+
     if (this.selectedAddress) {
       this.userAddNewAddress = false;
     }
@@ -398,9 +400,9 @@ export class DeliveryDetailsComponent implements OnInit {
     this.form
       .get('whatsapp_number_code')
       ?.setValue(this.countryCode?.value || this.selectedWhatsappCountry);
- 
- 
-    this.form.get('country_code')?.valueChanges.subscribe((value) => { 
+
+
+    this.form.get('country_code')?.valueChanges.subscribe((value) => {
       this.selectedCountry = value;
       const phoneControl = this.form.get('address_phone');
       if (phoneControl) {
@@ -418,11 +420,11 @@ export class DeliveryDetailsComponent implements OnInit {
       //   ]);
       // }
     });
- 
+
     this.form.get('whatsapp_number')?.valueChanges.subscribe((value) => {
-      const codeControl = this.form.get('whatsapp_number_code');  
-       
-      if (value && value.trim() !== '') { 
+      const codeControl = this.form.get('whatsapp_number_code');
+
+      if (value && value.trim() !== '') {
         codeControl?.setValidators([Validators.required]);
       } else {
         codeControl?.clearValidators();
@@ -813,21 +815,63 @@ export class DeliveryDetailsComponent implements OnInit {
       console.error('branch_id not found in localStorage');
       return;
     }
-    const url = `${baseUrl}api/areas/${branchId}`;
 
-    this.http.get<any>(url).subscribe({
-      next: (res: { status: any; data: any }) => {
-        if (res.status && res.data) {
-          this.areas = res.data;
-          this.allAreas = res.data;
+    // Check if online or offline
+    if (navigator.onLine) {
+      // Online: Fetch from API and save to IndexedDB
+      const url = `${baseUrl}api/areas/${branchId}`;
+
+      this.http.get<any>(url).subscribe({
+        next: (res: { status: any; data: any }) => {
+          if (res.status && res.data) {
+            this.areas = res.data;
+            this.allAreas = res.data;
+            this.areas = [...this.allAreas];
+
+            // Save to IndexedDB for offline access
+            this.dbService.saveData('areas', res.data)
+              .then(() => {
+                console.log('✅ Areas saved to IndexedDB');
+              })
+              .catch(error => {
+                console.error('Error saving areas to IndexedDB:', error);
+              });
+          }
+          console.log(this.areas, 'areas');
+        },
+        error: (err) => {
+          console.error('خطأ في تحميل المناطق:', err);
+          // If API fails, try to load from IndexedDB as fallback
+          this.loadAreasFromIndexedDB();
+        },
+      });
+    } else {
+      // Offline: Load from IndexedDB
+      this.loadAreasFromIndexedDB();
+    }
+  }
+
+  private loadAreasFromIndexedDB() {
+    this.dbService.getAll('areas')
+      .then((areas) => {
+        if (areas && areas.length > 0) {
+          this.areas = areas;
+          this.allAreas = areas;
           this.areas = [...this.allAreas];
+          console.log('✅ Areas loaded from IndexedDB:', this.areas);
+        } else {
+          console.warn('⚠️ No areas found in IndexedDB');
+          this.areas = [];
+          this.allAreas = [];
         }
-        console.log(this.areas, 'areas');
-      },
-      error: (err) => {
-        console.error('خطأ في تحميل المناطق:', err);
-      },
-    });
+        this.cdr.detectChanges();
+      })
+      .catch((error) => {
+        console.error('❌ Error loading areas from IndexedDB:', error);
+        this.areas = [];
+        this.allAreas = [];
+        this.cdr.detectChanges();
+      });
   }
   propertyLabels: any = {
     apartment: {
@@ -885,18 +929,61 @@ export class DeliveryDetailsComponent implements OnInit {
   }
   hotels: any;
   getHotels() {
-    return this.formDataService.getHotelsData().subscribe({
-      next: (res: any) => {
-        console.log(res.data);
-        this.hotels = res.data;
+    // Check if online or offline
+    if (navigator.onLine) {
+      // Online: Fetch from API and save to IndexedDB
+      return this.formDataService.getHotelsData().subscribe({
+        next: (res: any) => {
+          console.log(res.data);
+          if (res.data) {
+            this.hotels = res.data;
+            this.allHotels = res.data;
+            this.hotels = [...this.allHotels];
 
-        this.allHotels = res.data;
-        this.hotels = [...this.allHotels];
-      },
-      error: (err) => {
-        console.log(err);
-      },
-    });
+            // Save to IndexedDB for offline access
+            this.dbService.saveData('hotels', res.data)
+              .then(() => {
+                console.log('✅ Hotels saved to IndexedDB');
+              })
+              .catch(error => {
+                console.error('Error saving hotels to IndexedDB:', error);
+              });
+          }
+        },
+        error: (err) => {
+          console.error('خطأ في تحميل الفنادق:', err);
+          // If API fails, try to load from IndexedDB as fallback
+          this.loadHotelsFromIndexedDB();
+        },
+      });
+    } else {
+      // Offline: Load from IndexedDB
+      this.loadHotelsFromIndexedDB();
+      return { unsubscribe: () => {} }; // Return a dummy subscription object
+    }
+  }
+
+  private loadHotelsFromIndexedDB() {
+    this.dbService.getAll('hotels')
+      .then((hotels) => {
+        if (hotels && hotels.length > 0) {
+          this.hotels = hotels;
+          this.allHotels = hotels;
+          this.hotels = [...this.allHotels];
+          console.log('✅ Hotels loaded from IndexedDB:', this.hotels);
+        } else {
+          console.warn('⚠️ No hotels found in IndexedDB');
+          this.hotels = [];
+          this.allHotels = [];
+        }
+        this.cdr.detectChanges();
+      })
+      .catch((error) => {
+        console.error('❌ Error loading hotels from IndexedDB:', error);
+        this.hotels = [];
+        this.allHotels = [];
+        this.cdr.detectChanges();
+      });
   }
   selectedHotel: any;
   onHotelChange(hotel: any) {
@@ -960,7 +1047,7 @@ export class DeliveryDetailsComponent implements OnInit {
             if (res.status == true) {
               if (typeof res.data === 'object' && res.data !== null) {
                 // this.allUserAddress = {...res.data,country_code:{code:res.data.country_code,flag:res.data['country_flag']||null}};
-                
+
                     this.clientName?.setValue(res.data[0].user_name)
                 this.allUserAddress = res.data.map((item: any) => ({
                   ...item,
@@ -968,7 +1055,7 @@ export class DeliveryDetailsComponent implements OnInit {
                     code: item?.country_code ?? null,
                     flag: item?.country_flag ?? null,
                   },
-                }));// fatma: must ask BE to return country_code as object of flag,code not code only 
+                }));// fatma: must ask BE to return country_code as object of flag,code not code only
 
                 this.userStoredAddress = res.data.map((address: any) => {
                   this.userId = address.user_id;
@@ -1028,7 +1115,7 @@ export class DeliveryDetailsComponent implements OnInit {
         ...storedAddressData,
         client_name: this.clientName?.value || storedAddressData.user_name,
       whatsapp_number: this.whatsappPhone, // hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-      whatsapp_number_code: this.form.get('whatsapp_number_code')?.value, 
+      whatsapp_number_code: this.form.get('whatsapp_number_code')?.value,
       };
 
       localStorage.setItem('form_data', JSON.stringify(formData));
@@ -1091,22 +1178,22 @@ export class DeliveryDetailsComponent implements OnInit {
   }
   listenToChangeWhatsappCountry(){
  this.whatsappNumberCode?.valueChanges.subscribe((value) => {
-      const whatsappNumControl = this.form.get('whatsapp_number');  
-      if (value) { 
+      const whatsappNumControl = this.form.get('whatsapp_number');
+      if (value) {
         this.selectedWhatsappCountry=value;
         whatsappNumControl?.setValidators([Validators.required,Validators.pattern(
             new RegExp(`^\\d{${this.whatsappNumberCode?.value?.phoneLength}}$`)
-          )]); 
+          )]);
       } else {
-        whatsappNumControl?.clearValidators(); 
-      }  
+        whatsappNumControl?.clearValidators();
+      }
     });
   }
  listenToAddressChange() {
   this.selectedAddressControl.valueChanges
     .subscribe(arg => {
       this.clientName?.setValue(arg.client_name)
-      
+
     });
 }
 
