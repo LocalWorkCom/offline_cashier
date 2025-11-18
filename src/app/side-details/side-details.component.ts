@@ -192,6 +192,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     creditAmountMixed?: any; // المبلغ المدفوع فيزا في الدفع المختلط
     additionalPaymentRequired?: number; // ✅ جديد
     originalPaymentAmount?: number;     // ✅ جديد
+    tips_aption?: string;
   } | null = null;
   // متغيرات لإدارة خيارات الإكرامية داخل المودال
   selectedTipType: 'tip_the_change' | 'tip_specific_amount' | 'no_tip' = 'no_tip';
@@ -3353,6 +3354,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       this.invoices = response.data.invoices;
       console.log(response, "alaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+      // ✅ تحميل بيانات الإكرامية من localStorage
+      const savedTipSummary = localStorage.getItem('finalTipSummary');
+      if (savedTipSummary) {
+        this.finalTipSummary = JSON.parse(savedTipSummary);
+      }
 
       const statusMap: { [key: string]: string } = {
         completed: 'مكتمل',
@@ -3433,7 +3439,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         console.error('Print section not found.');
         return;
       }
-
+      // ✅ تأكد من تحميل بيانات الإكرامية أولاً
+      const savedTipSummary = localStorage.getItem('finalTipSummary');
+      if (savedTipSummary) {
+        this.finalTipSummary = JSON.parse(savedTipSummary);
+      }
       const originalHTML = document.body.innerHTML;
 
       const copies = this.isDeliveryOrder
@@ -3472,6 +3482,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       document.body.innerHTML = originalHTML;
       /*       location.reload();
        */
+      setTimeout(() => {
+        localStorage.removeItem('finalTipSummary');
+        this.finalTipSummary = null;
+      }, 1000);
       setTimeout(() => {
         location.reload();
       }, 200);
@@ -4820,34 +4834,22 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
    */
   selectTipOption(type: 'tip_the_change' | 'tip_specific_amount' | 'no_tip'): void {
     this.selectedTipType = type;
-
     this.tip_aption = type; // حفظ الخيار المحدد
-
 
     switch (type) {
       case 'tip_the_change':
-        // إذا اختار العميل إكرامية الباقي بالكامل
         this.specificTipAmount = this.tempChangeAmount;
         break;
       case 'no_tip':
-        // إذا اختار العميل لا إكرامية
         this.specificTipAmount = 0;
         break;
       case 'tip_specific_amount':
-        // ✅ التعديل الرئيسي هنا: تقريب القيمة فور تعيينها
         let initialTipAmount = this.tempChangeAmount > 0 ? this.tempChangeAmount : 0;
-
-        // 1. تقريب القيمة لأقرب منزلتين عشريتين
         this.specificTipAmount = parseFloat(initialTipAmount.toFixed(2));
         break;
     }
   }
 
-  /**
-   * لمعالجة الإكرامية النهائية وإغلاق المودال.
-   * @param modal الـ Modal Reference المُمررة من القالب
-   */
-  // تحديث دالة تأكيد الإكرامية
   // تحديث دالة تأكيد الإكرامية
   confirmTipAndClose(modal: any): void {
     let finalTipAmount: number = 0;
@@ -4876,19 +4878,25 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     if (this.selectedPaymentMethod === 'cash') {
       cashFinal = this.tempPaymentAmount;
+      creditFinal = 0;
     } else if (this.selectedPaymentMethod === 'credit') {
+      cashFinal = 0;
       creditFinal = this.tempPaymentAmount;
     } else if (this.selectedPaymentMethod === 'cash + credit') {
-      const totalPaid = this.cashAmountMixed + this.creditAmountMixed + additionalPaymentRequired;
+      cashFinal = this.cashAmountMixed || 0;
+      creditFinal = this.creditAmountMixed || 0;
+      // const totalPaid = this.cashAmountMixed + this.creditAmountMixed + additionalPaymentRequired;
 
-      if (totalPaid > 0) {
-        const cashRatio = this.cashAmountMixed / (this.cashAmountMixed + this.creditAmountMixed);
-        const creditRatio = this.creditAmountMixed / (this.cashAmountMixed + this.creditAmountMixed);
+      // ✅ إذا كان هناك مبلغ إضافي مطلوب للإكرامية، نضيفه بنفس النسب
+      if (additionalPaymentRequired > 0) {
+        const totalOriginal = cashFinal + creditFinal;
+        if (totalOriginal > 0) {
+          const cashRatio = cashFinal / totalOriginal;
+          const creditRatio = creditFinal / totalOriginal;
 
-        const totalWithTip = this.tempBillAmount + finalTipAmount;
-
-        cashFinal = totalWithTip * cashRatio;
-        creditFinal = totalWithTip * creditRatio;
+          cashFinal += additionalPaymentRequired * cashRatio;
+          creditFinal += additionalPaymentRequired * creditRatio;
+        }
       }
     }
 
@@ -4905,10 +4913,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       changeToReturn: changeToReturn,
       cashAmountMixed: cashFinal,
       creditAmountMixed: creditFinal,
-      additionalPaymentRequired: additionalPaymentRequired, // ✅ جديد
-      originalPaymentAmount: originalPaymentAmount         // ✅ جديد
+      additionalPaymentRequired: additionalPaymentRequired,
+      originalPaymentAmount: originalPaymentAmount,
+      tips_aption: this.selectedTipType
     };
-
+    // ✅ حفظ في localStorage للطباعة
+    localStorage.setItem('finalTipSummary', JSON.stringify(this.finalTipSummary));
     // ✅ إذا كان هناك مبلغ إضافي مطلوب، نعرض تأكيد للمستخدم
     if (additionalPaymentRequired > 0) {
       this.showAdditionalPaymentConfirmation(additionalPaymentRequired, modal);
@@ -5021,7 +5031,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.tempPaymentAmount = totalPaid;
       this.tempChangeAmount = totalPaid - billAmount;
 
-      // this.openTipModal(modalContent, billAmount, totalPaid);
+      this.openTipModal(modalContent, billAmount, totalPaid);
     } else {
       // يمكن إضافة رسالة تنبيه هنا إذا أردت
       // console.warn('المبلغ المدفوع غير كافي لفتح مودال الإكرامية');
@@ -5109,15 +5119,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       country.code.toLowerCase().includes(this.searchTerm.toLowerCase())
     );
   }
-   getOrderTypeLabel(type: string): string {
-  const map: any = {
-    'dine-in': 'في المطعم',
-    'Takeaway': 'استلام',
-    'talabat': 'طلبات',
-    'Delivery': 'توصيل'
-  };
+  getOrderTypeLabel(type: string): string {
+    const map: any = {
+      'dine-in': 'في المطعم',
+      'Takeaway': 'استلام',
+      'talabat': 'طلبات',
+      'Delivery': 'توصيل'
+    };
 
-  return map[type] || type;
-}
+    return map[type] || type;
+  }
 
 }
