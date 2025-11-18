@@ -444,7 +444,7 @@
         <!-- <h6>
     رقم الطلب: <span>{{ branchDetails?.[0]?.order_number ?? 'لا يوجد' }}</span>
   </h6> -->
-        <div class="d-flex justify-content-between align-items-center mb-0 fw-bold" style="font-size: 10px;">
+        <div class="d-flex justify-content-between align-items-center mb-0 fw-bold bg_black" style="font-size: 10px;">
           <h6 style="font-size: 10px;">
             اسم العميل:
             <span style="font-size: 10px;"> {{ addressDetails?.[0]?.client_name ?? 'لا يوجد' }}</span>
@@ -454,12 +454,12 @@
             <span>{{ addressDetails?.[0]?.address_phone ?? 'لا يوجد' }}</span>
           </h6>
         </div>
-        <div class="d-flex justify-content-between align-items-center mb-0 fw-bold" style="font-size: 10px;">
-          <h6 style="font-size: 10px;">
+        <div class="d-flex justify-content-between align-items-center mb-0 fw-bold bg_black" style="font-size: 10px;">
+          <h6 style="font-size: 10px;" class="bg_black">
             عنوان التوصيل:
-            <span style="font-size: 10px;"> {{ addressDetails?.[0]?.client_address ?? 'لا يوجد' }}</span>
+            <span style="font-size: 10px;" > {{ addressDetails?.[0]?.client_address ?? 'لا يوجد' }}</span>
           </h6>
-            <h6 style="font-size: 10px;" class="fw-bold"> 
+            <h6 style="font-size: 10px;" class="fw-bold bg_black"> 
           اسم الطيار:
           <span>{{ invoices?.[0]?.delivery_name && invoices[0].delivery_name.trim() !== '' ? invoices[0].delivery_name :
             'لا يوجد' }}</span>
@@ -468,7 +468,7 @@
         </div>
 
       
-   <h6 style="font-size: 10px;">
+   <h6 style="font-size: 10px;" class="bg_black">
             تعليمات التوصيل:
             <span style="font-size: 10px;">{{ addressDetails?.[0]?.address_notes ?? 'لا يوجد' }}</span>
           </h6>
