@@ -2092,4 +2092,132 @@ export class IndexeddbService {
       });
     });
   }
+  // حفظ بيانات الفورم للتوصيل
+async saveDeliveryFormData(formData: any): Promise<number> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('formData', 'readwrite');
+      const store = tx.objectStore('formData');
+
+      const formDataWithMetadata = {
+        ...formData,
+        type: 'deliveryForm',
+        savedAt: new Date().toISOString(),
+        isSynced: navigator.onLine
+      };
+
+      const request = store.add(formDataWithMetadata);
+
+      request.onsuccess = () => resolve(request.result as number);
+      request.onerror = (e) => reject(e);
+    });
+  });
+}
+
+// حفظ العناوين المؤقتة
+async savePendingAddress(addressData: any): Promise<number> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('pendingOperations', 'readwrite');
+      const store = tx.objectStore('pendingOperations');
+
+      const addressWithMetadata = {
+        ...addressData,
+        type_operation: 'addressCreation',
+        savedAt: new Date().toISOString(),
+        isSynced: false
+      };
+
+      const request = store.add(addressWithMetadata);
+
+      request.onsuccess = () => {
+        console.log('✅ Pending address saved to IndexedDB:', request.result);
+        resolve(request.result as number);
+      };
+      request.onerror = (e) => {
+        console.error('❌ Error saving pending address:', e);
+        reject(e);
+      };
+    });
+  });
+}
+
+// جلب العناوين المؤقتة
+async getPendingAddresses(): Promise<any[]> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('pendingOperations', 'readonly');
+      const store = tx.objectStore('pendingOperations');
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        const pendingAddresses = request.result.filter((item: any) =>
+          item.type_operation === 'addressCreation' && !item.isSynced
+        );
+        resolve(pendingAddresses);
+      };
+      request.onerror = (e) => {
+        console.error('❌ Error getting pending addresses:', e);
+        reject(e);
+      };
+    });
+  });
+}
+
+// حذف عنوان مؤقت بعد المزامنة
+async deletePendingAddress(id: number): Promise<void> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('pendingOperations', 'readwrite');
+      const store = tx.objectStore('pendingOperations');
+      const request = store.delete(id);
+
+      request.onsuccess = () => resolve();
+      request.onerror = (e) => {
+        console.error('❌ Error deleting pending address:', e);
+        reject(e);
+      };
+    });
+  });
+}
+
+// مزامنة العناوين المؤقتة
+async syncPendingAddresses(): Promise<void> {
+  if (!navigator.onLine) {
+    console.log('📴 Offline - skipping address sync');
+    return;
+  }
+
+  try {
+    const pendingAddresses = await this.getPendingAddresses();
+    
+    if (pendingAddresses.length === 0) {
+      console.log('✅ No pending addresses to sync');
+      return;
+    }
+
+    console.log(`🔄 Syncing ${pendingAddresses.length} pending address(es)...`);
+
+    for (const address of pendingAddresses) {
+      try {
+        // هنا يمكنك إضافة استدعاء API لإرسال العنوان
+        // await this.addressService.submitAddress(address).toPromise();
+        
+        console.log('✅ Successfully synced address:', address);
+        
+        // حذف من IndexedDB بعد المزامنة الناجحة
+        await this.deletePendingAddress(address.id);
+        
+      } catch (error) {
+        console.error('❌ Error syncing address:', error);
+        // نستمر مع العناوين الأخرى حتى لو فشل أحدها
+      }
+    }
+
+    console.log('✅ Finished syncing all pending addresses');
+    
+  } catch (error) {
+    console.error('❌ Error in syncPendingAddresses:', error);
+  }
+}
 }

@@ -360,3 +360,24 @@ select.styled-select option:hover {
 .form-delivery .btn:hover {
   border: 1px solid #fe0000;
 }
+
+.offline-status {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+}
+
+.offline-status .alert {
+  margin-bottom: 0.5rem;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+}
+
+/* تحسين التصميم للشاشات الصغيرة */
+@media (max-width: 768px) {
+  .offline-status .alert {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+  }
+}
