@@ -63,6 +63,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   translate = inject(TranslateService);
   private destroy$ = new Subject<void>();
   isOnline: boolean = navigator.onLine;
+  private onlineHandler?: () => void;
+  private offlineHandler?: () => void;
   pendingOrdersCount: number = 0;
   cartItems: any[] = [];
   totalPrice: number = 100;
@@ -538,6 +540,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.selectedCountryCode = savedCode; // If you use a separate property
     }
 
+    // Setup network listeners to sync pending orders when connection is restored
+    this.setupNetworkListeners();
+
+    // If already online, try to sync any pending orders
+    if (this.isOnline) {
+      this.syncPendingOrders();
+    }
+
 
     // Load initial cart from localStorage
     // const storedCart = localStorage.getItem('cart');
@@ -622,77 +632,84 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   }
 
   private setupNetworkListeners(): void {
-    window.addEventListener('online', () => {
+    // Store handler references for cleanup
+    this.onlineHandler = () => {
       this.isOnline = true;
-      console.log('Online - attempting to sync pending orders');
-      // this.retryPendingOrders();
-      // Also sync raw orderData
+      console.log('🌐 Online - attempting to sync pending orders');
       this.syncPendingOrders();
-    });
+    };
 
-    window.addEventListener('offline', () => {
+    this.offlineHandler = () => {
       this.isOnline = false;
-      console.log('Offline - orders will be saved locally');
-    });
+      console.log('📴 Offline - orders will be saved locally');
+    };
+
+    window.addEventListener('online', this.onlineHandler);
+    window.addEventListener('offline', this.offlineHandler);
   }
 
   // Sync pending orders using raw orderData saved for API
   async syncPendingOrders(): Promise<void> {
     if (!this.isOnline) {
+      console.log('📴 Offline - skipping sync');
       return;
     }
 
     try {
-      // const pendingOrders = await this.dbService.getPendingOrders();
+      const pendingOrders = await this.dbService.getPendingOrders();
 
-      // if (pendingOrders.length === 0) {
-      //   console.log('✅ No pending orders to sync');
-      //   return;
-      // }
+      if (pendingOrders.length === 0) {
+        console.log('✅ No pending orders to sync');
+        return;
+      }
 
-      // console.log(`🔄 Syncing ${pendingOrders.length} pending order(s)...`);
+      console.log(`🔄 Syncing ${pendingOrders.length} pending order(s)...`);
 
-      // for (const pendingOrder of pendingOrders) {
-      //   try {
-      //     // Remove metadata fields before sending to API
-      //     const orderDataForAPI = { ...pendingOrder };
-      //     delete orderDataForAPI.type;
-      //     delete orderDataForAPI.savedAt;
-      //     delete orderDataForAPI.isSynced;
-      //     delete orderDataForAPI.id;
+      for (const pendingOrder of pendingOrders) {
+        try {
 
-      //     await new Promise<void>((resolve, reject) => {
-      //       const timeoutPromise = new Promise((_, timeoutReject) =>
-      //         setTimeout(() => timeoutReject(new Error('Request timeout')), 30000)
-      //       );
+          console.log('pendingOrder', pendingOrder);
+          // Remove metadata fields before sending to API
+          const orderDataForAPI = { ...pendingOrder };
+          delete orderDataForAPI.type_operation;
+          delete orderDataForAPI.savedAt;
+          delete orderDataForAPI.isSynced;
+          delete orderDataForAPI.id;
 
-      //       Promise.race([
-      //         firstValueFrom(this.plaseOrderService.placeOrder(orderDataForAPI)),
-      //         timeoutPromise
-      //       ]).then((response: any) => {
-      //         if (response.status !== false && !response.errorData) {
-      //           // Mark as synced and delete
-      //           this.dbService.markPendingOrderAsSynced(pendingOrder.id)
-      //             .then(() => this.dbService.deleteSyncedPendingOrder(pendingOrder.id))
-      //             .then(() => {
-      //               console.log(`✅ Successfully synced order ${pendingOrder.orderId || 'N/A'}`);
-      //               resolve();
-      //             })
-      //             .catch(reject);
-      //         } else {
-      //           console.error(`❌ API returned error for order:`, response);
-      //           resolve(); // Continue with next order even if this one failed
-      //         }
-      //       }).catch((err) => {
-      //         console.error(`❌ Error syncing order:`, err);
-      //         resolve(); // Continue with next order even if this one failed
-      //       });
-      //     });
-      //   } catch (err) {
-      //     console.error(`❌ Error processing pending order ${pendingOrder.id}:`, err);
-      //     // Continue with next order
-      //   }
-      // }
+          await new Promise<void>((resolve, reject) => {
+            const timeoutPromise = new Promise((_, timeoutReject) =>
+              setTimeout(() => timeoutReject(new Error('Request timeout')), 30000)
+            );
+
+            console.log('orderDataForAPI', orderDataForAPI);
+
+            Promise.race([
+              firstValueFrom(this.plaseOrderService.placeOrder(orderDataForAPI)),
+              timeoutPromise
+            ]).then((response: any) => {
+              if (response.status !== false && !response.errorData) {
+                // Mark as synced and delete
+                this.dbService.markPendingOrderAsSynced(pendingOrder.id)
+                  .then(() => this.dbService.deleteSyncedPendingOrder(pendingOrder.id))
+                  .then(() => {
+                    console.log(`✅ Successfully synced order ${pendingOrder.orderId || 'N/A'}`);
+                    resolve();
+                  })
+                  .catch(reject);
+              } else {
+                console.error(`❌ API returned error for order:`, response);
+                resolve(); // Continue with next order even if this one failed
+              }
+            }).catch((err) => {
+              console.error(`❌ Error syncing order:`, err);
+              resolve(); // Continue with next order even if this one failed
+            });
+          });
+        } catch (err) {
+          console.error(`❌ Error processing pending order ${pendingOrder.id}:`, err);
+          // Continue with next order
+        }
+      }
 
       console.log('✅ Finished syncing all pending orders');
     } catch (err) {
@@ -937,6 +954,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     return item.order_detail_id || item.dish_name + index || index;
   }
   ngOnDestroy(): void {
+    // Remove event listeners to prevent memory leaks
+    if (this.onlineHandler) {
+      window.removeEventListener('online', this.onlineHandler);
+    }
+    if (this.offlineHandler) {
+      window.removeEventListener('offline', this.offlineHandler);
+    }
+
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -2956,48 +2981,53 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
 
     // معالجة حالة عدم الاتصال
-    // if (!navigator.onLine) {
-    //   try {
-    //     orderData.offlineTimestamp = new Date().toISOString();
-    //     orderData.status = 'pending_sync';
+    if (!navigator.onLine) {
+      try {
+        console.log('📴 Offline mode: Saving order to IndexedDB', orderData);
 
-    //     // Save to orders/pills stores (existing functionality)
-    //     const savedOrderId = await this.dbService.savePendingOrder(orderData);
-    //     console.log("Order saved to IndexedDB with ID:", savedOrderId);
+        // Save to orders/pills stores (existing functionality) - preserves full structure
+        await this.dbService.savePendingOrder(orderData);
+        console.log("✅ Order saved to IndexedDB with full structure");
 
-    //     // Save raw orderData for API sync (exact data that will be sent to API)
-    //     // Remove metadata fields that shouldn't be sent to API
-    //     const orderDataForSync = { ...orderData };
-    //     delete orderDataForSync.offlineTimestamp;
-    //     delete orderDataForSync.status;
+        // Save raw orderData for API sync (exact data that will be sent to API)
+        // Keep the complete orderData structure for sync
+        const orderDataForSync = { ...orderData };
+        await this.dbService.savePendingOrderForSync(orderDataForSync);
+        console.log("✅ Raw orderData saved for API sync");
 
-    //     await this.dbService.savePendingOrderForSync(orderDataForSync);
-    //     console.log("Raw orderData saved for API sync");
+        // Clean up localStorage
+        const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
+        const orderIdToRemove = orderData.orderId;
+        const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
+        localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
 
-    //     await this.releaseTableAndOrderType();
+        // Clear cart and reset
+        this.clearCart();
+        this.resetLocalStorage();
+        this.resetAddress();
+        this.loadCart();
 
-    //     this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
-    //     this.clearCart();
-    //     this.resetLocalStorage();
+        // Show success message
+        this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
+        this.falseMessage = '';
+        this.tableError = '';
+        this.couponError = '';
+        this.cashiermachine = '';
 
-    //     if (this.successModal) {
-    //       this.successModal.show();
-    //     }
+        if (this.successModal) {
+          this.successModal.show();
+        }
 
-    //     const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
-    //     const orderIdToRemove = orderData.orderId;
-    //     const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
-    //     localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
-
-    //   } catch (error) {
-    //     console.error('Error saving order to IndexedDB:', error);
-    //     this.showError('فشل حفظ الطلب في وضع عدم الاتصال. يرجى المحاولة مرة أخرى.');
-    //   } finally {
-    //     this.isLoading = false;
-    //     this.loading = false;
-    //   }
-    //   return;
-    // }
+        this.cdr.detectChanges();
+      } catch (error) {
+        console.error('❌ Error saving order to IndexedDB:', error);
+        this.showError('فشل حفظ الطلب في وضع عدم الاتصال. يرجى المحاولة مرة أخرى.');
+      } finally {
+        this.isLoading = false;
+        this.loading = false;
+      }
+      return;
+    }
 
     // إرسال الطلب إلى API
     console.log('Submitting order online:', orderData);

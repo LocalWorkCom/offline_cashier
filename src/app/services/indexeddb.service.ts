@@ -996,6 +996,7 @@ export class IndexeddbService {
             tax_percentage,
             tax_value,
             total_price,
+
           };
         };
 
@@ -1026,8 +1027,9 @@ export class IndexeddbService {
           order_details: {
             order_id: orderData.order_id ?? orderId, // ⚠️ REQUIRED for IndexedDB keyPath
             order_number: orderId,
-            table_id: orderData.table_number || orderData.table_id || 1,
+            table_number: orderData.table_number || orderData.table_id,
             order_type: orderData.type || "dine-in",
+            type: orderData.type || "dine-in",
             hasCoupon: !!orderData.coupon_code,
             client_name: orderData.client_name || "",
             client_phone: orderData.client_phone || "",
@@ -1048,6 +1050,7 @@ export class IndexeddbService {
           details_order: {
             currency_symbol,
             order_type: orderData.type || "dine-in",
+            type: orderData.type || "dine-in",
             status: "pending",
             transactions: [
               {
@@ -1138,6 +1141,7 @@ export class IndexeddbService {
             order_items_count: count_item,
             invoice_print_status: "hold",
             order_type: orderData.type || "dine-in",
+            type: orderData.type || "dine-in",
             order_status: "pending",
             order_time: 30,
             payment_status: orderData.payment_status || "unpaid",
@@ -1194,6 +1198,7 @@ export class IndexeddbService {
 
                 order_status: "pending",
                 order_type: orderData.type || "dine-in",
+                type: orderData.type || "dine-in",
                 transactions: [
                   {
                     date: new Date().toISOString().split("T")[0],
@@ -1913,7 +1918,7 @@ export class IndexeddbService {
 
         const pendingUpdate = {
           ...invoiceUpdateData,
-          type: 'invoiceUpdate',
+          type_operation: 'invoiceUpdate',
           savedAt: new Date().toISOString(),
           isSynced: false
         };
@@ -1943,7 +1948,7 @@ export class IndexeddbService {
 
         request.onsuccess = () => {
           const pendingUpdates = request.result.filter((item: any) =>
-            item.type === 'invoiceUpdate' && !item.isSynced
+            item.type_operation === 'invoiceUpdate' && !item.isSynced
           );
           resolve(pendingUpdates);
         };
@@ -2005,7 +2010,7 @@ export class IndexeddbService {
 
         const pendingOrder = {
           ...orderData,
-          type: 'orderPlacement',
+          type_operation: 'orderPlacement',
           savedAt: new Date().toISOString(),
           isSynced: false
         };
@@ -2035,7 +2040,7 @@ export class IndexeddbService {
 
         request.onsuccess = () => {
           const pendingOrders = request.result.filter((item: any) =>
-            item.type === 'orderPlacement' && !item.isSynced
+            item.type_operation === 'orderPlacement' && !item.isSynced
           );
           resolve(pendingOrders);
         };

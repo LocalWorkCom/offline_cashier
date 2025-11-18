@@ -15,7 +15,7 @@ export const environment = {
 export const environment2 = {
   production: false,
   pusher: {
-    key: 'localkey', 
+    key: 'localkey',
     wsHost: 'erpfortest.testdomain100.online',
     wsPort: 6001,
     cluster: 'mt1',

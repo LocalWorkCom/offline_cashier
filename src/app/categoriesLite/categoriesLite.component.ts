@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, Input, OnDestroy, OnInit, ViewChild, NgZone } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ProductCardComponent } from '../product-card/product-card.component';
 import { ProductsService } from '../services/products.service';
@@ -44,7 +44,7 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
   @ViewChild('closebutton') closebutton: any;
   constructor(private productsRequestService: ProductsService, private modalService: NgbModal,
     private newDish: NewDishService,private dbService: IndexeddbService,
-    private cdr: ChangeDetectorRef) { }
+    private cdr: ChangeDetectorRef, private ngZone: NgZone) { }
 
   ngOnInit(): void {
     //start dalia
@@ -96,6 +96,8 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
     }
     else{
       this.fetchFromAPILite();
+      //
+
     }
   }
   private loadCategoriesFromIndexedDB() {
@@ -111,27 +113,44 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
       });
   }
 
-    private fetchFromAPI() {
-    this.errorMessage = '';
+  private backgroundSyncInProgress = false;
+
+    private fetchFromAPI_all(runSilently: boolean = false) {
+
+      console.log('fetchFromAPI_all');
+    if (!runSilently) {
+      this.isAllLoading = false;
+    }
     this.productsRequestService.getMenuDishes().pipe(
       finalize(() => {
-        this.isAllLoading = true;
+        if (!runSilently) {
+          this.isAllLoading = true;
+        }
+        if (runSilently) {
+          this.backgroundSyncInProgress = false;
+        }
       })
     ).subscribe((response: any) => {
       if (response && response.status && response.data) {
-        this.categories = response.data;
-        this.processCategories();
-        this.errorMessage = '';
+        this.dbService.saveData('categories', response.data);
+
+        console.log('saved to indexeddb');
+
+        if (!runSilently) {
+          this.errorMessage = '';
+        }
       } else {
         console.error("Invalid response format", response);
-        // this.errorMessage = 'Failed to fetch data from server. Please try again.';
-      this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+        if (!runSilently) {
+          this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+        }
 
       }
     }, (error) => {
       console.error('API fetch failed, trying offline data:', error);
-      // this.errorMessage = 'Failed to fetch data from server. Please try again.';
-      this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+      if (!runSilently) {
+        this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+      }
 
     });
   }
@@ -183,9 +202,22 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
   private handleOnlineStatus() {
     this.isOnline = navigator.onLine;
     if (this.isOnline) {
+      this.errorMessage = '';
       this.fetchMenuData();
+      this.runFullCategoriesSyncInBackground();
+    } else {
+      this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
     }
     this.cdr.detectChanges();
+  }
+
+  private runFullCategoriesSyncInBackground(): void {
+    if (this.backgroundSyncInProgress || !this.isOnline) {
+      return;
+    }
+
+    this.backgroundSyncInProgress = true;
+    this.ngZone.runOutsideAngular(() => this.fetchFromAPI_all(true));
   }
   //end dalia
 
@@ -254,7 +286,7 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
     const normalizedDishes = this.normalizeDishesPayload(dishesPayload);
 
     category.dishes = normalizedDishes;
-    this.errorMessage = '';
+    // this.errorMessage = '';
 
     if (this.selectedCategory?.id !== category.id) {
       return;
