@@ -98,7 +98,12 @@ export class PillDetailsComponent implements OnInit {
       this.pillId = params.get('id');
 
       if (this.pillId) {
-        this.fetchPillsDetails(this.pillId);
+        if (!navigator.onLine) {
+          this.fetchPillFromIndexedDB(this.pillId);
+        } else {
+          this.fetchPillsDetails(this.pillId);
+        }
+        // this.fetchPillsDetails(this.pillId);
       }
     });
     this.fetchTrackingStatus();
@@ -154,7 +159,7 @@ export class PillDetailsComponent implements OnInit {
     try {
       const pill = await this.dbService.getPillByInvoiceId(identifier);
 
-
+      console.log("pill_offline",pill);
       if (pill) {
         console.log("Loaded pill from IndexedDB ✅");
         this.processPillDetails(pill);
@@ -170,12 +175,27 @@ export class PillDetailsComponent implements OnInit {
 
 
   private processPillDetails(data: any): void {
+
+    console.log("processPillDetails",data);
     try {
       this.order_id = data.order_id;
-      this.invoices = Array.isArray(data.invoices.invoice_details) ? data.invoices.invoice_details : []; // ✅ fix
 
-      if (!this.invoices.length) {
-        console.warn("No invoices found in offline pill:", data);
+      // Convert invoice_details to array (handle both API format 'invoices' and IndexedDB format 'invoice_details')
+      if (data.invoices && Array.isArray(data.invoices)) {
+        this.invoices = data.invoices;
+      } else if (data.invoice_details && Array.isArray(data.invoice_details)) {
+        this.invoices = data.invoice_details;
+      } else if (data.invoice_details) {
+        // If invoice_details exists but is not an array, convert it
+        this.invoices = Array.isArray(data.invoice_details) ? data.invoice_details : [data.invoice_details];
+      } else {
+        this.invoices = [];
+      }
+
+      console.log("this.invoices", this.invoices);
+
+      if (!this.invoices || !this.invoices.length) {
+        console.warn("No invoices found in pill data:", data);
         return;
       }
 
@@ -221,9 +241,14 @@ export class PillDetailsComponent implements OnInit {
       if (this.branchDetails?.length) {
         this.extractDateAndTime(this.branchDetails[0]);
       }
-      this.invoiceTips = data.invoice_tips;
+
+      // Convert invoice_tips to array
+      this.invoiceTips = Array.isArray(data.invoice_tips) ? data.invoice_tips : (data.invoice_tips ? [data.invoice_tips] : []);
 
       console.log(" this.invoiceTips ", this.invoiceTips);
+
+      // Trigger change detection to update template
+      this.cdr.detectChanges();
     } catch (error) {
       console.error("Error processing pill details offline:", error, data);
     }
