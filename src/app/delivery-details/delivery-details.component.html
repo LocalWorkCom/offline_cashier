@@ -1,4 +1,29 @@
 <!-- <pre>{{form.value | json}}</pre>  -->
+ <div class="offline-status" *ngIf="!isOnline || offlineMessage || pendingSyncCount > 0">
+  <!-- رسالة عدم الاتصال -->
+  <div class="alert alert-warning mb-2" *ngIf="!isOnline">
+    <i class="fas fa-wifi-slash me-2"></i>
+    ⚠️ أنت غير متصل بالإنترنت
+  </div>
+  
+  <!-- رسالة حفظ البيانات -->
+  <div class="alert alert-info mb-2" *ngIf="offlineMessage">
+    <i class="fas fa-save me-2"></i>
+    {{ offlineMessage }}
+  </div>
+
+  <!-- عدد العناوين المنتظرة -->
+  <div class="alert alert-secondary mb-2" *ngIf="pendingSyncCount > 0">
+    <i class="fas fa-sync-alt me-2"></i>
+    📦 لديك {{ pendingSyncCount }} عنوان بانتظار الإرسال
+  </div>
+
+  <!-- حالة الحفظ -->
+  <div class="alert alert-success mb-2" *ngIf="isSavingOffline">
+    <i class="fas fa-spinner fa-spin me-2"></i>
+    💾 جاري حفظ البيانات محلياً...
+  </div>
+</div>
 <section class="form-delivery">
   <form class="p-3" [formGroup]="form" (ngSubmit)="onSubmit()">
     <nav class="inner-header">

@@ -996,6 +996,7 @@ export class IndexeddbService {
             tax_percentage,
             tax_value,
             total_price,
+
           };
         };
 
@@ -1026,8 +1027,9 @@ export class IndexeddbService {
           order_details: {
             order_id: orderData.order_id ?? orderId, // ⚠️ REQUIRED for IndexedDB keyPath
             order_number: orderId,
-            table_id: orderData.table_number || orderData.table_id || 1,
+            table_number: orderData.table_number || orderData.table_id,
             order_type: orderData.type || "dine-in",
+            type: orderData.type || "dine-in",
             hasCoupon: !!orderData.coupon_code,
             client_name: orderData.client_name || "",
             client_phone: orderData.client_phone || "",
@@ -1048,6 +1050,7 @@ export class IndexeddbService {
           details_order: {
             currency_symbol,
             order_type: orderData.type || "dine-in",
+            type: orderData.type || "dine-in",
             status: "pending",
             transactions: [
               {
@@ -1138,6 +1141,7 @@ export class IndexeddbService {
             order_items_count: count_item,
             invoice_print_status: "hold",
             order_type: orderData.type || "dine-in",
+            type: orderData.type || "dine-in",
             order_status: "pending",
             order_time: 30,
             payment_status: orderData.payment_status || "unpaid",
@@ -1194,6 +1198,7 @@ export class IndexeddbService {
 
                 order_status: "pending",
                 order_type: orderData.type || "dine-in",
+                type: orderData.type || "dine-in",
                 transactions: [
                   {
                     date: new Date().toISOString().split("T")[0],
@@ -1913,7 +1918,7 @@ export class IndexeddbService {
 
         const pendingUpdate = {
           ...invoiceUpdateData,
-          type: 'invoiceUpdate',
+          type_operation: 'invoiceUpdate',
           savedAt: new Date().toISOString(),
           isSynced: false
         };
@@ -1943,7 +1948,7 @@ export class IndexeddbService {
 
         request.onsuccess = () => {
           const pendingUpdates = request.result.filter((item: any) =>
-            item.type === 'invoiceUpdate' && !item.isSynced
+            item.type_operation === 'invoiceUpdate' && !item.isSynced
           );
           resolve(pendingUpdates);
         };
@@ -2005,7 +2010,8 @@ export class IndexeddbService {
 
         const pendingOrder = {
           ...orderData,
-          type: 'orderPlacement',
+          type_operation: 'orderPlacement',
+          'edit_invoice': false,
           savedAt: new Date().toISOString(),
           isSynced: false
         };
@@ -2035,7 +2041,7 @@ export class IndexeddbService {
 
         request.onsuccess = () => {
           const pendingOrders = request.result.filter((item: any) =>
-            item.type === 'orderPlacement' && !item.isSynced
+            item.type_operation === 'orderPlacement' && !item.isSynced
           );
           resolve(pendingOrders);
         };
@@ -2087,4 +2093,132 @@ export class IndexeddbService {
       });
     });
   }
+  // حفظ بيانات الفورم للتوصيل
+async saveDeliveryFormData(formData: any): Promise<number> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('formData', 'readwrite');
+      const store = tx.objectStore('formData');
+
+      const formDataWithMetadata = {
+        ...formData,
+        type: 'deliveryForm',
+        savedAt: new Date().toISOString(),
+        isSynced: navigator.onLine
+      };
+
+      const request = store.add(formDataWithMetadata);
+
+      request.onsuccess = () => resolve(request.result as number);
+      request.onerror = (e) => reject(e);
+    });
+  });
+}
+
+// حفظ العناوين المؤقتة
+async savePendingAddress(addressData: any): Promise<number> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('pendingOperations', 'readwrite');
+      const store = tx.objectStore('pendingOperations');
+
+      const addressWithMetadata = {
+        ...addressData,
+        type_operation: 'addressCreation',
+        savedAt: new Date().toISOString(),
+        isSynced: false
+      };
+
+      const request = store.add(addressWithMetadata);
+
+      request.onsuccess = () => {
+        console.log('✅ Pending address saved to IndexedDB:', request.result);
+        resolve(request.result as number);
+      };
+      request.onerror = (e) => {
+        console.error('❌ Error saving pending address:', e);
+        reject(e);
+      };
+    });
+  });
+}
+
+// جلب العناوين المؤقتة
+async getPendingAddresses(): Promise<any[]> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('pendingOperations', 'readonly');
+      const store = tx.objectStore('pendingOperations');
+      const request = store.getAll();
+
+      request.onsuccess = () => {
+        const pendingAddresses = request.result.filter((item: any) =>
+          item.type_operation === 'addressCreation' && !item.isSynced
+        );
+        resolve(pendingAddresses);
+      };
+      request.onerror = (e) => {
+        console.error('❌ Error getting pending addresses:', e);
+        reject(e);
+      };
+    });
+  });
+}
+
+// حذف عنوان مؤقت بعد المزامنة
+async deletePendingAddress(id: number): Promise<void> {
+  return this.ensureInit().then(() => {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('pendingOperations', 'readwrite');
+      const store = tx.objectStore('pendingOperations');
+      const request = store.delete(id);
+
+      request.onsuccess = () => resolve();
+      request.onerror = (e) => {
+        console.error('❌ Error deleting pending address:', e);
+        reject(e);
+      };
+    });
+  });
+}
+
+// مزامنة العناوين المؤقتة
+async syncPendingAddresses(): Promise<void> {
+  if (!navigator.onLine) {
+    console.log('📴 Offline - skipping address sync');
+    return;
+  }
+
+  try {
+    const pendingAddresses = await this.getPendingAddresses();
+
+    if (pendingAddresses.length === 0) {
+      console.log('✅ No pending addresses to sync');
+      return;
+    }
+
+    console.log(`🔄 Syncing ${pendingAddresses.length} pending address(es)...`);
+
+    for (const address of pendingAddresses) {
+      try {
+        // هنا يمكنك إضافة استدعاء API لإرسال العنوان
+        // await this.addressService.submitAddress(address).toPromise();
+
+        console.log('✅ Successfully synced address:', address);
+
+        // حذف من IndexedDB بعد المزامنة الناجحة
+        await this.deletePendingAddress(address.id);
+
+      } catch (error) {
+        console.error('❌ Error syncing address:', error);
+        // نستمر مع العناوين الأخرى حتى لو فشل أحدها
+      }
+    }
+
+    console.log('✅ Finished syncing all pending addresses');
+
+  } catch (error) {
+    console.error('❌ Error in syncPendingAddresses:', error);
+  }
+}
 }

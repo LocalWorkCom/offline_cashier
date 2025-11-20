@@ -63,6 +63,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   translate = inject(TranslateService);
   private destroy$ = new Subject<void>();
   isOnline: boolean = navigator.onLine;
+  private onlineHandler?: () => void;
+  private offlineHandler?: () => void;
   pendingOrdersCount: number = 0;
   cartItems: any[] = [];
   totalPrice: number = 100;
@@ -538,6 +540,20 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.selectedCountryCode = savedCode; // If you use a separate property
     }
 
+    // Setup network listeners to sync pending orders when connection is restored
+    this.setupNetworkListeners();
+
+    // If already online, try to sync any pending orders
+    // if (this.isOnline) {
+    //   this.syncPendingOrders();
+
+    // }
+    this.syncService.retryOrders$.subscribe(() => {
+      // this.retryPendingOrders(); // 👈 دي الفانكشن اللي عندك
+      // Also sync raw orderData
+      this.syncPendingOrders();
+    });
+
 
     // Load initial cart from localStorage
     // const storedCart = localStorage.getItem('cart');
@@ -570,38 +586,52 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.loadSavedCoupon();
 
   }
+  
   private loadSavedCoupon(): void {
-    const hasAppliedCoupon = localStorage.getItem('appliedCoupon') === 'true';
-    const couponCode = localStorage.getItem('couponCode');
-    const discountAmount = localStorage.getItem('discountAmount');
-    const couponType = localStorage.getItem('couponType');
+  const hasAppliedCoupon = localStorage.getItem('appliedCoupon') === 'true';
+  const couponCode = localStorage.getItem('couponCode');
+  const discountAmount = localStorage.getItem('discountAmount');
+  const couponType = localStorage.getItem('couponType');
+  const couponApplyType = localStorage.getItem('couponApplyType'); // 🔥 جديد
 
-    console.log('🔄 Loading saved coupon:', {
-      hasAppliedCoupon,
-      couponCode,
-      discountAmount,
-      couponType
+  console.log('🔄 Loading saved coupon:', {
+    hasAppliedCoupon,
+    couponCode,
+    discountAmount,
+    couponType,
+    couponApplyType // 🔥 جديد
+  });
+
+  if (hasAppliedCoupon && couponCode) {
+    this.validCoupon = true;
+    this.couponCode = couponCode;
+    this.discountAmount = parseFloat(discountAmount || '0');
+    this.couponType = couponType || '';
+    this.appliedCoupon = {
+      code: couponCode,
+      coupon_title: localStorage.getItem('couponTitle') || couponCode,
+      coupon_value: localStorage.getItem('couponValue') || discountAmount,
+      value_type: couponType,
+      coupon_apply_type: couponApplyType || 'order',
+      amount_after_coupon: this.getTotal() - this.discountAmount,
+      total_discount: this.discountAmount,
+      currency_symbol: this.currencySymbol
+    };
+
+    console.log('✅ Restored coupon from localStorage:', {
+      code: this.couponCode,
+      discount: this.discountAmount,
+      type: this.couponType,
+      applyType: couponApplyType // 🔥 جديد
     });
 
-    if (hasAppliedCoupon && couponCode) {
-      this.validCoupon = true;
-      this.couponCode = couponCode;
-      this.discountAmount = parseFloat(discountAmount || '0');
-      this.couponType = couponType || '';
-
-      console.log('✅ Restored coupon from localStorage:', {
-        code: this.couponCode,
-        discount: this.discountAmount,
-        type: this.couponType
-      });
-
-      // 🔥 التعديل المهم: تطبيق الكوبون فوراً بعد تحميل الكارت
-      setTimeout(() => {
-        console.log('🔄 Applying restored coupon...');
-        this.applyCoupon();
-      }, 1000);
-    }
+    // 🔥 التعديل المهم: تطبيق الكوبون فوراً بعد تحميل الكارت
+    setTimeout(() => {
+      console.log('🔄 Applying restored coupon...');
+      this.applyCoupon();
+    }, 1000);
   }
+}
   // start hanan
   private initializePaymentAmount(): void {
     const cartTotal = this.getCartTotal();
@@ -622,77 +652,90 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   }
 
   private setupNetworkListeners(): void {
-    window.addEventListener('online', () => {
+    // Store handler references for cleanup
+    this.onlineHandler = () => {
       this.isOnline = true;
-      console.log('Online - attempting to sync pending orders');
-      // this.retryPendingOrders();
-      // Also sync raw orderData
+      console.log('🌐 Online - attempting to sync pending orders');
       this.syncPendingOrders();
-    });
+    };
 
-    window.addEventListener('offline', () => {
+    this.offlineHandler = () => {
       this.isOnline = false;
-      console.log('Offline - orders will be saved locally');
-    });
+      console.log('📴 Offline - orders will be saved locally');
+    };
+
+    window.addEventListener('online', this.onlineHandler);
+    window.addEventListener('offline', this.offlineHandler);
   }
 
   // Sync pending orders using raw orderData saved for API
   async syncPendingOrders(): Promise<void> {
     if (!this.isOnline) {
+      console.log('📴 Offline - skipping sync');
       return;
     }
 
     try {
-      // const pendingOrders = await this.dbService.getPendingOrders();
+      const pendingOrders = await this.dbService.getPendingOrders();
 
-      // if (pendingOrders.length === 0) {
-      //   console.log('✅ No pending orders to sync');
-      //   return;
-      // }
+      if (pendingOrders.length === 0) {
+        console.log('✅ No pending orders to sync');
+        return;
+      }
 
-      // console.log(`🔄 Syncing ${pendingOrders.length} pending order(s)...`);
+      console.log(`🔄 Syncing ${pendingOrders.length} pending order(s)...`);
 
-      // for (const pendingOrder of pendingOrders) {
-      //   try {
-      //     // Remove metadata fields before sending to API
-      //     const orderDataForAPI = { ...pendingOrder };
-      //     delete orderDataForAPI.type;
-      //     delete orderDataForAPI.savedAt;
-      //     delete orderDataForAPI.isSynced;
-      //     delete orderDataForAPI.id;
+      for (const pendingOrder of pendingOrders) {
+        try {
 
-      //     await new Promise<void>((resolve, reject) => {
-      //       const timeoutPromise = new Promise((_, timeoutReject) =>
-      //         setTimeout(() => timeoutReject(new Error('Request timeout')), 30000)
-      //       );
+          // localStorage.setItem('form_data', pendingOrder.formData);
+          // let addressId = await this.getAddressId();
+          // if (addressId) {
+          //   localStorage.setItem('address_id', addressId.toString());
+          // }
 
-      //       Promise.race([
-      //         firstValueFrom(this.plaseOrderService.placeOrder(orderDataForAPI)),
-      //         timeoutPromise
-      //       ]).then((response: any) => {
-      //         if (response.status !== false && !response.errorData) {
-      //           // Mark as synced and delete
-      //           this.dbService.markPendingOrderAsSynced(pendingOrder.id)
-      //             .then(() => this.dbService.deleteSyncedPendingOrder(pendingOrder.id))
-      //             .then(() => {
-      //               console.log(`✅ Successfully synced order ${pendingOrder.orderId || 'N/A'}`);
-      //               resolve();
-      //             })
-      //             .catch(reject);
-      //         } else {
-      //           console.error(`❌ API returned error for order:`, response);
-      //           resolve(); // Continue with next order even if this one failed
-      //         }
-      //       }).catch((err) => {
-      //         console.error(`❌ Error syncing order:`, err);
-      //         resolve(); // Continue with next order even if this one failed
-      //       });
-      //     });
-      //   } catch (err) {
-      //     console.error(`❌ Error processing pending order ${pendingOrder.id}:`, err);
-      //     // Continue with next order
-      //   }
-      // }
+          console.log('pendingOrder', pendingOrder);
+          // Remove metadata fields before sending to API
+          const orderDataForAPI = { ...pendingOrder };
+          delete orderDataForAPI.type_operation;
+          delete orderDataForAPI.savedAt;
+          delete orderDataForAPI.isSynced;
+          delete orderDataForAPI.id;
+
+          await new Promise<void>((resolve, reject) => {
+            const timeoutPromise = new Promise((_, timeoutReject) =>
+              setTimeout(() => timeoutReject(new Error('Request timeout')), 30000)
+            );
+
+            console.log('orderDataForAPI', orderDataForAPI);
+
+            Promise.race([
+              firstValueFrom(this.plaseOrderService.placeOrder_offline(orderDataForAPI)),
+              timeoutPromise
+            ]).then((response: any) => {
+              if (response.status !== false && !response.errorData) {
+                // Mark as synced and delete
+                this.dbService.markPendingOrderAsSynced(pendingOrder.id)
+                  .then(() => this.dbService.deleteSyncedPendingOrder(pendingOrder.id))
+                  .then(() => {
+                    console.log(`✅ Successfully synced order ${pendingOrder.orderId || 'N/A'}`);
+                    resolve();
+                  })
+                  .catch(reject);
+              } else {
+                console.error(`❌ API returned error for order:`, response);
+                resolve(); // Continue with next order even if this one failed
+              }
+            }).catch((err) => {
+              console.error(`❌ Error syncing order:`, err);
+              resolve(); // Continue with next order even if this one failed
+            });
+          });
+        } catch (err) {
+          console.error(`❌ Error processing pending order ${pendingOrder.id}:`, err);
+          // Continue with next order
+        }
+      }
 
       console.log('✅ Finished syncing all pending orders');
     } catch (err) {
@@ -937,6 +980,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     return item.order_detail_id || item.dish_name + index || index;
   }
   ngOnDestroy(): void {
+    // Remove event listeners to prevent memory leaks
+    if (this.onlineHandler) {
+      window.removeEventListener('online', this.onlineHandler);
+    }
+    if (this.offlineHandler) {
+      window.removeEventListener('offline', this.offlineHandler);
+    }
+
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -1422,6 +1473,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const taxEnabled = this.branchData.tax_application;
     const couponEnabled = this.branchData.coupon_application;
     const couponPercentage = this.appliedCoupon?.value_type;
+    const couponApplyType = this.appliedCoupon?.coupon_apply_type;
 
     // Step 1: Calculate subtotal from cart items
     const rawSubtotal = this.getTotal();
@@ -1435,39 +1487,34 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     let taxAmount = 0;
 
-    // Step 2: Calculate tax if tax is disabled (weird condition?)
+    // Step 2: Calculate tax if tax is disabled
     if (!taxEnabled) {
-      // taxAmount = this.getTotalAfterServices() * (this.branchData.tax_percentage / 100);
       taxAmount = this.getTax();
-      /*       console.log('Subtotal before tax:', subtotal);
-            console.log('Calculated taxAmount:', taxAmount); */
     }
-    // if (this.discountAmount) {
-    //   if (taxEnabled && !couponEnabled) {
-    //     subtotal = this.getTotal() - this.discountAmount; // getTax already includes tax
-    //   } else {
-    //     subtotal = this.getTotal() + this.discountAmount;
-    //     console.log('Subtotal after coupon:', subtotal);
-    //   }
-    // }
-    // Step 3: Apply coupon
-    if (this.appliedCoupon && this.validCoupon && localStorage.getItem('selectedOrderType') !== 'talabat') {
-      if (taxEnabled && !couponEnabled && couponPercentage === 'percentage') {
-        subtotal = this.appliedCoupon.amount_after_coupon + this.getTax(); // getTax already includes tax
-      } else {
-        subtotal = this.appliedCoupon.amount_after_coupon;
-        // console.log('Subtotal after coupon:', subtotal);
-      }
 
+    // Step 3: Apply coupon - 🔥 تحديث بناءً على نوع التطبيق
+    if (this.appliedCoupon && this.validCoupon && localStorage.getItem('selectedOrderType') !== 'talabat') {
+      if (couponApplyType === 'dish') {
+        // 🔥 كوبون على أطباق محددة - استخدم المبلغ بعد الخصم مباشرة
+        subtotal = this.appliedCoupon.amount_after_coupon;
+      } else {
+        // كوبون على الطلب كامل
+        if (taxEnabled && !couponEnabled && couponPercentage === 'percentage') {
+          subtotal = this.appliedCoupon.amount_after_coupon + this.getTax();
+        } else {
+          subtotal = this.appliedCoupon.amount_after_coupon;
+        }
+      }
     } else {
       this.getTax();
       subtotal = this.getTotal();
-      // console.log(subtotal, "tttttttttttt");
-
     }
-    // Step 4: Ensure subtotal is not negative
-    // subtotal = Math.max(subtotal, 0);
+
     subtotal = parseFloat(subtotal.toFixed(2));
+
+    // Step 4: Ensure subtotal is not negative
+    subtotal = Math.max(subtotal, 0);
+
     // Step 5: Calculate service fee (based on raw subtotal only)
     let serviceFee = 0;
     if (
@@ -1483,57 +1530,39 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
     serviceFee = parseFloat(serviceFee.toFixed(2));
 
-    // Step 6: Delivery fee
+    // Step 6: Delivery fee - 🔥 معالجة خاصية delivery_fees من الكوبون
     let deliveryFee = 0;
     if (
       this.selectedOrderType === 'توصيل' ||
       this.selectedOrderType === 'Delivery' ||
       this.currentOrderData?.order_details?.order_type === 'Delivery'
     ) {
-
-      console.log("rfdewrewrwe");
-      deliveryFee = this.delivery_fees;
+      // 🔥 إذا كان الكوبون يلغي delivery_fees (مثل كوبون 100%)
+      if (this.appliedCoupon && this.appliedCoupon.delivery_fees === 0) {
+        deliveryFee = 0;
+      } else {
+        deliveryFee = this.delivery_fees;
+      }
     }
     deliveryFee = parseFloat(deliveryFee.toFixed(2));
 
-    if ((this.selectedOrderType === 'توصيل' || this.selectedOrderType === 'Delivery') && (this.appliedCoupon) && (this.appliedCoupon.coupon_value == '100.00' && this.appliedCoupon.value_type == 'percentage') && (this.appliedCoupon.coupon_apply_type == 'order')
-    ) {
-      deliveryFee = 0
-      console.log(this.appliedCoupon, "ffff");
-
-    }
     // Step 7: Final total calculation
     let total = 0;
 
     if (!taxEnabled && !this.appliedCoupon) {
-      total =
-        subtotal +
-        taxAmount +
-        serviceFee +
-        deliveryFee; /*  console.log(subtotal, taxAmount, serviceFee, deliveryFee); */
-      /*       console.log(total, 'first');
-       */
+      total = subtotal + taxAmount + serviceFee + deliveryFee;
     } else if (!taxEnabled && couponEnabled) {
       total = subtotal + serviceFee + deliveryFee;
-      // console.log(total, 'second');
     } else {
       total = subtotal + taxAmount + serviceFee + deliveryFee;
-      // console.log(total, 'third', subtotal, taxAmount, serviceFee, deliveryFee);
     }
+
     if ((this.selectedOrderType === 'talabat' || this.selectedOrderType === 'طلبات')) {
-      console.log(this.selectedOrderType, "talabat");
-      console.log(subtotal, "subtotal");
       total = subtotal;
     }
+
     const finalTotal = total > 0 ? parseFloat(total.toFixed(2)) : 0;
-
-    // ✅ تحديث مبلغ الدفع تلقائياً عند أي تغيير في المجموع الكلي
-    // setTimeout(() => {
-    //   this.cashPaymentInput = finalTotal;
-    //   this.cdr.detectChanges();
-    // }, 0);
     return finalTotal;
-
   }
 
   getServiceOnAmountAfterCoupon(): number {
@@ -1749,29 +1778,33 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const storedCouponCode = localStorage.getItem('couponCode');
     const storedDiscountAmount = localStorage.getItem('discountAmount');
     const storedCouponType = localStorage.getItem('couponType');
-    const storedCouponValue = localStorage.getItem('couponValue'); // نحتاج تخزين قيمة الكوبون الأصلية
+    const storedCouponValue = localStorage.getItem('couponValue');
+    const storedCouponApplyType = localStorage.getItem('couponApplyType'); // 🔥 جديد
 
     if (hasStoredCoupon && storedCouponCode && storedCouponType && this.couponCode === storedCouponCode) {
       console.log('🎯 Applying stored coupon without API call');
 
-      // حساب الخصم بناءً على نوع الكوبون والعناصر الحالية فقط
+      // حساب الخصم بناءً على نوع الكوبون ونطاق التطبيق
       let discountAmount = 0;
       const currentCartTotal = this.getTotal();
 
-      if (storedCouponType === 'percentage') {
-        // تطبيق النسبة المئوية على المجموع الحالي
-        const couponPercentage = parseFloat(storedCouponValue || '10');
-        discountAmount = (currentCartTotal * couponPercentage) / 100;
-        console.log('💰 10% coupon calculation:', {
-          percentage: couponPercentage + '%',
-          currentTotal: currentCartTotal,
-          discount: discountAmount,
-          finalPrice: currentCartTotal - discountAmount
-        });
-      } else {
-        // للكوبون الثابت، استخدام القيمة المحفوظة
-        const fixedDiscount = parseFloat(storedCouponValue || '0');
-        discountAmount = Math.min(fixedDiscount, currentCartTotal);
+      if (storedCouponApplyType === 'order') {
+        // 🔥 كوبون على الطلب كامل
+        if (storedCouponType === 'percentage') {
+          const couponPercentage = parseFloat(storedCouponValue || '10');
+          discountAmount = (currentCartTotal * couponPercentage) / 100;
+        } else {
+          const fixedDiscount = parseFloat(storedCouponValue || '0');
+          discountAmount = Math.min(fixedDiscount, currentCartTotal);
+        }
+      } else if (storedCouponApplyType === 'dish') {
+        // 🔥 كوبون على أطباق محددة
+        // ✅ التصحيح: استخدام القيم الافتراضية إذا كانت null
+        discountAmount = this.calculateDishCouponDiscount(
+          storedCouponCode,
+          storedCouponType || 'percentage',
+          storedCouponValue || '0'
+        );
       }
 
       this.validCoupon = true;
@@ -1780,6 +1813,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         coupon_title: localStorage.getItem('couponTitle') || storedCouponCode,
         coupon_value: storedCouponValue,
         value_type: storedCouponType,
+        coupon_apply_type: storedCouponApplyType, // 🔥 جديد
         amount_after_coupon: currentCartTotal - discountAmount,
         total_discount: discountAmount,
         currency_symbol: this.currencySymbol
@@ -1790,18 +1824,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount.toFixed(2)} ${this.currencySymbol} من الإجمالي.`;
 
-      console.log('✅ Stored coupon applied with new calculation:', {
-        type: storedCouponType,
-        value: storedCouponValue + '%',
-        originalValue: storedCouponValue,
-        currentTotal: currentCartTotal,
-        discount: discountAmount,
-        finalTotal: currentCartTotal - discountAmount
-
-      });
-
       this.updateTotalPrice();
-      // this.closeCouponModal();
       this.initializePaymentAmount();
       this.isLoading = false;
       this.cdr.detectChanges();
@@ -1848,7 +1871,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       }, 0);
     } else if (!taxEnabled && couponOnTotalAfterTax) {
       baseAmount = this.getTotal() + this.getTax();
-      console.log(baseAmount, 'cashier3');
     } else if (taxEnabled && couponOnTotalAfterTax) {
       baseAmount = this.getTotal();
     } else {
@@ -1861,7 +1883,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    const requestData = {
+    // 🔥 إعداد بيانات الأطباق للكوبونات على الأطباق المحددة
+    const requestData: any = {
       code: this.couponCode,
       amount: baseAmount,
       branch_id: branchId,
@@ -1879,6 +1902,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       })
     };
 
+    // 🔥 إضافة order_type إذا كان متاحاً
+    if (this.selectedOrderType) {
+      requestData.order_type = this.selectedOrderType.toLowerCase();
+    }
+
     this.http
       .post(apiUrl, requestData, { headers })
       .pipe(
@@ -1889,9 +1917,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             this.couponTitle = response.data.coupon_title;
             this.discountAmount = response.data.total_discount;
 
+            // 🔥 جديد: حفظ نوع تطبيق الكوبون
+            const couponApplyType = response.data.coupon_apply_type || 'order';
+
             this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount.toFixed(2)} ${response.data.currency_symbol} من الإجمالي.`;
 
-            // حفظ بيانات الكوبون في localStorage بما فيها القيمة الأصلية
+            // حفظ بيانات الكوبون في localStorage
             localStorage.setItem('appliedCoupon', 'true');
             localStorage.setItem('validCoupon', 'true');
             localStorage.setItem('couponTitle', this.couponTitle);
@@ -1899,6 +1930,18 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             localStorage.setItem('discountAmount', this.discountAmount.toString());
             localStorage.setItem('couponType', response.data.value_type || '');
             localStorage.setItem('couponValue', response.data.coupon_value || this.discountAmount.toString());
+            localStorage.setItem('couponApplyType', couponApplyType);
+
+            // 🔥 إذا كان الكوبون على أطباق محددة، احفظ تفاصيل الخصم
+            if (couponApplyType === 'dish' && response.data.discount_details) {
+              localStorage.setItem('discountDetails', JSON.stringify(response.data.discount_details));
+            }
+
+            // 🔥 معالجة خاصية delivery_fees إذا كانت موجودة
+            if (response.data.delivery_fees !== undefined) {
+              this.delivery_fees = response.data.delivery_fees;
+              localStorage.setItem('delivery_fees', this.delivery_fees.toString());
+            }
 
             this.updateTotalPrice();
 
@@ -1951,23 +1994,55 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         this.isLoading = false;
       });
   }
+  // 🔥 دالة جديدة لحساب خصم الكوبون على الأطباق المحددة
+  calculateDishCouponDiscount(couponCode: string, couponType: string, couponValue: string): number {
+    let totalDiscount = 0;
+
+    // جلب تفاصيل الخصم من localStorage
+    const discountDetailsJson = localStorage.getItem('discountDetails');
+    if (!discountDetailsJson) {
+      console.warn('❌ No discount details found for dish coupon');
+      return 0;
+    }
+
+    try {
+      const discountDetails = JSON.parse(discountDetailsJson);
+
+      // جمع إجمالي الخصم من التفاصيل
+      discountDetails.forEach((detail: any) => {
+        totalDiscount += detail.totalDiscount || 0;
+      });
+
+      console.log('💰 Dish coupon calculation:', {
+        discountDetailsCount: discountDetails.length,
+        totalDiscount,
+        couponType,
+        couponValue
+      });
+
+    } catch (error) {
+      console.error('❌ Error calculating dish coupon discount:', error);
+    }
+
+    return totalDiscount;
+  }
+
   restoreCoupon() {
     const storedCoupon = localStorage.getItem('appliedCoupon');
+    const storedCouponApplyType = localStorage.getItem('couponApplyType');
+
     if (storedCoupon) {
       this.appliedCoupon = JSON.parse(storedCoupon);
 
       const taxEnabled: boolean = this.branchData?.tax_application ?? false;
-      const couponOnTotalAfterTax: boolean =
-        this.branchData?.coupon_application ?? false;
-      const taxPercentage: number =
-        parseFloat(this.branchData?.tax_percentage) || 0;
+      const couponOnTotalAfterTax: boolean = this.branchData?.coupon_application ?? false;
+      const taxPercentage: number = parseFloat(this.branchData?.tax_percentage) || 0;
 
       let baseAmount = 0;
 
       if (taxEnabled && !couponOnTotalAfterTax) {
         baseAmount = this.cartItems.reduce((total, item) => {
-          const priceBeforeTax =
-            this.getItemTotal(item) / (1 + taxPercentage / 100);
+          const priceBeforeTax = this.getItemTotal(item) / (1 + taxPercentage / 100);
           return total + priceBeforeTax;
         }, 0);
       } else if (!taxEnabled && couponOnTotalAfterTax) {
@@ -1977,19 +2052,29 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       }
 
       if (this.appliedCoupon) {
-        if (this.appliedCoupon.value_type === 'percentage') {
-          this.discountAmount =
-            (baseAmount * parseFloat(this.appliedCoupon.coupon_value)) / 100;
-        } else if (this.appliedCoupon.value_type === 'fixed') {
-          this.discountAmount = parseFloat(this.appliedCoupon.coupon_value);
+        // 🔥 تحديث الحساب بناءً على نوع التطبيق
+        if (storedCouponApplyType === 'dish') {
+          // كوبون على أطباق محددة
+          this.discountAmount = this.calculateDishCouponDiscount(
+            this.appliedCoupon.code,
+            this.appliedCoupon.value_type,
+            this.appliedCoupon.coupon_value
+          );
+        } else {
+          // كوبون على الطلب كامل
+          if (this.appliedCoupon.value_type === 'percentage') {
+            this.discountAmount = (baseAmount * parseFloat(this.appliedCoupon.coupon_value)) / 100;
+          } else if (this.appliedCoupon.value_type === 'fixed') {
+            this.discountAmount = parseFloat(this.appliedCoupon.coupon_value);
+          }
         }
       }
-      // localStorage.setItem('discountAmount', this.discountAmount.toString());
 
       this.discountAmount = Math.min(this.discountAmount, baseAmount);
     }
     this.updateTotalPrice();
   }
+
   getLocalDiscount() {
     let discount = localStorage.getItem('discountAmount');
     return discount;
@@ -2070,11 +2155,16 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   removeCouponFromLocalStorage() {
     const couponKeys = [
       'couponCode', 'discountAmount', 'appliedCoupon',
-      'validCoupon', 'couponTitle', 'couponType', 'couponValue'
+      'validCoupon', 'couponTitle', 'couponType', 'couponValue',
+      'couponApplyType', 'discountDetails' // 🔥 جديد
     ];
 
     couponKeys.forEach(key => localStorage.removeItem(key));
+
+    // 🔥 إعادة تعيين delivery_fees إذا تم تطبيق كوبون 100%
+    this.delivery_fees = Number(localStorage.getItem('original_delivery_fees')) || this.delivery_fees;
   }
+
   getTotal(): number {
     const itemsHash = JSON.stringify(this.cartItems);
     if (this._cachedTotal !== null && this._cachedCartItemsHash === itemsHash) {
@@ -2662,17 +2752,30 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     //     }
     //   }
     // }
+    if (navigator.onLine) {
+      if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
+        addressId = localStorage.getItem('address_id');
 
-    if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
-      addressId = localStorage.getItem('address_id');
+        if (!addressId && !this.addressRequestInProgress) {
+          this.addressRequestInProgress = true;
+          try {
 
-      if (!addressId && !this.addressRequestInProgress) {
-        this.addressRequestInProgress = true;
-        try {
-          addressId = await this.getAddressId();
-          if (addressId) {
-            localStorage.setItem('address_id', addressId.toString());
-          } else {
+            addressId = await this.getAddressId();
+            if (addressId) {
+              localStorage.setItem('address_id', addressId.toString());
+            } else {
+              this.isLoading = false;
+              this.loading = false;
+
+              this.falseMessage = 'يرجى اختيار عنوان التوصيل';
+              setTimeout(() => {
+                this.falseMessage = '';
+              }, 1500);
+              return;
+            }
+
+          } catch (error) {
+            // ❌ API failed → show message and stop
             this.isLoading = false;
             this.loading = false;
 
@@ -2680,22 +2783,23 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             setTimeout(() => {
               this.falseMessage = '';
             }, 1500);
+
             return;
+          } finally {
+            this.addressRequestInProgress = false;
           }
-        } catch (error) {
-          // ❌ API failed → show message and stop
-          this.isLoading = false;
-          this.loading = false;
-
-          this.falseMessage = 'يرجى اختيار عنوان التوصيل';
-          setTimeout(() => {
-            this.falseMessage = '';
-          }, 1500);
-
-          return;
-        } finally {
-          this.addressRequestInProgress = false;
         }
+      }
+    }
+    // ✅ التحقق من معلومات التوصيل في وضع Offline
+    if (!navigator.onLine && this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
+      const validation = this.validateOfflineDeliveryInfo();
+      if (!validation.isValid) {
+        this.isLoading = false;
+        this.loading = false;
+        this.falseMessage = validation.message;
+        setTimeout(() => { this.falseMessage = ''; }, 3000);
+        return;
       }
     }
     const authToken = localStorage.getItem('authToken');
@@ -2957,40 +3061,100 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     // معالجة حالة عدم الاتصال
     // if (!navigator.onLine) {
+    //   // ✅ التحقق من معلومات التوصيل في وضع Offline - بدون دالة مساعدة
+    //   if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
+    //     const hasFormData = localStorage.getItem('form_data');
+    //     const hasClientInfo = this.clientName && this.clientPhone && this.address;
+
+    //     console.log('📋 Offline delivery info check:', {
+    //       hasFormData: !!hasFormData,
+    //       clientName: this.clientName,
+    //       clientPhone: this.clientPhone,
+    //       address: this.address
+    //     });
+
+    //     if (!hasFormData && !hasClientInfo) {
+    //       this.isLoading = false;
+    //       this.loading = false;
+    //       this.falseMessage = 'يرجى إدخال معلومات التوصيل أولاً';
+    //       setTimeout(() => { this.falseMessage = ''; }, 3000);
+    //       return;
+    //     }
+    //   }
+
     //   try {
-    //     orderData.offlineTimestamp = new Date().toISOString();
-    //     orderData.status = 'pending_sync';
+    //     console.log('📴 Offline mode: Saving order to IndexedDB', orderData);
 
-    //     // Save to orders/pills stores (existing functionality)
-    //     const savedOrderId = await this.dbService.savePendingOrder(orderData);
-    //     console.log("Order saved to IndexedDB with ID:", savedOrderId);
+    //     // ✅ إضافة بيانات التوصيل للطلب في وضع Offline
+    //     if (this.selectedOrderType === 'Delivery') {
+    //       const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
 
-    //     // Save raw orderData for API sync (exact data that will be sent to API)
-    //     // Remove metadata fields that shouldn't be sent to API
-    //     const orderDataForSync = { ...orderData };
-    //     delete orderDataForSync.offlineTimestamp;
-    //     delete orderDataForSync.status;
+    //       // إضافة معلومات التوصيل للطلب
+    //       orderData.delivery_info = {
+    //         client_name: formData.client_name || this.clientName,
+    //         client_phone: formData.address_phone || this.clientPhone,
+    //         address: formData.address || this.address,
+    //         country_code: formData.country_code?.code || formData.country_code || this.selectedCountry.code,
+    //         apartment_number: formData.apartment_number || '',
+    //         building: formData.building || '',
+    //         address_type: formData.address_type || '',
+    //         propertyType: formData.propertyType || '',
+    //         buildingName: formData.buildingName || '',
+    //         note: formData.note || '',
+    //         floor_number: formData.floor_number || '',
+    //         landmark: formData.landmark || '',
+    //         villaName: formData.villaName || '',
+    //         villaNumber: formData.villaNumber || '',
+    //         companyName: formData.companyName || '',
+    //         buildingNumber: formData.buildingNumber || ''
+    //       };
 
-    //     await this.dbService.savePendingOrderForSync(orderDataForSync);
-    //     console.log("Raw orderData saved for API sync");
+    //       // استخدام عنوان مؤقت للـ Offline
+    //       orderData.address_id = 9999; // أو أي قيمة مؤقتة
 
-    //     await this.releaseTableAndOrderType();
-
-    //     this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
-    //     this.clearCart();
-    //     this.resetLocalStorage();
-
-    //     if (this.successModal) {
-    //       this.successModal.show();
+    //       // أيضاً إضافة معلومات العميل للطلب
+    //       orderData.client_name = formData.client_name || this.clientName;
+    //       orderData.client_phone = formData.address_phone || this.clientPhone;
+    //       orderData.client_country_code = formData.country_code?.code || formData.country_code || this.selectedCountry.code;
     //     }
 
+    //     // Save to orders/pills stores (existing functionality) - preserves full structure
+    //     await this.dbService.savePendingOrder(orderData);
+    //     console.log("✅ Order saved to IndexedDB with full structure");
+
+    //     // Save raw orderData for API sync (exact data that will be sent to API)
+    //     // const formData = localStorage.getItem('form_data');
+    //     const orderDataForSync = { ...orderData };
+
+    //     await this.dbService.savePendingOrderForSync(orderDataForSync);
+    //     console.log("✅ Raw orderData saved for API sync");
+
+    //     // Clean up localStorage
     //     const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
     //     const orderIdToRemove = orderData.orderId;
     //     const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
     //     localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
 
+    //     // Clear cart and reset
+    //     this.clearCart();
+    //     this.resetLocalStorage();
+    //     this.resetAddress();
+    //     this.loadCart();
+
+    //     // Show success message
+    //     this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
+    //     this.falseMessage = '';
+    //     this.tableError = '';
+    //     this.couponError = '';
+    //     this.cashiermachine = '';
+
+    //     if (this.successModal) {
+    //       this.successModal.show();
+    //     }
+
+    //     this.cdr.detectChanges();
     //   } catch (error) {
-    //     console.error('Error saving order to IndexedDB:', error);
+    //     console.error('❌ Error saving order to IndexedDB:', error);
     //     this.showError('فشل حفظ الطلب في وضع عدم الاتصال. يرجى المحاولة مرة أخرى.');
     //   } finally {
     //     this.isLoading = false;
@@ -3078,7 +3242,88 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.loading = false;
     }
   }
+  validateOfflineDeliveryInfo(): { isValid: boolean; message: string } {
+    if (this.selectedOrderType !== 'Delivery') {
+      return { isValid: true, message: '' };
+    }
 
+    console.log('📋 التحقق من معلومات التوصيل في وضع Offline');
+
+    // التحقق من وجود بيانات العميل الأساسية
+    const hasClientInfo = this.clientName && this.clientPhone && this.address;
+    const hasFormData = localStorage.getItem('form_data');
+
+    console.log('📊 حالة البيانات:', {
+      hasClientInfo,
+      hasFormData,
+      clientName: this.clientName,
+      clientPhone: this.clientPhone,
+      address: this.address,
+      selectedOrderType: this.selectedOrderType
+    });
+
+    // إذا لا توجد أي بيانات
+    if (!hasClientInfo && !hasFormData) {
+      return {
+        isValid: false,
+        message: '❌ يرجى إدخال معلومات التوصيل (الاسم، رقم الهاتف، العنوان) قبل حفظ الطلب في وضع عدم الاتصال'
+      };
+    }
+
+    // إذا كانت البيانات من الفورم
+    if (hasFormData) {
+      try {
+        const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+
+        console.log('📝 بيانات الفورم:', {
+          client_name: formData.client_name,
+          address_phone: formData.address_phone,
+          address: formData.address
+        });
+
+        if (!formData.client_name || formData.client_name.trim().length < 2) {
+          return { isValid: false, message: '❌ يرجى إدخال اسم العميل بشكل صحيح (أكثر من حرفين)' };
+        }
+
+        if (!formData.address_phone || !this.isValidPhoneNumber(formData.address_phone)) {
+          return { isValid: false, message: '❌ يرجى إدخال رقم هاتف صحيح (من 8 إلى 15 رقم)' };
+        }
+
+        if (!formData.address || formData.address.trim().length < 5) {
+          return { isValid: false, message: '❌ يرجى إدخال العنوان بالكامل (أكثر من 5 أحرف)' };
+        }
+
+      } catch (error) {
+        console.error('❌ خطأ في تحليل بيانات الفورم:', error);
+        return { isValid: false, message: '❌ بيانات التوصيل غير صالحة' };
+      }
+    }
+
+    // إذا كانت البيانات من معلومات العميل
+    if (hasClientInfo) {
+      console.log('👤 بيانات العميل المباشرة:', {
+        clientName: this.clientName,
+        clientPhone: this.clientPhone,
+        address: this.address
+      });
+
+      if (!this.clientName.trim() || this.clientName.trim().length < 2) {
+        return { isValid: false, message: '❌ يرجى إدخال اسم العميل بشكل صحيح (أكثر من حرفين)' };
+      }
+
+      if (!this.clientPhone || !this.isValidPhoneNumber(this.clientPhone)) {
+        return { isValid: false, message: '❌ يرجى إدخال رقم هاتف صحيح (من 8 إلى 15 رقم)' };
+      }
+
+      // في حالة معلومات العميل، نتحقق من العنوان أيضاً
+      if (!this.address || this.address.trim().length < 5) {
+        return { isValid: false, message: '❌ يرجى إدخال العنوان بالكامل (أكثر من 5 أحرف)' };
+      }
+    }
+
+    console.log('✅ معلومات التوصيل صالحة للطلب في وضع Offline');
+    return { isValid: true, message: '' };
+  }
   // دالة مساعدة بسيطة لعرض الأخطاء
   private showError(message: string): void {
     this.falseMessage = message;
@@ -3114,12 +3359,99 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     console.error('API Error:', error);
 
     console.log(navigator.onLine);
+    // ✅ التحقق أولاً إذا كان هناك اتصال بالإنترنت
+    if (!navigator.onLine) {
+      console.log('📴 No internet connection detected');
 
-    if (navigator.onLine == false) {
-      this.falseMessage = 'يوجد خطأ فى الاتصال يرجى المحاولة مره اخرى';
-      setTimeout(() => {
+      // ✅ التحقق من معلومات التوصيل قبل محاولة الحفظ في وضع Offline
+      if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
+        const validation = this.validateOfflineDeliveryInfo();
+        if (!validation.isValid) {
+          this.falseMessage = validation.message;
+          setTimeout(() => { this.falseMessage = ''; }, 3500);
+          this.isLoading = false;
+          this.loading = false;
+          return;
+        }
+      }
+
+      try {
+        console.log('📴 Offline mode: Attempting to save order to IndexedDB');
+
+        // ✅ إضافة بيانات التوصيل للطلب في وضع Offline
+        if (this.selectedOrderType === 'Delivery') {
+          const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+
+          // إضافة معلومات التوصيل للطلب
+          orderData.delivery_info = {
+            client_name: formData.client_name || this.clientName,
+            client_phone: formData.address_phone || this.clientPhone,
+            address: formData.address || this.address,
+            country_code: formData.country_code?.code || formData.country_code || this.selectedCountry.code,
+            apartment_number: formData.apartment_number || '',
+            building: formData.building || '',
+            address_type: formData.address_type || '',
+            propertyType: formData.propertyType || '',
+            buildingName: formData.buildingName || '',
+            note: formData.note || '',
+            floor_number: formData.floor_number || '',
+            landmark: formData.landmark || '',
+            villaName: formData.villaName || '',
+            villaNumber: formData.villaNumber || '',
+            companyName: formData.companyName || '',
+            buildingNumber: formData.buildingNumber || ''
+          };
+
+          // استخدام عنوان مؤقت للـ Offline
+          orderData.address_id = 9999;
+
+          // أيضاً إضافة معلومات العميل للطلب
+          orderData.client_name = formData.client_name || this.clientName;
+          orderData.client_phone = formData.address_phone || this.clientPhone;
+          orderData.client_country_code = formData.country_code?.code || formData.country_code || this.selectedCountry.code;
+        }
+
+        // حفظ الطلب في IndexedDB
+        await this.dbService.savePendingOrder(orderData);
+        console.log("✅ Order saved to IndexedDB with delivery info");
+
+        // حفظ raw orderData للـ API sync
+        const orderDataForSync = { ...orderData };
+        await this.dbService.savePendingOrderForSync(orderDataForSync);
+        console.log("✅ Raw orderData saved for API sync");
+
+        // تنظيف localStorage
+        const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
+        const orderIdToRemove = orderData.orderId;
+        const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
+        localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
+
+        // تنظيف البيانات
+        this.clearCart();
+        this.resetLocalStorage();
+        this.resetAddress();
+        this.loadCart();
+
+        // عرض رسالة النجاح
+        this.successMessage = '✅ تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
         this.falseMessage = '';
-      }, 3500);
+        this.tableError = '';
+        this.couponError = '';
+        this.cashiermachine = '';
+
+        if (this.successModal) {
+          this.successModal.show();
+        }
+
+        this.cdr.detectChanges();
+
+      } catch (dbError) {
+        console.error('❌ Error saving order to IndexedDB:', dbError);
+        this.falseMessage = '❌ فشل حفظ الطلب في وضع عدم الاتصال. يرجى المحاولة مرة أخرى.';
+      } finally {
+        this.isLoading = false;
+        this.loading = false;
+      }
       return;
     }
 
@@ -4360,7 +4692,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     ) {
       deliveryFee = this.delivery_fees;
     }
-
+    // ✅ التحقق من معلومات التوصيل في وضع Offline
+    if (this.selectedOrderType === 'Delivery') {
+      const validation = this.validateOfflineDeliveryInfo();
+      if (!validation.isValid) {
+        this.falseMessage = validation.message;
+        setTimeout(() => { this.falseMessage = ''; }, 3000);
+        return;
+      }
+    }
     // const total = subtotal + taxAmount + serviceFee + deliveryFee;
 
     const invoiceSummary = {
@@ -5058,8 +5398,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.FormDataDetails.client_name &&
       this.FormDataDetails.address &&
       this.FormDataDetails.address_phone;
-
-    return hasBasicInfo || hasFormData;
+    const hasClientInfo = this.clientName &&
+      this.clientPhone &&
+      this.address;
+    return hasBasicInfo || hasFormData || hasClientInfo;
   }
 
   // دالة للتحقق من اكتمال معلومات العميل للتوصيل

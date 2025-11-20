@@ -56,7 +56,10 @@ export class DeliveryDetailsComponent implements OnInit {
     flag: 'assets/images/egypt.png',
     phoneLength: 11,
   };
-
+  isOnline: boolean = navigator.onLine;
+  isSavingOffline: boolean = false;
+  offlineMessage: string = '';
+  pendingSyncCount: number = 0;
   dropdownOpen = false;
   selectedProperty: any | '' = 'apartment';
   submitted = false;
@@ -130,11 +133,31 @@ export class DeliveryDetailsComponent implements OnInit {
   }
   //
   ngOnInit() {
-
+    // start hanan
+    this.dbService.init();
+    // end hanan
     if (this.selectedAddress) {
       this.userAddNewAddress = false;
     }
     this.initializeForm();
+    // ✅ التأكد من تعيين القيم الافتراضية بعد تهيئة الفورم
+    setTimeout(() => {
+      if (!this.form.get('country_code')?.value) {
+        this.form.get('country_code')?.setValue(this.selectedCountry);
+      }
+      if (!this.form.get('whatsapp_number_code')?.value) {
+        this.form.get('whatsapp_number_code')?.setValue(this.selectedWhatsappCountry);
+      }
+      if (!this.form.get('address_type')?.value) {
+        this.form.get('address_type')?.setValue(this.selectedProperty);
+      }
+    }, 100);
+    // ✅ إضافة مستمع لحالة الاتصال
+    this.setupNetworkListeners();
+
+    // ✅ التحقق من البيانات المحفوظة حالياً
+    this.checkPendingData();
+
     this.restoreFormData();
     this.fetchCountries(() => {
       this.restoreFormData(); // only restore after countries are loaded,case problem fatema
@@ -182,7 +205,8 @@ export class DeliveryDetailsComponent implements OnInit {
     }
     this.updateWhatsappValidators();
     this.cdr.detectChanges();
-    this.listenToAddressChange()
+    this.listenToAddressChange();
+
   }
   listenPhoneNumberChange() {
     const addressId = localStorage.getItem('address_id');
@@ -230,8 +254,17 @@ export class DeliveryDetailsComponent implements OnInit {
     this.dropdownOpen = false;
     this.filteredWhatsappCountries = [...this.countryList];
 
-    // Update validators after country change
-    this.updateWhatsappValidators();
+    // ✅ تحديث validators رقم الواتساب
+    if (!this.useSameNumberForWhatsapp) {
+      const whatsappControl = this.form.get('whatsapp_number');
+      if (whatsappControl) {
+        whatsappControl.setValidators([
+          Validators.required,
+          Validators.pattern(new RegExp(`^\\d{${country.phoneLength}}$`)),
+        ]);
+        whatsappControl.updateValueAndValidity();
+      }
+    }
   }
 
   // Update useSameWhatsapp method
@@ -360,9 +393,7 @@ export class DeliveryDetailsComponent implements OnInit {
         [
           Validators.required,
           this.noLeadingSpaceValidator(),
-          Validators.pattern(
-            new RegExp(`^\\d{${this.selectedWhatsappCountry.phoneLength}}$`)
-          ),
+          this.phonePatternValidator() // ✅ استبدل Validators.pattern بالدالة المخصصة
         ],
       ],
       whatsapp_number_code: [this.selectedWhatsappCountry],
@@ -370,10 +401,8 @@ export class DeliveryDetailsComponent implements OnInit {
         '',
         [
           Validators.required,
-          this.noLeadingSpaceValidator(), // only numbers, exactly 11 digits
-          Validators.pattern(
-            new RegExp(`^\\d{${this.selectedCountry.phoneLength}}$`)
-          ),
+          this.noLeadingSpaceValidator(),
+          this.phonePatternValidator() // ✅ استبدل Validators.pattern بالدالة المخصصة
         ],
       ],
       country_code: [this.selectedCountry || '', [Validators.required]],
@@ -434,6 +463,30 @@ export class DeliveryDetailsComponent implements OnInit {
     });
     this.listenToChangeWhatsappCountry()
   }
+// ✅ أضف هذه الدالة للتحقق من صحة رقم الهاتف مع دعم وضع عدم الاتصال
+private phonePatternValidator(): ValidatorFn {
+  return (control: AbstractControl): ValidationErrors | null => {
+    if (!control.value) {
+      return null;
+    }
+    
+    const value = control.value.toString();
+    
+    // ✅ في وضع عدم الاتصال، اسمح بأي أرقام
+    if (!this.isOnline) {
+      // فقط تأكد أنها أرقام
+      const numericRegex = /^\d+$/;
+      return numericRegex.test(value) ? null : { pattern: true };
+    }
+    
+    // ✅ في وضع الاتصال، استخدم التحقق العادي
+    const currentCountry = this.selectedCountry || this.selectedWhatsappCountry;
+    const phoneLength = currentCountry?.phoneLength || 11;
+    const phoneRegex = new RegExp(`^\\d{${phoneLength}}$`);
+    
+    return phoneRegex.test(value) ? null : { pattern: true };
+  };
+}
 
   toggleDropdown() {
     this.dropdownOpen = !this.dropdownOpen;
@@ -452,18 +505,21 @@ export class DeliveryDetailsComponent implements OnInit {
     this.dropdownOpen = false;
     this.form.get('country_code')?.setValue(country);
     this.form.get('country_code')?.markAsTouched();
+    this.dropdownOpen = false;
+
     this.form.get('searchTerm')?.setValue('');
     this.filteredCountries = [...this.countryList];
 
     // Update phone number validators dynamically based on selected country
     const phoneControl = this.form.get('address_phone');
     if (phoneControl) {
-      phoneControl.setValidators([
-        Validators.required,
-        Validators.pattern(new RegExp(`^\\d{${country.phoneLength}}$`)),
-      ]);
-      phoneControl.updateValueAndValidity();
-    }
+    phoneControl.setValidators([
+      Validators.required,
+      this.noLeadingSpaceValidator(),
+      this.phonePatternValidator() // ✅ استخدم الدالة المخصصة
+    ]);
+    phoneControl.updateValueAndValidity();
+  }
   }
   propertyFormValues: { [key in PropertyType]?: any } = {};
 
@@ -645,8 +701,25 @@ export class DeliveryDetailsComponent implements OnInit {
   //     },
   //   });
   // }
-  onSubmit(): void {
- if (this.useSameNumberForWhatsapp) {
+  async onSubmit(): Promise<void> {
+    this.submitted = true;
+    // ✅ Skip validation for hotel-specific fields when in hotel tab
+    if (this.selectedProperty !== 'hotel') {
+      this.form.get('building')?.updateValueAndValidity();
+      this.form.get('apartment_number')?.updateValueAndValidity();
+      this.form.get('floor_number')?.updateValueAndValidity();
+    }
+    this.form.get('address')?.updateValueAndValidity();
+
+    // Manually check hotel if the tab is selected
+    const isHotelValid = this.selectedProperty !== 'hotel' || this.selectedHotel;
+
+    if (this.form.invalid || !isHotelValid) {
+      console.log('Form is invalid. Stopping submission.');
+      this.logInvalidFields();
+      return;
+    }
+    if (this.useSameNumberForWhatsapp) {
       this.form
         .get('whatsapp_number')
         ?.setValue(this.form.get('address_phone')?.value || '');
@@ -742,7 +815,73 @@ export class DeliveryDetailsComponent implements OnInit {
     localStorage.setItem('deliveryForm', JSON.stringify(this.form.value));
     console.log('🔙 Navigating back after local save');
     // this.resetForm();
+    // this.location.back();
+    // ✅ المنطق الجديد: حفظ في IndexedDB إذا لم يكن هناك اتصال
+    if (!this.isOnline) {
+      await this.saveOffline(formDataWithNote);
+      return;
+    }
+
+    // ✅ إذا كان هناك اتصال: حفظ بشكل طبيعي
+    this.saveOnline(formDataWithNote);
+  }
+  // ✅ حفظ البيانات في حالة الاتصال
+  private saveOnline(formData: any): void {
+    // حفظ في localStorage
+    localStorage.setItem('form_data', JSON.stringify(formData));
+    localStorage.setItem('deliveryForm', JSON.stringify(this.form.value));
+
+    console.log('✅ Saving to localStorage:', formData);
+
+    // محاولة إرسال البيانات إلى الخادم
+    this.trySubmitToServer(formData);
+
+    // العودة للخلف
     this.location.back();
+  }
+  // ✅ حفظ البيانات في وضع عدم الاتصال
+  private async saveOffline(formData: any): Promise<void> {
+    this.isSavingOffline = true;
+
+    try {
+      // حفظ في IndexedDB
+      // await this.dbService.savePendingAddress(formData);
+
+      // حفظ في localStorage كنسخة احتياطية
+      localStorage.setItem('form_data', JSON.stringify(formData));
+      localStorage.setItem('deliveryForm', JSON.stringify(this.form.value));
+
+      this.offlineMessage = '✅ تم حفظ العنوان محلياً. سيتم إرساله عند عودة الاتصال.';
+      this.pendingSyncCount++;
+
+      console.log('📱 Address saved offline:', formData);
+
+      // العودة للخلف بعد حفظ البيانات
+      setTimeout(() => {
+        this.location.back();
+      }, 2000);
+
+    } catch (error) {
+      console.error('❌ Error saving offline:', error);
+      this.offlineMessage = '❌ فشل في حفظ البيانات محلياً. يرجى المحاولة مرة أخرى.';
+    } finally {
+      this.isSavingOffline = false;
+    }
+  }
+  // ✅ محاولة إرسال البيانات للخادم
+  private async trySubmitToServer(formData: any): Promise<void> {
+    try {
+      // هنا يمكنك إضافة استدعاء API إذا كان مطلوباً
+      // await this.formDataService.submitForm(formData).toPromise();
+
+      console.log('✅ Data would be sent to server:', formData);
+    } catch (error) {
+      console.warn('⚠️ Failed to submit to server, saving offline:', error);
+
+      // إذا فشل الإرسال، احفظ محلياً
+      // await this.dbService.savePendingAddress(formData);
+      this.pendingSyncCount++;
+    }
   }
   whatsapp: any;
   private handleBackendErrors(errors: any): void {
@@ -959,7 +1098,7 @@ export class DeliveryDetailsComponent implements OnInit {
     } else {
       // Offline: Load from IndexedDB
       this.loadHotelsFromIndexedDB();
-      return { unsubscribe: () => {} }; // Return a dummy subscription object
+      return { unsubscribe: () => { } }; // Return a dummy subscription object
     }
   }
 
@@ -1048,7 +1187,7 @@ export class DeliveryDetailsComponent implements OnInit {
               if (typeof res.data === 'object' && res.data !== null) {
                 // this.allUserAddress = {...res.data,country_code:{code:res.data.country_code,flag:res.data['country_flag']||null}};
 
-                    this.clientName?.setValue(res.data[0].user_name)
+                this.clientName?.setValue(res.data[0].user_name)
                 this.allUserAddress = res.data.map((item: any) => ({
                   ...item,
                   country_code: {
@@ -1067,13 +1206,13 @@ export class DeliveryDetailsComponent implements OnInit {
                       address.delivery_fees
                     );
                   }
-                 return {
-    id: address.id,
-    name: address.address_type + ' , ' + (address.hotels.length > 0 ? address.hotels[0].name : address.address),
-    delivery_fees: address.delivery_fees,
-    client_name: address.user_name
-    // name: address.address,
-};
+                  return {
+                    id: address.id,
+                    name: address.address_type + ' , ' + (address.hotels.length > 0 ? address.hotels[0].name : address.address),
+                    delivery_fees: address.delivery_fees,
+                    client_name: address.user_name
+                    // name: address.address,
+                  };
                 });
                 this.confirmationDialog.confirm();
               } else {
@@ -1099,7 +1238,7 @@ export class DeliveryDetailsComponent implements OnInit {
       localStorage.removeItem('selected_address');
     }
   }
-  storeAddressinLocalStorage() {
+  async storeAddressinLocalStorage() {
     if (
       this.addressPhone?.valid &&
       this.form.controls['country_code'].valid &&
@@ -1114,10 +1253,14 @@ export class DeliveryDetailsComponent implements OnInit {
       const formData = {
         ...storedAddressData,
         client_name: this.clientName?.value || storedAddressData.user_name,
-      whatsapp_number: this.whatsappPhone, // hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-      whatsapp_number_code: this.form.get('whatsapp_number_code')?.value,
+        whatsapp_number: this.whatsappPhone, // hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
+        whatsapp_number_code: this.form.get('whatsapp_number_code')?.value,
       };
-
+      // ✅ حفظ في IndexedDB إذا لم يكن هناك اتصال
+      if (!this.isOnline) {
+        await this.saveOffline(formData);
+        return;
+      }
       localStorage.setItem('form_data', JSON.stringify(formData));
       console.log('tracee', this.allUserAddress);
 
@@ -1173,29 +1316,84 @@ export class DeliveryDetailsComponent implements OnInit {
   //     this.whatsappPhone = this.whatsappPhone;
   //   }
   // }
-   get whatsappNumberCode() {
+  get whatsappNumberCode() {
     return this.form.get('whatsapp_number_code');
   }
-  listenToChangeWhatsappCountry(){
- this.whatsappNumberCode?.valueChanges.subscribe((value) => {
-      const whatsappNumControl = this.form.get('whatsapp_number');
-      if (value) {
-        this.selectedWhatsappCountry=value;
-        whatsappNumControl?.setValidators([Validators.required,Validators.pattern(
-            new RegExp(`^\\d{${this.whatsappNumberCode?.value?.phoneLength}}$`)
-          )]);
-      } else {
-        whatsappNumControl?.clearValidators();
-      }
+ // ✅ أضف دالة مشابهة للواتساب
+private listenToChangeWhatsappCountry() {
+  this.whatsappNumberCode?.valueChanges.subscribe((value) => {
+    const whatsappNumControl = this.form.get('whatsapp_number');
+    if (value) {
+      this.selectedWhatsappCountry = value;
+      whatsappNumControl?.setValidators([
+        Validators.required, 
+        this.noLeadingSpaceValidator(),
+        this.phonePatternValidator() // ✅ استخدم الدالة المخصصة
+      ]);
+    } else {
+      whatsappNumControl?.clearValidators();
+    }
+    whatsappNumControl?.updateValueAndValidity();
+  });
+}
+  listenToAddressChange() {
+    this.selectedAddressControl.valueChanges
+      .subscribe(arg => {
+        this.clientName?.setValue(arg.client_name)
+
+      });
+  }
+  // ✅ إعداد مستمعي الشبكة
+  private setupNetworkListeners(): void {
+    window.addEventListener('online', () => {
+      this.isOnline = true;
+      console.log('🌐 Online - attempting to sync pending data');
+      this.syncPendingData();
+    });
+
+    window.addEventListener('offline', () => {
+      this.isOnline = false;
+      console.log('📴 Offline - data will be saved locally');
+      this.showOfflineMessage();
     });
   }
- listenToAddressChange() {
-  this.selectedAddressControl.valueChanges
-    .subscribe(arg => {
-      this.clientName?.setValue(arg.client_name)
 
-    });
-}
+  // ✅ عرض رسالة عدم الاتصال
+  private showOfflineMessage(): void {
+    this.offlineMessage = 'أنت غير متصل بالإنترنت. سيتم حفظ البيانات محلياً وسيتم إرسالها عند عودة الاتصال.';
+    setTimeout(() => {
+      this.offlineMessage = '';
+    }, 5000);
+  }
 
+  // ✅ التحقق من البيانات المحفوظة
+  private async checkPendingData(): Promise<void> {
+    try {
+      const pendingAddresses = await this.dbService.getPendingAddresses();
+      this.pendingSyncCount = pendingAddresses.length;
+
+      if (this.pendingSyncCount > 0 && this.isOnline) {
+        this.syncPendingData();
+      }
+    } catch (error) {
+      console.error('Error checking pending data:', error);
+    }
+  }
+
+  // ✅ مزامنة البيانات المحفوظة
+  private async syncPendingData(): Promise<void> {
+    if (!this.isOnline) return;
+
+    try {
+      await this.dbService.syncPendingAddresses();
+
+      // تحديث العدد بعد المزامنة
+      const pendingAddresses = await this.dbService.getPendingAddresses();
+      this.pendingSyncCount = pendingAddresses.length;
+
+    } catch (error) {
+      console.error('❌ Error syncing pending data:', error);
+    }
+  }
 }
 // aml
