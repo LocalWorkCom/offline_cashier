@@ -1919,6 +1919,7 @@ export class IndexeddbService {
         const pendingUpdate = {
           ...invoiceUpdateData,
           type_operation: 'invoiceUpdate',
+          'edit_invoice': true,
           savedAt: new Date().toISOString(),
           isSynced: false
         };
@@ -2008,22 +2009,102 @@ export class IndexeddbService {
         const tx = this.db.transaction('pendingOperations', 'readwrite');
         const store = tx.objectStore('pendingOperations');
 
-        const pendingOrder = {
-          ...orderData,
-          type_operation: 'orderPlacement',
-          'edit_invoice': false,
-          savedAt: new Date().toISOString(),
-          isSynced: false
+        // Get order_id from orderData (could be order_id, orderId, or id)
+        const orderId = orderData.order_id || orderData.orderId || orderData.id;
+
+        // First, search for existing order with same order_id
+        const getAllRequest = store.getAll();
+
+        getAllRequest.onsuccess = () => {
+          const allPending = getAllRequest.result;
+
+          // Find existing order with matching order_id and type_operation
+          // Check multiple possible locations for order_id
+          const existingOrder = allPending.find((item: any) => {
+            if (item.type_operation !== 'orderPlacement') return false;
+
+            // Check various possible order_id fields
+            const itemOrderId = item.order_id || item.orderId || item.id;
+            return itemOrderId === orderId ||
+                   itemOrderId === String(orderId) ||
+                   String(itemOrderId) === String(orderId);
+          });
+
+          let pendingOrder: any;
+          let request: IDBRequest;
+
+          if (existingOrder) {
+            // Update existing order - merge with existing data to preserve all fields
+            pendingOrder = {
+              ...existingOrder, // Keep ALL existing data (items, branch_id, bill_amount, etc.)
+              id: existingOrder.id, // Keep the existing id
+              type_operation: 'orderPlacement', // Ensure type is correct
+              savedAt: existingOrder.savedAt, // Keep original savedAt
+              isSynced: false // Reset sync status
+            };
+
+            // Update order_id/orderId if provided (but don't overwrite if they exist)
+            if (orderData.order_id) pendingOrder.order_id = orderData.order_id;
+            if (orderData.orderId) pendingOrder.orderId = orderData.orderId;
+
+            // If tip data is provided, update tip-related fields
+            if (orderData.tip && typeof orderData.tip === 'object') {
+              pendingOrder.tip_amount = orderData.tip.tip_amount !== undefined ? orderData.tip.tip_amount : existingOrder.tip_amount;
+              pendingOrder.tip_specific_amount = orderData.tip.tip_specific_amount !== undefined ? orderData.tip.tip_specific_amount : existingOrder.tip_specific_amount;
+              pendingOrder.payment_amount = orderData.tip.payment_amount !== undefined ? orderData.tip.payment_amount : existingOrder.payment_amount;
+              pendingOrder.bill_amount = orderData.tip.bill_amount !== undefined ? orderData.tip.bill_amount : existingOrder.bill_amount;
+              pendingOrder.total_with_tip = orderData.tip.total_with_tip !== undefined ? orderData.tip.total_with_tip : existingOrder.total_with_tip;
+              pendingOrder.returned_amount = orderData.tip.returned_amount !== undefined ? orderData.tip.returned_amount : existingOrder.returned_amount;
+              pendingOrder.change_amount = orderData.tip.change_amount !== undefined ? orderData.tip.change_amount : existingOrder.change_amount;
+              pendingOrder.tips_aption = orderData.tip.tips_aption !== undefined ? orderData.tip.tips_aption : existingOrder.tips_aption;
+              // Keep tip object reference if needed
+              pendingOrder.tip = orderData.tip;
+
+
+              pendingOrder.payment_status_menu_integration = "paid";
+            }
+
+            // Update payment_status to "paid" when editing invoice
+            if (orderData.edit_invoice === true) {
+              pendingOrder.payment_status = "paid";
+              pendingOrder.cash_amount = orderData.cash_amount !== undefined ? orderData.cash_amount : existingOrder.cash_amount;
+              pendingOrder.credit_amount = orderData.credit_amount !== undefined ? orderData.credit_amount : existingOrder.credit_amount;
+            }
+
+            // Update edit_invoice if explicitly set
+            if (orderData.edit_invoice !== undefined) {
+              pendingOrder.edit_invoice = orderData.edit_invoice;
+            }
+
+            request = store.put(pendingOrder);
+            console.log('🔄 Updating existing pending order with id:', existingOrder.id, 'orderId:', orderId);
+          } else {
+            // Create new order
+            pendingOrder = {
+              ...orderData,
+              type_operation: 'orderPlacement',
+              'edit_invoice': orderData.edit_invoice !== undefined ? orderData.edit_invoice : false,
+              savedAt: new Date().toISOString(),
+              isSynced: false
+            };
+            request = store.add(pendingOrder);
+            console.log('➕ Creating new pending order for orderId:', orderId);
+          }
+
+          request.onsuccess = () => {
+            const resultId = existingOrder ? existingOrder.id : (request.result as number);
+            console.log('✅ Pending order saved to IndexedDB for sync:', resultId);
+            resolve(resultId);
+          };
+
+          request.onerror = (e) => {
+            console.error('❌ Error saving pending order:', e);
+            reject(e);
+          };
         };
 
-        const request = store.add(pendingOrder);
-
-        request.onsuccess = () => {
-          console.log('✅ Pending order saved to IndexedDB for sync:', request.result);
-          resolve(request.result as number);
-        };
-        request.onerror = (e) => {
-          console.error('❌ Error saving pending order:', e);
+        getAllRequest.onerror = (e) => {
+          console.error('❌ Error getting pending orders:', e);
           reject(e);
         };
       });
