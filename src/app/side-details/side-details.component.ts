@@ -586,52 +586,52 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.loadSavedCoupon();
 
   }
-  
+
   private loadSavedCoupon(): void {
-  const hasAppliedCoupon = localStorage.getItem('appliedCoupon') === 'true';
-  const couponCode = localStorage.getItem('couponCode');
-  const discountAmount = localStorage.getItem('discountAmount');
-  const couponType = localStorage.getItem('couponType');
-  const couponApplyType = localStorage.getItem('couponApplyType'); // 🔥 جديد
+    const hasAppliedCoupon = localStorage.getItem('appliedCoupon') === 'true';
+    const couponCode = localStorage.getItem('couponCode');
+    const discountAmount = localStorage.getItem('discountAmount');
+    const couponType = localStorage.getItem('couponType');
+    const couponApplyType = localStorage.getItem('couponApplyType'); // 🔥 جديد
 
-  console.log('🔄 Loading saved coupon:', {
-    hasAppliedCoupon,
-    couponCode,
-    discountAmount,
-    couponType,
-    couponApplyType // 🔥 جديد
-  });
-
-  if (hasAppliedCoupon && couponCode) {
-    this.validCoupon = true;
-    this.couponCode = couponCode;
-    this.discountAmount = parseFloat(discountAmount || '0');
-    this.couponType = couponType || '';
-    this.appliedCoupon = {
-      code: couponCode,
-      coupon_title: localStorage.getItem('couponTitle') || couponCode,
-      coupon_value: localStorage.getItem('couponValue') || discountAmount,
-      value_type: couponType,
-      coupon_apply_type: couponApplyType || 'order',
-      amount_after_coupon: this.getTotal() - this.discountAmount,
-      total_discount: this.discountAmount,
-      currency_symbol: this.currencySymbol
-    };
-
-    console.log('✅ Restored coupon from localStorage:', {
-      code: this.couponCode,
-      discount: this.discountAmount,
-      type: this.couponType,
-      applyType: couponApplyType // 🔥 جديد
+    console.log('🔄 Loading saved coupon:', {
+      hasAppliedCoupon,
+      couponCode,
+      discountAmount,
+      couponType,
+      couponApplyType // 🔥 جديد
     });
 
-    // 🔥 التعديل المهم: تطبيق الكوبون فوراً بعد تحميل الكارت
-    setTimeout(() => {
-      console.log('🔄 Applying restored coupon...');
-      this.applyCoupon();
-    }, 1000);
+    if (hasAppliedCoupon && couponCode) {
+      this.validCoupon = true;
+      this.couponCode = couponCode;
+      this.discountAmount = parseFloat(discountAmount || '0');
+      this.couponType = couponType || '';
+      this.appliedCoupon = {
+        code: couponCode,
+        coupon_title: localStorage.getItem('couponTitle') || couponCode,
+        coupon_value: localStorage.getItem('couponValue') || discountAmount,
+        value_type: couponType,
+        coupon_apply_type: couponApplyType || 'order',
+        amount_after_coupon: this.getTotal() - this.discountAmount,
+        total_discount: this.discountAmount,
+        currency_symbol: this.currencySymbol
+      };
+
+      console.log('✅ Restored coupon from localStorage:', {
+        code: this.couponCode,
+        discount: this.discountAmount,
+        type: this.couponType,
+        applyType: couponApplyType // 🔥 جديد
+      });
+
+      // 🔥 التعديل المهم: تطبيق الكوبون فوراً بعد تحميل الكارت
+      setTimeout(() => {
+        console.log('🔄 Applying restored coupon...');
+        this.applyCoupon();
+      }, 1000);
+    }
   }
-}
   // start hanan
   private initializePaymentAmount(): void {
     const cartTotal = this.getCartTotal();
@@ -4880,68 +4880,77 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   clientInfoApplied = false; // ✅ show info now
 
   applyClientInfo() {
+    // التحقق من صحة البيانات
+    if (!this.client || !this.clientPhone) {
+      this.clientError = 'يرجى إدخال جميع البيانات المطلوبة';
+      return;
+    }
+
     this.isLoading = true;
+    this.clientError = '';
 
-    // Prepare client info object
-    const clientInfo = {
-      client: this.client,
-      clientPhone: this.clientPhone,
-      selectedCountryCode: this.selectedCountry.code
-    };
-    // Save to localStorage
-    localStorage.setItem('client', this.client);
-    localStorage.setItem('clientPhone', this.clientPhone);
-    localStorage.setItem('selectedCountryCode', this.selectedCountry.code);
+    try {
+      // حفظ البيانات في localStorage
+      localStorage.setItem('client', this.client);
+      localStorage.setItem('clientPhone', this.clientPhone);
+      localStorage.setItem('selectedCountryCode', this.selectedCountry.code);
 
-    // Save to IndexedDB
-    // this.dbService.saveClientInfo(clientInfo).then(id => {
-    //   console.log('✅ Client info saved to IndexedDB with ID:', id);
+      // تحديث المتغيرات المحلية
+      this.clientStoredInLocal = this.client;
+      this.clientPhoneStoredInLocal = this.clientPhone;
+      this.clientInfoApplied = true;
 
-    //   this.clientStoredInLocal = this.client;
-    //   this.clientPhoneStoredInLocal = this.clientPhone;
+      // إغلاق المودال مباشرة
+      this.closeClientModal();
 
-    //   // Simulate async saving
-    //   setTimeout(() => {
-    //     this.isLoading = false;
-    //     this.clientInfoApplied = true; // ✅ show info now
-
-    //     // Optionally close modal here
-    //     this.closeModal();
-    //   }, 500);
-    // }).catch(err => {
-    //   console.error('❌ Error saving client info to IndexedDB:', err);
-
-    //   // Fallback: Continue even if IndexedDB fails
-    //   this.clientStoredInLocal = this.client;
-    //   this.clientPhoneStoredInLocal = this.clientPhone;
-
-    //   setTimeout(() => {
-    //     this.isLoading = false;
-    //     this.clientInfoApplied = true;
-    //     this.closeModal();
-    //   }, 500);
-    // });
+    } catch (error) {
+      console.error('Error saving client info:', error);
+      this.clientError = 'حدث خطأ في حفظ البيانات';
+    } finally {
+      this.isLoading = false;
+    }
   }
 
   clearClientInfo() {
-    // Clear values from component
-    this.client = '';
-    this.clientPhone = '';
-    this.clientStoredInLocal = null;
-    this.clientPhoneStoredInLocal = null
-    // Remove from localStorage
-    localStorage.removeItem('client');
-    localStorage.removeItem('selectedCountryCode');
-    localStorage.removeItem('clientName');
-    localStorage.removeItem('clientPhone');
+  // إعادة تعيين القيم
+  this.client = '';
+  this.clientPhone = '';
+  this.clientStoredInLocal = null;
+  this.clientPhoneStoredInLocal = null;
+  this.clientInfoApplied = false;
 
-    console.log('Client info cleared');
-  }
+  // إزالة من localStorage
+  localStorage.removeItem('client');
+  localStorage.removeItem('clientPhone');
+  localStorage.removeItem('selectedCountryCode');
+
+  // إغلاق المودال
+  this.closeClientModal();
+}
 
   closeClientModal() {
-    // Optional: you can reset or keep values when closing the modal
-    this.clearClientInfo(); // or remove this line if you want to keep input filled
+  // إغلاق المودال باستخدام Bootstrap
+  const clientModal = document.getElementById('clientModal');
+  if (clientModal) {
+    const modalInstance = bootstrap.Modal.getInstance(clientModal);
+    if (modalInstance) {
+      modalInstance.hide();
+    }
   }
+
+  // تنظيف الـ DOM
+  this.cleanupModalBackdrop();
+}
+
+cleanupModalBackdrop() {
+  // إزالة backdrop يدويًا إذا بقي
+  const backdrops = document.querySelectorAll('.modal-backdrop');
+  backdrops.forEach(backdrop => backdrop.remove());
+
+  // إزالة classes من body
+  document.body.classList.remove('modal-open');
+  document.body.style.removeProperty('padding-right');
+}
   fetchCountries() {
     this.authService.getCountries().subscribe({
       next: (response) => {
