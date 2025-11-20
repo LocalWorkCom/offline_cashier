@@ -89,7 +89,7 @@ export class NewOrdersComponent implements OnDestroy {
   isFilterdFromClientSide: boolean = true;
   private activeOrderChannels: Set<string> = new Set();
   order: any;
-  errorMessage: string = '';
+  errorMessage: string | null = null; 
   apiUrl = `${baseUrl}`;
   removeLoading: boolean = false;
 
