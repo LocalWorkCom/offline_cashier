@@ -663,7 +663,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     try {
       const pendingOrders = await this.dbService.getPendingOrders();
-
       if (pendingOrders.length === 0) {
         console.log('✅ No pending orders to sync');
         return;
@@ -2478,6 +2477,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     //   this.selectedPaymentMethod = "cash"
     //   console.log(this.selectedPaymentMethod, "2");
     // }
+    // let formdata_delivery = null;
+    // if(this.selectedOrderType === "Delivery" || this.selectedOrderType === "توصيل") {
+    //   formdata_delivery = localStorage.getItem('form_delivery');
+    // }
 
 
     return {
@@ -2550,6 +2553,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       menu_integration: this.selectedOrderType === 'talabat' ? true : false,
       payment_status_menu_integration: this.selectedPaymentStatus,
       payment_method_menu_integration: this.selectedPaymentMethod,
+
+      // formdata_delivery: formdata_delivery ?? null,
 
       // dalia end tips
     };

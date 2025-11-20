@@ -651,67 +651,24 @@ export class PillEditComponent implements OnInit, OnDestroy {
       try {
         console.log("📴 Offline mode: Updating pill in IndexedDB");
 
-        // 1️⃣ Try to get order first (for pending orders)
-        const order: any = await this.dbService.getOrderById(this.pillId);
-
-        if (order) {
-          console.log("✅ Order found in IndexedDB, updating order");
-
-          // Update order details
-          if (order.order_details) {
-            order.order_details.payment_method = cashAmount > 0 ? 'cash' : (creditAmount > 0 ? 'credit' : order.order_details.payment_method);
-            order.order_details.payment_status = this.paymentStatus;
-            order.order_details.cash_amount = cashAmount || 0;
-            order.order_details.credit_amount = creditAmount || 0;
+        // Helper function to update pill
+        const updatePill = async (existingPill: any) => {
+          // Handle offline-created invoices (INV-OFF-*)
+          if (existingPill.invoice_number === `INV-OFF-${this.pillId}`) {
+            // Save order data for sync when online (for offline-created invoices)
+            // Use the same order_id that was used when the order was initially created
+            const orderId = existingPill.order_id || existingPill.invoice_id || this.pillId;
+            const orderData = {
+              orderId: orderId,
+              cash_amount: cashAmount,
+              credit_amount: creditAmount,
+              tip: this.tip,
+              edit_invoice: true
+            };
+            console.log("📝 Updating existing offline order for sync, orderId:", orderId);
+            await this.dbService.savePendingOrderForSync(orderData);
+            // console.log("💾 Order data saved for sync when online:", orderData);
           }
-
-          // Update tip information
-          if (this.tip) {
-            order.tip_amount = this.tip.tip_amount || 0;
-            order.tip_specific_amount = this.tip.tip_specific_amount || 0;
-            order.payment_amount = this.tip.payment_amount || 0;
-            order.bill_amount = this.tip.bill_amount || 0;
-            order.total_with_tip = this.tip.total_with_tip || 0;
-            order.returned_amount = this.tip.returned_amount || 0;
-            order.change_amount = this.tip.change_amount || 0;
-            order.tips_aption = this.tip.tips_aption || "tip_the_change";
-          }
-
-          // Update status
-          order.isUpdatedOffline = true;
-          order.isSynced = false;
-
-          // Save updated order
-          await this.dbService.savePendingOrder(order);
-
-          // Save invoice update data for sync when online
-          const invoiceUpdateData = {
-            orderNumber: this.orderNumber,
-            paymentStatus: this.paymentStatus,
-            trackingStatus: this.trackingStatus,
-            cashAmount: cashAmount,
-            creditAmount: creditAmount,
-            DeliveredOrNot: this.DeliveredOrNot,
-            totalll: this.totalll,
-            tip: this.tip,
-            referenceNumber: this.referenceNumber,
-            pillId: this.pillId
-          };
-
-          await this.dbService.savePendingInvoiceUpdate(invoiceUpdateData);
-          console.log("💾 Invoice update saved for sync when online");
-
-          console.log("💾 Order updated offline:", order);
-          alert("تم تحديث الطلب Offline ✅");
-          return;
-        }
-
-        // 2️⃣ If no order found, try to get pill
-        console.log("⚠️ Order not found, trying to get pill");
-        const existingPill: any = await this.dbService.getPillByInvoiceId(this.pillId);
-
-        if (existingPill) {
-          console.log("✅ Pill found in IndexedDB, updating pill");
 
           // Update main pill fields
           existingPill.payment_status = this.paymentStatus;
@@ -757,33 +714,101 @@ export class PillEditComponent implements OnInit, OnDestroy {
 
           // Save updated pill
           await this.dbService.updatePill(existingPill);
-
           console.log("💾 Pill updated offline in IndexedDB:", existingPill);
+        };
+
+        // Helper function to save invoice update data
+        const saveInvoiceUpdate = async (existingPill?: any) => {
+          const invoiceUpdateData = {
+            orderNumber: this.orderNumber,
+            paymentStatus: this.paymentStatus,
+            trackingStatus: this.trackingStatus,
+            cashAmount: cashAmount,
+            creditAmount: creditAmount,
+            DeliveredOrNot: this.DeliveredOrNot,
+            totalll: this.totalll,
+            tip: this.tip,
+            referenceNumber: this.referenceNumber,
+            pillId: this.pillId
+          };
+
+          // Only save invoice update if it's NOT an offline-created invoice (INV-OFF-*)
+          // For INV-OFF invoices, we use savePendingOrderForSync instead
+          if (!existingPill || existingPill.invoice_number !== `INV-OFF-${this.pillId}`) {
+            await this.dbService.savePendingInvoiceUpdate(invoiceUpdateData);
+            console.log("💾 Invoice update saved for sync when online");
+          } else {
+            console.log("⏭️ Skipping invoice update save for INV-OFF invoice (handled by savePendingOrderForSync)");
+          }
+        };
+
+        // 1️⃣ Try to get order first (for pending orders)
+        const order: any = await this.dbService.getOrderById(this.pillId);
+
+        if (order) {
+          console.log("✅ Order found in IndexedDB, updating order");
+
+          // Handle offline orders (need to update pill instead)
+          if (order.isOffline === true) {
+            const existingPill: any = await this.dbService.getPillByInvoiceId(this.pillId);
+            if (existingPill) {
+              console.log("✅ Pill found in IndexedDB, updating pill");
+              await updatePill(existingPill);
+              await saveInvoiceUpdate(existingPill);
+              alert("تم تحديث الفاتورة Offline وسيتم رفعها عند الاتصال بالإنترنت ✅");
+              return;
+            }
+          } else {
+            // Update regular order details
+            if (order.order_details) {
+              order.order_details.payment_method = cashAmount > 0 ? 'cash' : (creditAmount > 0 ? 'credit' : order.order_details.payment_method);
+              order.order_details.payment_status = this.paymentStatus;
+              order.order_details.cash_amount = cashAmount || 0;
+              order.order_details.credit_amount = creditAmount || 0;
+            }
+
+            // Update tip information
+            if (this.tip) {
+              order.tip_amount = this.tip.tip_amount || 0;
+              order.tip_specific_amount = this.tip.tip_specific_amount || 0;
+              order.payment_amount = this.tip.payment_amount || 0;
+              order.bill_amount = this.tip.bill_amount || 0;
+              order.total_with_tip = this.tip.total_with_tip || 0;
+              order.returned_amount = this.tip.returned_amount || 0;
+              order.change_amount = this.tip.change_amount || 0;
+              order.tips_aption = this.tip.tips_aption || "tip_the_change";
+            }
+
+            // Update status
+            order.isUpdatedOffline = true;
+            order.isSynced = false;
+
+            // Save updated order
+            await this.dbService.savePendingOrder(order);
+            await saveInvoiceUpdate(); // No existingPill for regular orders
+
+            console.log("💾 Order updated offline:", order);
+            alert("تم تحديث الطلب Offline ✅");
+            return;
+          }
+        }
+
+        // 2️⃣ If no order found, try to get pill
+        console.log("⚠️ Order not found, trying to get pill");
+        const existingPill: any = await this.dbService.getPillByInvoiceId(this.pillId);
+
+        if (existingPill) {
+          console.log("✅ Pill found in IndexedDB, updating pill");
+          await updatePill(existingPill);
+          await saveInvoiceUpdate(existingPill);
           alert("تم تحديث الفاتورة Offline وسيتم رفعها عند الاتصال بالإنترنت ✅");
         } else {
           console.warn("❌ لم يتم العثور على الفاتورة أو الطلب في IndexedDB");
           alert("⚠️ لم يتم العثور على الفاتورة في قاعدة البيانات المحلية");
         }
-
-        // Save invoice update data for sync when online
-        const invoiceUpdateData = {
-          orderNumber: this.orderNumber,
-          paymentStatus: this.paymentStatus,
-          trackingStatus: this.trackingStatus,
-          cashAmount: cashAmount,
-          creditAmount: creditAmount,
-          DeliveredOrNot: this.DeliveredOrNot,
-          totalll: this.totalll,
-          tip: this.tip,
-          referenceNumber: this.referenceNumber,
-          pillId: this.pillId
-        };
-
-        await this.dbService.savePendingInvoiceUpdate(invoiceUpdateData);
-        console.log("💾 Invoice update saved for sync when online");
       } catch (err) {
         console.error("❌ Error updating offline order/pill:", err);
-        alert("❌ حدث خطأ أثناء تحديث الفاتورة Offline");
+        alert("❌ حدث خطأ    تحديث الفاتورة Offline");
       }
     }
   }

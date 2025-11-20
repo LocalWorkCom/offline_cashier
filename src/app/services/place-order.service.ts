@@ -29,7 +29,7 @@ export class PlaceOrderService {
     return this.http.post(`${this.apiUrl}/orders/cashier/store/api`, orderData);
   }
 
-  placeOrder_offline(orderData: any): Observable<any> {
+    placeOrder_offline(orderData: any): Observable<any> {
     // const token = localStorage.getItem('authToken');
 
     // if (!token) {
