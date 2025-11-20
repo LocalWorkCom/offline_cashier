@@ -2011,6 +2011,7 @@ export class IndexeddbService {
         const pendingOrder = {
           ...orderData,
           type_operation: 'orderPlacement',
+          'edit_invoice': false,
           savedAt: new Date().toISOString(),
           isSynced: false
         };
@@ -2190,7 +2191,7 @@ async syncPendingAddresses(): Promise<void> {
 
   try {
     const pendingAddresses = await this.getPendingAddresses();
-    
+
     if (pendingAddresses.length === 0) {
       console.log('✅ No pending addresses to sync');
       return;
@@ -2202,12 +2203,12 @@ async syncPendingAddresses(): Promise<void> {
       try {
         // هنا يمكنك إضافة استدعاء API لإرسال العنوان
         // await this.addressService.submitAddress(address).toPromise();
-        
+
         console.log('✅ Successfully synced address:', address);
-        
+
         // حذف من IndexedDB بعد المزامنة الناجحة
         await this.deletePendingAddress(address.id);
-        
+
       } catch (error) {
         console.error('❌ Error syncing address:', error);
         // نستمر مع العناوين الأخرى حتى لو فشل أحدها
@@ -2215,7 +2216,7 @@ async syncPendingAddresses(): Promise<void> {
     }
 
     console.log('✅ Finished syncing all pending addresses');
-    
+
   } catch (error) {
     console.error('❌ Error in syncPendingAddresses:', error);
   }

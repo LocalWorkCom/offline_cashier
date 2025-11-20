@@ -696,7 +696,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             console.log('orderDataForAPI', orderDataForAPI);
 
             Promise.race([
-              firstValueFrom(this.plaseOrderService.placeOrder(orderDataForAPI)),
+              firstValueFrom(this.plaseOrderService.placeOrder_offline(orderDataForAPI)),
               timeoutPromise
             ]).then((response: any) => {
               if (response.status !== false && !response.errorData) {
