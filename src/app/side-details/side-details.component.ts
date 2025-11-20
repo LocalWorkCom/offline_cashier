@@ -2738,6 +2738,17 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         }
       }
     }
+    // ✅ التحقق من معلومات التوصيل في وضع Offline
+    if (!navigator.onLine && this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
+      const validation = this.validateOfflineDeliveryInfo();
+      if (!validation.isValid) {
+        this.isLoading = false;
+        this.loading = false;
+        this.falseMessage = validation.message;
+        setTimeout(() => { this.falseMessage = ''; }, 3000);
+        return;
+      }
+    }
     const authToken = localStorage.getItem('authToken');
     const cashier_machine_id = localStorage.getItem('cashier_machine_id');
     const orderId = this.currentOrderId ?? 0;
@@ -2996,108 +3007,108 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
 
     // معالجة حالة عدم الاتصال
-    if (!navigator.onLine) {
-      // ✅ التحقق من معلومات التوصيل في وضع Offline - بدون دالة مساعدة
-      if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
-        const hasFormData = localStorage.getItem('form_data');
-        const hasClientInfo = this.clientName && this.clientPhone && this.address;
+    // if (!navigator.onLine) {
+    //   // ✅ التحقق من معلومات التوصيل في وضع Offline - بدون دالة مساعدة
+    //   if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
+    //     const hasFormData = localStorage.getItem('form_data');
+    //     const hasClientInfo = this.clientName && this.clientPhone && this.address;
 
-        console.log('📋 Offline delivery info check:', {
-          hasFormData: !!hasFormData,
-          clientName: this.clientName,
-          clientPhone: this.clientPhone,
-          address: this.address
-        });
+    //     console.log('📋 Offline delivery info check:', {
+    //       hasFormData: !!hasFormData,
+    //       clientName: this.clientName,
+    //       clientPhone: this.clientPhone,
+    //       address: this.address
+    //     });
 
-        if (!hasFormData && !hasClientInfo) {
-          this.isLoading = false;
-          this.loading = false;
-          this.falseMessage = 'يرجى إدخال معلومات التوصيل أولاً';
-          setTimeout(() => { this.falseMessage = ''; }, 3000);
-          return;
-        }
-      }
+    //     if (!hasFormData && !hasClientInfo) {
+    //       this.isLoading = false;
+    //       this.loading = false;
+    //       this.falseMessage = 'يرجى إدخال معلومات التوصيل أولاً';
+    //       setTimeout(() => { this.falseMessage = ''; }, 3000);
+    //       return;
+    //     }
+    //   }
 
-      try {
-        console.log('📴 Offline mode: Saving order to IndexedDB', orderData);
+    //   try {
+    //     console.log('📴 Offline mode: Saving order to IndexedDB', orderData);
 
-        // ✅ إضافة بيانات التوصيل للطلب في وضع Offline
-        if (this.selectedOrderType === 'Delivery') {
-          const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+    //     // ✅ إضافة بيانات التوصيل للطلب في وضع Offline
+    //     if (this.selectedOrderType === 'Delivery') {
+    //       const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
 
-          // إضافة معلومات التوصيل للطلب
-          orderData.delivery_info = {
-            client_name: formData.client_name || this.clientName,
-            client_phone: formData.address_phone || this.clientPhone,
-            address: formData.address || this.address,
-            country_code: formData.country_code?.code || formData.country_code || this.selectedCountry.code,
-            apartment_number: formData.apartment_number || '',
-            building: formData.building || '',
-            address_type: formData.address_type || '',
-            propertyType: formData.propertyType || '',
-            buildingName: formData.buildingName || '',
-            note: formData.note || '',
-            floor_number: formData.floor_number || '',
-            landmark: formData.landmark || '',
-            villaName: formData.villaName || '',
-            villaNumber: formData.villaNumber || '',
-            companyName: formData.companyName || '',
-            buildingNumber: formData.buildingNumber || ''
-          };
+    //       // إضافة معلومات التوصيل للطلب
+    //       orderData.delivery_info = {
+    //         client_name: formData.client_name || this.clientName,
+    //         client_phone: formData.address_phone || this.clientPhone,
+    //         address: formData.address || this.address,
+    //         country_code: formData.country_code?.code || formData.country_code || this.selectedCountry.code,
+    //         apartment_number: formData.apartment_number || '',
+    //         building: formData.building || '',
+    //         address_type: formData.address_type || '',
+    //         propertyType: formData.propertyType || '',
+    //         buildingName: formData.buildingName || '',
+    //         note: formData.note || '',
+    //         floor_number: formData.floor_number || '',
+    //         landmark: formData.landmark || '',
+    //         villaName: formData.villaName || '',
+    //         villaNumber: formData.villaNumber || '',
+    //         companyName: formData.companyName || '',
+    //         buildingNumber: formData.buildingNumber || ''
+    //       };
 
-          // استخدام عنوان مؤقت للـ Offline
-          orderData.address_id = 9999; // أو أي قيمة مؤقتة
+    //       // استخدام عنوان مؤقت للـ Offline
+    //       orderData.address_id = 9999; // أو أي قيمة مؤقتة
 
-          // أيضاً إضافة معلومات العميل للطلب
-          orderData.client_name = formData.client_name || this.clientName;
-          orderData.client_phone = formData.address_phone || this.clientPhone;
-          orderData.client_country_code = formData.country_code?.code || formData.country_code || this.selectedCountry.code;
-        }
+    //       // أيضاً إضافة معلومات العميل للطلب
+    //       orderData.client_name = formData.client_name || this.clientName;
+    //       orderData.client_phone = formData.address_phone || this.clientPhone;
+    //       orderData.client_country_code = formData.country_code?.code || formData.country_code || this.selectedCountry.code;
+    //     }
 
-        // Save to orders/pills stores (existing functionality) - preserves full structure
-        await this.dbService.savePendingOrder(orderData);
-        console.log("✅ Order saved to IndexedDB with full structure");
+    //     // Save to orders/pills stores (existing functionality) - preserves full structure
+    //     await this.dbService.savePendingOrder(orderData);
+    //     console.log("✅ Order saved to IndexedDB with full structure");
 
-        // Save raw orderData for API sync (exact data that will be sent to API)
-        // const formData = localStorage.getItem('form_data');
-        const orderDataForSync = {...orderData };
+    //     // Save raw orderData for API sync (exact data that will be sent to API)
+    //     // const formData = localStorage.getItem('form_data');
+    //     const orderDataForSync = { ...orderData };
 
-        await this.dbService.savePendingOrderForSync(orderDataForSync);
-        console.log("✅ Raw orderData saved for API sync");
+    //     await this.dbService.savePendingOrderForSync(orderDataForSync);
+    //     console.log("✅ Raw orderData saved for API sync");
 
-        // Clean up localStorage
-        const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
-        const orderIdToRemove = orderData.orderId;
-        const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
-        localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
+    //     // Clean up localStorage
+    //     const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
+    //     const orderIdToRemove = orderData.orderId;
+    //     const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
+    //     localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
 
-        // Clear cart and reset
-        this.clearCart();
-        this.resetLocalStorage();
-        this.resetAddress();
-        this.loadCart();
+    //     // Clear cart and reset
+    //     this.clearCart();
+    //     this.resetLocalStorage();
+    //     this.resetAddress();
+    //     this.loadCart();
 
-        // Show success message
-        this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
-        this.falseMessage = '';
-        this.tableError = '';
-        this.couponError = '';
-        this.cashiermachine = '';
+    //     // Show success message
+    //     this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
+    //     this.falseMessage = '';
+    //     this.tableError = '';
+    //     this.couponError = '';
+    //     this.cashiermachine = '';
 
-        if (this.successModal) {
-          this.successModal.show();
-        }
+    //     if (this.successModal) {
+    //       this.successModal.show();
+    //     }
 
-        this.cdr.detectChanges();
-      } catch (error) {
-        console.error('❌ Error saving order to IndexedDB:', error);
-        this.showError('فشل حفظ الطلب في وضع عدم الاتصال. يرجى المحاولة مرة أخرى.');
-      } finally {
-        this.isLoading = false;
-        this.loading = false;
-      }
-      return;
-    }
+    //     this.cdr.detectChanges();
+    //   } catch (error) {
+    //     console.error('❌ Error saving order to IndexedDB:', error);
+    //     this.showError('فشل حفظ الطلب في وضع عدم الاتصال. يرجى المحاولة مرة أخرى.');
+    //   } finally {
+    //     this.isLoading = false;
+    //     this.loading = false;
+    //   }
+    //   return;
+    // }
 
     // إرسال الطلب إلى API
     console.log('Submitting order online:', orderData);
@@ -3178,7 +3189,88 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.loading = false;
     }
   }
+  validateOfflineDeliveryInfo(): { isValid: boolean; message: string } {
+    if (this.selectedOrderType !== 'Delivery') {
+      return { isValid: true, message: '' };
+    }
 
+    console.log('📋 التحقق من معلومات التوصيل في وضع Offline');
+
+    // التحقق من وجود بيانات العميل الأساسية
+    const hasClientInfo = this.clientName && this.clientPhone && this.address;
+    const hasFormData = localStorage.getItem('form_data');
+
+    console.log('📊 حالة البيانات:', {
+      hasClientInfo,
+      hasFormData,
+      clientName: this.clientName,
+      clientPhone: this.clientPhone,
+      address: this.address,
+      selectedOrderType: this.selectedOrderType
+    });
+
+    // إذا لا توجد أي بيانات
+    if (!hasClientInfo && !hasFormData) {
+      return {
+        isValid: false,
+        message: '❌ يرجى إدخال معلومات التوصيل (الاسم، رقم الهاتف، العنوان) قبل حفظ الطلب في وضع عدم الاتصال'
+      };
+    }
+
+    // إذا كانت البيانات من الفورم
+    if (hasFormData) {
+      try {
+        const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+
+        console.log('📝 بيانات الفورم:', {
+          client_name: formData.client_name,
+          address_phone: formData.address_phone,
+          address: formData.address
+        });
+
+        if (!formData.client_name || formData.client_name.trim().length < 2) {
+          return { isValid: false, message: '❌ يرجى إدخال اسم العميل بشكل صحيح (أكثر من حرفين)' };
+        }
+
+        if (!formData.address_phone || !this.isValidPhoneNumber(formData.address_phone)) {
+          return { isValid: false, message: '❌ يرجى إدخال رقم هاتف صحيح (من 8 إلى 15 رقم)' };
+        }
+
+        if (!formData.address || formData.address.trim().length < 5) {
+          return { isValid: false, message: '❌ يرجى إدخال العنوان بالكامل (أكثر من 5 أحرف)' };
+        }
+
+      } catch (error) {
+        console.error('❌ خطأ في تحليل بيانات الفورم:', error);
+        return { isValid: false, message: '❌ بيانات التوصيل غير صالحة' };
+      }
+    }
+
+    // إذا كانت البيانات من معلومات العميل
+    if (hasClientInfo) {
+      console.log('👤 بيانات العميل المباشرة:', {
+        clientName: this.clientName,
+        clientPhone: this.clientPhone,
+        address: this.address
+      });
+
+      if (!this.clientName.trim() || this.clientName.trim().length < 2) {
+        return { isValid: false, message: '❌ يرجى إدخال اسم العميل بشكل صحيح (أكثر من حرفين)' };
+      }
+
+      if (!this.clientPhone || !this.isValidPhoneNumber(this.clientPhone)) {
+        return { isValid: false, message: '❌ يرجى إدخال رقم هاتف صحيح (من 8 إلى 15 رقم)' };
+      }
+
+      // في حالة معلومات العميل، نتحقق من العنوان أيضاً
+      if (!this.address || this.address.trim().length < 5) {
+        return { isValid: false, message: '❌ يرجى إدخال العنوان بالكامل (أكثر من 5 أحرف)' };
+      }
+    }
+
+    console.log('✅ معلومات التوصيل صالحة للطلب في وضع Offline');
+    return { isValid: true, message: '' };
+  }
   // دالة مساعدة بسيطة لعرض الأخطاء
   private showError(message: string): void {
     this.falseMessage = message;
@@ -3214,12 +3306,99 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     console.error('API Error:', error);
 
     console.log(navigator.onLine);
+    // ✅ التحقق أولاً إذا كان هناك اتصال بالإنترنت
+    if (!navigator.onLine) {
+      console.log('📴 No internet connection detected');
 
-    if (navigator.onLine == false) {
-      this.falseMessage = 'يوجد خطأ فى الاتصال يرجى المحاولة مره اخرى';
-      setTimeout(() => {
+      // ✅ التحقق من معلومات التوصيل قبل محاولة الحفظ في وضع Offline
+      if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
+        const validation = this.validateOfflineDeliveryInfo();
+        if (!validation.isValid) {
+          this.falseMessage = validation.message;
+          setTimeout(() => { this.falseMessage = ''; }, 3500);
+          this.isLoading = false;
+          this.loading = false;
+          return;
+        }
+      }
+
+      try {
+        console.log('📴 Offline mode: Attempting to save order to IndexedDB');
+
+        // ✅ إضافة بيانات التوصيل للطلب في وضع Offline
+        if (this.selectedOrderType === 'Delivery') {
+          const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+
+          // إضافة معلومات التوصيل للطلب
+          orderData.delivery_info = {
+            client_name: formData.client_name || this.clientName,
+            client_phone: formData.address_phone || this.clientPhone,
+            address: formData.address || this.address,
+            country_code: formData.country_code?.code || formData.country_code || this.selectedCountry.code,
+            apartment_number: formData.apartment_number || '',
+            building: formData.building || '',
+            address_type: formData.address_type || '',
+            propertyType: formData.propertyType || '',
+            buildingName: formData.buildingName || '',
+            note: formData.note || '',
+            floor_number: formData.floor_number || '',
+            landmark: formData.landmark || '',
+            villaName: formData.villaName || '',
+            villaNumber: formData.villaNumber || '',
+            companyName: formData.companyName || '',
+            buildingNumber: formData.buildingNumber || ''
+          };
+
+          // استخدام عنوان مؤقت للـ Offline
+          orderData.address_id = 9999;
+
+          // أيضاً إضافة معلومات العميل للطلب
+          orderData.client_name = formData.client_name || this.clientName;
+          orderData.client_phone = formData.address_phone || this.clientPhone;
+          orderData.client_country_code = formData.country_code?.code || formData.country_code || this.selectedCountry.code;
+        }
+
+        // حفظ الطلب في IndexedDB
+        await this.dbService.savePendingOrder(orderData);
+        console.log("✅ Order saved to IndexedDB with delivery info");
+
+        // حفظ raw orderData للـ API sync
+        const orderDataForSync = { ...orderData };
+        await this.dbService.savePendingOrderForSync(orderDataForSync);
+        console.log("✅ Raw orderData saved for API sync");
+
+        // تنظيف localStorage
+        const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
+        const orderIdToRemove = orderData.orderId;
+        const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
+        localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
+
+        // تنظيف البيانات
+        this.clearCart();
+        this.resetLocalStorage();
+        this.resetAddress();
+        this.loadCart();
+
+        // عرض رسالة النجاح
+        this.successMessage = '✅ تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
         this.falseMessage = '';
-      }, 3500);
+        this.tableError = '';
+        this.couponError = '';
+        this.cashiermachine = '';
+
+        if (this.successModal) {
+          this.successModal.show();
+        }
+
+        this.cdr.detectChanges();
+
+      } catch (dbError) {
+        console.error('❌ Error saving order to IndexedDB:', dbError);
+        this.falseMessage = '❌ فشل حفظ الطلب في وضع عدم الاتصال. يرجى المحاولة مرة أخرى.';
+      } finally {
+        this.isLoading = false;
+        this.loading = false;
+      }
       return;
     }
 
@@ -4460,7 +4639,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     ) {
       deliveryFee = this.delivery_fees;
     }
-
+    // ✅ التحقق من معلومات التوصيل في وضع Offline
+    if (this.selectedOrderType === 'Delivery') {
+      const validation = this.validateOfflineDeliveryInfo();
+      if (!validation.isValid) {
+        this.falseMessage = validation.message;
+        setTimeout(() => { this.falseMessage = ''; }, 3000);
+        return;
+      }
+    }
     // const total = subtotal + taxAmount + serviceFee + deliveryFee;
 
     const invoiceSummary = {
@@ -5158,8 +5345,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.FormDataDetails.client_name &&
       this.FormDataDetails.address &&
       this.FormDataDetails.address_phone;
-
-    return hasBasicInfo || hasFormData;
+    const hasClientInfo = this.clientName &&
+      this.clientPhone &&
+      this.address;
+    return hasBasicInfo || hasFormData || hasClientInfo;
   }
 
   // دالة للتحقق من اكتمال معلومات العميل للتوصيل
