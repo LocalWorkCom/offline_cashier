@@ -185,7 +185,12 @@
                   </h6>
                   <h6 class="text-muted mx-5 fw-medium" *ngIf="item.addons.length>0"> الاضافات :
                     <span *ngFor="let addon of item.addons; let last = last">
-                      <span>{{ addon.addon_name }}<span *ngIf="!last">، </span></span>
+                      @if (!isOnline) {
+                        <span>{{ addon.name }}<span *ngIf="!last">، </span></span>
+                      }
+                      @else {
+                        <span>{{ addon.addon_name }}<span *ngIf="!last">، </span></span>
+                      }
                     </span>
 
                   </h6>
@@ -228,7 +233,7 @@
             }" (click)="changePaymentStatus('paid')">
             مدفوعة
           </button>
-        </div> 
+        </div>
 
         <!-- Show selected status -->
       </div>
@@ -487,7 +492,7 @@
             عنوان التوصيل:
             <span>{{ addressDetails?.[0]?.client_address ?? 'لا يوجد' }}</span>
           </h6>
-       
+
             <h6 style="font-size: 10px;">
           اسم الطيار:
           <span>{{ invoices?.[0]?.delivery_name && invoices[0].delivery_name.trim() !== '' ? invoices[0].delivery_name :
@@ -495,7 +500,7 @@
         </h6>
         </div>
 
-      
+
    <h6 style="font-size: 10px;" class="bg_black">
             تعليمات التوصيل:
             <span>{{ addressDetails?.[0]?.address_notes ?? 'لا يوجد' }}</span>
