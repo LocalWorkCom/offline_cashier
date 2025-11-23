@@ -1076,9 +1076,9 @@ export class IndexeddbService {
               coupon_id: item.coupon_id || null,
               coupon_title: item.coupon_title || null,
               coupon_value: item.coupon_value || 0,
-              total_dish_price: item.finalPrice * item.quantity,
+              total_dish_price: item.dish_price  * item.quantity,
               total_dish_price_coupon_applied:
-                item.finalPrice * item.quantity - (item.coupon_value || 0),
+                item.dish_price * item.quantity - (item.coupon_value || 0),
             })),
             order_summary: summary,
           },
@@ -1191,9 +1191,9 @@ export class IndexeddbService {
                   coupon_id: item.coupon_id || null,
                   coupon_title: item.coupon_title || null,
                   coupon_value: item.coupon_value || 0,
-                  total_dish_price: item.finalPrice * item.quantity,
+                  total_dish_price: item.dish_price * item.quantity,
                   total_dish_price_coupon_applied:
-                    item.finalPrice * item.quantity - (item.coupon_value || 0),
+                    item.dish_price * item.quantity - (item.coupon_value || 0),
                 })),
 
                 order_status: "pending",
