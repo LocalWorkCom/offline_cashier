@@ -445,7 +445,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.productsService.cart$.subscribe(cart => {
       this.cartItems = cart;
       this.updateTotalPrice();
-
+      // ✅ إذا كان الكوبون مطبق، أعد التحقق تلقائياً
+      if (this.appliedCoupon && this.validCoupon) {
+        setTimeout(() => {
+          this.applyCoupon();
+        }, 300);
+      }
       // ✅ If coupon is applied → recheck automatically
       if (this.appliedCoupon) {
         this.applyCoupon();
@@ -583,55 +588,55 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     this.updateTotalPrice();
     this.cdr.detectChanges();
-    this.loadSavedCoupon();
+    // this.loadSavedCoupon();
 
   }
 
-  private loadSavedCoupon(): void {
-    const hasAppliedCoupon = localStorage.getItem('appliedCoupon') === 'true';
-    const couponCode = localStorage.getItem('couponCode');
-    const discountAmount = localStorage.getItem('discountAmount');
-    const couponType = localStorage.getItem('couponType');
-    const couponApplyType = localStorage.getItem('couponApplyType'); // 🔥 جديد
+  // private loadSavedCoupon(): void {
+  //   const hasAppliedCoupon = localStorage.getItem('appliedCoupon') === 'true';
+  //   const couponCode = localStorage.getItem('couponCode');
+  //   const discountAmount = localStorage.getItem('discountAmount');
+  //   const couponType = localStorage.getItem('couponType');
+  //   const couponApplyType = localStorage.getItem('couponApplyType'); // 🔥 جديد
 
-    console.log('🔄 Loading saved coupon:', {
-      hasAppliedCoupon,
-      couponCode,
-      discountAmount,
-      couponType,
-      couponApplyType // 🔥 جديد
-    });
+  //   console.log('🔄 Loading saved coupon:', {
+  //     hasAppliedCoupon,
+  //     couponCode,
+  //     discountAmount,
+  //     couponType,
+  //     couponApplyType // 🔥 جديد
+  //   });
 
-    if (hasAppliedCoupon && couponCode) {
-      this.validCoupon = true;
-      this.couponCode = couponCode;
-      this.discountAmount = parseFloat(discountAmount || '0');
-      this.couponType = couponType || '';
-      this.appliedCoupon = {
-        code: couponCode,
-        coupon_title: localStorage.getItem('couponTitle') || couponCode,
-        coupon_value: localStorage.getItem('couponValue') || discountAmount,
-        value_type: couponType,
-        coupon_apply_type: couponApplyType || 'order',
-        amount_after_coupon: this.getTotal() - this.discountAmount,
-        total_discount: this.discountAmount,
-        currency_symbol: this.currencySymbol
-      };
+  //   if (hasAppliedCoupon && couponCode) {
+  //     this.validCoupon = true;
+  //     this.couponCode = couponCode;
+  //     this.discountAmount = parseFloat(discountAmount || '0');
+  //     this.couponType = couponType || '';
+  //     this.appliedCoupon = {
+  //       code: couponCode,
+  //       coupon_title: localStorage.getItem('couponTitle') || couponCode,
+  //       coupon_value: localStorage.getItem('couponValue') || discountAmount,
+  //       value_type: couponType,
+  //       coupon_apply_type: couponApplyType || 'order',
+  //       amount_after_coupon: this.getTotal() - this.discountAmount,
+  //       total_discount: this.discountAmount,
+  //       currency_symbol: this.currencySymbol
+  //     };
 
-      console.log('✅ Restored coupon from localStorage:', {
-        code: this.couponCode,
-        discount: this.discountAmount,
-        type: this.couponType,
-        applyType: couponApplyType // 🔥 جديد
-      });
+  //     console.log('✅ Restored coupon from localStorage:', {
+  //       code: this.couponCode,
+  //       discount: this.discountAmount,
+  //       type: this.couponType,
+  //       applyType: couponApplyType // 🔥 جديد
+  //     });
 
-      // 🔥 التعديل المهم: تطبيق الكوبون فوراً بعد تحميل الكارت
-      setTimeout(() => {
-        console.log('🔄 Applying restored coupon...');
-        this.applyCoupon();
-      }, 1000);
-    }
-  }
+  //     // 🔥 التعديل المهم: تطبيق الكوبون فوراً بعد تحميل الكارت
+  //     setTimeout(() => {
+  //       console.log('🔄 Applying restored coupon...');
+  //       this.applyCoupon();
+  //     }, 1000);
+  //   }
+  // }
   // start hanan
   private initializePaymentAmount(): void {
     const cartTotal = this.getCartTotal();
@@ -1348,10 +1353,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       0
     );
     // this.loadCouponFromLocalStorage()
-    if (this.appliedCoupon && localStorage.getItem('selectedOrderType') !== 'talabat')
-      this.applyCoupon();
+    if (this.appliedCoupon && this.validCoupon && localStorage.getItem('selectedOrderType') !== 'talabat') {
+      setTimeout(() => {
+        this.applyCoupon();
+      }, 100);
+    }
+
     this.getTax();
-    // ✅ تحديث مبلغ الدفع تلقائياً
     this.initializePaymentAmount();
     this.cdr.detectChanges();
 
@@ -1360,28 +1368,49 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.cartItems[index].quantity++;
     this.updateTotalPrices();
     this.saveCart();
+
+    // ✅ إعادة تطبيق الكوبون تلقائياً
+    if (this.appliedCoupon && this.validCoupon) {
+      setTimeout(() => {
+        this.applyCoupon();
+        this.cdr.detectChanges(); // ✅ إضافة اكتشاف التغييرات
+      }, 100);
+    } else {
+      this.cdr.detectChanges(); // ✅ تحديث الواجهة حتى بدون كوبون
+    }
   }
   decreaseQuantity(index: number) {
     if (this.cartItems[index].quantity > 1) {
       this.cartItems[index].quantity--;
     } else {
       this.cartItems.splice(index, 1);
-      // this.dbService.removeFromCart(index);
       localStorage.setItem('cart', JSON.stringify(this.cartItems));
-      // If the cart is empty, clear coupon, note, and messages
+
+      // إذا أصبح الكارت فارغاً
       if (this.cartItems.length === 0) {
         this.appliedCoupon = null;
         this.couponCode = '';
         this.discountAmount = 0;
         this.additionalNote = '';
         this.savedNote = '';
-        this.successMessage = ''; // Clear success message
-        this.errorMessage = ''; // Clear error message
+        this.successMessage = '';
+        this.errorMessage = '';
         this.removeCouponFromLocalStorage();
       }
     }
+
     this.updateTotalPrices();
     this.saveCart();
+
+    // ✅ إعادة تطبيق الكوبون تلقائياً
+    if (this.appliedCoupon && this.validCoupon && this.cartItems.length > 0) {
+      setTimeout(() => {
+        this.applyCoupon();
+        this.cdr.detectChanges(); // ✅ إضافة اكتشاف التغييرات
+      }, 100);
+    } else {
+      this.cdr.detectChanges(); // ✅ تحديث الواجهة حتى بدون كوبون
+    }
   }
   removeItem(productId: number, sizeId?: number): void {
     this.productsService.removeFromCart(productId, sizeId);
@@ -1521,14 +1550,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.selectedOrderType === 'dine-in' ||
       this.currentOrderData?.order_details?.order_type === 'dine-in'
     ) {
-      // if (!couponEnabled && !taxEnabled && this.appliedCoupon) {
-      //   serviceFee = this.getServiceOnAmountAfterCoupon();
-      // } else {
-      //   serviceFee = this.getServiceFeeAmount();
-      // }
-
-      serviceFee = this.getServiceFeeAmount();
-
+      if (!couponEnabled && !taxEnabled && this.appliedCoupon) {
+        serviceFee = this.getServiceOnAmountAfterCoupon();
+      } else {
+        serviceFee = this.getServiceFeeAmount();
+      }
     }
     serviceFee = parseFloat(serviceFee.toFixed(2));
 
@@ -1551,66 +1577,22 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // Step 7: Final total calculation
     let total = 0;
 
-    if (taxEnabled) {
-      // الضريبة مضمنة في الأسعار
-      const taxableAmount = rawSubtotal + serviceFee + deliveryFee;
-      const taxPercentage = this.branchData.tax_percentage ?? 10;
-      taxAmount = taxableAmount - (taxableAmount / (1 + taxPercentage / 100));
+    if (!taxEnabled && !this.appliedCoupon) {
+      total = subtotal + taxAmount + serviceFee + deliveryFee;
+    } else if (!taxEnabled && couponEnabled) {
+      total = subtotal + serviceFee + deliveryFee;
     } else {
-      // الضريبة تضاف بشكل منفصل
-      const taxableAmount = rawSubtotal + serviceFee + deliveryFee;
-      const taxPercentage = this.branchData.tax_percentage ?? 10;
-      taxAmount = (taxableAmount * taxPercentage) / 100;
+      total = subtotal + taxAmount + serviceFee + deliveryFee;
     }
-    taxAmount = parseFloat(taxAmount.toFixed(2));
-
-    // Step 5: Calculate total before coupon (المجموع قبل الخصم)
-    let totalBeforeCoupon = rawSubtotal + serviceFee + deliveryFee + taxAmount;
-
-    // Step 6: Apply coupon discount على المجموع الكامل بعد الرسوم
-    let finalTotal = totalBeforeCoupon;
-    if (this.appliedCoupon && this.validCoupon && localStorage.getItem('selectedOrderType') !== 'talabat') {
-      const discountAmount = this.calculateCouponDiscount(totalBeforeCoupon);
-      finalTotal = Math.max(totalBeforeCoupon - discountAmount, 0);
-
-      console.log('💰 تطبيق الكوبون بعد الرسوم:', {
-        totalBeforeCoupon,
-        discountAmount,
-        finalTotal
-      });
-    }
-
-    // Step 7: Ensure final total is not negative
-    finalTotal = Math.max(finalTotal, 0);
 
     if ((this.selectedOrderType === 'talabat' || this.selectedOrderType === 'طلبات')) {
-      finalTotal = rawSubtotal;
+      total = subtotal;
     }
 
-    return parseFloat(finalTotal.toFixed(2));
+    const finalTotal = total > 0 ? parseFloat(total.toFixed(2)) : 0;
+    return finalTotal;
   }
-  calculateCouponDiscount(totalAmount: number): number {
-    if (!this.appliedCoupon || !this.validCoupon) return 0;
 
-    let discountAmount = 0;
-    const couponValue = parseFloat(this.appliedCoupon.coupon_value || '0');
-    const valueType = this.appliedCoupon.value_type;
-    const applyType = this.appliedCoupon.coupon_apply_type;
-
-    if (applyType === 'dish') {
-      // كوبون على أطباق محددة - استخدام المبلغ المحسوب مسبقاً
-      discountAmount = this.discountAmount;
-    } else {
-      // كوبون على الطلب كامل
-      if (valueType === 'percentage') {
-        discountAmount = (totalAmount * couponValue) / 100;
-      } else if (valueType === 'fixed') {
-        discountAmount = Math.min(couponValue, totalAmount);
-      }
-    }
-
-    return parseFloat(discountAmount.toFixed(2));
-  }
   getServiceOnAmountAfterCoupon(): number {
     const serviceType = this.branchData.service_fees_type;
     const serviceValue = this.branchData.service_fees;
@@ -1692,38 +1674,50 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   //     return taxAmount;
   //   }
   // }
- getTax(): number {
-  if (!this.branchData) return 0;
-  
-  const taxEnabled = this.branchData.tax_application;
-  const taxPercentage = this.branchData.tax_percentage ?? 10;
+  getTax(): number {
+    if (!this.branchData) return 0;
+    const taxEnabled = this.branchData.tax_application;
+    const couponEnabled = this.branchData.coupon_application;
+    const taxPercentage = this.branchData.tax_percentage ?? 10;
+    const isDineIn =
+      this.selectedOrderType === 'في المطعم' ||
+      this.selectedOrderType === 'dine-in' ||
+      this.currentOrderData?.order_details?.order_type === 'dine-in';
+    const isDeliveryOrder =
+      this.selectedOrderType === 'توصيل' ||
+      this.selectedOrderType === 'Delivery' ||
+      this.currentOrderData?.order_details?.order_type === 'Delivery';
 
-  // حساب الأساس الضريبي (بدون خصم)
-  const rawSubtotal = this.getTotal();
-  
-  let serviceFee = 0;
-  if (this.selectedOrderType === 'dine-in' || this.selectedOrderType === 'في المطعم') {
-    serviceFee = this.getServiceFeeAmount();
+    let subtotal;
+    if (this.appliedCoupon && this.validCoupon) {
+      subtotal = this.appliedCoupon?.amount_after_coupon;
+      // console.log(subtotal, 'hhhh');
+    } else if ((subtotal = isDineIn)) {
+      subtotal = isDineIn ? this.getTotalAfterServices() : this.getTotal();
+    } else {
+      subtotal = this.getTotal();
+    }
+    let taxAmount = 0;
+
+    if (this.branchData.tax_application === true) {
+      taxAmount = subtotal - subtotal / (1 + taxPercentage / 100);
+    } else {
+      if (isDineIn && this.appliedCoupon && this.validCoupon) {
+        subtotal =
+          this.appliedCoupon?.amount_after_coupon +
+          this.getServiceOnAmountAfterCoupon();
+      }
+      if (isDeliveryOrder && this.appliedCoupon && this.validCoupon) {
+        const deliveryFees = this.delivery_fees;
+        subtotal = this.appliedCoupon?.amount_after_coupon;
+      }
+
+      taxAmount = (subtotal * taxPercentage) / 100;
+      /*       console.log(taxAmount, 'here');
+       */
+    }
+    return parseFloat(taxAmount.toFixed(2));
   }
-  
-  let deliveryFee = 0;
-  if (this.selectedOrderType === 'Delivery' || this.selectedOrderType === 'توصيل') {
-    deliveryFee = this.delivery_fees;
-  }
-
-  const taxableBase = rawSubtotal + serviceFee + deliveryFee;
-  let taxAmount = 0;
-
-  if (taxEnabled) {
-    // الضريبة مضمنة
-    taxAmount = taxableBase - (taxableBase / (1 + taxPercentage / 100));
-  } else {
-    // الضريبة تضاف
-    taxAmount = (taxableBase * taxPercentage) / 100;
-  }
-
-  return parseFloat(taxAmount.toFixed(2));
-}
 
   getTotalItemCount(): number {
     return this.cartItems.reduce(
@@ -1731,179 +1725,83 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       0
     );
   }
-  // applyCoupon() {
-  //   const token = localStorage.getItem('authToken');
-
-  //   if (!token) {
-  //     this.errorMessage = 'يجب تسجيل الدخول لتطبيق الكوبون.';
-  //     return;
-  //   }
-
-  //   if (!this.couponCode.trim()) {
-  //     this.errorMessage = 'يرجى إدخال الكوبون.';
-  //     return;
-  //   }
-
-  //   this.errorMessage = '';
-  //   this.successMessage = '';
-  //   this.isLoading = true;
-
-  //   const headers = new HttpHeaders({
-  //     'Authorization': `Bearer ${token}`,
-  //     'Content-Type': 'application/json'
-  //   });
-
-  //   const amount = this.getTotal();
-  //   const branchId = localStorage.getItem('branch_id');
-  //   const apiUrl = 'https://erpsystem.testdomain100.online/api/coupons/check-coupon';
-
-  //   const requestData = {
-  //     code: this.couponCode,
-  //     amount: amount,
-  //     branch_id: branchId
-  //   };
-
-  //   this.http.post(apiUrl, requestData, { headers }).pipe(
-  //     tap((response: any) => {
-  //       if (response.status) {
-  //         this.appliedCoupon = response.data;
-
-  //         // Use the 'amount_after_coupon' from API response
-  //         const amountAfterCoupon = parseFloat(response.data.amount_after_coupon);
-  //         const originalAmount = amount;
-  //         this.discountAmount = originalAmount - amountAfterCoupon;
-
-  //         // Ensure discount is not negative
-  //         this.discountAmount = Math.max(this.discountAmount, 0);
-
-  //         this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount.toFixed(2)} ${response.data.currency_symbol} من الإجمالي.`;
-
-  //         // Save the applied coupon data in local storage
-  //         this.saveCouponToLocalStorage(response.data);
-
-  //         // Update the total price with the amount after coupon
-  //         const backdrop = document.querySelector('.modal-backdrop');
-
-  //         this.totalPrice = amountAfterCoupon;
-  //         if (backdrop) {
-  //           backdrop.remove();
-  //         }
-
-  //         const modal = document.getElementById('couponModal');
-  //         if (modal) {
-  //           modal.classList.remove('show');
-  //           modal.setAttribute('aria-hidden', 'true');
-  //           modal.setAttribute('style', 'display: none');
-  //         }
-
-  //       } else {
-  //         this.errorMessage = response.message || 'حدث خطأ ما!';
-  //       }
-  //     }),
-  //     catchError(error => {
-  //       this.errorMessage = error.error?.message || 'حدث خطأ أثناء التحقق من الكوبون.';
-  //       return of(null);
-  //     })
-  //   ).subscribe(() => this.isLoading = false);
-  // }
-  applyCoupon(): void {
-    // ✅ أولاً: تحقق إذا كان هناك كوبون محفوظ في localStorage ونفس الكود
-    const hasStoredCoupon = localStorage.getItem('appliedCoupon') === 'true';
-    const storedCouponCode = localStorage.getItem('couponCode');
-    const storedDiscountAmount = localStorage.getItem('discountAmount');
-    const storedCouponType = localStorage.getItem('couponType');
-    const storedCouponValue = localStorage.getItem('couponValue');
-    const storedCouponApplyType = localStorage.getItem('couponApplyType');
-
-    if (hasStoredCoupon && storedCouponCode && storedCouponType && this.couponCode === storedCouponCode) {
-      console.log('🎯 Applying stored coupon without API call');
-
-      // حساب الخصم بناءً على السعر الكلي بعد الرسوم
-      const totalAfterFees = this.calculateTotalBeforeCoupon(); // السعر بعد الرسوم وقبل الخصم
-      let discountAmount = 0;
-
-      if (storedCouponApplyType === 'order') {
-        // 🔥 كوبون على الطلب كامل - بعد الرسوم
-        if (storedCouponType === 'percentage') {
-          const couponPercentage = parseFloat(storedCouponValue || '10');
-          discountAmount = (totalAfterFees * couponPercentage) / 100;
-        } else {
-          const fixedDiscount = parseFloat(storedCouponValue || '0');
-          discountAmount = Math.min(fixedDiscount, totalAfterFees);
-        }
-      } else if (storedCouponApplyType === 'dish') {
-        // 🔥 كوبون على أطباق محددة - استخدام القيم المحفوظة
-        discountAmount = this.calculateDishCouponDiscount(
-          storedCouponCode,
-          storedCouponType || 'percentage',
-          storedCouponValue || '0'
-        );
-      }
-
-      this.validCoupon = true;
-      this.appliedCoupon = {
-        code: storedCouponCode,
-        coupon_title: localStorage.getItem('couponTitle') || storedCouponCode,
-        coupon_value: storedCouponValue,
-        value_type: storedCouponType,
-        coupon_apply_type: storedCouponApplyType,
-        amount_after_coupon: totalAfterFees - discountAmount,
-        total_discount: discountAmount,
-        currency_symbol: this.currencySymbol
-      };
-
-      this.discountAmount = discountAmount;
-      this.couponTitle = localStorage.getItem('couponTitle') || '';
-
-      this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount.toFixed(2)} ${this.currencySymbol} من الإجمالي.`;
-
-      this.updateTotalPrice();
-      this.initializePaymentAmount();
-      this.isLoading = false;
-      this.cdr.detectChanges();
-      return;
-    }
-
-    // ✅ إذا لا يوجد كوبون محفوظ، اتصل بالـ API كالمعتاد
+  applyCoupon() {
     const token = localStorage.getItem('authToken');
     if (!token) {
       this.errorMessage = 'يجب تسجيل الدخول لتطبيق الكوبون.';
-      this.isLoading = false;
       return;
     }
-
     if (!this.couponCode.trim()) {
+
       this.errorMessage = 'يرجى إدخال الكوبون.';
-      this.isLoading = false;
       return;
     }
 
+    // ✅ Track start time for minimum 1 second duration
+    const startTime = Date.now();
+    const minDuration = 1000; // 1 second
     this.errorMessage = '';
     this.successMessage = '';
     this.isLoading = true;
-    this.cdr.markForCheck();
+    this.cdr.markForCheck(); // Trigger change detection immediately
 
+    // Prepare HTTP headers and API endpoint.
     const headers = new HttpHeaders({
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     });
-
     const branchId = localStorage.getItem('branch_id');
     const apiUrl = `${baseUrl}api/coupons/check-coupon`;
+    // Ensure branchData exists; otherwise, default values.
+    const taxEnabled: boolean = this.branchData?.tax_application ?? false;
+    const couponOnTotalAfterTax: boolean =
+      this.branchData?.coupon_application ?? false;
+    const taxPercentage: number =
+      parseFloat(this.branchData?.tax_percentage) || 0;
+    let baseAmount = 0;
+    // Log settings for debugging
+    // console.log('Applying coupon with settings:', {
+    //   taxEnabled,
+    //   couponOnTotalAfterTax,
+    //   taxPercentage,
+    // });
 
-    // 🔥 حساب السعر الكلي بعد الرسوم وقبل الخصم لإرساله للـ API
-    const totalBeforeCoupon = this.calculateTotalBeforeCoupon();
-
-    if (!totalBeforeCoupon || isNaN(totalBeforeCoupon)) {
+    // CASE 1: Tax enabled and coupon applies before tax
+    if (taxEnabled && !couponOnTotalAfterTax) {
+      baseAmount = this.cartItems.reduce((total, item) => {
+        const priceBeforeTax =
+          this.getItemTotal(item) / (1 + taxPercentage / 100);
+        return total + priceBeforeTax;
+      }, 0);
+      // console.log("copon", baseAmount);
+    }
+    // CASE 2: Tax disabled but coupon applies after tax
+    else if (!taxEnabled && couponOnTotalAfterTax) {
+      // Using getTotal() plus getTax() ensures correct total with tax included.
+      baseAmount = this.getTotal() + this.getTax();
+      console.log(baseAmount, 'cashier3');
+    }
+    // CASE 3: Tax enabled and coupon applies after tax
+    else if (taxEnabled && couponOnTotalAfterTax) {
+      // Apply coupon on cart total calculated by getTotal()
+      baseAmount = this.getTotal();
+    }
+    // CASE 4: Tax disabled and coupon applies on cart total (default)
+    else {
+      baseAmount = this.getTotal();
+      // console.log(baseAmount, 'coupon');
+    }
+    // Log computed base amount for debugging.
+    // console.log('Computed baseAmount:', baseAmount);
+    // Validate computed baseAmount.
+    if (!baseAmount || isNaN(baseAmount)) {
       this.errorMessage = 'فشل حساب إجمالي الطلب. تحقق من الأسعار والكميات.';
       this.isLoading = false;
       return;
     }
-
-    // 🔥 إعداد بيانات الأطباق للكوبونات على الأطباق المحددة
-    const requestData: any = {
+    const requestData = {
       code: this.couponCode,
-      amount: totalBeforeCoupon, // إرسال السعر بعد الرسوم
+      amount: baseAmount,
       branch_id: branchId,
       dishes: this.cartItems.map(item => {
         const dishData: any = {
@@ -1919,48 +1817,44 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       })
     };
 
-    // 🔥 إضافة order_type إذا كان متاحاً
-    if (this.selectedOrderType) {
-      requestData.order_type = this.selectedOrderType.toLowerCase();
-    }
-
     this.http
       .post(apiUrl, requestData, { headers })
       .pipe(
         tap((response: any) => {
           if (response.status) {
-            this.validCoupon = true;
+            this.validCoupon = true
             this.appliedCoupon = response.data;
-            this.couponTitle = response.data.coupon_title;
-            
-            // 🔥 استخدام الخصم الذي رجعه الـ API مباشرة
-            this.discountAmount = response.data.total_discount;
+            this.couponTitle = response.data.coupon_title
+            // if(response.data.value_type == "percentage" && response.data.coupon_value == "100.00"){
+            //   localStorage.setItem("delivery_fees" , "0")
+            //   this.deliveryFeesWithFullCoupon = 0
+            //   console.log(this.delivery_fees ,"88")
+            // }
+            // if (response.data.value_type === 'percentage') {
+            //   this.discountAmount =
+            //     (baseAmount * parseFloat(response.data.coupon_value)) / 100;
+            //   console.log(this.discountAmount, 'coupon');
+            // } else if (response.data.value_type === 'fixed') {
+            //   this.discountAmount = parseFloat(response.data.coupon_value);
+            //   console.log(this.discountAmount, 'fixed');
+            // }
+            // this.discountAmount = Math.min(this.discountAmount, baseAmount);
+            this.discountAmount = response.data.total_discount
+            this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount.toFixed(
+              2
+            )} ${response.data.currency_symbol} من الإجمالي.`;
 
-            // 🔥 جديد: حفظ نوع تطبيق الكوبون
-            const couponApplyType = response.data.coupon_apply_type || 'order';
+            localStorage.setItem(
+              'appliedCoupon',
+              JSON.stringify(response.data)
+            );
+            localStorage.setItem(
+              'discountAmount',
+              this.discountAmount.toString()
+            );
 
-            this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount.toFixed(2)} ${response.data.currency_symbol} من الإجمالي.`;
-
-            // حفظ بيانات الكوبون في localStorage
-            localStorage.setItem('appliedCoupon', 'true');
-            localStorage.setItem('validCoupon', 'true');
-            localStorage.setItem('couponTitle', this.couponTitle);
             localStorage.setItem('couponCode', this.couponCode);
-            localStorage.setItem('discountAmount', this.discountAmount.toString());
-            localStorage.setItem('couponType', response.data.value_type || '');
-            localStorage.setItem('couponValue', response.data.coupon_value || this.discountAmount.toString());
-            localStorage.setItem('couponApplyType', couponApplyType);
-
-            // 🔥 إذا كان الكوبون على أطباق محددة، احفظ تفاصيل الخصم
-            if (couponApplyType === 'dish' && response.data.discount_details) {
-              localStorage.setItem('discountDetails', JSON.stringify(response.data.discount_details));
-            }
-
-            // 🔥 معالجة خاصية delivery_fees إذا كانت موجودة
-            if (response.data.delivery_fees !== undefined) {
-              this.delivery_fees = response.data.delivery_fees;
-              localStorage.setItem('delivery_fees', this.delivery_fees.toString());
-            }
+            localStorage.setItem('couponTitle', this.couponTitle);
 
             this.updateTotalPrice();
 
@@ -1981,201 +1875,71 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             this.initializePaymentAmount();
 
           } else {
-            this.validCoupon = false;
-            this.removeCouponFromLocalStorage();
-            this.couponCode = '';
 
+            baseAmount = baseAmount
+            this.validCoupon = false;
+            this.removeCouponFromLocalStorage()
+            this.couponCode = null;
             if (response.errorData?.error) {
               this.errorMessage = response.errorData.error;
             }
 
             this.getTax();
             this.initializePaymentAmount();
+
           }
         }),
         catchError((error) => {
-          this.validCoupon = false;
-          this.removeCouponFromLocalStorage();
-          this.couponCode = '';
-
           if (error.error?.errorData?.error) {
             this.errorMessage = error.error?.errorData.error;
-          } else {
-            this.errorMessage = 'حدث خطأ أثناء التحقق من الكوبون.';
           }
 
-          this.getTax();
-          this.initializePaymentAmount();
           return of(null);
         })
       )
-      .subscribe(() => {
-        this.isLoading = false;
-      });
+      .subscribe(() => (this.isLoading = false));
   }
-  // 🔥 دالة جديدة لحساب خصم الكوبون على الأطباق المحددة
-  calculateDishCouponDiscount(couponCode: string, couponType: string, couponValue: string): number {
-    let totalDiscount = 0;
 
-    // جلب تفاصيل الخصم من localStorage
-    const discountDetailsJson = localStorage.getItem('discountDetails');
-    if (!discountDetailsJson) {
-      console.warn('❌ No discount details found for dish coupon');
-      return 0;
+  restoreCoupon() {
+    const storedCoupon = localStorage.getItem('appliedCoupon');
+    if (storedCoupon) {
+      this.appliedCoupon = JSON.parse(storedCoupon);
+
+      const taxEnabled: boolean = this.branchData?.tax_application ?? false;
+      const couponOnTotalAfterTax: boolean =
+        this.branchData?.coupon_application ?? false;
+      const taxPercentage: number =
+        parseFloat(this.branchData?.tax_percentage) || 0;
+
+      let baseAmount = 0;
+
+      if (taxEnabled && !couponOnTotalAfterTax) {
+        baseAmount = this.cartItems.reduce((total, item) => {
+          const priceBeforeTax =
+            this.getItemTotal(item) / (1 + taxPercentage / 100);
+          return total + priceBeforeTax;
+        }, 0);
+      } else if (!taxEnabled && couponOnTotalAfterTax) {
+        baseAmount = this.getTotal() + this.getTax();
+      } else {
+        baseAmount = this.getTotal();
+      }
+
+      if (this.appliedCoupon) {
+        if (this.appliedCoupon.value_type === 'percentage') {
+          this.discountAmount =
+            (baseAmount * parseFloat(this.appliedCoupon.coupon_value)) / 100;
+        } else if (this.appliedCoupon.value_type === 'fixed') {
+          this.discountAmount = parseFloat(this.appliedCoupon.coupon_value);
+        }
+      }
+      // localStorage.setItem('discountAmount', this.discountAmount.toString());
+
+      this.discountAmount = Math.min(this.discountAmount, baseAmount);
     }
-
-    try {
-      const discountDetails = JSON.parse(discountDetailsJson);
-
-      // جمع إجمالي الخصم من التفاصيل
-      discountDetails.forEach((detail: any) => {
-        totalDiscount += detail.totalDiscount || 0;
-      });
-
-      console.log('💰 Dish coupon calculation:', {
-        discountDetailsCount: discountDetails.length,
-        totalDiscount,
-        couponType,
-        couponValue
-      });
-
-    } catch (error) {
-      console.error('❌ Error calculating dish coupon discount:', error);
-    }
-
-    return totalDiscount;
-  }
-// دالة لحساب السعر الكلي بعد الرسوم وقبل تطبيق الكوبون
-calculateTotalBeforeCoupon(): number {
-  if (!this.branchData) return 0;
-
-  // Step 1: Calculate subtotal from cart items (بدون أي خصم)
-  const rawSubtotal = this.getTotal();
-
-  // Step 2: Calculate service fee (بناءً على rawSubtotal)
-  let serviceFee = 0;
-  if (
-    this.selectedOrderType === 'في المطعم' ||
-    this.selectedOrderType === 'dine-in' ||
-    this.currentOrderData?.order_details?.order_type === 'dine-in'
-  ) {
-    serviceFee = this.getServiceFeeAmount();
-  }
-  serviceFee = parseFloat(serviceFee.toFixed(2));
-
-  // Step 3: Delivery fee
-  let deliveryFee = 0;
-  if (
-    this.selectedOrderType === 'توصيل' ||
-    this.selectedOrderType === 'Delivery' ||
-    this.currentOrderData?.order_details?.order_type === 'Delivery'
-  ) {
-    deliveryFee = this.delivery_fees;
-  }
-  deliveryFee = parseFloat(deliveryFee.toFixed(2));
-
-  // Step 4: Calculate tax (بناءً على rawSubtotal + serviceFee + deliveryFee)
-  let taxAmount = 0;
-  const taxEnabled = this.branchData.tax_application;
-  const taxPercentage = this.branchData.tax_percentage ?? 10;
-
-  if (taxEnabled) {
-    // الضريبة مضمنة في الأسعار
-    const taxableAmount = rawSubtotal + serviceFee + deliveryFee;
-    taxAmount = taxableAmount - (taxableAmount / (1 + taxPercentage / 100));
-  } else {
-    // الضريبة تضاف بشكل منفصل
-    const taxableAmount = rawSubtotal + serviceFee + deliveryFee;
-    taxAmount = (taxableAmount * taxPercentage) / 100;
-  }
-  taxAmount = parseFloat(taxAmount.toFixed(2));
-
-  // Step 5: Calculate total before coupon (المجموع قبل الخصم)
-  const totalBeforeCoupon = rawSubtotal + serviceFee + deliveryFee + taxAmount;
-
-  console.log('💰 حساب السعر بعد الرسوق:', {
-    rawSubtotal,
-    serviceFee,
-    deliveryFee,
-    taxAmount,
-    totalBeforeCoupon
-  });
-
-  return parseFloat(totalBeforeCoupon.toFixed(2));
-}
-  // restoreCoupon() {
-  //   const storedCoupon = localStorage.getItem('appliedCoupon');
-  //   const storedCouponApplyType = localStorage.getItem('couponApplyType');
-
-  //   if (storedCoupon) {
-  //     this.appliedCoupon = JSON.parse(storedCoupon);
-
-  //     const taxEnabled: boolean = this.branchData?.tax_application ?? false;
-  //     const couponOnTotalAfterTax: boolean = this.branchData?.coupon_application ?? false;
-  //     const taxPercentage: number = parseFloat(this.branchData?.tax_percentage) || 0;
-
-  //     let baseAmount = 0;
-
-  //     if (taxEnabled && !couponOnTotalAfterTax) {
-  //       baseAmount = this.cartItems.reduce((total, item) => {
-  //         const priceBeforeTax = this.getItemTotal(item) / (1 + taxPercentage / 100);
-  //         return total + priceBeforeTax;
-  //       }, 0);
-  //     } else if (!taxEnabled && couponOnTotalAfterTax) {
-  //       baseAmount = this.getTotal() + this.getTax();
-  //     } else {
-  //       baseAmount = this.getTotal();
-  //     }
-
-  //     if (this.appliedCoupon) {
-  //       // 🔥 تحديث الحساب بناءً على نوع التطبيق
-  //       if (storedCouponApplyType === 'dish') {
-  //         // كوبون على أطباق محددة
-  //         this.discountAmount = this.calculateDishCouponDiscount(
-  //           this.appliedCoupon.code,
-  //           this.appliedCoupon.value_type,
-  //           this.appliedCoupon.coupon_value
-  //         );
-  //       } else {
-  //         // كوبون على الطلب كامل
-  //         if (this.appliedCoupon.value_type === 'percentage') {
-  //           this.discountAmount = (baseAmount * parseFloat(this.appliedCoupon.coupon_value)) / 100;
-  //         } else if (this.appliedCoupon.value_type === 'fixed') {
-  //           this.discountAmount = parseFloat(this.appliedCoupon.coupon_value);
-  //         }
-  //       }
-  //     }
-
-  //     this.discountAmount = Math.min(this.discountAmount, baseAmount);
-  //   }
-  //   this.updateTotalPrice();
-  // }
-restoreCoupon() {
-  const storedCoupon = localStorage.getItem('appliedCoupon');
-  
-  if (storedCoupon) {
-    this.appliedCoupon = JSON.parse(storedCoupon);
-    
-    // حساب الخصم للمعاينة فقط (على السعر الأساسي)
-    const rawSubtotal = this.getTotal();
-    this.discountAmount = this.calculatePreviewDiscount(rawSubtotal);
-  }
-}
-private calculatePreviewDiscount(subtotal: number): number {
-  if (!this.appliedCoupon) return 0;
-
-  let discount = 0;
-  const couponValue = parseFloat(this.appliedCoupon.coupon_value || '0');
-  const valueType = this.appliedCoupon.value_type;
-
-  if (valueType === 'percentage') {
-    discount = (subtotal * couponValue) / 100;
-  } else if (valueType === 'fixed') {
-    discount = Math.min(couponValue, subtotal);
+    this.updateTotalPrice();
   }
 
-  return discount;
-}
   getLocalDiscount() {
     let discount = localStorage.getItem('discountAmount');
     return discount;
