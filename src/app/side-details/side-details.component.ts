@@ -649,8 +649,21 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.finalTipSummary = {
         ...this.finalTipSummary,
         paymentAmount: cartTotal,
-        billAmount: cartTotal
+        billAmount: cartTotal,
+        tips_aption: this.selectedTipType // ⬅️ تحديث tips_aption
       };
+    }
+    const billAmount = this.finalTipSummary?.billAmount ?? this.getCartTotal();
+
+    if (this.selectedPaymentMethod === 'cash') {
+      this.cash_amountt = billAmount;
+      this.cash_amount = billAmount;
+    }
+
+    // ✅ تعيين credit_amount تلقائياً إذا كانت طريقة الدفع فيزا
+    if (this.selectedPaymentMethod === 'credit') {
+      this.credit_amountt = billAmount;
+      this.credit_amount = billAmount;
     }
 
     console.log('💰 تم تعيين مبلغ الدفع تلقائياً:', cartTotal);
@@ -2378,6 +2391,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // continued order from orders list
     let continuedOrderId: number | null = null;
     let table_number: any;
+    // ✅ استخدام finalTipSummary إذا موجود، وإلا استخدام القيم الأساسية
+    const billAmount = this.finalTipSummary?.billAmount ?? this.getCartTotal();
+    const paymentAmount = this.finalTipSummary?.paymentAmount ?? billAmount;
+    const tipAmount = this.finalTipSummary?.tipAmount ?? 0;
+    const changeAmount = this.finalTipSummary?.changeToReturn ?? 0;
+      const tipsAption = this.finalTipSummary?.tips_aption || this.selectedTipType || 'no_tip';
 
     try {
       const currentOrderDataRaw = localStorage.getItem('currentOrderData');
@@ -2415,8 +2434,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       payment_status: this.selectedPaymentStatus,
       // cash_amount: this.selectedPaymentMethod === "cash" ? this.finalTipSummary?.billAmount ?? 0 : 0,
       // credit_amount: this.selectedPaymentMethod === "credit" ? this.finalTipSummary?.billAmount ?? 0 : 0,
-      cash_amount: this.cash_amountt,
-      credit_amount: this.credit_amountt,
+      cash_amount: this.finalTipSummary ?
+        (this.selectedPaymentMethod === 'cash' ? this.finalTipSummary.billAmount : 0) :
+        (this.selectedPaymentMethod === 'cash' ? this.cash_amountt : 0),
+
+      credit_amount: this.finalTipSummary ?
+        (this.selectedPaymentMethod === 'credit' ? this.finalTipSummary.paymentAmount : 0) :
+        (this.selectedPaymentMethod === 'credit' ? this.credit_amountt : 0),
       cashier_machine_id: localStorage.getItem('cashier_machine_id'),
       ...(this.clientPhoneStoredInLocal ? { client_country_code: this.selectedCountry.code || "+20" } : {}),
       ...(this.clientPhoneStoredInLocal ? { client_phone: this.clientPhoneStoredInLocal } : {}),
@@ -2460,7 +2484,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       // tip_amount: this.tipAmount || 0,
       change_amount: this.tempChangeAmount || 0,
       // tips_aption : this.selectedTipType ?? "tip_the_change" ,                  //'tip_the_change', 'tip_specific_amount','no_tip'
-      tips_aption: this.tip_aption ?? "tip_the_change",                  //'tip_the_change', 'tip_specific_amount','no_tip'
+      tips_aption: tipsAption,                  //'tip_the_change', 'tip_specific_amount','no_tip'
 
       tip_amount: this.finalTipSummary?.tipAmount ?? 0,
       // tip_specific_amount:this.finalTipSummary?.tipAmount ?? 0,
@@ -2846,7 +2870,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
         // ✅ التعديل المطلوب: إذا كاش يحط في cash_amount، إذا فيزا يحط في credit_amount
         if (this.selectedPaymentMethod === 'cash') {
-          orderData.cash_amount = this.cashPaymentInput > 0 ? this.cashPaymentInput : billAmount;
+          orderData.cash_amount = billAmount;
           orderData.credit_amount = 0;
         } else if (this.selectedPaymentMethod === 'cash + credit') {
 
@@ -4927,48 +4951,40 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   // hanan
   selectPaymentMethod(method: 'cash' | 'credit' | 'cash + credit' | 'deferred'): void {
     this.selectedPaymentMethod = method;
+    const billAmount = this.getCartTotal();
     console.log('Selected Payment Method:', this.selectedPaymentMethod);
     if (method === 'cash') {
-      const cartTotal = this.getCartTotal();
-      if (this.cashPaymentInput === 0) {
-        this.cashPaymentInput = " ";
-      }
-
-      if (this.cash_amount === 0) {
-        this.cash_amount = this.cashPaymentInput || cartTotal;
-      }
-      if (this.credit_amountt === 0) {
-        this.credit_amountt = this.cashPaymentInput || cartTotal;
-      }
+      // ✅ تعيين cash_amount تلقائياً بقيمة المبلغ المستحق
+      this.cash_amountt = billAmount;
+      this.cash_amount = billAmount;
+      this.cashPaymentInput = billAmount;
 
       this.credit_amountt = 0; // إعادة تعيين الفيزا
       localStorage.setItem('cash_amountt', JSON.stringify(this.cash_amountt));
       localStorage.setItem('credit_amountt', JSON.stringify(this.credit_amountt));
-      console.log('💰 تم تهيئة الدفع النقدي:', {
-        مدخل: this.cashPaymentInput,
-        محفوظ: this.cash_amount
+
+      console.log('💰 تم تعيين cash_amount تلقائياً:', {
+        method: 'cash',
+        cash_amountt: this.cash_amountt,
+        billAmount: billAmount
       });
-      console.log('💰 تم تعيين cash_amount تلقائياً:', cartTotal);
     }
     //
 
     if (method === 'credit') {
-      const cartTotal = this.getCartTotal();
-      if (this.cashPaymentInput > 0 && this.cashPaymentInput !== cartTotal) {
-        this.credit_amountt = this.cashPaymentInput;
-        this.credit_amount = this.cashPaymentInput;
-      } else {
-        this.credit_amountt = cartTotal;
-      }
+      // ✅ تعيين credit_amount تلقائياً بقيمة المبلغ المستحق
+      this.credit_amountt = billAmount;
+      this.credit_amount = billAmount;
 
       this.cash_amountt = 0;
+      this.cashPaymentInput = 0;
       localStorage.setItem('cash_amountt', JSON.stringify(this.cash_amountt));
       localStorage.setItem('credit_amountt', JSON.stringify(this.credit_amountt));
-      console.log('💳 تم تعيين credit_amount:', {
+
+      console.log('💳 تم تعيين credit_amount تلقائياً:', {
         method: 'credit',
         credit_amountt: this.credit_amountt,
-        cashPaymentInput: this.cashPaymentInput,
-        cartTotal: this.getCartTotal()
+        billAmount: billAmount
       });
     }
     //  //////
@@ -5068,6 +5084,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         this.specificTipAmount = parseFloat(initialTipAmount.toFixed(2));
         break;
     }
+    console.log('✅ تم اختيار نوع الإكرامية:', {
+      selectedTipType: this.selectedTipType,
+      tip_aption: this.tip_aption,
+      specificTipAmount: this.specificTipAmount
+    });
   }
 
   // تحديث دالة تأكيد الإكرامية
@@ -5089,7 +5110,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         this.tempPaymentAmount = this.tempPaymentAmount + additionalPaymentRequired;
       }
     }
-
+    else if (this.selectedTipType === 'no_tip') {
+      finalTipAmount = 0; // ⬅️ التأكد من أن الإكرامية = 0
+      additionalPaymentRequired = 0;
+    }
     const changeToReturn = Math.max(0, this.tempPaymentAmount - (this.tempBillAmount + finalTipAmount));
 
     // حساب المبالغ النهائية بناءً على طريقة الدفع
@@ -5192,6 +5216,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     console.log('Bill Amount:', billAmount, 'Entered:', this.cashPaymentInput);
     const currentPaymentInput = this.cashPaymentInput;
+    if (!currentPaymentInput || currentPaymentInput <= 0) {
+      // this.cashPaymentInput = billAmount;
+      // this.cash_amountt = billAmount;
+      this.cash_amount = billAmount;
+      console.log('💰 تم تعيين المبلغ المستحق تلقائياً:', billAmount);
+    }
     // ✅ إضافة تحقق صريح للمبلغ المدخل
     if (currentPaymentInput <= 0) {
       this.paymentError = 'يرجى إدخال مبلغ صحيح أكبر من الصفر';
