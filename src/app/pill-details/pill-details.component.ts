@@ -502,8 +502,6 @@ export class PillDetailsComponent implements OnInit {
       return;
     }
 
-    const originalHTML = document.body.innerHTML;
-
     const copies = this.isDeliveryOrder
       ? [
         { showPrices: true, test: true },
@@ -519,30 +517,118 @@ export class PillDetailsComponent implements OnInit {
       this.showPrices = copies[i].showPrices;
       this.test = copies[i].test;
 
+      // Wait for Angular to update the view
+      this.cdr.detectChanges();
       await new Promise((resolve) => setTimeout(resolve, 300));
 
-      const singlePageHTML = `
-        <div>
-          ${printContent.innerHTML}
-          ${!this.isOnline ? '<div style="text-align: center; color: red; margin-top: 10px;">🔴 طباعة محلية - غير متصل بالإنترنت</div>' : ''}
-        </div>
-      `;
+      // Create a hidden iframe for printing
+      const printFrame = document.createElement('iframe');
+      printFrame.style.position = 'fixed';
+      printFrame.style.right = '0';
+      printFrame.style.bottom = '0';
+      printFrame.style.width = '0';
+      printFrame.style.height = '0';
+      printFrame.style.border = '0';
+      document.body.appendChild(printFrame);
 
-      document.body.innerHTML = singlePageHTML;
+      const printFrameDoc = printFrame.contentWindow?.document || printFrame.contentDocument;
+      if (!printFrameDoc) {
+        console.error('Failed to access iframe document');
+        document.body.removeChild(printFrame);
+        continue;
+      }
 
-      await new Promise((resolve) =>
+      // Get the updated content after Angular changes
+      const updatedContent = document.getElementById('printSection');
+      if (!updatedContent) {
+        document.body.removeChild(printFrame);
+        continue;
+      }
+
+      // Clone the content to avoid affecting the original
+      const clonedContent = updatedContent.cloneNode(true) as HTMLElement;
+
+      // Get all stylesheets from the main document
+      const stylesheets = Array.from(document.styleSheets)
+        .map(sheet => {
+          try {
+            return Array.from(sheet.cssRules || [])
+              .map(rule => rule.cssText)
+              .join('\n');
+          } catch (e) {
+            return '';
+          }
+        })
+        .filter(text => text.length > 0)
+        .join('\n');
+
+      // Write content to iframe
+      printFrameDoc.open();
+      printFrameDoc.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Print Invoice</title>
+            <style>
+              ${stylesheets}
+              @page {
+                size: auto;
+                margin: 0;
+              }
+              body {
+                margin: 0;
+                padding: 0;
+                font-family: Arial, sans-serif;
+              }
+              .printSection {
+                width: 90mm !important;
+                font-size: 8px !important;
+                margin: 0 !important;
+                padding: 0 !important;
+              }
+              .printSection .card-img img {
+                width: 150px !important;
+                height: auto !important;
+                max-width: 150px !important;
+                display: block !important;
+                margin: 0 auto !important;
+              }
+              * {
+                box-sizing: border-box;
+              }
+            </style>
+          </head>
+          <body>
+            ${clonedContent.innerHTML}
+            ${!this.isOnline ? '<div style="text-align: center; color: red; margin-top: 10px;">🔴 طباعة محلية - غير متصل بالإنترنت</div>' : ''}
+          </body>
+        </html>
+      `);
+      printFrameDoc.close();
+
+      // Wait for iframe to load, then print
+      await new Promise((resolve) => {
+        printFrame.onload = () => {
+          setTimeout(() => {
+            printFrame.contentWindow?.focus();
+            printFrame.contentWindow?.print();
+            resolve(true);
+          }, 200);
+        };
+        // Fallback if onload doesn't fire
         setTimeout(() => {
-          window.print();
+          printFrame.contentWindow?.focus();
+          printFrame.contentWindow?.print();
           resolve(true);
-        }, 200)
-      );
-    }
+        }, 500);
+      });
 
-    document.body.innerHTML = originalHTML;
-
-    // إعادة تحميل الصفحة فقط إذا كان هناك اتصال
-    if (this.isOnline) {
-      location.reload();
+      // Clean up iframe after printing
+      setTimeout(() => {
+        if (printFrame.parentNode) {
+          document.body.removeChild(printFrame);
+        }
+      }, 1000);
     }
   }
 
