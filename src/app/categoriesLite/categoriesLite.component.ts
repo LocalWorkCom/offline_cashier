@@ -176,10 +176,74 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
       this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
     });
   }
+
+  getProduct(product: any): any {
+
+    console.log('Original Product:', product);
+    if (localStorage.getItem('selectedOrderType') === 'talabat') {
+      if (Array.isArray(product.Id_menus_integrations) && product.Id_menus_integrations.length > 0) {
+        for (let integration of product.Id_menus_integrations) {
+          if (integration.name_en?.toLowerCase().includes('talabat')) {
+            console.log('✅ Talabat integration found:', integration);
+
+            // تحديث السعر الأساسي للطبق
+            const newPrice = integration.menus_integration_dishs?.[0]?.price || product.price;
+            product.price = parseFloat(newPrice);
+
+            // تحديث الأسعار داخل الـ sizes
+            if (Array.isArray(product.sizes) && Array.isArray(integration.menus_integration_dish_sizes)) {
+              product.sizes = product.sizes.map((size: any) => {
+                const matchedSize = integration.menus_integration_dish_sizes.find(
+                  (s: any) => s.branch_menu_size_id === size.id
+                );
+                if (matchedSize) {
+                  return { ...size, price: parseFloat(matchedSize.price) };
+                }
+                return size;
+              });
+            }
+
+            // تحديث الأسعار داخل الـ addons
+            if (Array.isArray(product.addon_categories) && Array.isArray(integration.menus_integration_dish_addons)) {
+              product.addon_categories = product.addon_categories.map((category: any) => ({
+                ...category,
+                addons: category.addons.map((addon: any) => {
+                  const matchedAddon = integration.menus_integration_dish_addons.find(
+                    (a: any) => a.branch_menu_addon_id === addon.id
+                  );
+                  if (matchedAddon) {
+                    return { ...addon, price: parseFloat(matchedAddon.price) };
+                  }
+                  return addon;
+                }),
+              }));
+            }
+          }
+        }
+      }
+    }
+
+    return product;
+  }
   private processCategories() {
     if(localStorage.getItem('selectedOrderType') === 'talabat'){
       this.categories = this.categories.filter(cat => cat.is_integration === true);
     }
+
+    this.categories = this.categories.map(category => {
+      if (Array.isArray(category.dishes) && category.dishes.length > 0) {
+        const normalizedDishes = this.normalizeDishesPayload(category.dishes)
+          .map(dish => this.getProduct({ ...dish }));
+
+        return {
+          ...category,
+          dishes: normalizedDishes
+        };
+      }
+
+      return category;
+    });
+
     this.filterCategories = [...this.categories];
 
     console.log('Fetched Categories:', this.categories);
@@ -284,8 +348,9 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
 
   private applyCategoryDishes(category: any, dishesPayload: any[], skipModalClose: boolean): void {
     const normalizedDishes = this.normalizeDishesPayload(dishesPayload);
+    const pricedDishes = normalizedDishes.map(dish => this.getProduct({ ...dish }));
 
-    category.dishes = normalizedDishes;
+    category.dishes = pricedDishes;
     // this.errorMessage = '';
 
     if (this.selectedCategory?.id !== category.id) {
@@ -294,7 +359,7 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
 
 
 
-    this.selectedCategoryProducts = normalizedDishes;
+    this.selectedCategoryProducts = pricedDishes;
     if(localStorage.getItem('selectedOrderType') === 'talabat'){
       this.selectedCategoryProducts = this.selectedCategoryProducts.filter(dish => dish.is_integration === true);
     }
