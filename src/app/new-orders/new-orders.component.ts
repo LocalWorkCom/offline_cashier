@@ -89,7 +89,7 @@ export class NewOrdersComponent implements OnDestroy {
   isFilterdFromClientSide: boolean = true;
   private activeOrderChannels: Set<string> = new Set();
   order: any;
-  errorMessage: string | null = null; 
+  errorMessage: string | null = null;
   apiUrl = `${baseUrl}`;
   removeLoading: boolean = false;
 
@@ -307,10 +307,16 @@ export class NewOrdersComponent implements OnDestroy {
               console.error('Error saving orders to IndexedDB:', err);
             });
           } else {
-            console.warn('No orders found in API response.');
-            this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+            if (response.status === false) {
+              localStorage.removeItem('authToken');
+              this.router.navigate(['/login']);
+            }
+            else {
+              console.warn('No orders found in API response.');
+              this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
 
-            this.loading = true;
+              this.loading = true;
+            }
           }
         },
         error: (err) => {
