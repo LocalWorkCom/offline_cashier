@@ -706,7 +706,7 @@ selectedOrderType === 'talabat') {
                   <label class="payment-suggestion-label"
                     [class.active-payment-suggestion]="selectedSuggestionType === 'billAmount'"
                     (click)="selectPaymentSuggestionAndOpenModal('billAmount', billAmount, billAmount, tipModalContent)">
-                    <strong>{{ billAmount | number:'1.0-0' }} ج.م</strong>
+                    <strong>{{ billAmount }} ج.م</strong>
                   </label>
 
                   <ng-container
@@ -749,7 +749,7 @@ selectedOrderType === 'talabat') {
                   </div>
                   }
 
-                  @if(this.credit_amountt){
+                  @if(this.credit_amountt > 0 || this.creditAmountMixed > 0 || selectedPaymentMethod === 'credit' || selectedPaymentMethod === 'cash + credit'){
                   <hr>
                   <div
                     class="mb-3 row mx-0 justify-content-center align-items-center">

@@ -446,6 +446,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.productsService.cart$.subscribe(cart => {
       this.cartItems = cart;
       this.updateTotalPrice();
+      // ✅ إذا تغيرت عناصر الكارت، إعادة تعيين الحسابات
+      if (this.hasCartItemsChanged(cart)) {
+        this.resetAllPaymentCalculations();
+      }
+
       // ✅ إذا كان الكوبون مطبق، أعد التحقق تلقائياً
       if (this.appliedCoupon && this.validCoupon) {
         setTimeout(() => {
@@ -592,7 +597,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // this.loadSavedCoupon();
 
   }
-
+  private hasCartItemsChanged(newCart: any[]): boolean {
+    const oldCartString = JSON.stringify(this.cartItems);
+    const newCartString = JSON.stringify(newCart);
+    return oldCartString !== newCartString;
+  }
   // private loadSavedCoupon(): void {
   //   const hasAppliedCoupon = localStorage.getItem('appliedCoupon') === 'true';
   //   const couponCode = localStorage.getItem('couponCode');
@@ -1458,7 +1467,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.additionalNote = '';
     this.savedNote = '';
     this.onholdOrdernote = '';
-      this.clearCouponData();
+    this.clearCouponData();
 
     this.clearOrderType();
     this.selectedPaymentMethod = null;
@@ -1499,38 +1508,38 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.FormDataDetails = null;
   }
   private clearCouponData(): void {
-  // ⭐️ مسح كل بيانات الكوبون من localStorage
-  const couponKeys = [
-    'couponCode',
-    'discountAmount',
-    'appliedCoupon',
-    'validCoupon',
-    'couponTitle',
-    'couponType',
-    'couponValue',
-    'couponApplyType',
-    'discountDetails',
-    'coupon_Code',
-    'coupon_value'
-  ];
+    // ⭐️ مسح كل بيانات الكوبون من localStorage
+    const couponKeys = [
+      'couponCode',
+      'discountAmount',
+      'appliedCoupon',
+      'validCoupon',
+      'couponTitle',
+      'couponType',
+      'couponValue',
+      'couponApplyType',
+      'discountDetails',
+      'coupon_Code',
+      'coupon_value'
+    ];
 
-  couponKeys.forEach(key => localStorage.removeItem(key));
+    couponKeys.forEach(key => localStorage.removeItem(key));
 
-  // ⭐️ إعادة تعيين متغيرات الكوبون في الكومبوننت
-  this.appliedCoupon = null;
-  this.couponCode = '';
-  this.discountAmount = 0;
-  this.validCoupon = false;
-  this.couponTitle = '';
-  this.couponType = '';
-  this.coupon_Code = '';
-  this.coupon_value = null;
+    // ⭐️ إعادة تعيين متغيرات الكوبون في الكومبوننت
+    this.appliedCoupon = null;
+    this.couponCode = '';
+    this.discountAmount = 0;
+    this.validCoupon = false;
+    this.couponTitle = '';
+    this.couponType = '';
+    this.coupon_Code = '';
+    this.coupon_value = null;
 
-  // ⭐️ إعادة تعيين delivery_fees إذا تم تطبيق كوبون 100%
-  this.delivery_fees = Number(localStorage.getItem('original_delivery_fees')) || this.delivery_fees;
-  
-  console.log('✅ تم مسح جميع بيانات الكوبون');
-}
+    // ⭐️ إعادة تعيين delivery_fees إذا تم تطبيق كوبون 100%
+    this.delivery_fees = Number(localStorage.getItem('original_delivery_fees')) || this.delivery_fees;
+
+    console.log('✅ تم مسح جميع بيانات الكوبون');
+  }
   clearCart(): void {
     this.productsService.clearCart();
     this.cartItems = [];
@@ -1788,7 +1797,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.errorMessage = 'يرجى إدخال الكوبون.';
       return;
     }
-
+    this.resetAllPaymentCalculations();
     // ✅ Track start time for minimum 1 second duration
     const startTime = Date.now();
     const minDuration = 1000; // 1 second
@@ -2048,9 +2057,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.appliedCoupon = null;
     this.discountAmount = 0;
     this.couponCode = '';
+    this.validCoupon = false;
+
     this.successMessage = '';
     this.errorMessage = '';
     this.removeCouponFromLocalStorage();
+    // 3. إعادة تعيين كل الحسابات المرتبطة بالكوبون
+    this.resetAllPaymentCalculations();
     this.updateTotalPrice();
     // setTimeout(() => {
     //  const modalEl = document.getElementById('couponModal');
@@ -2067,19 +2080,71 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     //}
     // }, 1000);
     this.initializePaymentAmount();
-  }
+    this.cdr.detectChanges();
 
-  removeCouponFromLocalStorage() {
+  }
+  private resetAllPaymentCalculations(): void {
+    console.log('🔄 Resetting all payment calculations...');
+
+    // 1. إعادة تعيين حالة الدفع لغير مدفوع
+    this.selectedPaymentStatus = 'unpaid';
+    localStorage.setItem('selectedPaymentStatus', 'unpaid');
+
+    // 2. إعادة تعيين طريقة الدفع
+    this.selectedPaymentMethod = null;
+
+    // 3. إعادة تعيين مبالغ الدفع
+    this.cash_amountt = 0;
+    this.credit_amountt = 0;
+    this.cashPaymentInput = " ";
+    this.cashAmountMixed = " ";
+    this.creditAmountMixed = " ";
+
+    // 4. مسح مبالغ الدفع من localStorage
+    localStorage.removeItem('cash_amountt');
+    localStorage.removeItem('credit_amountt');
+
+    // 5. إعادة تعيين بيانات الإكرامية
+    this.finalTipSummary = null;
+    this.selectedTipType = 'no_tip';
+    this.specificTipAmount = 0;
+    this.selectedSuggestionType = null;
+
+    // 6. مسح بيانات الإكرامية من localStorage
+    localStorage.removeItem('finalTipSummary');
+
+    // 7. إعادة تعيين رسائل الخطأ
+    this.paymentError = '';
+    this.amountError = false;
+    this.falseMessage = '';
+
+    // 8. إعادة تعيين delivery_fees للقيمة الأصلية (في حالة الحذف فقط)
+    const originalDeliveryFees = localStorage.getItem('original_delivery_fees');
+    if (originalDeliveryFees) {
+      this.delivery_fees = Number(originalDeliveryFees);
+      console.log('✅ Restored original delivery fees:', this.delivery_fees);
+    }
+
+    console.log('✅ All payment calculations reset');
+  }
+  removeCouponFromLocalStorage(): void {
     const couponKeys = [
       'couponCode', 'discountAmount', 'appliedCoupon',
       'validCoupon', 'couponTitle', 'couponType', 'couponValue',
-      'couponApplyType', 'discountDetails' // 🔥 جديد
+      'couponApplyType', 'discountDetails', 'couponFullData'
     ];
 
-    couponKeys.forEach(key => localStorage.removeItem(key));
+    couponKeys.forEach(key => {
+      localStorage.removeItem(key);
+      console.log(`🗑️ Removed ${key} from localStorage`);
+    });
 
     // 🔥 إعادة تعيين delivery_fees إذا تم تطبيق كوبون 100%
-    this.delivery_fees = Number(localStorage.getItem('original_delivery_fees')) || this.delivery_fees;
+    const originalDeliveryFees = localStorage.getItem('original_delivery_fees');
+    if (originalDeliveryFees) {
+      this.delivery_fees = Number(originalDeliveryFees);
+      console.log('✅ Restored original delivery fees:', this.delivery_fees);
+    }
   }
 
   getTotal(): number {
@@ -3862,7 +3927,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     localStorage.removeItem('selectedOrderType');
     const currentCart = [...this.cartItems];
     this.clearOrderTypeData();
-
+    // ✅ إعادة تعيين الحسابات عند تغيير نوع الطلب
+    this.resetAllPaymentCalculations();
     // ✅ Clear selectedOrderType from localStorage first to ensure correct pricing
 
 
@@ -4340,12 +4406,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     if (this.selectedPaymentStatus === 'unpaid') {
       this.cash_amountt = 0;
       this.credit_amountt = 0;
-      this.referenceNumber = '';
+      // this.referenceNumber = '';
       this.referenceNumberTouched = false;
       // this.selectedPaymentMethod = '';
       localStorage.removeItem('cash_amountt');
       localStorage.removeItem('credit_amountt');
-      localStorage.removeItem('referenceNumber');
+      // localStorage.removeItem('referenceNumber');
     }
 
     localStorage.setItem('selectedPaymentStatus', this.selectedPaymentStatus);
