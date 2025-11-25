@@ -11,6 +11,7 @@ import { AuthLayoutComponent } from './auth-layout/auth-layout.component';
 import { PusherService } from './services/pusher/pusher.service'; 
 import { TranslationService } from './core/i18n';
 import { ConfirmDialog } from "primeng/confirmdialog";
+import { SyncService } from './services/sync.service';
 
 // import {LoginComponent} from "./login/login.component";
 
@@ -27,11 +28,15 @@ export class AppComponent implements OnInit {
 
   private pusher = inject(PusherService);
   private translate = inject(TranslationService);
+  private syncService = inject(SyncService);
 
   ngOnInit(): void {
     this.dir = this.translate.getHtmlDirection();
     document.body.dir = this.dir;
 
     this.pusher.connect();
+
+    // Trigger early instantiation so online listeners are registered app-wide.
+    void this.syncService;
   }
 }
