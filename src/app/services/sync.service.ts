@@ -49,16 +49,17 @@
 // }
 
 
-import { Injectable } from '@angular/core';
+import { Injectable, OnDestroy } from '@angular/core';
 import { Subject, timer } from 'rxjs';
 import { IndexeddbService } from './indexeddb.service';
 import { PillDetailsService } from './pill-details.service';
 import { firstValueFrom } from 'rxjs';
+import { PlaceOrderService } from '../services/place-order.service';
 
 @Injectable({
   providedIn: 'root'
 })
-export class SyncService {
+export class SyncService implements OnDestroy {
 
   private retryOrdersSubject = new Subject<void>();
   private retryPillsSubject = new Subject<void>();
@@ -68,15 +69,26 @@ export class SyncService {
   retryPills$ = this.retryPillsSubject.asObservable();
   retryInvoices$ = this.retryInvoicesSubject.asObservable();
 
+  private readonly handleOnline = () => {
+    console.log('🌐 Back online, running all sync functions...');
+    this.runAllSyncFunctions();
+  };
+
   constructor(
     private dbService: IndexeddbService,
-    private orderService: PillDetailsService
+    private orderService: PillDetailsService,
+    private plaseOrderService: PlaceOrderService,
   ) {
-    // ✅ Auto-run لو عايزة تبدأ تسمع أول ما السيرفس يشتغل
-    window.addEventListener('online', () => {
-      console.log("🌐 Back online, running all sync functions...");
+    window.addEventListener('online', this.handleOnline);
+
+    if (navigator.onLine) {
+      // In case the app starts while already online, sync immediately.
       this.runAllSyncFunctions();
-    });
+    }
+  }
+
+  ngOnDestroy(): void {
+    window.removeEventListener('online', this.handleOnline);
   }
 
   // 👇 Helper تضيف delay + retry
@@ -106,6 +118,7 @@ export class SyncService {
   callRetryOrders() {
     console.log("🔄 Trigger retryOrders with retries");
     // this.triggerWithRetry(this.retryOrdersSubject, 1, 5000);
+    this.syncPendingOrders();
   }
 
   callRetryPills() {
@@ -198,6 +211,80 @@ export class SyncService {
       console.log('✅ Finished syncing all pending invoice updates');
     } catch (err) {
       console.error('❌ Error in syncPendingInvoiceUpdates:', err);
+    }
+  }
+
+   // Sync pending orders using raw orderData saved for API
+   async syncPendingOrders(): Promise<void> {
+    if (!navigator.onLine) {
+      console.log('📴 Offline - skipping sync');
+      return;
+    }
+
+    try {
+      const pendingOrders = await this.dbService.getPendingOrders();
+      if (pendingOrders.length === 0) {
+        console.log('✅ No pending orders to sync');
+        return;
+      }
+
+      console.log(`🔄 Syncing ${pendingOrders.length} pending order(s)...`);
+
+      for (const pendingOrder of pendingOrders) {
+        try {
+
+          // localStorage.setItem('form_data', pendingOrder.formData);
+          // let addressId = await this.getAddressId();
+          // if (addressId) {
+          //   localStorage.setItem('address_id', addressId.toString());
+          // }
+
+          console.log('pendingOrder', pendingOrder);
+          // Remove metadata fields before sending to API
+          const orderDataForAPI = { ...pendingOrder };
+          delete orderDataForAPI.type_operation;
+          delete orderDataForAPI.savedAt;
+          delete orderDataForAPI.isSynced;
+          delete orderDataForAPI.id;
+
+          await new Promise<void>((resolve, reject) => {
+            const timeoutPromise = new Promise((_, timeoutReject) =>
+              setTimeout(() => timeoutReject(new Error('Request timeout')), 30000)
+            );
+
+            console.log('orderDataForAPI', orderDataForAPI);
+
+            Promise.race([
+              firstValueFrom(this.plaseOrderService.placeOrder_offline(orderDataForAPI)),
+              timeoutPromise
+            ]).then((response: any) => {
+              if (response.status !== false && !response.errorData) {
+                // Mark as synced and delete
+                this.dbService.markPendingOrderAsSynced(pendingOrder.id)
+                  .then(() => this.dbService.deleteSyncedPendingOrder(pendingOrder.id))
+                  .then(() => {
+                    console.log(`✅ Successfully synced order ${pendingOrder.orderId || 'N/A'}`);
+                    resolve();
+                  })
+                  .catch(reject);
+              } else {
+                console.error(`❌ API returned error for order:`, response);
+                resolve(); // Continue with next order even if this one failed
+              }
+            }).catch((err) => {
+              console.error(`❌ Error syncing order:`, err);
+              resolve(); // Continue with next order even if this one failed
+            });
+          });
+        } catch (err) {
+          console.error(`❌ Error processing pending order ${pendingOrder.id}:`, err);
+          // Continue with next order
+        }
+      }
+
+      console.log('✅ Finished syncing all pending orders');
+    } catch (err) {
+      console.error('❌ Error in syncPendingOrders:', err);
     }
   }
 

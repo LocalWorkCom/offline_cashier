@@ -553,11 +553,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     //   this.syncPendingOrders();
 
     // }
-    this.syncService.retryOrders$.subscribe(() => {
-      // this.retryPendingOrders(); // 👈 دي الفانكشن اللي عندك
-      // Also sync raw orderData
-      this.syncPendingOrders();
-    });
+    // this.syncService.retryOrders$.subscribe(() => {
+    //   // this.retryPendingOrders(); // 👈 دي الفانكشن اللي عندك
+    //   // Also sync raw orderData
+    //   this.syncPendingOrders();
+    // });
 
 
     // Load initial cart from localStorage
