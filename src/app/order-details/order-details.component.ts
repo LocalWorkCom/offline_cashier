@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, Input } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { OrderListDetailsService } from '../services/order-list-details.service';
 import { CommonModule, Location } from '@angular/common';
 import { Subject } from 'rxjs';
@@ -37,7 +37,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     private orderListById: OrderListDetailsService,
     private http: HttpClient,
     private location: Location,
-    private dbService: IndexeddbService
+    private dbService: IndexeddbService,
+    private router: Router
   ) { }
   ngOnInit(): void {
     this.route.paramMap.subscribe({
@@ -230,7 +231,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       )
       .subscribe({
         next: (response) => {
-          if (response) {
+          if (response && response.status === true) {
             const order = response.data.orderDetails[0];
             this.currencySymbol = order.currency_symbol;
             this.paymenMethod = order.transactions[0].payment_method;
@@ -249,8 +250,15 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
             console.log(' orderSummary :', this.orderSummary);
             this.loading = false;
           } else {
-            this.error = 'No order details available.';
-            this.loading = false;
+            if (response.status === false) {
+              localStorage.removeItem('authToken');
+              this.router.navigate(['/login']);
+            }
+            else
+            {
+              this.error = 'No order details available.';
+              this.loading = false;
+            }
           }
         },
         error: (error: any) => {
