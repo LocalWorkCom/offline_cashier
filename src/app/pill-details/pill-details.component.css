@@ -8,6 +8,7 @@
   outline: 0;
   box-shadow: none !important;
 }
+/* Main view styles - only for non-print content */
 .card-img img {
   width: 10vw;
 }
@@ -25,7 +26,7 @@
   padding-block: 0.65rem;
 }
 
-/* Set the width of the print section to fit the receipt printer */
+/* Print section styles - scoped to printSection only */
 .printSection {
   width: 90mm;
   font-size: 8px !important;
@@ -34,13 +35,17 @@
   height: auto;
   /* overflow: visible; */
 }
+
 .printSection h6 {
   font-size: 0.8rem !important;
   margin-bottom: 2px;
 }
-.card-img img {
-  width: 150px;
-  height: auto;
+
+/* Logo in print section only */
+.printSection .card-img img {
+  width: 150px !important;
+  height: auto !important;
+  max-width: 150px !important;
 }
 
 .table {

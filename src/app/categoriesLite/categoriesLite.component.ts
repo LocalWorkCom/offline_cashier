@@ -179,7 +179,7 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
 
   getProduct(product: any): any {
 
-    console.log('Original Product:', product);
+    // console.log('Original Product:', product);
     if (localStorage.getItem('selectedOrderType') === 'talabat') {
       if (Array.isArray(product.Id_menus_integrations) && product.Id_menus_integrations.length > 0) {
         for (let integration of product.Id_menus_integrations) {
