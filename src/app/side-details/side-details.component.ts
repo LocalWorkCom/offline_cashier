@@ -174,6 +174,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   cashAmountMixed: any = " ";
   creditAmountMixed: any = " ";
   tip_aption: any;
+  isPaymentInputTouched: boolean = false;
 
   Math = Math;
 
@@ -1452,6 +1453,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.currentOrderData = null;
     localStorage.removeItem('currentOrderId');
     this.currentOrderId = null;
+    localStorage.removeItem('additionalNote');
+    localStorage.removeItem('notes');
+    this.additionalNote = '';
+    this.savedNote = '';
+    this.onholdOrdernote = '';
+      this.clearCouponData();
+
     this.clearOrderType();
     this.selectedPaymentMethod = null;
     this.selectedPaymentStatus = 'unpaid';
@@ -1484,14 +1492,45 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     console.log('fatema');
 
     localStorage.removeItem('form_data');
-    localStorage.removeItem('notes');
-    localStorage.removeItem('additionalNote');
     localStorage.removeItem('selectedHotel');
     localStorage.removeItem('hotel_id');
     localStorage.removeItem('selected_address');
     this.tableNumber = null;
     this.FormDataDetails = null;
   }
+  private clearCouponData(): void {
+  // ⭐️ مسح كل بيانات الكوبون من localStorage
+  const couponKeys = [
+    'couponCode',
+    'discountAmount',
+    'appliedCoupon',
+    'validCoupon',
+    'couponTitle',
+    'couponType',
+    'couponValue',
+    'couponApplyType',
+    'discountDetails',
+    'coupon_Code',
+    'coupon_value'
+  ];
+
+  couponKeys.forEach(key => localStorage.removeItem(key));
+
+  // ⭐️ إعادة تعيين متغيرات الكوبون في الكومبوننت
+  this.appliedCoupon = null;
+  this.couponCode = '';
+  this.discountAmount = 0;
+  this.validCoupon = false;
+  this.couponTitle = '';
+  this.couponType = '';
+  this.coupon_Code = '';
+  this.coupon_value = null;
+
+  // ⭐️ إعادة تعيين delivery_fees إذا تم تطبيق كوبون 100%
+  this.delivery_fees = Number(localStorage.getItem('original_delivery_fees')) || this.delivery_fees;
+  
+  console.log('✅ تم مسح جميع بيانات الكوبون');
+}
   clearCart(): void {
     this.productsService.clearCart();
     this.cartItems = [];
@@ -2396,7 +2435,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const paymentAmount = this.finalTipSummary?.paymentAmount ?? billAmount;
     const tipAmount = this.finalTipSummary?.tipAmount ?? 0;
     const changeAmount = this.finalTipSummary?.changeToReturn ?? 0;
-      const tipsAption = this.finalTipSummary?.tips_aption || this.selectedTipType || 'no_tip';
+    const tipsAption = this.finalTipSummary?.tips_aption || this.selectedTipType || 'no_tip';
 
     try {
       const currentOrderDataRaw = localStorage.getItem('currentOrderData');
@@ -4957,7 +4996,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       // ✅ تعيين cash_amount تلقائياً بقيمة المبلغ المستحق
       this.cash_amountt = billAmount;
       this.cash_amount = billAmount;
-      this.cashPaymentInput = billAmount;
+      this.cashPaymentInput = " ";
 
       this.credit_amountt = 0; // إعادة تعيين الفيزا
       localStorage.setItem('cash_amountt', JSON.stringify(this.cash_amountt));
@@ -5051,8 +5090,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.selectedPaymentMethod = paymentMethod;
     }
 
-    this.selectedTipType = 'no_tip';
-    this.specificTipAmount = 0;
+    if (!this.selectedTipType) {
+      this.selectedTipType = 'no_tip';
+    }
+
+    if (!this.specificTipAmount) {
+      this.specificTipAmount = 0;
+    }
 
     this.modalService.open(content, {
       centered: true,
@@ -5081,7 +5125,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         break;
       case 'tip_specific_amount':
         let initialTipAmount = this.tempChangeAmount > 0 ? this.tempChangeAmount : 0;
-        this.specificTipAmount = parseFloat(initialTipAmount.toFixed(2));
+        // this.specificTipAmount = parseFloat(initialTipAmount.toFixed(2));
+        this.specificTipAmount = 0;
         break;
     }
     console.log('✅ تم اختيار نوع الإكرامية:', {
@@ -5171,8 +5216,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
 
     // إعادة تعيين المتغيرات
-    this.selectedTipType = 'no_tip';
-    this.specificTipAmount = 0;
+    // this.selectedTipType = 'no_tip';
+    // this.specificTipAmount = 0;
   }
   showAdditionalPaymentConfirmation(additionalAmount: number, modal: any) {
     const confirmed = confirm(
