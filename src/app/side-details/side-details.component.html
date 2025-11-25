@@ -851,7 +851,8 @@ selectedOrderType === 'talabat') {
               </button>
             </div> -->
             <!-- رسالة تنبيه إذا كان المبلغ غير كافي -->
-            <div *ngIf="(cashAmountMixed + creditAmountMixed) < billAmount"
+            <div
+              *ngIf="(cashAmountMixed + creditAmountMixed) < billAmount && isPaymentInputTouched"
               class="alert alert-warning mt-2 py-2">
               <small>المبلغ المدفوع غير كافي. يرجى إدخال مبلغ يساوي أو أكبر من
                 {{ billAmount | number:'1.2-2' }} ج.م</small>
@@ -885,7 +886,7 @@ selectedOrderType === 'talabat') {
             <div>
               <strong>مبلغ إضافي مطلوب:</strong>
               <span class="fw-bold">{{ finalTipSummary.additionalPaymentRequired
-                | number:'1.2-2' }} ج.م  لتحقيق الإكرامية المطلوبة </span>
+                | number:'1.2-2' }} ج.م لتحقيق الإكرامية المطلوبة </span>
               <br>
               <!-- <small>  لتحقيق الإكرامية المطلوبة  </small> -->
             </div>
@@ -1727,9 +1728,9 @@ selectedOrderType === 'talabat') {
       <br>
       <small class="fw-normal" style="color: #fff;">
         (المتبقي للرد: {{
-        selectedTipType === 'no_tip' ? tempChangeAmount :
+        (selectedTipType === 'no_tip' ? tempChangeAmount :
         selectedTipType === 'tip_the_change' ? 0 :
-        tempChangeAmount - specificTipAmount | number:'1.2-2'
+        tempChangeAmount - specificTipAmount) | number:'1.2-2'
         }} ج.م)
       </small>
     </button>
