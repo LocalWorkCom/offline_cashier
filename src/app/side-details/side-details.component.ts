@@ -675,7 +675,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.onlineHandler = () => {
       this.isOnline = true;
       console.log('🌐 Online - attempting to sync pending orders');
-      this.syncPendingOrders();
+      // this.syncPendingOrders();
     };
 
     this.offlineHandler = () => {
@@ -1528,7 +1528,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
   // ⭐️ إعادة تعيين delivery_fees إذا تم تطبيق كوبون 100%
   this.delivery_fees = Number(localStorage.getItem('original_delivery_fees')) || this.delivery_fees;
-  
+
   console.log('✅ تم مسح جميع بيانات الكوبون');
 }
   clearCart(): void {
@@ -2430,6 +2430,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // continued order from orders list
     let continuedOrderId: number | null = null;
     let table_number: any;
+    if(localStorage.getItem('table_number'))
+    {
+      table_number = Number(localStorage.getItem('table_number'));
+    }
+
+
     // ✅ استخدام finalTipSummary إذا موجود، وإلا استخدام القيم الأساسية
     const billAmount = this.finalTipSummary?.billAmount ?? this.getCartTotal();
     const paymentAmount = this.finalTipSummary?.paymentAmount ?? billAmount;
@@ -2466,7 +2472,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       ...(continuedOrderId ? { order_id: continuedOrderId } : {}),
       order_id: continuedOrderId ?? null,
       table_number: table_number ?? null,
-      table_id: table_number ?? null,
+      table_id: tableId ?? null,
       type: this.selectedOrderType,
       branch_id: branchId,
       payment_method: this.selectedPaymentMethod ?? 'cash',

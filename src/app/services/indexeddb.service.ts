@@ -916,15 +916,12 @@ export class IndexeddbService {
 
       const formData = await this.getLastFormData();
       let delivery_fees = 0;
-
       // 🟢 Get delivery fees from area if available
-
       if (formData) {
     //  console.log("dd");
         const area = await this.getAreaById(Number(formData.area_id));
         delivery_fees = area ? parseFloat(area.delivery_fees) : 0;
       }
-
 
       return new Promise((resolve, reject) => {
 
