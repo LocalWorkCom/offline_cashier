@@ -3463,6 +3463,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           orderData.client_country_code = formData.country_code?.code || formData.country_code || this.selectedCountry.code;
         }
 
+
         // حفظ الطلب في IndexedDB
         await this.dbService.savePendingOrder(orderData);
         console.log("✅ Order saved to IndexedDB with delivery info");
@@ -3472,11 +3473,18 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         await this.dbService.savePendingOrderForSync(orderDataForSync);
         console.log("✅ Raw orderData saved for API sync");
 
+        if(this.selectedOrderType == 'dine-in')
+          {
+             this.dbService.updateTableStatus(orderData.table_number, 2);
+          }
+
         // تنظيف localStorage
         const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
         const orderIdToRemove = orderData.orderId;
         const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
         localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
+
+
 
         // تنظيف البيانات
         this.clearCart();
