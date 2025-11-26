@@ -749,7 +749,9 @@ selectedOrderType === 'talabat') {
                   </div>
                   }
 
-                  @if(this.credit_amountt > 0 || this.creditAmountMixed > 0 || selectedPaymentMethod === 'credit' || selectedPaymentMethod === 'cash + credit'){
+                  @if(this.credit_amountt > 0 || this.creditAmountMixed > 0 ||
+                  selectedPaymentMethod === 'credit' || selectedPaymentMethod
+                  === 'cash + credit'){
                   <hr>
                   <div
                     class="mb-3 row mx-0 justify-content-center align-items-center">
@@ -949,24 +951,12 @@ selectedOrderType === 'talabat') {
 
         </div>
       </div>
-      @if (amountError) {
-      <div class="alert alert-danger text-center" role="alert">
-        يجب أدخال الإجمالي. {{ getCartTotal().toFixed(2) }} {{ currencySymbol }}
-      </div>
-
-      <!-- } -->
-      }
-
+      
       @if (trueMessage) {
       <p class="message">{{ trueMessage }}</p>
-      } @if (falseMessage) {
+      } @if (falseMessage && falseMessage !== "order.amount_wrong") {
       <div class="alert alert-danger text-center" role="alert">
-        @if(falseMessage === "order.amount_wrong"){
-        <p> يجب أدخال الإجمالي. </p>
-
-        }@else{
         {{falseMessage}}
-        }
       </div>
       }
       @if (tableError) {
