@@ -3433,12 +3433,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         // ✅ إضافة بيانات التوصيل للطلب في وضع Offline
         if (this.selectedOrderType === 'Delivery') {
           const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+          console.log(formData,"formData");
 
           // إضافة معلومات التوصيل للطلب
           orderData.delivery_info = {
             client_name: formData.client_name || this.clientName,
             client_phone: formData.address_phone || this.clientPhone,
             address: formData.address || this.address,
+            client_address: formData.address || this.address,
+            address_phone: formData.address_phone || this.clientPhone,
             country_code: formData.country_code?.code || formData.country_code || this.selectedCountry.code,
             apartment_number: formData.apartment_number || '',
             building: formData.building || '',
