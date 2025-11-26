@@ -2484,7 +2484,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   addressRequestInProgress: boolean = false;
   // start hanan
 
-  private prepareOrderData(): any {
+  private async prepareOrderData(): Promise<any> {
     // This should contain all the order data preparation logic
     // that was previously in your submitOrder method
     console.log("prepareOrderData called");
@@ -2495,9 +2495,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // continued order from orders list
     let continuedOrderId: number | null = null;
     let table_number: any;
-    if (localStorage.getItem('table_number')) {
-      table_number = Number(localStorage.getItem('table_number'));
+    if(tableId != null)
+    {
+      table_number = await this.dbService.searchTableByTableId(tableId);
     }
+
+    console.log(table_number,"table_number");
 
 
     // ✅ استخدام finalTipSummary إذا موجود، وإلا استخدام القيم الأساسية
@@ -2960,7 +2963,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const paymentStatus = this.selectedPaymentMethod === 'cash' ? this.selectedPaymentStatus : 'paid';
     console.log(this.selectedPaymentMethod, 'selectedPaymentMethod');
 
-    const orderData: any = this.prepareOrderData();
+    const orderData: any = await this.prepareOrderData();
 
     // معالجة عنوان التوصيل
     // let addressId = null;

@@ -1176,7 +1176,7 @@ export class IndexeddbService {
             payment_status: orderData.payment_status || "unpaid",
             currency_symbol,
             print_count: 0,
-            table_number: orderData.table_id || null,
+            table_number: orderData.table_number,
 
             invoice_details: [
               {
@@ -1195,6 +1195,7 @@ export class IndexeddbService {
                   invoice_number: `INV-OFF-${orderId}`,
                   order_number: orderId,
                   table_id: orderData.table_id || null,
+                  table_number :orderData.table_number,
                   created_at: new Date().toISOString(),
                 },
 
@@ -1243,6 +1244,7 @@ export class IndexeddbService {
 
             invoice_tips: [
               {
+                payment_method:orderData.payment_method || "cash",
                 change_amount: orderData.change_amount || 0,
                 tips_aption: orderData.tips_aption ?? "tip_the_change",
                 tip_amount: orderData.tip_amount ?? 0,
@@ -2330,5 +2332,23 @@ export class IndexeddbService {
     } catch (error) {
       console.error('❌ Error in syncPendingAddresses:', error);
     }
+  }
+
+  // search table by table_id to get table_number
+  async searchTableByTableId(tableId: number): Promise<any> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('tables', 'readonly');
+        const store = tx.objectStore('tables');
+        const request = store.get(tableId);
+        request.onsuccess = () => {
+          resolve(request.result?.table_number);
+        };
+        request.onerror = (e) => {
+          console.error('❌ Error searching table by table_id:', e);
+          reject(e);
+        };
+      });
+    });
   }
 }

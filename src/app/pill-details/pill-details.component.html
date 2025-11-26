@@ -322,7 +322,7 @@
         <h6>سعر الوجبات يشتمل على ضريبة القيمة المضافة</h6>
       </div> -->
 
-      <div class="px-2 mb-1" *ngIf="!item.tax_application">
+      <div class="px-2 mb-1" *ngIf="item.tax_application">
         <h6>
           تضاف ضريبة القيمة المضافة
           <span class="main-color"> بنسبة {{ item.tax_percentage }}% </span>
@@ -330,7 +330,7 @@
         </h6>
       </div>
       <div class="d-flex flex-column">
-        <div class="px-2 mb-1" *ngIf="item.tax_application">
+        <div class="px-2 mb-1" *ngIf="!item.tax_application">
           <h6>سعر الوجبات يشتمل على ضريبة القيمة المضافة</h6>
         </div>
 
@@ -347,7 +347,7 @@
 
       </div>
 <!-- قسم التيبس -->
-        <div class="tips-section" *ngIf="invoiceTips.length > 0">
+        <div class="tips-section" *ngIf="invoiceTips.length > 0 && paymentStatus == 'paid'">
           <hr />
           <div *ngFor="let tip of invoiceTips" class="mb-3">
             <div class="d-flex justify-content-between px-2 mb-1">
