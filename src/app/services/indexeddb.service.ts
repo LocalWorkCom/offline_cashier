@@ -57,8 +57,8 @@ export class IndexeddbService {
 
         if (!this.db.objectStoreNames.contains('tables')) {
           // this.db.createObjectStore('tables', { keyPath: 'id' });
-            const tableStore = this.db.createObjectStore('tables', { keyPath: 'id', autoIncrement: true });
-           tableStore.createIndex('table_number', 'table_number', { unique: false });
+          const tableStore = this.db.createObjectStore('tables', { keyPath: 'id', autoIncrement: true });
+          tableStore.createIndex('table_number', 'table_number', { unique: false });
         }
 
         if (!this.db.objectStoreNames.contains('selectedTable')) {
@@ -916,11 +916,39 @@ export class IndexeddbService {
 
       const formData = await this.getLastFormData();
       let delivery_fees = 0;
+      let tranaction: Array<{
+        date: string;
+        is_refund: number;
+        paid: number;
+        payment_method: string;
+        payment_status: string;
+        refund: number;
+      }> | undefined;
       // 🟢 Get delivery fees from area if available
       if (formData) {
-    //  console.log("dd");
+        //  console.log("dd");
         const area = await this.getAreaById(Number(formData.area_id));
         delivery_fees = area ? parseFloat(area.delivery_fees) : 0;
+      }
+      if (orderData.payment_method_menu_integration == "cash + credit") {
+        tranaction = [{
+          date: new Date().toISOString().split("T")[0],
+          is_refund: 0,
+          paid: orderData.cash_amount,
+          payment_method: "cash",
+          payment_status: orderData.payment_status || "unpaid",
+          refund: 0,
+        },
+        {
+          date: new Date().toISOString().split("T")[0],
+          is_refund: 0,
+          paid: orderData.credit_amount,
+          payment_method: "credit",
+          payment_status: orderData.payment_status || "unpaid",
+          refund: 0,
+
+        }]
+
       }
 
       return new Promise((resolve, reject) => {
@@ -944,11 +972,11 @@ export class IndexeddbService {
 
         // 🧾 Build order summary once and reuse it
         const buildOrderSummary = () => {
-          const subtotal_price_before_coupon = orderData.type !="talabat" ? orderData.items.reduce(
+          const subtotal_price_before_coupon = orderData.type != "talabat" ? orderData.items.reduce(
             (sum: number, item: any) => sum + item.dish_price * item.quantity,
             0
           ) : orderData.items.reduce(
-            (sum: number, item: any) => sum + item.dish_price ,
+            (sum: number, item: any) => sum + item.dish_price,
             0
           );
 
@@ -1012,6 +1040,8 @@ export class IndexeddbService {
           floor_name: "الطابق الأرضي"
         };
 
+        console.log("orderData.payment_method", orderData.payment_method);
+
 
 
         // 🟢 Order object
@@ -1019,7 +1049,7 @@ export class IndexeddbService {
           formdata_delivery: formData,
           formdata_delivery_area_id: formData ? formData.area_id : null,
           delivery_fees_amount: delivery_fees,
-          edit_invoice:false,
+          edit_invoice: false,
 
           order_details: {
             order_id: orderData.order_id ?? orderId, // ⚠️ REQUIRED for IndexedDB keyPath
@@ -1044,12 +1074,14 @@ export class IndexeddbService {
             updated_at: new Date().toISOString(),
           },
 
+
+
           details_order: {
             currency_symbol,
             order_type: orderData.type || "dine-in",
             type: orderData.type || "dine-in",
             status: "pending",
-            transactions: [
+            transactions: tranaction || [
               {
                 date: new Date().toISOString().split("T")[0],
                 is_refund: 0,
@@ -1073,7 +1105,7 @@ export class IndexeddbService {
               coupon_id: item.coupon_id || null,
               coupon_title: item.coupon_title || null,
               coupon_value: item.coupon_value || 0,
-              total_dish_price: item.dish_price  * item.quantity,
+              total_dish_price: item.dish_price * item.quantity,
               total_dish_price_coupon_applied:
                 item.dish_price * item.quantity - (item.coupon_value || 0),
             })),
@@ -1093,7 +1125,7 @@ export class IndexeddbService {
             sizeId: item.sizeId,
             size: item.sizeName || "",
             size_name: item.sizeName || "",
-            total_dish_price: item.finalPrice == 0 ? item.dish_price*item.quantity:  item.finalPrice,
+            total_dish_price: item.finalPrice == 0 ? item.dish_price * item.quantity : item.finalPrice,
             dish_status: "pending",
           })),
 
@@ -1120,7 +1152,7 @@ export class IndexeddbService {
           savedAt: new Date().toISOString(),
           createdAt: new Date().toISOString(),
         };
-        console.log("orderWithMetadata",orderWithMetadata);
+        console.log("orderWithMetadata", orderWithMetadata);
         // 🧾 Save to IndexedDB (orders)
         const orderRequest = ordersStore.put(orderWithMetadata);
 
@@ -1714,49 +1746,49 @@ export class IndexeddbService {
   // }
 
   async updateTableStatus(identifier: number, newStatus: number): Promise<void> {
-  await this.ensureInit();
+    await this.ensureInit();
 
-  return new Promise((resolve, reject) => {
-    const tx = this.db.transaction('tables', 'readwrite');
-    const store = tx.objectStore('tables');
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('tables', 'readwrite');
+      const store = tx.objectStore('tables');
 
-    // حاول الأول بالـ id
-    const getById = store.get(identifier);
+      // حاول الأول بالـ id
+      const getById = store.get(identifier);
 
-    getById.onsuccess = () => {
-      let table = getById.result;
+      getById.onsuccess = () => {
+        let table = getById.result;
 
-      if (table) {
-        // ✅ لو لقاها بالـ id
-        table.status = newStatus;
-        const putReq = store.put(table);
-        putReq.onsuccess = () => resolve();
-        putReq.onerror = (e) => reject(e);
-      } else {
-        // ❌ مش لقاها بالـ id → نجرب بالـ table_number
-        const index = store.index('table_number');
-        const getByTableNumber = index.get(identifier);
-
-        getByTableNumber.onsuccess = () => {
-          const tableByNumber = getByTableNumber.result;
-          if (!tableByNumber) {
-            reject(`Table with ID or table_number ${identifier} not found`);
-            return;
-          }
-
-          tableByNumber.status = newStatus;
-          const putReq = store.put(tableByNumber);
+        if (table) {
+          // ✅ لو لقاها بالـ id
+          table.status = newStatus;
+          const putReq = store.put(table);
           putReq.onsuccess = () => resolve();
           putReq.onerror = (e) => reject(e);
-        };
+        } else {
+          // ❌ مش لقاها بالـ id → نجرب بالـ table_number
+          const index = store.index('table_number');
+          const getByTableNumber = index.get(identifier);
 
-        getByTableNumber.onerror = (e) => reject(e);
-      }
-    };
+          getByTableNumber.onsuccess = () => {
+            const tableByNumber = getByTableNumber.result;
+            if (!tableByNumber) {
+              reject(`Table with ID or table_number ${identifier} not found`);
+              return;
+            }
 
-    getById.onerror = (e) => reject(e);
-  });
-}
+            tableByNumber.status = newStatus;
+            const putReq = store.put(tableByNumber);
+            putReq.onsuccess = () => resolve();
+            putReq.onerror = (e) => reject(e);
+          };
+
+          getByTableNumber.onerror = (e) => reject(e);
+        }
+      };
+
+      getById.onerror = (e) => reject(e);
+    });
+  }
 
 
 
@@ -2023,8 +2055,8 @@ export class IndexeddbService {
             // Check various possible order_id fields
             const itemOrderId = item.order_id || item.orderId || item.id;
             return itemOrderId === orderId ||
-                   itemOrderId === String(orderId) ||
-                   String(itemOrderId) === String(orderId);
+              itemOrderId === String(orderId) ||
+              String(itemOrderId) === String(orderId);
           });
 
           let pendingOrder: any;
@@ -2172,131 +2204,131 @@ export class IndexeddbService {
     });
   }
   // حفظ بيانات الفورم للتوصيل
-async saveDeliveryFormData(formData: any): Promise<number> {
-  return this.ensureInit().then(() => {
-    return new Promise((resolve, reject) => {
-      const tx = this.db.transaction('formData', 'readwrite');
-      const store = tx.objectStore('formData');
+  async saveDeliveryFormData(formData: any): Promise<number> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('formData', 'readwrite');
+        const store = tx.objectStore('formData');
 
-      const formDataWithMetadata = {
-        ...formData,
-        type: 'deliveryForm',
-        savedAt: new Date().toISOString(),
-        isSynced: navigator.onLine
-      };
+        const formDataWithMetadata = {
+          ...formData,
+          type: 'deliveryForm',
+          savedAt: new Date().toISOString(),
+          isSynced: navigator.onLine
+        };
 
-      const request = store.add(formDataWithMetadata);
+        const request = store.add(formDataWithMetadata);
 
-      request.onsuccess = () => resolve(request.result as number);
-      request.onerror = (e) => reject(e);
+        request.onsuccess = () => resolve(request.result as number);
+        request.onerror = (e) => reject(e);
+      });
     });
-  });
-}
-
-// حفظ العناوين المؤقتة
-async savePendingAddress(addressData: any): Promise<number> {
-  return this.ensureInit().then(() => {
-    return new Promise((resolve, reject) => {
-      const tx = this.db.transaction('pendingOperations', 'readwrite');
-      const store = tx.objectStore('pendingOperations');
-
-      const addressWithMetadata = {
-        ...addressData,
-        type_operation: 'addressCreation',
-        savedAt: new Date().toISOString(),
-        isSynced: false
-      };
-
-      const request = store.add(addressWithMetadata);
-
-      request.onsuccess = () => {
-        console.log('✅ Pending address saved to IndexedDB:', request.result);
-        resolve(request.result as number);
-      };
-      request.onerror = (e) => {
-        console.error('❌ Error saving pending address:', e);
-        reject(e);
-      };
-    });
-  });
-}
-
-// جلب العناوين المؤقتة
-async getPendingAddresses(): Promise<any[]> {
-  return this.ensureInit().then(() => {
-    return new Promise((resolve, reject) => {
-      const tx = this.db.transaction('pendingOperations', 'readonly');
-      const store = tx.objectStore('pendingOperations');
-      const request = store.getAll();
-
-      request.onsuccess = () => {
-        const pendingAddresses = request.result.filter((item: any) =>
-          item.type_operation === 'addressCreation' && !item.isSynced
-        );
-        resolve(pendingAddresses);
-      };
-      request.onerror = (e) => {
-        console.error('❌ Error getting pending addresses:', e);
-        reject(e);
-      };
-    });
-  });
-}
-
-// حذف عنوان مؤقت بعد المزامنة
-async deletePendingAddress(id: number): Promise<void> {
-  return this.ensureInit().then(() => {
-    return new Promise((resolve, reject) => {
-      const tx = this.db.transaction('pendingOperations', 'readwrite');
-      const store = tx.objectStore('pendingOperations');
-      const request = store.delete(id);
-
-      request.onsuccess = () => resolve();
-      request.onerror = (e) => {
-        console.error('❌ Error deleting pending address:', e);
-        reject(e);
-      };
-    });
-  });
-}
-
-// مزامنة العناوين المؤقتة
-async syncPendingAddresses(): Promise<void> {
-  if (!navigator.onLine) {
-    console.log('📴 Offline - skipping address sync');
-    return;
   }
 
-  try {
-    const pendingAddresses = await this.getPendingAddresses();
+  // حفظ العناوين المؤقتة
+  async savePendingAddress(addressData: any): Promise<number> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('pendingOperations', 'readwrite');
+        const store = tx.objectStore('pendingOperations');
 
-    if (pendingAddresses.length === 0) {
-      console.log('✅ No pending addresses to sync');
+        const addressWithMetadata = {
+          ...addressData,
+          type_operation: 'addressCreation',
+          savedAt: new Date().toISOString(),
+          isSynced: false
+        };
+
+        const request = store.add(addressWithMetadata);
+
+        request.onsuccess = () => {
+          console.log('✅ Pending address saved to IndexedDB:', request.result);
+          resolve(request.result as number);
+        };
+        request.onerror = (e) => {
+          console.error('❌ Error saving pending address:', e);
+          reject(e);
+        };
+      });
+    });
+  }
+
+  // جلب العناوين المؤقتة
+  async getPendingAddresses(): Promise<any[]> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('pendingOperations', 'readonly');
+        const store = tx.objectStore('pendingOperations');
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+          const pendingAddresses = request.result.filter((item: any) =>
+            item.type_operation === 'addressCreation' && !item.isSynced
+          );
+          resolve(pendingAddresses);
+        };
+        request.onerror = (e) => {
+          console.error('❌ Error getting pending addresses:', e);
+          reject(e);
+        };
+      });
+    });
+  }
+
+  // حذف عنوان مؤقت بعد المزامنة
+  async deletePendingAddress(id: number): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('pendingOperations', 'readwrite');
+        const store = tx.objectStore('pendingOperations');
+        const request = store.delete(id);
+
+        request.onsuccess = () => resolve();
+        request.onerror = (e) => {
+          console.error('❌ Error deleting pending address:', e);
+          reject(e);
+        };
+      });
+    });
+  }
+
+  // مزامنة العناوين المؤقتة
+  async syncPendingAddresses(): Promise<void> {
+    if (!navigator.onLine) {
+      console.log('📴 Offline - skipping address sync');
       return;
     }
 
-    console.log(`🔄 Syncing ${pendingAddresses.length} pending address(es)...`);
+    try {
+      const pendingAddresses = await this.getPendingAddresses();
 
-    for (const address of pendingAddresses) {
-      try {
-        // هنا يمكنك إضافة استدعاء API لإرسال العنوان
-        // await this.addressService.submitAddress(address).toPromise();
-
-        console.log('✅ Successfully synced address:', address);
-
-        // حذف من IndexedDB بعد المزامنة الناجحة
-        await this.deletePendingAddress(address.id);
-
-      } catch (error) {
-        console.error('❌ Error syncing address:', error);
-        // نستمر مع العناوين الأخرى حتى لو فشل أحدها
+      if (pendingAddresses.length === 0) {
+        console.log('✅ No pending addresses to sync');
+        return;
       }
+
+      console.log(`🔄 Syncing ${pendingAddresses.length} pending address(es)...`);
+
+      for (const address of pendingAddresses) {
+        try {
+          // هنا يمكنك إضافة استدعاء API لإرسال العنوان
+          // await this.addressService.submitAddress(address).toPromise();
+
+          console.log('✅ Successfully synced address:', address);
+
+          // حذف من IndexedDB بعد المزامنة الناجحة
+          await this.deletePendingAddress(address.id);
+
+        } catch (error) {
+          console.error('❌ Error syncing address:', error);
+          // نستمر مع العناوين الأخرى حتى لو فشل أحدها
+        }
+      }
+
+      console.log('✅ Finished syncing all pending addresses');
+
+    } catch (error) {
+      console.error('❌ Error in syncPendingAddresses:', error);
     }
-
-    console.log('✅ Finished syncing all pending addresses');
-
-  } catch (error) {
-    console.error('❌ Error in syncPendingAddresses:', error);
   }
-}
 }
