@@ -914,7 +914,7 @@ export class IndexeddbService {
       console.log("🟢 Saving pending order:", orderData);
       await this.ensureInit();
 
-      const formData = await this.getLastFormData();
+      const formData = orderData.delivery_info;
       let delivery_fees = 0;
       let tranaction: Array<{
         date: string;
@@ -925,11 +925,11 @@ export class IndexeddbService {
         refund: number;
       }> | undefined;
       // 🟢 Get delivery fees from area if available
-      if (formData) {
-        //  console.log("dd");
-        const area = await this.getAreaById(Number(formData.area_id));
-        delivery_fees = area ? parseFloat(area.delivery_fees) : 0;
-      }
+      // if (formData) {
+      //   //  console.log("dd");
+      //   // const area = await this.getAreaById(Number(formData.area_id));
+      //   delivery_fees = area ? parseFloat(area.delivery_fees) : 0;
+      // }
       if (orderData.payment_method_menu_integration == "cash + credit") {
         tranaction = [{
           date: new Date().toISOString().split("T")[0],

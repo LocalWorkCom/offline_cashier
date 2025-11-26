@@ -802,6 +802,10 @@ export class PillEditComponent implements OnInit, OnDestroy {
           await updatePill(existingPill);
           await saveInvoiceUpdate(existingPill);
           alert("تم تحديث الفاتورة Offline وسيتم رفعها عند الاتصال بالإنترنت ✅");
+            if(existingPill.order_type == 'dine-in')
+            {
+                this.dbService.updateTableStatus(existingPill.table_number, 1);
+            }
         } else {
           console.warn("❌ لم يتم العثور على الفاتورة أو الطلب في IndexedDB");
           alert("⚠️ لم يتم العثور على الفاتورة في قاعدة البيانات المحلية");
@@ -920,10 +924,54 @@ export class PillEditComponent implements OnInit, OnDestroy {
       // }
       // الطباعة المحلية
       await this.performLocalPrint();
+
+      if (!navigator.onLine) {
+        // ✅ في حالة العمل أوفلاين: إذا كانت الفاتورة لطاولة (Dine-in) ومدفوعة، يتم تفريغ الطاولة
+        try {
+          const existingPill: any = await this.dbService.getPillByInvoiceId(this.pillId);
+
+          if (existingPill && existingPill.order_type === 'dine-in') {
+            // محاولة قراءة حالة الدفع من المتغير الحالي أو من بيانات الفاتورة المخزّنة
+            const pillPaymentStatus =
+              this.paymentStatus ||
+              existingPill.payment_status ||
+              existingPill.order_details?.payment_status;
+
+            if (pillPaymentStatus === 'paid') {
+              await this.dbService.updateTableStatus(existingPill.table_number, 1); // 1 = متاحة
+              console.log('✅ Table status updated to available after paid pill (offline).');
+            }
+          }
+        } catch (e) {
+          console.error('❌ Error updating table status after offline pill print:', e);
+        }
+      }
     } catch (error) {
       console.error('خطأ في طباعة الفاتورة:', error);
       // في حالة الخطأ، حاولي الطباعة محلياً فقط
       await this.performLocalPrint();
+
+      if (!navigator.onLine) {
+        // ✅ في حالة العمل أوفلاين: إذا كانت الفاتورة لطاولة (Dine-in) ومدفوعة، يتم تفريغ الطاولة
+        try {
+          const existingPill: any = await this.dbService.getPillByInvoiceId(this.pillId);
+
+          if (existingPill && existingPill.order_type === 'dine-in') {
+            // محاولة قراءة حالة الدفع من المتغير الحالي أو من بيانات الفاتورة المخزّنة
+            const pillPaymentStatus =
+              this.paymentStatus ||
+              existingPill.payment_status ||
+              existingPill.order_details?.payment_status;
+
+            if (pillPaymentStatus === 'paid') {
+              await this.dbService.updateTableStatus(existingPill.table_number, 1); // 1 = متاحة
+              console.log('✅ Table status updated to available after paid pill (offline).');
+            }
+          }
+        } catch (e) {
+          console.error('❌ Error updating table status after offline pill print:', e);
+        }
+      }
     } finally {
       this.isPrinting = false;
       // التأكد من إغلاق الـ modal نهائيًا
@@ -997,6 +1045,8 @@ export class PillEditComponent implements OnInit, OnDestroy {
     this.test = copies[i].test;
 
     await new Promise((resolve) => setTimeout(resolve, 300));
+
+
 
     // 👉 IMPORTANT: replace whole body with only the print section
     document.body.innerHTML = `
