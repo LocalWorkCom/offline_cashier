@@ -748,7 +748,14 @@ selectedOrderType === 'talabat') {
                     {{ paymentError }}
                   </div>
                   }
+                  <div *ngIf="amountError" class="invalid-feedback d-block">
+                    {{ falseMessage }}
+                  </div>
 
+                  <small class="text-muted">
+                    المبلغ المطلوب: {{ getCartTotal() | number:'1.2-2' }} {{
+                    currencySymbol }}
+                  </small>
                   @if(this.credit_amountt > 0 || this.creditAmountMixed > 0 ||
                   selectedPaymentMethod === 'credit' || selectedPaymentMethod
                   === 'cash + credit'){
@@ -951,7 +958,7 @@ selectedOrderType === 'talabat') {
 
         </div>
       </div>
-      
+
       @if (trueMessage) {
       <p class="message">{{ trueMessage }}</p>
       } @if (falseMessage && falseMessage !== "order.amount_wrong") {
