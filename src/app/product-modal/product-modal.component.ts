@@ -1,4 +1,6 @@
-import { Component, Input, Output, EventEmitter, OnInit, DoCheck, SimpleChanges } from '@angular/core';
+import { Component, Input, Output, EventEmitter, OnInit, DoCheck, SimpleChanges, ChangeDetectorRef } from '@angular/core';
+import { PaymentService } from '../services/payment.service';
+
 import { ProductsService } from '../services/products.service';
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
@@ -10,6 +12,25 @@ import { CommonModule } from '@angular/common';
   styleUrl: './product-modal.component.css'
 })
 export class ProductModalComponent implements OnInit {
+  // متغيرات الدفع والإكرامية
+  selectedPaymentStatus: string = 'unpaid';
+  selectedPaymentMethod: any = null;
+  cash_amountt: number = 0;
+  credit_amountt: number = 0;
+  cashPaymentInput: number = 0;
+  cashAmountMixed: number = 0;
+  creditAmountMixed: number = 0;
+  finalTipSummary: any = null;
+  selectedTipType: 'tip_the_change' | 'tip_specific_amount' | 'no_tip' = 'no_tip';
+  specificTipAmount: number = 0;
+  selectedSuggestionType: 'billAmount' | 'amount50' | 'amount100' | null = null;
+  selectedPaymentSuggestion: number | null = null;
+  paymentError: string = '';
+  amountError: boolean = false;
+  falseMessage: string = '';
+  referenceNumber: string = '';
+  referenceNumberTouched: boolean = false;
+
   @Input() item: any;
   product: any;
   selectedProduct: any;
@@ -26,7 +47,7 @@ export class ProductModalComponent implements OnInit {
       maxLabel: string;
     }
   } = {};
-    selectedAddons: any[] = [];
+  selectedAddons: any[] = [];
   addonCategories: any;
   @Input() orderId: string = '';
   currentRoute!: string;
@@ -34,7 +55,8 @@ export class ProductModalComponent implements OnInit {
     public activeModal: NgbActiveModal,
     private productService: ProductsService,
     private router: Router,
-
+    private cdr: ChangeDetectorRef, // ⬅️ أضف هذا
+private paymentService: PaymentService,
     private route: ActivatedRoute
   ) {
     this.router.events.subscribe((event) => {
@@ -117,7 +139,7 @@ export class ProductModalComponent implements OnInit {
       this.updatePrice();
       this.initializeAddonValidation();
     });
-        this.productService.savedOrders$.subscribe((orders) => {
+    this.productService.savedOrders$.subscribe((orders) => {
       if (!orders || !this.orderId) return;
 
       const order = orders.find((o) => o.orderId === this.orderId);
@@ -295,7 +317,7 @@ export class ProductModalComponent implements OnInit {
       addons: category.addons?.map((addon: { id: any; name: any; price: any; currency_symbol: any; }) => ({
         id: addon.id,
         name: addon.name,
-        price:   addon.price,
+        price: addon.price,
         currency_symbol: addon.currency_symbol || "ج.م"
       })) || []
     })) || [];
@@ -315,7 +337,7 @@ export class ProductModalComponent implements OnInit {
     // Send data to cart service
     this.productService.addToCart(productToAdd);
     this.activeModal.dismiss(); // Close modal
-    this.addNote=false;
+    this.addNote = false;
 
   }
 
@@ -381,7 +403,7 @@ export class ProductModalComponent implements OnInit {
     // Send data to cart service
     this.productService.addToHoldCart(productToAdd);
     this.activeModal.dismiss(); // Close modal
-    this.addNote=false;
+    this.addNote = false;
 
   }
   updateNote(event: any): void {
@@ -413,25 +435,28 @@ export class ProductModalComponent implements OnInit {
       this.updatePrice();
     }
   }
-isAdding = false;
+  isAdding = false;
 
-handleAddToCart() {
-  if (this.isAdding) return;   // ⛔ block double fire
-  this.isAdding = true;
+  handleAddToCart() {
+    if (this.isAdding) return;   // ⛔ block double fire
+    this.isAdding = true;
 
-  const currentUrl = this.router.url;
-  console.log('🧭 Current route:', currentUrl);
+    const currentUrl = this.router.url;
+    console.log('🧭 Current route:', currentUrl);
 
-  if (currentUrl.includes('/onhold-orders/')) {
-    console.log('📝 Adding to ON HOLD order');
-    this.addToHoldCart();
-  } else {
-    console.log('🛍️ Adding to NEW cart');
-    this.addToCart();
+    if (currentUrl.includes('/onhold-orders/')) {
+      console.log('📝 Adding to ON HOLD order');
+      this.addToHoldCart();
+    } else {
+      console.log('🛍️ Adding to NEW cart');
+      this.addToCart();
+    }
+    this.paymentService.resetAllPaymentCalculations();
+
+    setTimeout(() => this.isAdding = false, 300); // reset guard
   }
 
-  setTimeout(() => this.isAdding = false, 300); // reset guard
-}
+ 
   // addToHoldCart(): void {
   //   if (!this.canAddToCart()) {
   //     console.warn("🚨 Cannot add to cart: Minimum addon requirement not met!");
@@ -595,9 +620,9 @@ handleAddToCart() {
     const addonPrice = this.selectedAddons.reduce((sum, addon) => sum + addon.price, 0);
     this.finalPrice = (basePrice + addonPrice) * this.quantity;
   }
-  addNote:boolean=false;
-ShowAddNote(){
-this.addNote=true
-}
+  addNote: boolean = false;
+  ShowAddNote() {
+    this.addNote = true
+  }
 
 }
