@@ -139,15 +139,26 @@
       </p>
       <p v-if="addresDetails.client_address || addresDetails.branch_name">
         <span class="fw-bold">العنوان :</span>
-        {{ addresDetails.client_address ?? "غير متوفر" }}
-        @if(addresDetails.branch_name){
-        , {{ addresDetails.branch_name}}
+        @if(!isOnline)
+        {
+          {{ addresDetails.address ?? addresDetails.client_address }}
+          @if(addresDetails.branch_name){
+          , {{ addresDetails.branch_name}}
+          }
         }
+        @else
+        {
+          {{ addresDetails.client_address ?? "غير متوفر" }}
+          @if(addresDetails.branch_name){
+          , {{ addresDetails.branch_name}}
+          }
+        }
+
       </p>
 
       <p v-if="addresDetails.address_phone">
         <span class="fw-bold">رقم الهاتف :</span>
-        {{ addresDetails.address_phone}}
+        {{ addresDetails.address_phone ?? addresDetails.client_phone}}
       </p>
       <p>
         <span class="fw-bold" *ngIf="invoices[0].delivery_name">اسم الطيار :</span>
@@ -322,7 +333,7 @@
         <h6>سعر الوجبات يشتمل على ضريبة القيمة المضافة</h6>
       </div> -->
 
-      <div class="px-2 mb-1" *ngIf="item.tax_application">
+      <div class="px-2 mb-1" *ngIf="tax_application == false">
         <h6>
           تضاف ضريبة القيمة المضافة
           <span class="main-color"> بنسبة {{ item.tax_percentage }}% </span>
@@ -330,7 +341,7 @@
         </h6>
       </div>
       <div class="d-flex flex-column">
-        <div class="px-2 mb-1" *ngIf="!item.tax_application">
+        <div class="px-2 mb-1" *ngIf="tax_application == true">
           <h6>سعر الوجبات يشتمل على ضريبة القيمة المضافة</h6>
         </div>
 
