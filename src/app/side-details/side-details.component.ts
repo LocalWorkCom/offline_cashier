@@ -467,7 +467,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         this.applyCoupon();
       }
     });
-
+    // ✅ الاستماع لحدث إعادة التعيين من الخدمة
+    this.paymentService.paymentReset$.subscribe(() => {
+      this.onPaymentReset();
+    });
     this.loadBranchData();
     this.restoreCoupon();
     // this.loadSelectedCourier();
@@ -602,7 +605,30 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // this.loadSavedCoupon();
 
   }
+  private onPaymentReset(): void {
+    console.log('🔄 استقبال حدث إعادة تعيين الدفع من الخدمة');
 
+    // إعادة تعيين المتغيرات المحلية
+    this.selectedPaymentStatus = 'unpaid';
+    this.selectedPaymentMethod = null;
+    this.cash_amountt = 0;
+    this.credit_amountt = 0;
+    this.cashPaymentInput = 0;
+    this.cashAmountMixed = 0;
+    this.creditAmountMixed = 0;
+    this.finalTipSummary = null;
+    this.selectedTipType = 'no_tip';
+    this.specificTipAmount = 0;
+    this.selectedSuggestionType = null;
+    this.selectedPaymentSuggestion = null;
+    this.paymentError = '';
+    this.amountError = false;
+    this.falseMessage = '';
+    this.referenceNumber = '';
+    this.referenceNumberTouched = false;
+
+    this.cdr.detectChanges();
+  }
   private hasCartItemsChanged(newCart: any[]): boolean {
     // إذا عدد العناصر اختلف
     if (this.cartItems.length !== newCart.length) {
@@ -1404,6 +1430,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       (total, item) => total + item.totalPrice,
       0
     );
+    // ✅ إعادة حساب رسوم الخدمة بعد تحديث كل العناصر
+    const serviceFee = this.getServiceFeeAmount();
+    console.log('💼 رسوم الخدمة بعد التحديث:', serviceFee);
     // this.loadCouponFromLocalStorage()
     if (this.appliedCoupon && this.validCoupon && localStorage.getItem('selectedOrderType') !== 'talabat') {
       setTimeout(() => {
@@ -1711,30 +1740,40 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const taxPercentage: number =
       parseFloat(this.branchData?.tax_percentage) || 0;
 
-    // Step 1: Get total of cart items (before any discount or tax)
-    let cartSubtotal = this.getTotal();
-    /*     console.log(cartSubtotal);
-     */ // Step 2: Determine base amount for service fee
-    let baseAmount = cartSubtotal;
+    // ✅ حساب المجموع الكلي للكارت مع مراعاة الضرائب
+    let baseAmount = 0;
 
-    if (taxEnabled && serviceType === 'percentage') {
-      // When tax is enabled and service fee is percentage → apply on subtotal before tax
-      baseAmount = this.cartItems.reduce((total, item) => {
-        const priceBeforeTax =
-          this.getItemTotal(item) / (1 + taxPercentage / 100);
-        return total + priceBeforeTax;
-      }, 0);
-      // console.log(baseAmount);
-    }
+    this.cartItems.forEach(item => {
+      let itemTotal = this.getItemTotal(item);
 
-    // Step 3: Calculate service fee
+      if (taxEnabled && serviceType === 'percentage') {
+        // عند تفعيل الضريبة ورسوم الخدمة كنسبة - احسب السعر قبل الضريبة
+        const priceBeforeTax = itemTotal / (1 + taxPercentage / 100);
+        baseAmount += priceBeforeTax;
+      } else {
+        baseAmount += itemTotal;
+      }
+    });
+
+    // ✅ حساب رسوم الخدمة
     let serviceFee = 0;
     if (serviceType === 'percentage') {
       serviceFee = (baseAmount * serviceValue) / 100;
     } else {
       serviceFee = serviceValue;
     }
+
+    // ✅ تقريب النتيجة
     serviceFee = Math.round(serviceFee * 100) / 100;
+
+    console.log('💰 رسوم الخدمة المحسوبة:', {
+      baseAmount,
+      serviceType,
+      serviceValue,
+      serviceFee,
+      cartItemsCount: this.cartItems.length
+    });
+
     return serviceFee;
   }
 
@@ -2116,30 +2155,30 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.cdr.detectChanges();
 
   }
- public resetAllPaymentCalculations(): void {
-  this.paymentService.resetAllPaymentCalculations();
-  
-  // إعادة تعيين المتغيرات المحلية فقط
-  this.selectedPaymentStatus = 'unpaid';
-  this.selectedPaymentMethod = null;
-  this.cash_amountt = 0;
-  this.credit_amountt = 0;
-  this.cashPaymentInput = 0;
-  this.cashAmountMixed = 0;
-  this.creditAmountMixed = 0;
-  this.finalTipSummary = null;
-  this.selectedTipType = 'no_tip';
-  this.specificTipAmount = 0;
-  this.selectedSuggestionType = null;
-  this.selectedPaymentSuggestion = null;
-  this.paymentError = '';
-  this.amountError = false;
-  this.falseMessage = '';
-  this.referenceNumber = '';
-  this.referenceNumberTouched = false;
+  public resetAllPaymentCalculations(): void {
+    this.paymentService.resetAllPaymentCalculations();
 
-  this.cdr.detectChanges();
-}
+    // إعادة تعيين المتغيرات المحلية فقط
+    this.selectedPaymentStatus = 'unpaid';
+    this.selectedPaymentMethod = null;
+    this.cash_amountt = 0;
+    this.credit_amountt = 0;
+    this.cashPaymentInput = 0;
+    this.cashAmountMixed = 0;
+    this.creditAmountMixed = 0;
+    this.finalTipSummary = null;
+    this.selectedTipType = 'no_tip';
+    this.specificTipAmount = 0;
+    this.selectedSuggestionType = null;
+    this.selectedPaymentSuggestion = null;
+    this.paymentError = '';
+    this.amountError = false;
+    this.falseMessage = '';
+    this.referenceNumber = '';
+    this.referenceNumberTouched = false;
+
+    this.cdr.detectChanges();
+  }
   // public resetAllPaymentCalculations(): void {
   //   console.log('🔄 Resetting all payment calculations due to cart changes...');
 
@@ -3143,6 +3182,52 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           const cashAmount = Math.max(0, billAmount - this.creditAmountMixed);
           const creditAmount = this.creditAmountMixed;
           const totalPaid = cashAmount + creditAmount;
+          if ((!this.cashAmountMixed || this.cashAmountMixed <= 0) &&
+            (!this.creditAmountMixed || this.creditAmountMixed <= 0)) {
+
+            this.isLoading = false;
+            this.loading = false;
+            this.amountError = true;
+            this.falseMessage = `❌ يرجى إدخال مبالغ الدفع في كل من الكاش والفيزا. المبلغ المطلوب: ${billAmount.toFixed(2)} ${this.currencySymbol}`;
+
+            console.log('❌ تم منع الطلب - لم يتم إدخال أي مبالغ في الدفع المختلط');
+
+            setTimeout(() => {
+              this.amountError = false;
+              this.falseMessage = '';
+            }, 5000);
+            return;
+          }
+          // التحقق إذا لم يتم إدخال مبلغ الكاش
+          if (!this.cashAmountMixed || this.cashAmountMixed <= 0) {
+            this.isLoading = false;
+            this.loading = false;
+            this.amountError = true;
+            this.falseMessage = `❌ يرجى إدخال مبلغ الكاش. المطلوب على الأقل: ${billAmount - (this.creditAmountMixed || 0)} ${this.currencySymbol}`;
+
+            console.log('❌ تم منع الطلب - لم يتم إدخال مبلغ الكاش');
+
+            setTimeout(() => {
+              this.amountError = false;
+              this.falseMessage = '';
+            }, 5000);
+            return;
+          }
+          // التحقق إذا لم يتم إدخال مبلغ الفيزا
+          if (!this.creditAmountMixed || this.creditAmountMixed <= 0) {
+            this.isLoading = false;
+            this.loading = false;
+            this.amountError = true;
+            this.falseMessage = `❌ يرجى إدخال مبلغ الفيزا. المطلوب على الأقل: ${billAmount - (this.cashAmountMixed || 0)} ${this.currencySymbol}`;
+
+            console.log('❌ تم منع الطلب - لم يتم إدخال مبلغ الفيزا');
+
+            setTimeout(() => {
+              this.amountError = false;
+              this.falseMessage = '';
+            }, 5000);
+            return;
+          }
 
           console.log('💰 الدفع المختلط:', {
             cashAmount: cashAmount,
@@ -3156,8 +3241,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
 
           if (totalPaid < billAmount) {
+            this.isLoading = false;
+            this.loading = false;
             this.amountError = true;
             this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmount} ${this.currencySymbol}`;
+            setTimeout(() => { this.falseMessage = ''; }, 5000);
             return;
           }
           orderData.payment_method = "cash";
@@ -4579,7 +4667,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       localStorage.removeItem('cash_amountt');
       localStorage.removeItem('credit_amountt');
       // ⭐️ إعادة تعيين كل بيانات الدفع والإكرامية
-      this.resetPaymentAndTipData();
+      // this.resetPaymentAndTipData();
+      this.paymentService.resetAllPaymentCalculations();
+
       // localStorage.removeItem('referenceNumber');
     }
 
@@ -5615,7 +5705,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       this.openTipModal(modalContent, billAmount, totalPaid);
     } else {
-      // يمكن إضافة رسالة تنبيه هنا إذا أردت
       // console.warn('المبلغ المدفوع غير كافي لفتح مودال الإكرامية');
     }
   }
