@@ -2494,6 +2494,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const branchId = Number(localStorage.getItem('branch_id')) || null;
     const tableId = Number(localStorage.getItem('table_id')) || this.table_id || null;
     const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+    const delivery_fees = localStorage.getItem("delivery_fees") || 0;
     // continued order from orders list
     let continuedOrderId: number | null = null;
     let table_number: any;
@@ -2563,6 +2564,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     return {
       isOnline: navigator.onLine,
+      delivery_fees: delivery_fees || 0,
       orderId: this.finalOrderId || Date.now(),
       ...(continuedOrderId ? { order_id: continuedOrderId } : {}),
       order_id: continuedOrderId ?? null,
@@ -2735,24 +2737,24 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   if (this.selectedPaymentMethod === 'credit' && this.selectedPaymentStatus === 'paid') {
     const billAmount = this.finalTipSummary?.billAmount ?? this.getCartTotal();
     const enteredCreditAmount = Number(this.credit_amountt) || 0;
-    
+
     console.log('🔍 التحقق من مبلغ الفيزا:', {
       enteredCreditAmount,
       billAmount,
       credit_amountt: this.credit_amountt
     });
-    
+
     // إذا كان credit_amountt أقل من الفاتورة
     if (enteredCreditAmount < billAmount) {
       this.isLoading = false;
       this.loading = false;
       this.amountError = true;
-      this.falseMessage = `❌ لا يمكن تنفيذ الطلب. مبلغ الفيزا غير كافي. 
+      this.falseMessage = `❌ لا يمكن تنفيذ الطلب. مبلغ الفيزا غير كافي.
                            المبلغ المدخل: ${enteredCreditAmount} ${this.currencySymbol}
                            المبلغ المطلوب: ${billAmount.toFixed(2)} ${this.currencySymbol}`;
-      
+
       console.log('❌ تم منع الطلب - مبلغ الفيزا غير كافي');
-      
+
       setTimeout(() => {
         this.amountError = false;
         this.falseMessage = '';
@@ -2766,7 +2768,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.cash_amountt = this.cashPaymentInput;
       console.log('✅ تم تعيين cash_amountt من cashPaymentInput:', this.cash_amountt);
     }
-   
+
     if (this.currentOrderData) {
       this.selectedOrderType = this.currentOrderData?.order_details?.order_type;
       localStorage.setItem('selectedOrderType', this.selectedOrderType);
@@ -3097,7 +3099,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           orderData.cash_amount = cashAmount;
           orderData.credit_amount = creditAmount;
 
-          
+
 
           if (totalPaid < billAmount) {
             this.amountError = true;
