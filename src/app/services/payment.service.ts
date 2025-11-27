@@ -1,11 +1,13 @@
-// payment.service.ts
 import { Injectable } from '@angular/core';
+import { Subject } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
 })
 export class PaymentService {
-  
+  private paymentResetSource = new Subject<void>();
+  paymentReset$ = this.paymentResetSource.asObservable();
+
   resetAllPaymentCalculations(): void {
     console.log('🔄 إعادة تعيين جميع حسابات الدفع...');
 
@@ -19,6 +21,9 @@ export class PaymentService {
 
       // 3. مسح بيانات الإكرامية من localStorage
       localStorage.removeItem('finalTipSummary');
+
+      // إرسال حدث إعادة التعيين
+      this.paymentResetSource.next();
 
       console.log('✅ تم إعادة تعيين جميع حسابات الدفع بنجاح');
     } catch (error) {

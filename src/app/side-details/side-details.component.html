@@ -751,7 +751,7 @@ selectedOrderType === 'talabat') {
                   <div *ngIf="amountError" class="invalid-feedback d-block">
                     {{ falseMessage }}
                   </div>
-
+                  {{ falseMessage }}
                   <small class="text-muted">
                     المبلغ المطلوب: {{ getCartTotal() | number:'1.2-2' }} {{
                     currencySymbol }}
@@ -863,8 +863,11 @@ selectedOrderType === 'talabat') {
             <div
               *ngIf="(cashAmountMixed + creditAmountMixed) < billAmount && isPaymentInputTouched"
               class="alert alert-warning mt-2 py-2">
-              <small>المبلغ المدفوع غير كافي. يرجى إدخال مبلغ يساوي أو أكبر من
-                {{ billAmount | number:'1.2-2' }} ج.م</small>
+              <small>
+                <i class="fas fa-exclamation-triangle me-1"></i>
+                المبلغ المدفوع غير كافي. يرجى إدخال مبلغ يساوي أو أكبر من
+                {{ billAmount | number:'1.2-2' }} {{ currencySymbol }}
+              </small>
             </div>
           </ng-container>
         </div>
