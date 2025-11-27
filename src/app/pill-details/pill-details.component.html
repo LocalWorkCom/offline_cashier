@@ -333,7 +333,7 @@
         <h6>سعر الوجبات يشتمل على ضريبة القيمة المضافة</h6>
       </div> -->
 
-      <div class="px-2 mb-1" *ngIf="item.tax_apply">
+      <div class="px-2 mb-1" *ngIf="tax_application == false">
         <h6>
           تضاف ضريبة القيمة المضافة
           <span class="main-color"> بنسبة {{ item.tax_percentage }}% </span>
@@ -341,7 +341,7 @@
         </h6>
       </div>
       <div class="d-flex flex-column">
-        <div class="px-2 mb-1" *ngIf="!item.tax_apply">
+        <div class="px-2 mb-1" *ngIf="tax_application == true">
           <h6>سعر الوجبات يشتمل على ضريبة القيمة المضافة</h6>
         </div>
 

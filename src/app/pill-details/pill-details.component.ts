@@ -69,6 +69,7 @@ export class PillDetailsComponent implements OnInit {
   paymentMethod: any;
   loading: boolean = true;
   isPrinting = false;
+  tax_application = JSON.parse(localStorage.getItem("branchData") || '{}').tax_application;
 
   constructor(
     private pillDetailsService: PillDetailsService,
@@ -94,6 +95,8 @@ export class PillDetailsComponent implements OnInit {
 
   //  start dalia
   ngOnInit(): void {
+
+
     this.route.paramMap.subscribe((params) => {
       this.pillId = params.get('id');
 
@@ -210,7 +213,7 @@ export class PillDetailsComponent implements OnInit {
         delivered: 'تم التوصيل',
       };
 
-      const trackingKey = this.invoices[0]?.['tracking-status'];
+      const trackingKey = this.invoices[0]?.['tracking-status'] ?? this.invoices[0]?.['order_status'] ;
       if (trackingKey === 'completed') {
         this.isShow = false;
       }
