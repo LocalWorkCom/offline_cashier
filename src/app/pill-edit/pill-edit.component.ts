@@ -1148,14 +1148,26 @@ export class PillEditComponent implements OnInit, OnDestroy {
     return this.invoices?.[0]?.invoice_summary?.total_price || 0;
   }
 
-  isPaymentAmountValid(): boolean {
-    if (this.paymentStatus !== 'paid') return true;
+ isPaymentAmountValid(): boolean {
+  if (this.paymentStatus !== 'paid') return true;
 
-    const cash = Number(this.cash_value ?? 0);
-    const credit = Number(this.credit_value ?? 0);
-    const total = this.getInvoiceTotal();
-    return Number(((Number(cash) || 0) + (Number(credit) || 0)).toFixed(2)) >= total;
+  const totalPaid = this.getTotalPaidAmount();
+  const total = this.getInvoiceTotal();
+  
+  // Use the same precision as backend (2 decimal places)
+  return Number(totalPaid.toFixed(2)) >= Number(total.toFixed(2));
+}
+
+getTotalPaidAmount(): number {
+  if (this.selectedPaymentMethod === 'cash') {
+    return this.finalTipSummary?.billAmount ?? this.getInvoiceTotal();
+  } else if (this.selectedPaymentMethod === 'credit') {
+    return this.finalTipSummary?.billAmount ?? this.getInvoiceTotal();
+  } else if (this.selectedPaymentMethod === 'cash + credit') {
+    return (this.cashAmountMixed || 0) + (this.creditAmountMixed || 0);
   }
+  return 0;
+}
   show_delivered_only(aa: any) {
     if (aa == 'delivered') {
       this.Delivery_show_delivered_only = true
