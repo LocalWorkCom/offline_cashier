@@ -914,8 +914,9 @@ export class IndexeddbService {
       console.log("🟢 Saving pending order:", orderData);
       await this.ensureInit();
 
-      const formData = await this.getLastFormData();
-      let delivery_fees = 0;
+      const formData = orderData.delivery_info;
+      let delivery_fees = orderData.delivery_fees || 0;
+
       let tranaction: Array<{
         date: string;
         is_refund: number;
@@ -925,11 +926,11 @@ export class IndexeddbService {
         refund: number;
       }> | undefined;
       // 🟢 Get delivery fees from area if available
-      if (formData) {
-        //  console.log("dd");
-        const area = await this.getAreaById(Number(formData.area_id));
-        delivery_fees = area ? parseFloat(area.delivery_fees) : 0;
-      }
+      // if (formData) {
+      //   //  console.log("dd");
+      //   // const area = await this.getAreaById(Number(formData.area_id));
+        // delivery_fees = orderData.delivery_fees || 0;
+      // }
       if (orderData.payment_method_menu_integration == "cash + credit") {
         tranaction = [{
           date: new Date().toISOString().split("T")[0],
@@ -991,7 +992,7 @@ export class IndexeddbService {
           if (orderData.type === "dine-in") {
             service_percentage = 12;
             service_fees = (subtotal_price * service_percentage) / 100;
-          } else if (orderData.type === "delivery") {
+          } else if (orderData.type == "Delivery") {
             delivery_fees_value = Number(delivery_fees) || 0;
           }
 
@@ -1172,6 +1173,7 @@ export class IndexeddbService {
             order_type: orderData.type || "dine-in",
             type: orderData.type || "dine-in",
             order_status: "pending",
+            // tracking-status: "pending",
             order_time: 30,
             payment_status: orderData.payment_status || "unpaid",
             currency_symbol,

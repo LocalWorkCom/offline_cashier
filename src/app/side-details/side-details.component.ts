@@ -2550,6 +2550,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const branchId = Number(localStorage.getItem('branch_id')) || null;
     const tableId = Number(localStorage.getItem('table_id')) || this.table_id || null;
     const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+    const delivery_fees = localStorage.getItem("delivery_fees") || 0;
     // continued order from orders list
     let continuedOrderId: number | null = null;
     let table_number: any;
@@ -2619,6 +2620,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     return {
       isOnline: navigator.onLine,
+      delivery_fees: delivery_fees || 0,
       orderId: this.finalOrderId || Date.now(),
       ...(continuedOrderId ? { order_id: continuedOrderId } : {}),
       order_id: continuedOrderId ?? null,
@@ -3540,12 +3542,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         // ✅ إضافة بيانات التوصيل للطلب في وضع Offline
         if (this.selectedOrderType === 'Delivery') {
           const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
+          console.log(formData,"formData");
 
           // إضافة معلومات التوصيل للطلب
           orderData.delivery_info = {
             client_name: formData.client_name || this.clientName,
             client_phone: formData.address_phone || this.clientPhone,
             address: formData.address || this.address,
+            client_address: formData.address || this.address,
+            address_phone: formData.address_phone || this.clientPhone,
             country_code: formData.country_code?.code || formData.country_code || this.selectedCountry.code,
             apartment_number: formData.apartment_number || '',
             building: formData.building || '',

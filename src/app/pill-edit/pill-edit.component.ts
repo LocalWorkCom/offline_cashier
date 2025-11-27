@@ -107,6 +107,8 @@ export class PillEditComponent implements OnInit, OnDestroy {
   isOnline: boolean = navigator.onLine;
   private destroy$ = new Subject<void>();
 
+  tax_application = JSON.parse(localStorage.getItem("branchData") || '{}').tax_application;
+
   constructor(
     private pillDetailsService: PillDetailsService,
     private route: ActivatedRoute,
@@ -235,7 +237,7 @@ export class PillEditComponent implements OnInit, OnDestroy {
           delivered: 'تم التوصيل',
         };
 
-        const trackingKey = this.invoices[0]?.['tracking-status'];
+        const trackingKey = this.invoices[0]?.['tracking-status']  ;
         /*  if (trackingKey === 'completed') {
            this.isShow = false;
          } */
@@ -348,7 +350,7 @@ export class PillEditComponent implements OnInit, OnDestroy {
         delivered: 'تم التوصيل',
       };
 
-      const trackingKey = this.invoices[0]?.['tracking-status'];
+      const trackingKey = this.invoices[0]?.['tracking-status'] ?? this.invoices[0]?.['order_status'];
       if (trackingKey === 'completed') {
         this.isShow = false;
       }
@@ -590,15 +592,15 @@ export class PillEditComponent implements OnInit, OnDestroy {
 
     this.tip =
     {
-      change_amount: this.tempChangeAmount || 0,
+      change_amount:  Number(this.tempChangeAmount.toFixed(3)) || 0,
       // tips_aption : this.selectedTipType ?? "tip_the_change" ,                  //'tip_the_change', 'tip_specific_amount','no_tip'
       tips_aption: this.tip_aption ?? "tip_the_change",                  //'tip_the_change', 'tip_specific_amount','no_tip'
-      tip_amount: this.finalTipSummary?.tipAmount ?? 0,
-      tip_specific_amount: this.specificTipAmount ? this.finalTipSummary?.tipAmount : 0,
-      payment_amount: this.finalTipSummary?.paymentAmount ?? 0,
-      bill_amount: this.finalTipSummary?.billAmount ?? 0,
-      total_with_tip: (this.finalTipSummary?.tipAmount ?? 0) + (this.finalTipSummary?.billAmount ?? 0),
-      returned_amount: this.finalTipSummary?.changeToReturn ?? 0
+      tip_amount: Number(this.finalTipSummary?.tipAmount.toFixed(3)) ?? 0,
+      tip_specific_amount: this.specificTipAmount ? Number(this.finalTipSummary?.tipAmount.toFixed(3)) : 0,
+      payment_amount: Number(this.finalTipSummary?.paymentAmount.toFixed(3)) ?? 0,
+      bill_amount: Number(this.finalTipSummary?.billAmount.toFixed(3)) ?? 0,
+      total_with_tip:Number( (this.finalTipSummary?.tipAmount ?? 0) + (this.finalTipSummary?.billAmount ?? 0).toFixed(3)),
+      returned_amount: Number(this.finalTipSummary?.changeToReturn.toFixed(3)) ?? 0
     }
 
     console.log("this.tip", this.tip);
@@ -802,6 +804,10 @@ export class PillEditComponent implements OnInit, OnDestroy {
           await updatePill(existingPill);
           await saveInvoiceUpdate(existingPill);
           alert("تم تحديث الفاتورة Offline وسيتم رفعها عند الاتصال بالإنترنت ✅");
+            if(existingPill.order_type == 'dine-in')
+            {
+                this.dbService.updateTableStatus(existingPill.table_number, 1);
+            }
         } else {
           console.warn("❌ لم يتم العثور على الفاتورة أو الطلب في IndexedDB");
           alert("⚠️ لم يتم العثور على الفاتورة في قاعدة البيانات المحلية");
@@ -819,117 +825,161 @@ export class PillEditComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
   isFinal: boolean = false;
-  // async printInvoice(isfinal: boolean) {
-  //   this.isFinal = isfinal
-  //   if (!this.invoices?.length || !this.invoiceSummary?.length) {
-  //     console.warn('Invoice data not ready.');
-  //     return;
-  //   }
-
-  //   try {
-  //     const response = await this.printedInvoiceService
-  //       .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
-  //       .toPromise();
-  //     console.log(response, 'testttttt')
-  //     console.log('Print invoice response:', response);
-  //     const printContent = document.getElementById('printSection');
-  //     if (!printContent) {
-  //       console.error('Print section not found.');
-  //       return;
-  //     }
-
-  //     const originalHTML = document.body.innerHTML;
-
-  //     const copies = this.isDeliveryOrder
-  //       ? [
-  //         { showPrices: true, test: true },
-  //         { showPrices: false, test: false },
-  //         { showPrices: true, test: true },
-  //       ]
-  //       : [
-  //         { showPrices: true, test: true },
-  //         { showPrices: false, test: false },
-  //       ];
-
-  //     for (let i = 0; i < copies.length; i++) {
-  //       this.showPrices = copies[i].showPrices;
-  //       this.test = copies[i].test;
-  //       await new Promise((resolve) => setTimeout(resolve, 300));
-
-  //       const singlePageHTML = `
-  //       <div>
-  //         ${printContent.innerHTML}
-  //       </div>
-  //     `;
-
-  //       document.body.innerHTML = singlePageHTML;
-
-  //       await new Promise((resolve) =>
-  //         setTimeout(() => {
-  //           window.print();
-  //           resolve(true);
-  //         }, 200)
-  //       );
-  //     }
-
-  //     document.body.innerHTML = originalHTML;
-  //     location.reload();
-  //   } catch (error) {
-  //     console.error('Error printing invoice:', error);
-  //   }
-  // }
   async printInvoice(isfinal: boolean) {
-    console.log('جاري طباعة الفاتورة...');
-    this.isFinal = isfinal;
-    this.isPrinting = true;
-    // تأكد من أن بيانات الإكرامية جاهزة
-    if (this.invoiceTips && this.invoiceTips.length > 0) {
-      console.log('بيانات الإكرامية متاحة للطباعة:', this.invoiceTips);
+    this.isFinal = isfinal
+    if (!this.invoices?.length || !this.invoiceSummary?.length) {
+      console.warn('Invoice data not ready.');
+      return;
     }
 
-    if (this.finalTipSummary) {
-      console.log('بيانات الإكرامية النهائية متاحة:', this.finalTipSummary);
-    }
-    // إغلاق الـ modal فورًا بعد بدء الطباعة
-    this.closeConfirmationDialog();
-    if (!this.invoices?.length || !this.invoiceSummary?.length) {
-      console.warn('بيانات الفاتورة غير جاهزة.');
-      // محاولة تحميل البيانات من التخزين المحلي
-      // if (!this.isOnline) {
-      //   await this.fetchPillFromIndexedDB(this.pillId);
-      // }
-      if (!this.invoices?.length) {
-        alert('بيانات الفاتورة غير متوفرة للطباعة.');
-        this.isPrinting = false;
+    try {
+      const response = await this.printedInvoiceService
+        .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
+        .toPromise();
+      console.log(response, 'testttttt')
+      console.log('Print invoice response:', response);
+      const printContent = document.getElementById('printSection');
+      if (!printContent) {
+        console.error('Print section not found.');
         return;
       }
-    }
-    try {
-      // إذا كان هناك اتصال، محاولة الطباعة عبر الخدمة
-      // if (this.isOnline) {
-      //   try {
-      //     const response = await this.printedInvoiceService
-      //       .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
-      //       .toPromise();
-      //     console.log('استجابة طباعة الفاتورة:', response);
-      //   } catch (onlineError) {
-      //     console.warn('فشل الطباعة عبر الخدمة، الانتقال للطباعة المحلية:', onlineError);
-      //   }
-      // } else {
-      //   console.log('الطباعة في وضع عدم الاتصال');
-      // }
-      // الطباعة المحلية
-      await this.performLocalPrint();
+
+      const originalHTML = document.body.innerHTML;
+
+      const copies = this.isDeliveryOrder
+        ? [
+          { showPrices: true, test: true },
+          { showPrices: false, test: false },
+          { showPrices: true, test: true },
+        ]
+        : [
+          { showPrices: true, test: true },
+          { showPrices: false, test: false },
+        ];
+
+      for (let i = 0; i < copies.length; i++) {
+        this.showPrices = copies[i].showPrices;
+        this.test = copies[i].test;
+        await new Promise((resolve) => setTimeout(resolve, 300));
+
+        const singlePageHTML = `
+        <div>
+          ${printContent.innerHTML}
+        </div>
+      `;
+
+        document.body.innerHTML = singlePageHTML;
+
+        await new Promise((resolve) =>
+          setTimeout(() => {
+            window.print();
+            resolve(true);
+          }, 200)
+        );
+      }
+
+      document.body.innerHTML = originalHTML;
+      location.reload();
     } catch (error) {
-      console.error('خطأ في طباعة الفاتورة:', error);
-      // في حالة الخطأ، حاولي الطباعة محلياً فقط
-      await this.performLocalPrint();
-    } finally {
-      this.isPrinting = false;
-      // التأكد من إغلاق الـ modal نهائيًا
-      this.closeConfirmationDialog();
+      console.error('Error printing invoice:', error);
     }
   }
+  // async printInvoice(isfinal: boolean) {
+  //   console.log('جاري طباعة الفاتورة...');
+  //   this.isFinal = isfinal;
+  //   this.isPrinting = true;
+  //   // تأكد من أن بيانات الإكرامية جاهزة
+  //   if (this.invoiceTips && this.invoiceTips.length > 0) {
+  //     console.log('بيانات الإكرامية متاحة للطباعة:', this.invoiceTips);
+  //   }
+
+  //   if (this.finalTipSummary) {
+  //     console.log('بيانات الإكرامية النهائية متاحة:', this.finalTipSummary);
+  //   }
+  //   // إغلاق الـ modal فورًا بعد بدء الطباعة
+  //   this.closeConfirmationDialog();
+  //   if (!this.invoices?.length || !this.invoiceSummary?.length) {
+  //     console.warn('بيانات الفاتورة غير جاهزة.');
+  //     // محاولة تحميل البيانات من التخزين المحلي
+  //     // if (!this.isOnline) {
+  //     //   await this.fetchPillFromIndexedDB(this.pillId);
+  //     // }
+  //     if (!this.invoices?.length) {
+  //       alert('بيانات الفاتورة غير متوفرة للطباعة.');
+  //       this.isPrinting = false;
+  //       return;
+  //     }
+  //   }
+  //   try {
+  //     // إذا كان هناك اتصال، محاولة الطباعة عبر الخدمة
+  //     if (this.isOnline) {
+  //       try {
+  //         const response = await this.printedInvoiceService
+  //           .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
+  //           .toPromise();
+  //         console.log('استجابة طباعة الفاتورة:', response);
+  //       } catch (onlineError) {
+  //         console.warn('فشل الطباعة عبر الخدمة، الانتقال للطباعة المحلية:', onlineError);
+  //       }
+  //     } else {
+  //       console.log('الطباعة في وضع عدم الاتصال');
+  //     }
+  //     // الطباعة المحلية
+  //     // await this.performLocalPrint();
+
+  //     if (!navigator.onLine) {
+  //       // ✅ في حالة العمل أوفلاين: إذا كانت الفاتورة لطاولة (Dine-in) ومدفوعة، يتم تفريغ الطاولة
+  //       try {
+  //         const existingPill: any = await this.dbService.getPillByInvoiceId(this.pillId);
+
+  //         if (existingPill && existingPill.order_type === 'dine-in') {
+  //           // محاولة قراءة حالة الدفع من المتغير الحالي أو من بيانات الفاتورة المخزّنة
+  //           const pillPaymentStatus =
+  //             this.paymentStatus ||
+  //             existingPill.payment_status ||
+  //             existingPill.order_details?.payment_status;
+
+  //           if (pillPaymentStatus === 'paid') {
+  //             await this.dbService.updateTableStatus(existingPill.table_number, 1); // 1 = متاحة
+  //             console.log('✅ Table status updated to available after paid pill (offline).');
+  //           }
+  //         }
+  //       } catch (e) {
+  //         console.error('❌ Error updating table status after offline pill print:', e);
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error('خطأ في طباعة الفاتورة:', error);
+  //     // في حالة الخطأ، حاولي الطباعة محلياً فقط
+  //     await this.performLocalPrint();
+
+  //     if (!navigator.onLine) {
+  //       // ✅ في حالة العمل أوفلاين: إذا كانت الفاتورة لطاولة (Dine-in) ومدفوعة، يتم تفريغ الطاولة
+  //       try {
+  //         const existingPill: any = await this.dbService.getPillByInvoiceId(this.pillId);
+
+  //         if (existingPill && existingPill.order_type === 'dine-in') {
+  //           // محاولة قراءة حالة الدفع من المتغير الحالي أو من بيانات الفاتورة المخزّنة
+  //           const pillPaymentStatus =
+  //             this.paymentStatus ||
+  //             existingPill.payment_status ||
+  //             existingPill.order_details?.payment_status;
+
+  //           if (pillPaymentStatus === 'paid') {
+  //             await this.dbService.updateTableStatus(existingPill.table_number, 1); // 1 = متاحة
+  //             console.log('✅ Table status updated to available after paid pill (offline).');
+  //           }
+  //         }
+  //       } catch (e) {
+  //         console.error('❌ Error updating table status after offline pill print:', e);
+  //       }
+  //     }
+  //   } finally {
+  //     this.isPrinting = false;
+  //     // التأكد من إغلاق الـ modal نهائيًا
+  //     this.closeConfirmationDialog();
+  //   }
+  // }
   // دورة الطباعة المحلية
   // private async performLocalPrint(): Promise<void> {
   //   const printContent = document.getElementById('printSectionn');
@@ -997,6 +1047,8 @@ export class PillEditComponent implements OnInit, OnDestroy {
     this.test = copies[i].test;
 
     await new Promise((resolve) => setTimeout(resolve, 300));
+
+
 
     // 👉 IMPORTANT: replace whole body with only the print section
     document.body.innerHTML = `
