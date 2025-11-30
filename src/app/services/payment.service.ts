@@ -30,4 +30,23 @@ export class PaymentService {
       console.error('❌ خطأ في إعادة تعيين حسابات الدفع:', error);
     }
   }
+   resetPaymentCalculations(): void {
+    console.log('🔄 إعادة تعيين حسابات الدفع...');
+
+    try {
+      // 1. مسح مبالغ الدفع من localStorage
+      localStorage.removeItem('cash_amountt');
+      localStorage.removeItem('credit_amountt');
+
+      // 2. مسح بيانات الإكرامية من localStorage
+      localStorage.removeItem('finalTipSummary');
+
+      // إرسال حدث إعادة التعيين
+      this.paymentResetSource.next();
+
+      console.log('✅ تم إعادة تعيين حسابات الدفع بنجاح');
+    } catch (error) {
+      console.error('❌ خطأ في إعادة تعيين حسابات الدفع:', error);
+    }
+  }
 }

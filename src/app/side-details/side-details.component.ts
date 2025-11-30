@@ -162,6 +162,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   passwordError!: string
   clientError: any;
   // hanan front
+  // إضافة متغير مؤقت لطريقة الدفع
+  tempPaymentMethod: string | null = null;
   isOrderTypeSelected: boolean = false;
 
   selectedPaymentSuggestion: number | null = null;
@@ -3420,7 +3422,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     });
     localStorage.removeItem('cart');
     localStorage.removeItem('holdCart');
-    localStorage.removeItem('savedOrders');
+    // localStorage.removeItem('savedOrders');
     try {
       const response = await Promise.race([
         this.plaseOrderService.placeOrder(orderData).toPromise(),
@@ -3630,7 +3632,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         // ✅ إضافة بيانات التوصيل للطلب في وضع Offline
         if (this.selectedOrderType === 'Delivery') {
           const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
-          console.log(formData,"formData");
+          console.log(formData, "formData");
 
           // إضافة معلومات التوصيل للطلب
           orderData.delivery_info = {
@@ -5354,6 +5356,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
   // hanan
   selectPaymentMethod(method: 'cash' | 'credit' | 'cash + credit' | 'deferred'): void {
+    
     this.selectedPaymentMethod = method;
     const billAmount = this.getCartTotal();
     console.log('Selected Payment Method:', this.selectedPaymentMethod);
@@ -5444,6 +5447,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const roundedAmount = Math.ceil(amount / base) * base;
     return roundedAmount;
   }
+  // إضافة دالة للتحقق إذا كان المبلغ المتبقي يساوي صفر
+  hasZeroChangeAmount(): boolean {
+    return this.tempChangeAmount <= 0;
+  }
   // تحديث دالة فتح مودال الإكرامية
   openTipModal(content: any, billAmount: number, paymentAmount: number, paymentMethod?: string): void {
     this.tempBillAmount = billAmount;
@@ -5452,11 +5459,21 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     // تعيين طريقة الدفع إذا تم تمريرها
     if (paymentMethod) {
-      this.selectedPaymentMethod = paymentMethod;
+      // ✅ حفظ مؤقت فقط
+      this.tempPaymentMethod = paymentMethod;
+    } else {
+      this.tempPaymentMethod = this.selectedPaymentMethod;
     }
 
-    if (!this.selectedTipType) {
+    // ✅ إذا كان المبلغ المتبقي = 0، نحدد "بدون إكرامية" تلقائياً
+    if (this.hasZeroChangeAmount()) {
       this.selectedTipType = 'no_tip';
+      this.specificTipAmount = 0;
+    } else {
+      // إذا كان هناك مبلغ متبقي، نستخدم الإعدادات الحالية أو الافتراضية
+      if (!this.selectedTipType) {
+        this.selectedTipType = 'no_tip';
+      }
     }
 
     if (!this.specificTipAmount) {
@@ -5468,16 +5485,59 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       size: 'md'
     }).result.then((result) => {
       console.log('Tip Modal Closed with final result:', result);
+      if (result) {
+        this.applyTipToMainVariables(result);
+      }
     }, (reason) => {
       console.log('Tip Modal Dismissed:', reason);
+      // ✅ عند الإلغاء، لا نحدث أي شيء - نترك القيم كما هي
+      this.resetTempVariables();
     });
   }
+  // دالة لتطبيق الإكرامية على المتغيرات الرئيسية بعد التأكيد
+  private applyTipToMainVariables(finalTipSummary: any): void {
+    if (!finalTipSummary) return;
 
+    // ✅ تحديث المتغيرات الرئيسية فقط عند التأكيد
+    this.finalTipSummary = finalTipSummary;
+
+    // تحديث cashPaymentInput بناءً على طريقة الدفع
+    if (this.selectedPaymentMethod === 'cash') {
+      this.cashPaymentInput = finalTipSummary.paymentAmount;
+      this.cash_amountt = finalTipSummary.paymentAmount;
+    } else if (this.selectedPaymentMethod === 'credit') {
+      this.credit_amountt = finalTipSummary.paymentAmount;
+    } else if (this.selectedPaymentMethod === 'cash + credit') {
+      this.cashAmountMixed = finalTipSummary.cashAmountMixed || 0;
+      this.creditAmountMixed = finalTipSummary.creditAmountMixed || 0;
+    }
+
+    // ✅ حفظ في localStorage للطباعة
+    localStorage.setItem('finalTipSummary', JSON.stringify(this.finalTipSummary));
+
+    console.log('✅ تم تطبيق الإكرامية على المتغيرات الرئيسية:', this.finalTipSummary);
+  }
+
+  // دالة لإعادة تعيين المتغيرات المؤقتة عند الإلغاء
+  private resetTempVariables(): void {
+    // ✅ إعادة تعيين المتغيرات المؤقتة فقط، مع الحفاظ على القيم الرئيسية
+    this.tempBillAmount = 0;
+    this.tempPaymentAmount = 0;
+    this.tempChangeAmount = 0;
+    this.tempPaymentMethod = null;
+
+    console.log('🔄 تم إعادة تعيين المتغيرات المؤقتة بعد الإلغاء');
+  }
   /**
    * لتحديد نوع الإكرامية المُختار وتحديث قيمة الإكرامية النهائية.
    * @param type نوع الإكرامية المُختار
    */
   selectTipOption(type: 'tip_the_change' | 'tip_specific_amount' | 'no_tip'): void {
+    // ✅ إذا كان المبلغ المتبقي = 0، نمنع اختيار أي خيار غير "بدون إكرامية"
+    if (this.hasZeroChangeAmount() && type !== 'no_tip') {
+      console.warn('❌ لا يمكن اختيار إكرامية عندما لا يوجد مبلغ متبقي');
+      return;
+    }
     this.selectedTipType = type;
     this.tip_aption = type; // حفظ الخيار المحدد
 
@@ -5503,6 +5563,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
   // تحديث دالة تأكيد الإكرامية
   confirmTipAndClose(modal: any): void {
+    // ✅ إذا كان المبلغ المتبقي = 0، نؤكد على "بدون إكرامية"
+    if (this.hasZeroChangeAmount()) {
+      this.selectedTipType = 'no_tip';
+      this.specificTipAmount = 0;
+    }
+
     let finalTipAmount: number = 0;
     let additionalPaymentRequired: number = 0;
     let originalPaymentAmount: number = this.tempPaymentAmount;
@@ -5591,17 +5657,21 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // this.specificTipAmount = 0;
   }
   showAdditionalPaymentConfirmation(additionalAmount: number, modal: any) {
+    // تقريب لأقرب 3 أرقام عشرية
+    const roundedAdditionalAmount = Math.round(additionalAmount * 1000) / 1000;
+
     const confirmed = confirm(
-      `لتحقيق الإكرامية المطلوبة (${this.specificTipAmount} ج.م)، تحتاج لدفع ${additionalAmount} ج.م إضافية.\n\nهل تريد المتابعة؟`
+      `لتحقيق الإكرامية المطلوبة (${this.specificTipAmount} ج.م)، تحتاج لدفع ${roundedAdditionalAmount} ج.م إضافية.\n\nهل تريد المتابعة؟`
     );
 
     if (confirmed) {
       modal.close(this.finalTipSummary);
     } else {
       // إلغاء وتراجع عن الحسابات
-      this.tempPaymentAmount = this.finalTipSummary!.originalPaymentAmount!;
-      this.finalTipSummary = null;
-      this.specificTipAmount = 0;
+      // this.tempPaymentAmount = this.finalTipSummary!.originalPaymentAmount!;
+      // this.finalTipSummary = null;
+      // this.specificTipAmount = 0;
+      modal.dismiss('Cancelled by user');
     }
   }
 
@@ -5618,7 +5688,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       return;
     }
     if (paymentAmount >= billAmount) {
-      this.cashPaymentInput = paymentAmount;
+      // this.cashPaymentInput = paymentAmount;
       this.paymentError = ''; // مسح أي أخطاء
       this.openTipModal(modalContent, billAmount, paymentAmount);
     }
@@ -5636,6 +5706,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.cashPaymentInput = parseFloat(this.cashPaymentInput) || 0;
     }
     const currentPaymentInput = Number(this.cashPaymentInput) || 0;
+    // ✅ استخدام متغير مؤقت للتحقق فقط
+  const tempPaymentInput = currentPaymentInput;
     if (currentPaymentInput <= 0) {
       // this.cashPaymentInput = billAmount;
       // this.cash_amountt = billAmount;
@@ -5647,7 +5719,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.paymentError = 'يرجى إدخال مبلغ صحيح أكبر من الصفر';
       return;
     }
-    if (currentPaymentInput < billAmount) {
+    if (tempPaymentInput  < billAmount) {
       this.paymentError = `المبلغ المدخل (${currentPaymentInput}) أقل من المبلغ المستحق (${billAmount})`;
       return;
     }
@@ -5669,9 +5741,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       محفوظ: this.cash_amountt,
       المستحق: billAmount
     });
-    if (currentPaymentInput > 0 && currentPaymentInput > billAmount) {
-      this.openTipModal(modalContent, billAmount, currentPaymentInput);
-    }
+    // if (currentPaymentInput > 0 && currentPaymentInput > billAmount) {
+    //   this.openTipModal(modalContent, billAmount, currentPaymentInput);
+    // }
+     // ✅ فتح المودال باستخدام المبلغ المؤقت فقط
+  if (tempPaymentInput > 0 && tempPaymentInput > billAmount) {
+    this.openTipModal(modalContent, billAmount, tempPaymentInput);
+  }
   }
 
   // حساب مبلغ الفيزا بناءً على الكاش
