@@ -326,6 +326,8 @@ export class NewOrdersComponent implements OnDestroy {
             'حدث خطأ فى الاتصال يرجى المحاولة مره اخرى',
             'error'
           );
+          localStorage.removeItem('authToken');
+          this.router.navigate(['/login']);
 
           // If we're online but API failed, try to use IndexedDB data as fallback
           // if (this.isOnline) {

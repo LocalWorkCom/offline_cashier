@@ -170,10 +170,16 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
       } else {
         console.error("Invalid response format", response);
         this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+        console.log("read from indexedb");
+        // Auto-load from IndexedDB when invalid response
+        this.loadCategoriesFromIndexedDB();
       }
     }, (error) => {
       console.error('API fetch failed, trying offline data:', error);
       this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+      console.log("read from indexedb");
+      // Auto-load from IndexedDB when API fails
+      this.loadCategoriesFromIndexedDB();
     });
   }
 
