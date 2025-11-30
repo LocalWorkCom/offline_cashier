@@ -704,7 +704,7 @@ selectedOrderType === 'talabat') {
                   class="d-flex justify-content-between flex-wrap gap-2 payment-suggestions-container">
 
                   <label class="payment-suggestion-label"
-                    [class.active-payment-suggestion]="selectedSuggestionType === 'billAmount'"
+                    [class.active-payment-suggestion]="selectedSuggestionType === 'billAmount'&& finalTipSummary?.paymentAmount === billAmount"
                     (click)="selectPaymentSuggestionAndOpenModal('billAmount', billAmount, billAmount, tipModalContent)">
                     <strong>{{ billAmount }} ج.م</strong>
                   </label>
@@ -713,7 +713,7 @@ selectedOrderType === 'talabat') {
                     *ngIf="getNearestAmount(billAmount, 50) as amount50">
                     <label class="payment-suggestion-label"
                       [class.disabled-suggestion]="amount50 < billAmount"
-                      [class.active-payment-suggestion]="selectedSuggestionType === 'amount50'"
+                      [class.active-payment-suggestion]="selectedSuggestionType === 'amount50'&& finalTipSummary?.paymentAmount === amount50"
                       (click)="selectPaymentSuggestionAndOpenModal('amount50', billAmount, amount50, tipModalContent)">
                       <strong>{{ amount50 | number:'1.0-0' }} ج.م</strong>
                     </label>
@@ -723,7 +723,7 @@ selectedOrderType === 'talabat') {
                     *ngIf="getNearestAmount(billAmount, 100) as amount100">
                     <label class="payment-suggestion-label"
                       [class.disabled-suggestion]="amount100 < billAmount"
-                      [class.active-payment-suggestion]="selectedSuggestionType === 'amount100'"
+                      [class.active-payment-suggestion]="selectedSuggestionType === 'amount100'&& finalTipSummary?.paymentAmount === amount100"
                       (click)="selectPaymentSuggestionAndOpenModal('amount100', billAmount, amount100, tipModalContent)">
                       <strong>{{ amount100 | number:'1.0-0' }} ج.م</strong>
                     </label>
@@ -1662,22 +1662,23 @@ selectedOrderType === 'talabat') {
         <!-- صبلغ محدد -->
         <div class="col-4">
           <div class="tip-option-horizontal text-center"
-            [class.active-tip-horizontal]="selectedTipType === 'tip_specific_amount'"
+            [class.active-tip-horizontal]="selectedTipType === 'tip_specific_amount' && tempChangeAmount > 0"
             [class.disabled-tip-horizontal]="tempChangeAmount <= 0"
-            (click)="selectTipOption('tip_specific_amount')">
+            (click)="tempChangeAmount > 0 ? selectTipOption('tip_specific_amount') : null">
             <div class="option-radio">
               <div class="radio-dot"
-                [class.radio-dot-active]="selectedTipType === 'tip_specific_amount'"
+                [class.radio-dot-active]="selectedTipType === 'tip_specific_amount' && tempChangeAmount > 0"
                 [class.radio-dot-disabled]="tempChangeAmount <= 0"></div>
             </div>
             <div class="option-title fw-bold">مبلغ محدد</div>
+            <small *ngIf="tempChangeAmount <= 0" class="text-danger">غير متاح</small>
           </div>
         </div>
 
         <!-- الصبلغ كله -->
         <div class="col-4">
           <div class="tip-option-horizontal text-center"
-            [class.active-tip-horizontal]="selectedTipType === 'tip_the_change'"
+            [class.active-tip-horizontal]="selectedTipType === 'tip_the_change' && tempChangeAmount > 0"
             [class.disabled-tip-horizontal]="tempChangeAmount <= 0"
             (click)="tempChangeAmount > 0 ? selectTipOption('tip_the_change') : null">
             <div class="option-radio">
@@ -1686,13 +1687,14 @@ selectedOrderType === 'talabat') {
                 [class.radio-dot-disabled]="tempChangeAmount <= 0"></div>
             </div>
             <div class="option-title fw-bold">المبلغ كله</div>
+             <small *ngIf="tempChangeAmount <= 0" class="text-danger">غير متاح</small>
           </div>
         </div>
       </div>
     </div>
 
     <!-- حقل إدخال المبلغ المحدد -->
-    @if(selectedTipType === 'tip_specific_amount') {
+    @if(selectedTipType === 'tip_specific_amount' && tempChangeAmount > 0) {
     <div class="tip-input-section mb-4 text-center">
       <div class="tip-input-large">
         <input type="number" class="form-control form-control-lg text-center"
