@@ -611,25 +611,30 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     console.log('🔄 استقبال حدث إعادة تعيين الدفع من الخدمة');
 
     // إعادة تعيين المتغيرات المحلية
-    this.selectedPaymentStatus = 'unpaid';
-    this.selectedPaymentMethod = null;
-    this.cash_amountt = 0;
-    this.credit_amountt = 0;
-    this.cashPaymentInput = 0;
-    this.cashAmountMixed = 0;
-    this.creditAmountMixed = 0;
-    this.finalTipSummary = null;
-    this.selectedTipType = 'no_tip';
-    this.specificTipAmount = 0;
-    this.selectedSuggestionType = null;
-    this.selectedPaymentSuggestion = null;
-    this.paymentError = '';
-    this.amountError = false;
-    this.falseMessage = '';
-    this.referenceNumber = '';
-    this.referenceNumberTouched = false;
+    // this.selectedPaymentStatus = 'unpaid';
+    // this.selectedPaymentMethod = null;
+    // this.cash_amountt = 0;
+    // this.credit_amountt = 0;
+    // this.cashPaymentInput = 0;
+    // this.cashAmountMixed = 0;
+    // this.creditAmountMixed = 0;
+    // this.finalTipSummary = null;
+    // this.selectedTipType = 'no_tip';
+    // this.specificTipAmount = 0;
+    // this.selectedSuggestionType = null;
+    // this.selectedPaymentSuggestion = null;
+    // this.paymentError = '';
+    // this.amountError = false;
+    // this.falseMessage = '';
+    // this.referenceNumber = '';
+    // this.referenceNumberTouched = false;
 
-    this.cdr.detectChanges();
+    // this.cdr.detectChanges();
+     // ⭐️ استخدام الدالة الجديدة التي تحافظ على حالة الدفع
+  this.resetPaymentCalculationsOnly();
+  
+  // ✅ تحديث الواجهة
+  this.cdr.detectChanges();
   }
   private hasCartItemsChanged(newCart: any[]): boolean {
     // إذا عدد العناصر اختلف
@@ -5356,8 +5361,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
   // hanan
   selectPaymentMethod(method: 'cash' | 'credit' | 'cash + credit' | 'deferred'): void {
-    
+     // ✅ حفظ حالة الدفع الحالية قبل أي إعادة تعيين
+  const currentPaymentStatus = this.selectedPaymentStatus;
+  
+  // ✅ إعادة تعيين الحسابات المرتبطة بالدفع فقط
+  this.resetPaymentCalculationsOnly();
     this.selectedPaymentMethod = method;
+    // ✅ استعادة حالة الدفع بعد إعادة التعيين
+  this.selectedPaymentStatus = currentPaymentStatus;
     const billAmount = this.getCartTotal();
     console.log('Selected Payment Method:', this.selectedPaymentMethod);
     if (method === 'cash') {
@@ -5438,8 +5449,46 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.cash_amountt = 0;
       this.credit_amountt = 0;
     }
+     // ✅ تحديث الواجهة
+  this.cdr.detectChanges();
   }
+/**
+ * 🔄 إعادة تعيين الحسابات المرتبطة بالدفع فقط (بدون التأثير على حالة الدفع)
+ */
+private resetPaymentCalculationsOnly(): void {
+  console.log('🔄 إعادة تعيين حسابات الدفع فقط...');
 
+  // 1. إعادة تعيين مبالغ الدفع
+  this.cash_amountt = 0;
+  this.credit_amountt = 0;
+  this.cashPaymentInput = 0;
+  this.cashAmountMixed = 0;
+  this.creditAmountMixed = 0;
+
+  // 2. مسح مبالغ الدفع من localStorage
+  localStorage.removeItem('cash_amountt');
+  localStorage.removeItem('credit_amountt');
+
+  // 3. إعادة تعيين بيانات الإكرامية
+  this.finalTipSummary = null;
+  this.selectedTipType = 'no_tip';
+  this.specificTipAmount = 0;
+  this.selectedSuggestionType = null;
+  this.selectedPaymentSuggestion = null;
+
+  // 4. مسح بيانات الإكرامية من localStorage
+  localStorage.removeItem('finalTipSummary');
+
+  // 5. إعادة تعيين رسائل الخطأ المرتبطة بالدفع
+  this.paymentError = '';
+  this.amountError = false;
+
+  // 6. إعادة تعيين reference number
+  this.referenceNumber = '';
+  this.referenceNumberTouched = false;
+
+  console.log('✅ تم إعادة تعيين حسابات الدفع فقط (مع الحفاظ على حالة الدفع)');
+}
   getNearestAmount(amount: number, base: number): number {
     if (amount <= 0) return base;
 
