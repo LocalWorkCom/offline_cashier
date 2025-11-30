@@ -1216,7 +1216,7 @@ export class IndexeddbService {
                   order_detail_id: idx + 1,
                   dish_id: item.dish_id,
                   dish_name: item.dish_name,
-                  size: item.size || null,
+                  size: item.sizeName  || null,
                   quantity: item.quantity,
                   note: item.note || "",
                   addons: item.selectedAddons || [],

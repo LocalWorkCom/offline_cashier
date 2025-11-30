@@ -48,6 +48,7 @@ export class PillEditComponent implements OnInit, OnDestroy {
   addressDetails: any;
   isDeliveryOrder: boolean = false;
   paymentStatus: any = '';
+  paymentStatus1: any = '';
   trackingStatus: any = '';
   orderNumber: any;
   addresDetails: any;
@@ -248,6 +249,7 @@ export class PillEditComponent implements OnInit, OnDestroy {
         this.addresDetails = this.invoices[0]?.address_details || {};
 
         this.paymentStatus = this.invoices[0]?.['payment_status'];
+        this.paymentStatus1 = this.invoices[0]?.transactions?.[0]?.['payment_status'];
         this.paymentMethod = this.invoices[0]?.transactions[0].payment_method;
         //  if (this.trackingStatus === 'completed' ) {
         //   this.deliveredButton?.nativeElement.click();
@@ -361,6 +363,7 @@ export class PillEditComponent implements OnInit, OnDestroy {
       this.addresDetails = this.invoices[0]?.address_details || {};
       this.paymentMethod = this.invoices[0]?.transactions?.[0]?.['payment_method'];
       this.paymentStatus = this.invoices[0]?.transactions?.[0]?.['payment_status'];
+      this.paymentStatus1 = this.invoices[0]?.transactions?.[0]?.['payment_status'];
 
       this.isDeliveryOrder = this.invoices.some(
         (invoice: any) => invoice.order_type === 'Delivery'
@@ -1153,7 +1156,7 @@ export class PillEditComponent implements OnInit, OnDestroy {
 
   const totalPaid = this.getTotalPaidAmount();
   const total = this.getInvoiceTotal();
-  
+
   // Use the same precision as backend (2 decimal places)
   return Number(totalPaid.toFixed(2)) >= Number(total.toFixed(2));
 }
