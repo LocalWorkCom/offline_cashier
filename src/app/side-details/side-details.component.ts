@@ -2585,12 +2585,37 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   amountError = false;
   addressRequestInProgress: boolean = false;
   // start hanan
-
+  // دالة مساعدة للحصول على category_id من ProductsService
+  private async getCategoryIdFromProductsService(dishId: number): Promise<number | null> {
+    return new Promise((resolve) => {
+      this.productsService.getCategoryIdForDish(dishId).subscribe({
+        next: (categoryId) => {
+          resolve(categoryId);
+        },
+        error: () => {
+          resolve(null);
+        }
+      });
+    });
+  }
   private async prepareOrderData(): Promise<any> {
     // This should contain all the order data preparation logic
     // that was previously in your submitOrder method
     console.log("prepareOrderData called");
+    console.log("=== تحضير بيانات الطلب ===");
+    console.log("Cart items:", this.cartItems);
 
+    // فحص كل عنصر في الكارت
+    this.cartItems.forEach((item, index) => {
+      console.log(`Item ${index + 1}:`, {
+        dish_id: item.dish?.id,
+        dish_name: item.dish?.name,
+        branch_menu_category_id: item.dish?.branch_menu_category_id,
+        category_id: item.dish?.category_id,
+        category: item.dish?.category,
+        fullDish: item.dish
+      });
+    });
     const branchId = Number(localStorage.getItem('branch_id')) || null;
     const tableId = Number(localStorage.getItem('table_id')) || this.table_id || null;
     const formData = JSON.parse(localStorage.getItem('form_data') || '{}');
@@ -2677,6 +2702,63 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         creditAmount = creditPart;
       }
     }
+    // تحضير العناصر مع category_id
+    const itemsWithCategory = [];
+
+    for (const cartItem of this.cartItems) {
+      const dishId = cartItem.dish?.id;
+      let categoryId = null;
+
+      // ⭐️ محاولة الحصول على category_id من عدة مصادر
+      categoryId = cartItem.dish?.branch_menu_category_id ||
+        cartItem.dish?.category_id ||
+        cartItem.category_id ||
+        cartItem.dish?.category?.id;
+
+      // إذا لم يكن category_id موجوداً، جلبيه من ProductsService
+      if (!categoryId && dishId) {
+        categoryId = await this.getCategoryIdFromProductsService(dishId);
+      }
+      // ⭐️ أضيفي console.log لفحص البيانات
+      console.log(`Dish: ${dishId}, Category found: ${categoryId}`, {
+        dish: cartItem.dish,
+        cartItem: cartItem
+      });
+      const itemData = {
+        dish_id: dishId || null,
+        dish_name: cartItem.dish?.name || '',
+        dish_description: cartItem.dish?.description || '',
+        dish_price: cartItem.dish?.price || 0,
+        currency_symbol: cartItem.dish?.currency_symbol || '',
+        dish_image: cartItem.dish?.image || null,
+        category: categoryId, // ⬅️ أضيفي category هنا
+        quantity: cartItem.quantity || 1,
+        sizeId: cartItem.selectedSize?.id || null,
+        size: cartItem.size || '',
+        sizeName: cartItem.selectedSize?.name || '',
+        sizeDescription: cartItem.selectedSize?.description || '',
+        note: cartItem.note || '',
+        finalPrice: cartItem.finalPrice || 0,
+        selectedAddons: cartItem.selectedAddons || [],
+        addon_categories: cartItem.addon_categories
+          ?.map((category: { id: any; addons: { id: any }[] }) => {
+            const selectedAddons = category.addons?.filter((addon) =>
+              cartItem.selectedAddons.some(
+                (selected: { id: any }) => selected.id === addon.id
+              )
+            );
+            return selectedAddons.length > 0
+              ? {
+                id: category.id,
+                addon: selectedAddons.map((addon) => addon.id),
+              }
+              : null;
+          })
+          .filter((category: null) => category !== null),
+      };
+
+      itemsWithCategory.push(itemData);
+    }
     return {
       isOnline: navigator.onLine,
       delivery_fees: delivery_fees || 0,
@@ -2709,39 +2791,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       ...(this.clientPhoneStoredInLocal ? { client_phone: this.clientPhoneStoredInLocal } : {}),
       ...(this.clientStoredInLocal ? { client_name: this.clientStoredInLocal } : {}),
       note: this.additionalNote || this.savedNote || this.applyAdditionalNote() || this.onholdOrdernote || '',
-      items: this.cartItems
-        .map((item) => ({
-          dish_id: item.dish?.id || null,
-          dish_name: item.dish?.name || '',
-          dish_description: item.dish?.description || '',
-          dish_price: item.dish?.price || 0,
-          currency_symbol: item.dish?.currency_symbol || '',
-          dish_image: item.dish?.image || null,
-          quantity: item.quantity || 1,
-          sizeId: item.selectedSize?.id || null,
-          size: item.size || '',
-          sizeName: item.selectedSize?.name || '',
-          sizeDescription: item.selectedSize?.description || '',
-          note: item.note || '',
-          finalPrice: item.finalPrice || 0,
-          selectedAddons: item.selectedAddons || [],
-          addon_categories: item.addon_categories
-            ?.map((category: { id: any; addons: { id: any }[] }) => {
-              const selectedAddons = category.addons?.filter((addon) =>
-                item.selectedAddons.some(
-                  (selected: { id: any }) => selected.id === addon.id
-                )
-              );
-              return selectedAddons.length > 0
-                ? {
-                  id: category.id,
-                  addon: selectedAddons.map((addon) => addon.id),
-                }
-                : null;
-            })
-            .filter((category: null) => category !== null),
-        }))
-        .filter((item) => item.dish_id),
+      items: itemsWithCategory.filter((item) => item.dish_id),
       // ✅ استخدام بيانات الإكرامية المعدلة بناءً على حالة الدفع
       ...tipData,
       // dalia start tips
@@ -5606,6 +5656,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         break;
       case 'no_tip':
         this.specificTipAmount = 0;
+        if (this.tempPaymentAmount > this.tempBillAmount) {
+          this.tempPaymentAmount = this.tempBillAmount;
+        }
         break;
       case 'tip_specific_amount':
         let initialTipAmount = this.tempChangeAmount > 0 ? this.tempChangeAmount : 0;
