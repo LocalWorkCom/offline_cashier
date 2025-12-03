@@ -2423,7 +2423,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       });
     });
   }
-  private prepareOrderData(): any {
+  private async prepareOrderData(): Promise<any> {
     // This should contain all the order data preparation logic
     // that was previously in your submitOrder method
     console.log("prepareOrderData called");
