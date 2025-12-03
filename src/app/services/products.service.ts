@@ -12,7 +12,7 @@ export class ProductsService {
   private apiUrl = `${baseUrl}api`;
 
   private cart: any[] = [];
-   categories: any[] = [];
+  categories: any[] = [];
 
   private productSubject = new BehaviorSubject<any>(null);
   product$ = this.productSubject.asObservable();
@@ -88,21 +88,21 @@ export class ProductsService {
   //     this.cart = [];
   //   }
   // }
-loadCart(): void {
-  try {
-    // ✅ حدد المفتاح حسب نوع الطلب
-    const isHoldOrder = !!localStorage.getItem('currentOrderId');
-    const cartKey = isHoldOrder ? 'holdCart' : 'cart';
+  loadCart(): void {
+    try {
+      // ✅ حدد المفتاح حسب نوع الطلب
+      const isHoldOrder = !!localStorage.getItem('currentOrderId');
+      const cartKey = isHoldOrder ? 'holdCart' : 'cart';
 
-    const storedCart = localStorage.getItem(cartKey);
-    this.cart = storedCart ? JSON.parse(storedCart) : [];
-    this.cartSubject.next(this.cart);
-    this.calculateTotal();
-  } catch (error) {
-    console.error("Error loading cart from localStorage", error);
-    this.cart = [];
+      const storedCart = localStorage.getItem(cartKey);
+      this.cart = storedCart ? JSON.parse(storedCart) : [];
+      this.cartSubject.next(this.cart);
+      this.calculateTotal();
+    } catch (error) {
+      console.error("Error loading cart from localStorage", error);
+      this.cart = [];
+    }
   }
-}
 
   saveCart(): void {
     try {
@@ -145,7 +145,13 @@ loadCart(): void {
     } catch {
       cart = [];
     }
-
+    // ⭐️ أضيفي category_id إلى الطبق إذا لم يكن موجوداً
+    if (product.dish && !product.dish.category_id) {
+      // يمكنك البحث عن category_id من source مختلف
+      product.dish.category_id = product.dish.branch_menu_category_id ||
+        product.category_id ||
+        product.dish.category?.id;
+    }
     const existingIndex = cart.findIndex((p: any) =>
       p.dish?.id === product.dish?.id &&
       p.selectedSize?.id === product.selectedSize?.id &&
@@ -164,6 +170,59 @@ loadCart(): void {
 
     localStorage.setItem('cart', JSON.stringify(cart));
     this.cartSubject.next(cart);
+    console.log('Product structure:', {
+      dish: product.dish,
+      hasBranchMenuCategoryId: !!product.dish?.branch_menu_category_id,
+      hasCategoryId: !!product.dish?.category_id,
+      hasCategory: !!product.dish?.category
+    });
+  }
+  getCategoryIdForDish(dishId: number): Observable<number | null> {
+    return new Observable(observer => {
+      // أولاً: بحث في categories الموجودة في الذاكرة
+      if (this.categories && this.categories.length > 0) {
+        for (const category of this.categories) {
+          if (category.dishes && Array.isArray(category.dishes)) {
+            // البحث في بنية dishes (قد يكون {dish: {...}} أو مباشرة)
+            for (const dishEntry of category.dishes) {
+              const dish = dishEntry.dish || dishEntry;
+              if (dish.id === dishId) {
+                observer.next(category.id);
+                observer.complete();
+                return;
+              }
+            }
+          }
+        }
+      }
+
+      // ثانياً: جلب بيانات جديدة إذا لزم الأمر
+      this.getMenuDishes().subscribe({
+        next: (response: any) => {
+          if (response && response.data) {
+            this.categories = response.data;
+            for (const category of this.categories) {
+              if (category.dishes && Array.isArray(category.dishes)) {
+                for (const dishEntry of category.dishes) {
+                  const dish = dishEntry.dish || dishEntry;
+                  if (dish.id === dishId) {
+                    observer.next(category.id);
+                    observer.complete();
+                    return;
+                  }
+                }
+              }
+            }
+          }
+          observer.next(null);
+          observer.complete();
+        },
+        error: () => {
+          observer.next(null);
+          observer.complete();
+        }
+      });
+    });
   }
   addToHoldCart(product: any): void {
     let cart: any[] = [];
@@ -258,40 +317,40 @@ loadCart(): void {
     localStorage.setItem('savedOrders', JSON.stringify(newOrders));
     this.savedOrdersSubject.next(newOrders); // ✅ Notifies all subscribers
   }
-destroyCart() {
-  console.warn('🚨 destroyCart CALLED');
-  this.cartSubject.next([]);
-}
+  destroyCart() {
+    console.warn('🚨 destroyCart CALLED');
+    this.cartSubject.next([]);
+  }
 
 
 
 
-fetchAndSave(): Observable<any> {
-  return new Observable(observer => {
-    this.getMenuDishes().subscribe({
-      next: async (response: any) => {
-         if (response && response.status && response.data) {
-      this.categories = response.data;
+  fetchAndSave(): Observable<any> {
+    return new Observable(observer => {
+      this.getMenuDishes().subscribe({
+        next: async (response: any) => {
+          if (response && response.status && response.data) {
+            this.categories = response.data;
 
 
-      // Save to IndexedDB for offline use (non-blocking)
-      this.db.saveData('categories', this.categories)
-        .catch(error => console.error('Error saving to IndexedDB:', error));
-    } else {
-      console.error("Invalid response format", response);
-      // Fallback to offline data if API returns invalid response
+            // Save to IndexedDB for offline use (non-blocking)
+            this.db.saveData('categories', this.categories)
+              .catch(error => console.error('Error saving to IndexedDB:', error));
+          } else {
+            console.error("Invalid response format", response);
+            // Fallback to offline data if API returns invalid response
 
-    }
-        observer.next(response);
-        observer.complete();
-      },
-      error: (err) => {
-        console.error('❌ Failed to fetch pils', err);
-        observer.error(err);
-      }
+          }
+          observer.next(response);
+          observer.complete();
+        },
+        error: (err) => {
+          console.error('❌ Failed to fetch pils', err);
+          observer.error(err);
+        }
+      });
     });
-  });
-}
+  }
 
 
 
