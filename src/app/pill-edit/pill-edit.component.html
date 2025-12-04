@@ -196,7 +196,7 @@
           isShow
         ">
         <div
-          *ngIf="invoices[0].order_type === 'Takeaway' ||invoices[0].order_type === 'dine-in' || (invoices[0].order_type === 'Delivery' && Delivery_show_delivered_only)">
+          *ngIf="invoices[0].order_type === 'Takeaway' ||invoices[0].order_type === 'dine-in' || invoices[0].order_type === 'Delivery'">
           <div class="d-flex gap-4"> <!--  *ngIf="invoices[0].transactions[0].payment_status != 'paid'" ALAAA -->
             <button class="fs-6 rounded-4 w-50 btn" [ngClass]="{
               'btn-static-main text-white': paymentStatus === 'unpaid' || (invoices[0].transactions[0].payment_status === 'unpaid' && paymentStatus !== 'paid'),
@@ -215,7 +215,7 @@
         </div>
       </div>
       <div class=" w-100 my-3"
-        *ngIf="paymentStatus == 'paid' &&  ( invoices[0]?.order_type =='Takeaway' || invoices[0]?.order_type =='dine-in')">
+        *ngIf="paymentStatus == 'paid' &&  ( invoices[0]?.order_type =='Takeaway' || invoices[0]?.order_type =='dine-in' || invoices[0]?.order_type =='Delivery')">
         <!-- <div class="mb-3 d-flex justify-content-between align-items-center">
           <label for="cash_amount" class="form-label">الكاش : </label>
           <input type="number" class="form-control w-75" id="cash_amount" [(ngModel)]="cash_value">
@@ -264,7 +264,7 @@
         <h5 class="mb-0" *ngIf="invoices[0]?.transactions?.length == 1">
           <span class="badge bg-success text-white">
             الدفع :
-            {{ invoices[0]?.transactions[0].payment_method === "credit" ? "أونلاين" : "كاش" }}
+            {{ invoices[0]?.transactions[0].payment_method === "credit" ? "فيزا" : "كاش" }}
           </span>
         </h5>
 
@@ -558,7 +558,7 @@
           <div class="d-flex justify-content-between align-items-center fw-bold py-2">
             <h6 class="mb-0">طريقة الدفع:</h6>
             <p class="mb-0">
-              {{ invoices[0].transactions[0].payment_method === "credit" ? "أونلاين" : "كاش" }}
+              {{ invoices[0].transactions[0].payment_method === "credit" ? "فيزا" : "كاش" }}
             </p>
           </div>
         </ng-container>
