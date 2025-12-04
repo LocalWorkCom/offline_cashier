@@ -777,7 +777,7 @@ selectedOrderType === 'talabat') {
               <input type="number" class="form-control" id="cashAmountInput"
                 [(ngModel)]="cashAmountMixed"
                 [ngModelOptions]="{standalone: true}"
-                placeholder="المبلغ المدفوع كاش" min="0" 
+                placeholder="المبلغ المدفوع كاش" min="0"
                 (change)="openMixedPaymentTipModal(billAmount, tipModalContent)">
 
               <!-- رسالة خطأ للكاش -->
@@ -794,7 +794,7 @@ selectedOrderType === 'talabat') {
               <input type="number" class="form-control" id="creditAmountInput"
                 [(ngModel)]="creditAmountMixed"
                 [ngModelOptions]="{standalone: true}"
-                placeholder="المبلغ المدفوع فيزا" min="0" 
+                placeholder="المبلغ المدفوع فيزا" min="0"
                 (change)="openMixedPaymentTipModal(billAmount, tipModalContent)">
 
               <!-- رسالة خطأ للفيزا -->
@@ -1663,3 +1663,42 @@ selectedOrderType === 'talabat') {
     <p>نتمنى لكم يومًا سعيدًا!</p>
   </div>
 </div> -->
+
+
+<div id="receiptToPrint" style="width: 300px; padding: 20px; font-family: Arial, Tahoma, sans-serif; direction: rtl; text-align: right; background: white;">
+  <div style="text-align: center; margin-bottom: 10px; font-weight: bold; font-size: 18px;">
+    اسم الفرع
+  </div>
+
+  <div style="margin-bottom: 10px; font-size: 14px;">
+    <div>التاريخ: 04/12/2025</div>
+    <div>الوقت: 17:00</div>
+    <div>نوع الطلب: توصيل</div>
+  </div>
+
+  <div style="border-top:1px solid #000; margin:10px 0;"></div>
+
+  <div>
+    <div style="font-weight:bold; border-bottom:1px solid #000; padding-bottom:5px;">
+      <span style="display:inline-block; width:60%;">الصنف</span>
+      <span style="display:inline-block; width:40%; text-align:center;">الكمية</span>
+    </div>
+
+    <div>
+      <div style="display:flex; justify-content:space-between;">
+        <span>بيتزا</span>
+        <span>2</span>
+      </div>
+      <div style="display:flex; justify-content:space-between;">
+        <span>كوكاكولا</span>
+        <span>1</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="border-top:1px solid #000; margin:10px 0;"></div>
+
+  <div style="text-align:center; margin-top:10px; font-weight:bold;">شكراً لزيارتكم</div>
+</div>
+
+<button (click)="printReceipt()">طباعة</button>

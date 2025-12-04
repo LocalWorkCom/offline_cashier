@@ -13,6 +13,7 @@ import {
   inject,
   OnDestroy,
 } from '@angular/core';
+import html2canvas from 'html2canvas';
 import { ProductsService } from '../services/products.service';
 import { PlaceOrderService } from '../services/place-order.service';
 import { FormsModule } from '@angular/forms';
@@ -3101,6 +3102,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
       localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
 
+      // Save cart items for printing before clearing
+      const cartItemsForPrint = JSON.parse(JSON.stringify(this.cartItems));
+      console.log(cartItemsForPrint, 'cartItemsForPrint');
+
       this.clearCart();
       this.resetLocalStorage();
       this.resetAddress();
@@ -3110,6 +3115,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       if (this.successModal) {
         this.successModal.show();
+
+        // Print invoice items without prices to network printer
+        this.printReceipt(cartItemsForPrint);
       }
 
       setTimeout(() => {
@@ -3124,6 +3132,247 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     } finally {
       this.isLoading = false;
       this.loading = false;
+    }
+  }
+
+  // دالة للطباعة - تستخدم Canvas API مباشرة لإنشاء صورة من الفاتورة
+  async printReceipt(cartItems?: any[]) {
+    try {
+      // Create image from receipt using Canvas API
+      const imageData = await this.convertReceiptToImage(cartItems);
+
+      if (!imageData) {
+        alert('❌ لم يتم توليد الصورة.');
+        return;
+      }
+
+      // Send image to printer
+      if (!window.deviceAPI) {
+        alert('❌ Electron deviceAPI غير متوفر. يجب تشغيل التطبيق في Electron');
+        return;
+      }
+
+      const result = await window.deviceAPI.printImageToNetwork(imageData, '192.168.100.102', 9100);
+
+      if (result && result.success) {
+        console.log('✅ تم الطباعة بنجاح!');
+      } else {
+        const errorMsg = result?.error || 'خطأ غير معروف';
+        console.error('❌ فشل الطباعة:', errorMsg);
+        alert(`❌ فشل الطباعة: ${errorMsg}`);
+      }
+    } catch (error: any) {
+      console.error('Error in printReceipt:', error);
+      alert(`❌ خطأ في الطباعة: ${error.message || 'خطأ غير معروف'}`);
+    }
+  }
+
+  // Convert receipt to image using Canvas API (supports Arabic)
+  async convertReceiptToImage(cartItems?: any[]): Promise<string | null> {
+    try {
+      let items: any[] = [];
+
+      // Get items from different sources
+      if (cartItems && cartItems.length > 0) {
+        items = cartItems;
+      } else if (this.orderDetails && this.orderDetails[0] && this.orderDetails[0].length > 0) {
+        items = this.orderDetails[0];
+      } else if (this.cartItems && this.cartItems.length > 0) {
+        items = this.cartItems;
+      } else {
+        return null;
+      }
+
+      // Create canvas
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+
+      if (!ctx) {
+        throw new Error('فشل في إنشاء canvas');
+      }
+
+      // Set canvas size (thermal printer width: ~384px)
+      const width = 384;
+      const padding = 20;
+      const lineHeight = 25;
+      const fontSize = 16;
+      const titleFontSize = 24;
+
+      // Calculate height needed
+      let currentY = padding;
+      currentY += lineHeight * 2; // Header
+      currentY += lineHeight; // Branch name
+      currentY += lineHeight * 2; // Date/time
+      currentY += lineHeight; // Order type
+      currentY += lineHeight * 2; // Spacing
+
+      // Calculate height for items
+      items.forEach((item: any) => {
+        currentY += lineHeight; // Item name
+        if (item.size || item.selectedSize?.name) currentY += lineHeight;
+        const addons = item.addons || item.selectedAddons || [];
+        currentY += addons.length * lineHeight;
+        if (item.note) currentY += lineHeight;
+        currentY += lineHeight; // Quantity
+        currentY += lineHeight; // Divider
+      });
+
+      currentY += lineHeight * 3; // Footer
+      currentY += padding;
+
+      canvas.width = width;
+      canvas.height = currentY;
+
+      // Set canvas style
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#000000';
+
+      // Important: Set text properties for Arabic support
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'top';
+      ctx.direction = 'rtl';
+
+      // Use system fonts that support Arabic better
+      const arabicFonts = 'Segoe UI, Tahoma, Arial Unicode MS, Arial, DejaVu Sans, sans-serif';
+      ctx.font = `${fontSize}px ${arabicFonts}`;
+
+      currentY = padding;
+
+      // Helper function to draw Arabic text correctly
+      const drawArabicText = (text: string, x: number, y: number, font: string, align: 'right' | 'center' | 'left' = 'right') => {
+        ctx.save();
+        ctx.font = font;
+        ctx.textAlign = align;
+        ctx.textBaseline = 'top';
+        ctx.direction = 'rtl';
+
+        let textToDraw = String(text);
+        try {
+          textToDraw = textToDraw.normalize('NFC');
+        } catch (e) {
+          console.warn('Text normalization failed:', e);
+        }
+
+        ctx.fillText(textToDraw, x, y);
+        ctx.restore();
+      };
+
+      // Draw header
+      drawArabicText('الفاتورة', width / 2, currentY, `bold ${titleFontSize}px ${arabicFonts}`, 'center');
+      currentY += lineHeight * 2;
+
+      // Draw branch name
+      const branchName = this.branchDetails?.name ||
+                        (this.branchDetails && Array.isArray(this.branchDetails) && this.branchDetails[0]?.name) || '';
+      if (branchName) {
+        drawArabicText(branchName, width / 2, currentY, `bold ${fontSize}px ${arabicFonts}`, 'center');
+        currentY += lineHeight;
+      }
+
+      // Draw date and time
+      const now = new Date();
+      const dateStr = now.toLocaleDateString('ar-SA');
+      const timeStr = now.toLocaleTimeString('ar-SA');
+      drawArabicText(`التاريخ: ${dateStr}`, width - padding, currentY, `${fontSize}px ${arabicFonts}`);
+      currentY += lineHeight;
+      drawArabicText(`الوقت: ${timeStr}`, width - padding, currentY, `${fontSize}px ${arabicFonts}`);
+      currentY += lineHeight;
+
+      // Order type
+      if (this.selectedOrderType) {
+        drawArabicText(`نوع الطلب: ${this.selectedOrderType}`, width - padding, currentY, `${fontSize}px ${arabicFonts}`);
+        currentY += lineHeight;
+      }
+
+      // Table number
+      if (this.tableNumber) {
+        drawArabicText(`رقم الطاولة: ${this.tableNumber}`, width - padding, currentY, `${fontSize}px ${arabicFonts}`);
+        currentY += lineHeight;
+      }
+
+      currentY += lineHeight; // Spacing
+
+      // Draw divider
+      ctx.strokeStyle = '#000000';
+      ctx.beginPath();
+      ctx.moveTo(padding, currentY);
+      ctx.lineTo(width - padding, currentY);
+      ctx.stroke();
+      currentY += lineHeight;
+
+      // Draw items header
+      drawArabicText('الصنف', width - padding, currentY, `bold ${fontSize}px ${arabicFonts}`);
+      drawArabicText('الكمية', padding + 50, currentY, `bold ${fontSize}px ${arabicFonts}`);
+      currentY += lineHeight;
+
+      // Draw divider
+      ctx.beginPath();
+      ctx.moveTo(padding, currentY);
+      ctx.lineTo(width - padding, currentY);
+      ctx.stroke();
+      currentY += lineHeight;
+
+      // Draw items
+      items.forEach((item: any) => {
+        const dishName = item.dish_name || item.dish?.name || 'غير محدد';
+        const quantity = item.quantity || 1;
+        const size = item.size || item.selectedSize?.name;
+        const addons = item.addons || item.selectedAddons || [];
+        const note = item.note;
+
+        // Item name
+        drawArabicText(dishName, width - padding, currentY, `${fontSize}px ${arabicFonts}`);
+        // Quantity is a number, draw it normally
+        ctx.textAlign = 'left';
+        ctx.fillText(`${quantity}`, padding + 50, currentY);
+        ctx.textAlign = 'right';
+        currentY += lineHeight;
+
+        // Size
+        if (size) {
+          drawArabicText(`  الحجم: ${size}`, width - padding, currentY, `${fontSize}px ${arabicFonts}`);
+          currentY += lineHeight;
+        }
+
+        // Addons
+        addons.forEach((addon: any) => {
+          const addonName = addon.addon_name || addon.name;
+          if (addonName) {
+            drawArabicText(`  + ${addonName}`, width - padding, currentY, `${fontSize}px ${arabicFonts}`);
+            currentY += lineHeight;
+          }
+        });
+
+        // Note
+        if (note) {
+          drawArabicText(`  ملاحظات: ${note}`, width - padding, currentY, `${fontSize}px ${arabicFonts}`);
+          currentY += lineHeight;
+        }
+
+        // Divider
+        ctx.beginPath();
+        ctx.moveTo(padding, currentY);
+        ctx.lineTo(width - padding, currentY);
+        ctx.stroke();
+        currentY += lineHeight;
+      });
+
+      // Draw footer
+      currentY += lineHeight;
+      ctx.beginPath();
+      ctx.moveTo(padding, currentY);
+      ctx.lineTo(width - padding, currentY);
+      ctx.stroke();
+      currentY += lineHeight * 2;
+
+      drawArabicText('شكراً لزيارتكم', width / 2, currentY, `bold ${fontSize}px ${arabicFonts}`, 'center');
+
+      // Convert canvas to image
+      return canvas.toDataURL('image/png');
+    } catch (error: any) {
+      console.error('Error converting receipt to image:', error);
+      return null;
     }
   }
 
@@ -5157,5 +5406,158 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.filteredCountries = this.countryList.filter((country) =>
       country.code.toLowerCase().includes(this.searchTerm.toLowerCase())
     );
+  }
+
+  // Test printer connection
+  async testPrinterConnection(ip: string, port: number = 9100): Promise<boolean> {
+    try {
+      if (!window.deviceAPI) {
+        console.error('❌ Electron deviceAPI not available.');
+        return false;
+      }
+
+      console.log(`🔍 Testing connection to printer at ${ip}:${port}...`);
+      const result = await window.deviceAPI.testPrinterConnection(ip, port);
+
+      if (result.success) {
+        console.log(`✅ ${result.message || 'Connection successful'}`);
+        return true;
+      } else {
+        console.error(`❌ Connection test failed: ${result.error}`);
+        return false;
+      }
+    } catch (error: any) {
+      console.error('❌ Connection test error:', error.message || error);
+      return false;
+    }
+  }
+
+  // Create HTML receipt element
+  createReceiptHTML(cartItems?: any[]): string {
+    let items: any[] = [];
+
+    // Try to get items from different sources
+    if (cartItems && cartItems.length > 0) {
+      items = cartItems;
+    } else if (this.orderDetails && this.orderDetails[0] && this.orderDetails[0].length > 0) {
+      items = this.orderDetails[0];
+    } else if (this.cartItems && this.cartItems.length > 0) {
+      items = this.cartItems;
+    } else {
+      return '';
+    }
+
+    // Branch name
+    const branchName = this.branchDetails?.name ||
+                      (this.branchDetails && Array.isArray(this.branchDetails) && this.branchDetails[0]?.name) ||
+                      '';
+
+    // Date and time
+    const now = new Date();
+    const dateStr = now.toLocaleDateString('ar-SA');
+    const timeStr = now.toLocaleTimeString('ar-SA');
+
+    // Build items HTML
+    let itemsHTML = '';
+    items.forEach((item: any) => {
+      const dishName = item.dish_name || item.dish?.name || 'غير محدد';
+      const size = item.size || item.selectedSize?.name;
+      const quantity = item.quantity || 1;
+      const addons = item.addons || item.selectedAddons || [];
+      const note = item.note;
+
+      itemsHTML += `
+        <div class="receipt-item">
+          <div class="item-name">${dishName}</div>
+          ${size ? `<div class="item-detail">الحجم: ${size}</div>` : ''}
+          ${addons.length > 0 ? addons.map((addon: any) =>
+            `<div class="item-detail">+ ${addon.addon_name || addon.name}</div>`
+          ).join('') : ''}
+          ${note ? `<div class="item-detail">ملاحظات: ${note}</div>` : ''}
+          <div class="item-quantity">الكمية: ${quantity}</div>
+        </div>
+        <div class="receipt-divider"></div>
+      `;
+    });
+
+    return `
+      <div class="receipt-container" dir="rtl" style="
+        font-family: 'Arial', 'Tahoma', sans-serif;
+        width: 300px;
+        padding: 20px;
+        background: white;
+        color: black;
+        direction: rtl;
+        text-align: right;
+      ">
+        <div class="receipt-header" style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px;">
+          <h2 style="margin: 0; font-size: 24px; font-weight: bold;">الفاتورة</h2>
+        </div>
+
+        ${branchName ? `<div style="text-align: center; margin-bottom: 10px; font-weight: bold; font-size: 18px;">${branchName}</div>` : ''}
+
+        <div class="receipt-info" style="margin-bottom: 15px; font-size: 14px;">
+          <div>التاريخ: ${dateStr}</div>
+          <div>الوقت: ${timeStr}</div>
+          ${this.selectedOrderType ? `<div>نوع الطلب: ${this.selectedOrderType}</div>` : ''}
+          ${this.tableNumber ? `<div>رقم الطاولة: ${this.tableNumber}</div>` : ''}
+        </div>
+
+        <div class="receipt-divider" style="border-top: 1px solid #000; margin: 15px 0;"></div>
+
+        <div class="receipt-items" style="margin-bottom: 20px;">
+          <div style="font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #000; padding-bottom: 5px;">
+            <span style="display: inline-block; width: 60%;">الصنف</span>
+            <span style="display: inline-block; width: 40%; text-align: center;">الكمية</span>
+          </div>
+          ${itemsHTML}
+        </div>
+
+        <div class="receipt-divider" style="border-top: 1px solid #000; margin: 15px 0;"></div>
+
+        <div class="receipt-footer" style="text-align: center; margin-top: 20px; padding-top: 10px; border-top: 2px solid #000;">
+          <div style="font-weight: bold; font-size: 16px;">شكراً لزيارتكم</div>
+        </div>
+      </div>
+    `;
+  }
+
+
+
+  // Print to network printer
+  async printToNetworkPrinter(text: string, ip: string, port: number = 9100): Promise<void> {
+    try {
+      if (!window.deviceAPI) {
+        console.error('❌ Electron deviceAPI not available. This function only works in Electron.');
+        alert('طابعة غير متاحة: يجب تشغيل التطبيق في Electron');
+        return;
+      }
+
+      console.log(`🖨️ Attempting to print to ${ip}:${port}...`);
+      console.log(`📝 Text to print: "${text}"`);
+
+      // Optional: Test connection first (commented out for faster printing)
+      // const connectionOk = await this.testPrinterConnection(ip, port);
+      // if (!connectionOk) {
+      //   alert(`لا يمكن الاتصال بالطابعة في ${ip}:${port}. يرجى التحقق من إعدادات الطابعة.`);
+      //   return;
+      // }
+
+      const result = await window.deviceAPI.printToNetwork(text, ip, port);
+
+      if (result.success) {
+        console.log(`✅ Print successful! Bytes sent: ${result.bytesSent || 'unknown'}`);
+        // Optionally show success message
+        // this.successMessage = 'تم الطباعة بنجاح';
+      } else {
+        const errorMsg = result.error || 'Unknown error';
+        console.error(`❌ Print failed: ${errorMsg}`);
+        alert(`فشلت الطباعة: ${errorMsg}\n\nيرجى التحقق من:\n- الطابعة متصلة بالشبكة\n- عنوان IP صحيح: ${ip}\n- المنفذ ${port} مفتوح`);
+      }
+    } catch (error: any) {
+      const errorMessage = error.message || error.toString() || 'Unknown error';
+      console.error('❌ Error printing to network printer:', errorMessage);
+      alert(`خطأ في الطباعة: ${errorMessage}\n\nيرجى التحقق من اتصال الطابعة بالشبكة.`);
+    }
   }
 }
