@@ -78,7 +78,7 @@ export class PillEditComponent {
       this.time = this.datePipe.transform(dateObj, 'hh:mm a');
     }
   }
-order_id:any ;
+  order_id: any;
 
   ngOnInit(): void {
     this.route.paramMap.subscribe((params) => {
@@ -145,14 +145,19 @@ order_id:any ;
       next: (response: any) => {
         this.order_id = response.data.order_id
         this.invoices = response.data.invoices;
+        // الحصول على tracking-status
+        const trackingKey = this.invoices[0]?.['tracking-status']
+          || this.invoices[0]?.['Tracking_status']
+          || this.invoices[0]?.['order_status'];
 
+        this.trackingStatus = trackingKey || '';
         console.log(this.invoices[0].order_type);
-        this.totalll=this.invoices[0].invoice_summary.total_price
+        this.totalll = this.invoices[0].invoice_summary.total_price
         this.orderType = this.invoices[0].order_type;
 
-        const trackingKey = this.invoices[0]?.['tracking-status'];
-        this.trackingStatus = trackingKey || '';
-        this.orderNumber =Number( response.data.order_id);
+        // const trackingKey = this.invoices[0]?.['tracking-status'];
+        // this.trackingStatus = trackingKey || '';
+        this.orderNumber = Number(response.data.order_id);
         this.couponType = this.invoices[0].invoice_summary.coupon_type;
 
         this.addresDetails = this.invoices[0]?.address_details || {};
@@ -276,7 +281,16 @@ order_id:any ;
       }
       return
     }
-
+    // تحديد حالة التوصيل المناسبة
+    let orderStatusToSend = '';
+    if (this.orderType === 'Delivery') {
+      if (this.trackingStatus === 'delivered' || this.trackingStatus === 'on_way') {
+        orderStatusToSend = this.trackingStatus;
+      } else if (this.trackingStatus === 'pending') {
+        // يمكن تحويل pending إلى قيمة مقبولة أو تجاهلها
+        orderStatusToSend = 'on_way'; // أو أي قيمة افتراضية
+      }
+    }
     this.amountError = false;
 
     if (this.paymentStatus === 'paid' && !this.isPaymentAmountValid()) {
@@ -291,55 +305,56 @@ order_id:any ;
       this.DeliveredOrNot = false;
     }
     console.log(cashAmount,
-        creditAmount)
- if(this.amountError == false && this.loading==false){
-  this.loading=true
+      creditAmount)
+    if (this.amountError == false && this.loading == false) {
+      this.loading = true
       this.orderService
-      .updateInvoiceStatus(
-        this.orderNumber,
-        this.paymentStatus,
-        this.trackingStatus,
-        cashAmount,
-        creditAmount,
-        this.DeliveredOrNot,this.totalll
-      ).pipe(finalize(()=>this.loading=false))
-      .subscribe({
-        next: (response) => {
-          if (response.status === false && response.message) {
-            this.errr = response.message
-          }
-          if (response.status === false || response.errorData) {
-            // Handle validation or logical API errors
-            this.apiErrors = Object.values(
-              response.errorData as { [key: string]: string[] }
-            ).flat();
+        .updateInvoiceStatus(
+          this.orderNumber,
+          this.paymentStatus,
+          this.trackingStatus,
+          cashAmount,
+          creditAmount,
+          this.orderType === 'Delivery',
+          this.DeliveredOrNot, this.totalll
+        ).pipe(finalize(() => this.loading = false))
+        .subscribe({
+          next: (response) => {
+            if (response.status === false && response.message) {
+              this.errr = response.message
+            }
+            if (response.status === false || response.errorData) {
+              // Handle validation or logical API errors
+              this.apiErrors = Object.values(
+                response.errorData as { [key: string]: string[] }
+              ).flat();
 
-            return; // ❌ Do not continue
-          }
+              return; // ❌ Do not continue
+            }
 
 
-          // ✅ Success
-          this.apiErrors = [];
-          localStorage.removeItem('cash_value')
-          localStorage.removeItem('credit_value')
-          localStorage.setItem(
-            'pill_detail_data',
-            JSON.stringify(response.data)
-          );
-          this.showSuccessPillEditModal();
-          this.fetchPillsDetails(this.pillId);
-           window.location.reload();
-        },
-        error: (err) => {
-          console.error('خطأ في حفظ الطلب:', err);
-          this.apiErrors = ['حدث خطأ أثناء الاتصال بالخادم.'];
-        },
-      });
+            // ✅ Success
+            this.apiErrors = [];
+            localStorage.removeItem('cash_value')
+            localStorage.removeItem('credit_value')
+            localStorage.setItem(
+              'pill_detail_data',
+              JSON.stringify(response.data)
+            );
+            this.showSuccessPillEditModal();
+            this.fetchPillsDetails(this.pillId);
+            window.location.reload();
+          },
+          error: (err) => {
+            console.error('خطأ في حفظ الطلب:', err);
+            this.apiErrors = ['حدث خطأ أثناء الاتصال بالخادم.'];
+          },
+        });
+    }
   }
-}
-isFinal:boolean=false;
-  async printInvoice(isfinal:boolean) {
-    this.isFinal=isfinal
+  isFinal: boolean = false;
+  async printInvoice(isfinal: boolean) {
+    this.isFinal = isfinal
     if (!this.invoices?.length || !this.invoiceSummary?.length) {
       console.warn('Invoice data not ready.');
       return;
@@ -349,7 +364,7 @@ isFinal:boolean=false;
       const response = await this.printedInvoiceService
         .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
         .toPromise();
-console.log(response,'testttttt')
+      console.log(response, 'testttttt')
       console.log('Print invoice response:', response);
       const printContent = document.getElementById('printSection');
       if (!printContent) {
@@ -392,7 +407,7 @@ console.log(response,'testttttt')
       }
 
       document.body.innerHTML = originalHTML;
-       location.reload();
+      location.reload();
     } catch (error) {
       console.error('Error printing invoice:', error);
     }
@@ -469,7 +484,7 @@ console.log(response,'testttttt')
     const cash = Number(this.cash_value ?? 0);
     const credit = Number(this.credit_value ?? 0);
     const total = this.getInvoiceTotal();
-  return Number(((Number(cash) || 0) + (Number(credit) || 0)).toFixed(2)) >= total;
+    return Number(((Number(cash) || 0) + (Number(credit) || 0)).toFixed(2)) >= total;
   }
   show_delivered_only(aa: any) {
     if (aa == 'delivered') {
@@ -480,7 +495,7 @@ console.log(response,'testttttt')
 
 
   }
-    setCashAmount(value: number) {
+  setCashAmount(value: number) {
     this.cash_value = value;
     localStorage.setItem('cash_value', String(value));
   }
