@@ -2864,7 +2864,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const paymentStatus = this.selectedPaymentMethod === 'cash' ? this.selectedPaymentStatus : 'paid';
     console.log(this.selectedPaymentMethod, 'selectedPaymentMethod');
 
-    const orderData: any = this.prepareOrderData();
+    const orderData: any = await this.prepareOrderData();
 
     // معالجة عنوان التوصيل
     // let addressId = null;
@@ -2976,7 +2976,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         });
       }
       // التحقق من العناصر
-      if (!orderData.items.length) {
+      if (!orderData.items || !orderData.items.length) {
         this.showError('لا يمكن تقديم الطلب بدون عناصر صالحة.');
         return;
       }
