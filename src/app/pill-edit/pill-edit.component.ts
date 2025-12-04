@@ -150,22 +150,8 @@ order_id:any ;
         this.totalll=this.invoices[0].invoice_summary.total_price
         this.orderType = this.invoices[0].order_type;
 
-        const statusMap: { [key: string]: string } = {
-          completed: 'مكتمل',
-          pending: 'في انتظار الموافقة',
-          cancelled: 'ملغي',
-          packing: 'يتم تجهيزها',
-          readyForPickup: 'جاهز للاستلام',
-          on_way: 'في الطريق',
-          in_progress: 'يتم تحضير الطلب',
-          delivered: 'تم التوصيل',
-        };
-
         const trackingKey = this.invoices[0]?.['tracking-status'];
-       /*  if (trackingKey === 'completed') {
-          this.isShow = false;
-        } */
-        this.trackingStatus = statusMap[trackingKey] || trackingKey;
+        this.trackingStatus = trackingKey || '';
         this.orderNumber =Number( response.data.order_id);
         this.couponType = this.invoices[0].invoice_summary.coupon_type;
 
@@ -293,7 +279,7 @@ order_id:any ;
 
     this.amountError = false;
 
-    if (this.paymentStatus === 'paid' && !this.isPaymentAmountValid() && this.orderType !== 'Delivery') {
+    if (this.paymentStatus === 'paid' && !this.isPaymentAmountValid()) {
       this.amountError = true;
 
     }
