@@ -13,7 +13,7 @@ import {
   inject,
   OnDestroy,
 } from '@angular/core';
-import html2canvas from 'html2canvas';
+// import html2canvas from 'html2canvas';
 import { ProductsService } from '../services/products.service';
 import { PlaceOrderService } from '../services/place-order.service';
 import { FormsModule } from '@angular/forms';
@@ -132,6 +132,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   onholdOrdernote: any;
   table_number: any;
   table_id: any;
+  kitchenDrinks: any[] = [];
   coupon_Code: any;
   couponCode: any;
   couponTitle: any;
@@ -3115,9 +3116,21 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       if (this.successModal) {
         this.successModal.show();
-
+        this.printedInvoiceService
+              .printkitchen(orderData, this.orderedId)
+              .subscribe({
+                next: (response) => {
+                  console.log('Kitchen print successful:', response);
+                  if(response.status && response.drinks && response.drinks.length > 0){
+                    this.printInvoiceImage(response.drinks ,response.order);
+                  }
+                },
+                error: (error) => {
+                  console.error('Kitchen print error:', error);
+                }
+              });
         // Print invoice items without prices to network printer
-        this.printReceipt(cartItemsForPrint);
+        // this.printInvoiceImage();
       }
 
       setTimeout(() => {
@@ -3135,246 +3148,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
   }
 
-  // دالة للطباعة - تستخدم Canvas API مباشرة لإنشاء صورة من الفاتورة
-  async printReceipt(cartItems?: any[]) {
-    try {
-      // Create image from receipt using Canvas API
-      const imageData = await this.convertReceiptToImage(cartItems);
 
-      if (!imageData) {
-        alert('❌ لم يتم توليد الصورة.');
-        return;
-      }
-
-      // Send image to printer
-      if (!window.deviceAPI) {
-        alert('❌ Electron deviceAPI غير متوفر. يجب تشغيل التطبيق في Electron');
-        return;
-      }
-
-      const result = await window.deviceAPI.printImageToNetwork(imageData, '192.168.100.102', 9100);
-
-      if (result && result.success) {
-        console.log('✅ تم الطباعة بنجاح!');
-      } else {
-        const errorMsg = result?.error || 'خطأ غير معروف';
-        console.error('❌ فشل الطباعة:', errorMsg);
-        alert(`❌ فشل الطباعة: ${errorMsg}`);
-      }
-    } catch (error: any) {
-      console.error('Error in printReceipt:', error);
-      alert(`❌ خطأ في الطباعة: ${error.message || 'خطأ غير معروف'}`);
-    }
-  }
-
-  // Convert receipt to image using Canvas API (supports Arabic)
-  async convertReceiptToImage(cartItems?: any[]): Promise<string | null> {
-    try {
-      let items: any[] = [];
-
-      // Get items from different sources
-      if (cartItems && cartItems.length > 0) {
-        items = cartItems;
-      } else if (this.orderDetails && this.orderDetails[0] && this.orderDetails[0].length > 0) {
-        items = this.orderDetails[0];
-      } else if (this.cartItems && this.cartItems.length > 0) {
-        items = this.cartItems;
-      } else {
-        return null;
-      }
-
-      // Create canvas
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-
-      if (!ctx) {
-        throw new Error('فشل في إنشاء canvas');
-      }
-
-      // Set canvas size (thermal printer width: ~384px)
-      const width = 384;
-      const padding = 20;
-      const lineHeight = 25;
-      const fontSize = 16;
-      const titleFontSize = 24;
-
-      // Calculate height needed
-      let currentY = padding;
-      currentY += lineHeight * 2; // Header
-      currentY += lineHeight; // Branch name
-      currentY += lineHeight * 2; // Date/time
-      currentY += lineHeight; // Order type
-      currentY += lineHeight * 2; // Spacing
-
-      // Calculate height for items
-      items.forEach((item: any) => {
-        currentY += lineHeight; // Item name
-        if (item.size || item.selectedSize?.name) currentY += lineHeight;
-        const addons = item.addons || item.selectedAddons || [];
-        currentY += addons.length * lineHeight;
-        if (item.note) currentY += lineHeight;
-        currentY += lineHeight; // Quantity
-        currentY += lineHeight; // Divider
-      });
-
-      currentY += lineHeight * 3; // Footer
-      currentY += padding;
-
-      canvas.width = width;
-      canvas.height = currentY;
-
-      // Set canvas style
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.fillStyle = '#000000';
-
-      // Important: Set text properties for Arabic support
-      ctx.textAlign = 'right';
-      ctx.textBaseline = 'top';
-      ctx.direction = 'rtl';
-
-      // Use system fonts that support Arabic better
-      const arabicFonts = 'Segoe UI, Tahoma, Arial Unicode MS, Arial, DejaVu Sans, sans-serif';
-      ctx.font = `${fontSize}px ${arabicFonts}`;
-
-      currentY = padding;
-
-      // Helper function to draw Arabic text correctly
-      const drawArabicText = (text: string, x: number, y: number, font: string, align: 'right' | 'center' | 'left' = 'right') => {
-        ctx.save();
-        ctx.font = font;
-        ctx.textAlign = align;
-        ctx.textBaseline = 'top';
-        ctx.direction = 'rtl';
-
-        let textToDraw = String(text);
-        try {
-          textToDraw = textToDraw.normalize('NFC');
-        } catch (e) {
-          console.warn('Text normalization failed:', e);
-        }
-
-        ctx.fillText(textToDraw, x, y);
-        ctx.restore();
-      };
-
-      // Draw header
-      drawArabicText('الفاتورة', width / 2, currentY, `bold ${titleFontSize}px ${arabicFonts}`, 'center');
-      currentY += lineHeight * 2;
-
-      // Draw branch name
-      const branchName = this.branchDetails?.name ||
-                        (this.branchDetails && Array.isArray(this.branchDetails) && this.branchDetails[0]?.name) || '';
-      if (branchName) {
-        drawArabicText(branchName, width / 2, currentY, `bold ${fontSize}px ${arabicFonts}`, 'center');
-        currentY += lineHeight;
-      }
-
-      // Draw date and time
-      const now = new Date();
-      const dateStr = now.toLocaleDateString('ar-SA');
-      const timeStr = now.toLocaleTimeString('ar-SA');
-      drawArabicText(`التاريخ: ${dateStr}`, width - padding, currentY, `${fontSize}px ${arabicFonts}`);
-      currentY += lineHeight;
-      drawArabicText(`الوقت: ${timeStr}`, width - padding, currentY, `${fontSize}px ${arabicFonts}`);
-      currentY += lineHeight;
-
-      // Order type
-      if (this.selectedOrderType) {
-        drawArabicText(`نوع الطلب: ${this.selectedOrderType}`, width - padding, currentY, `${fontSize}px ${arabicFonts}`);
-        currentY += lineHeight;
-      }
-
-      // Table number
-      if (this.tableNumber) {
-        drawArabicText(`رقم الطاولة: ${this.tableNumber}`, width - padding, currentY, `${fontSize}px ${arabicFonts}`);
-        currentY += lineHeight;
-      }
-
-      currentY += lineHeight; // Spacing
-
-      // Draw divider
-      ctx.strokeStyle = '#000000';
-      ctx.beginPath();
-      ctx.moveTo(padding, currentY);
-      ctx.lineTo(width - padding, currentY);
-      ctx.stroke();
-      currentY += lineHeight;
-
-      // Draw items header
-      drawArabicText('الصنف', width - padding, currentY, `bold ${fontSize}px ${arabicFonts}`);
-      drawArabicText('الكمية', padding + 50, currentY, `bold ${fontSize}px ${arabicFonts}`);
-      currentY += lineHeight;
-
-      // Draw divider
-      ctx.beginPath();
-      ctx.moveTo(padding, currentY);
-      ctx.lineTo(width - padding, currentY);
-      ctx.stroke();
-      currentY += lineHeight;
-
-      // Draw items
-      items.forEach((item: any) => {
-        const dishName = item.dish_name || item.dish?.name || 'غير محدد';
-        const quantity = item.quantity || 1;
-        const size = item.size || item.selectedSize?.name;
-        const addons = item.addons || item.selectedAddons || [];
-        const note = item.note;
-
-        // Item name
-        drawArabicText(dishName, width - padding, currentY, `${fontSize}px ${arabicFonts}`);
-        // Quantity is a number, draw it normally
-        ctx.textAlign = 'left';
-        ctx.fillText(`${quantity}`, padding + 50, currentY);
-        ctx.textAlign = 'right';
-        currentY += lineHeight;
-
-        // Size
-        if (size) {
-          drawArabicText(`  الحجم: ${size}`, width - padding, currentY, `${fontSize}px ${arabicFonts}`);
-          currentY += lineHeight;
-        }
-
-        // Addons
-        addons.forEach((addon: any) => {
-          const addonName = addon.addon_name || addon.name;
-          if (addonName) {
-            drawArabicText(`  + ${addonName}`, width - padding, currentY, `${fontSize}px ${arabicFonts}`);
-            currentY += lineHeight;
-          }
-        });
-
-        // Note
-        if (note) {
-          drawArabicText(`  ملاحظات: ${note}`, width - padding, currentY, `${fontSize}px ${arabicFonts}`);
-          currentY += lineHeight;
-        }
-
-        // Divider
-        ctx.beginPath();
-        ctx.moveTo(padding, currentY);
-        ctx.lineTo(width - padding, currentY);
-        ctx.stroke();
-        currentY += lineHeight;
-      });
-
-      // Draw footer
-      currentY += lineHeight;
-      ctx.beginPath();
-      ctx.moveTo(padding, currentY);
-      ctx.lineTo(width - padding, currentY);
-      ctx.stroke();
-      currentY += lineHeight * 2;
-
-      drawArabicText('شكراً لزيارتكم', width / 2, currentY, `bold ${fontSize}px ${arabicFonts}`, 'center');
-
-      // Convert canvas to image
-      return canvas.toDataURL('image/png');
-    } catch (error: any) {
-      console.error('Error converting receipt to image:', error);
-      return null;
-    }
-  }
 
   // دالة مساعدة بسيطة لعرض الأخطاء
   private showError(message: string): void {
@@ -3801,12 +3575,270 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   //     });
   // }
 
+  async printInvoiceImage(data?: any[], order?: any) {
+    try {
+      // Store drinks data for template binding
+      this.kitchenDrinks = data || [];
 
+      console.log(this.kitchenDrinks, 'kitchenDrinks');
+
+      // Validate data exists
+      if (!this.kitchenDrinks || this.kitchenDrinks.length === 0) {
+        console.warn('No drinks data to print');
+        return;
+      }
+
+      // Generate complete HTML document like PHP function
+      const completeHTML = this.formatTable(this.kitchenDrinks, order);
+
+      // Create a hidden iframe for printing
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      document.body.appendChild(iframe);
+
+      // Write HTML to iframe
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!iframeDoc) {
+        console.error('Failed to access iframe document');
+        document.body.removeChild(iframe);
+        return;
+      }
+
+      iframeDoc.open();
+      iframeDoc.write(completeHTML);
+      iframeDoc.close();
+
+      // Wait for content to load
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // Print from iframe
+      iframe.contentWindow?.print();
+
+      // Remove iframe after printing
+      setTimeout(() => {
+        if (iframe.parentNode) {
+          document.body.removeChild(iframe);
+        }
+      }, 1000);
+    } catch (error) {
+      console.error('Error printing invoice image:', error);
+    }
+  }
 
   hasDeliveryOrDineIn(): boolean {
     return this.invoices?.some((invoice: { order_type: string }) =>
       ['Delivery', 'Dine-in'].includes(invoice.order_type)
     );
+  }
+
+  getAddonsNames(addons: any[]): string {
+    if (!addons || addons.length === 0) {
+      return '';
+    }
+    return addons.map((a: any) => a.name || '').filter((name: string) => name).join(', ');
+  }
+
+  formatTable(items: any[], order?: any): string {
+    if (!items || items.length === 0) {
+      return '<!DOCTYPE html><html><body>No items to print</body></html>';
+    }
+
+    // Get order information
+    const orderNumber = order?.order_number || 'N/A';
+    const tableNumber = order?.table_id || 'N/A';
+    const orderType = order?.type || 'N/A';
+    const orderStatus = order?.status || 'N/A';
+    const orderCreatedAt = order?.date && order?.time ? `${order.date}   ${order.time}` : 'N/A';
+
+    // Calculate height
+    const baseHeight = 200;
+    const itemHeight = 100;
+    const headerHeight = 100;
+    const calculatedHeight = baseHeight + headerHeight + (items.length * itemHeight);
+    const finalHeight = Math.max(400, calculatedHeight + 200);
+
+    // Escape HTML to prevent XSS
+    const escapeHtml = (text: string): string => {
+      const map: { [key: string]: string } = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return text ? text.replace(/[&<>"']/g, (m) => map[m]) : '';
+    };
+
+    // Start HTML document
+    let html = `<!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }
+                html, body {
+                    font-family: Arial, "Segoe UI", Tahoma, sans-serif;
+                    padding: 15px;
+                    background: white;
+                    width: 576px;
+                    font-size: 30px;
+                    min-height: ${finalHeight}px;
+                    height: auto;
+                    overflow: visible;
+                    margin: 0;
+                }
+                .content-wrapper {
+                    width: 576px;
+                    min-height: 100px;
+                    background: white;
+                    overflow: visible;
+                }
+                table {
+                    width: 100%;
+                    border-collapse: collapse;
+                    margin: 10px auto 0;
+                    background: white;
+                }
+                th {
+                    background-color: white;
+                    color: black;
+                    padding: 15px 10px;
+                    text-align: center;
+                    border: 5px solid #000;
+                    font-weight: bold;
+                    font-size:30px;
+                }
+                td {
+                    padding: 12px 10px;
+                    border: 5px solid #000;
+                    text-align: center;
+                    font-size: 30px;
+                }
+                .item-number {
+                    width: 50px;
+                    font-weight: bold;
+                }
+                .item-name {
+                    text-align: right;
+                    font-weight: bold;
+                }
+                .item-quantity {
+                    width: 80px;
+                    font-weight: bold;
+                }
+                .item-details {
+                    font-size: 16px;
+                    color: #333;
+                    margin-top: 5px;
+                    display: block;
+                }
+                .size, .addons {
+                    display: block;
+                    margin-top: 3px;
+                    font-size: 30px;
+                }
+                .logo-container {
+                    text-align: center;
+                    margin-bottom: 20px;
+                    padding: 10px 0;
+                }
+                .logo-container img {
+                    max-width: 300px;
+                    height: auto;
+                    display: block;
+                    margin: 0 auto;
+                }
+                .order-details {
+                    margin-bottom: 20px;
+                }
+                .order-details p {
+                    margin: 5px 0;
+                    font-size: 30px;
+                }
+            </style>
+        </head>
+        <body style="height: ${finalHeight}px; min-height: ${finalHeight}px;">
+            <div class="content-wrapper" style="height: ${finalHeight}px; min-height: ${finalHeight}px;">
+            <div class="logo-container">`;
+
+    // Add logo (using asset path - in browser this will work)
+    html += '<img src="assets/images/logo-with-white-bg.png" alt="Logo" style="max-width: 100%; height: auto; display: block;" />';
+
+    html += `</div>
+        <div class="order-details">
+            <p>رقم الطلب: ${escapeHtml(String(orderNumber))}</p>
+            <p>رقم الطاولة: ${escapeHtml(String(tableNumber))}</p>
+            <p>نوع الطلب: ${escapeHtml(String(orderType))}</p>
+            <p>حالة الطلب: ${escapeHtml(String(orderStatus))}</p>
+            <p>تاريخ الطلب: ${escapeHtml(String(orderCreatedAt))}</p>
+        </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="item-number">ت</th>
+                        <th class="item-name">اسم الطبق</th>
+                        <th class="item-quantity">الكمية</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+    let itemNumber = 1;
+    items.forEach((item: any) => {
+      const name = escapeHtml(item.name || '-');
+      const name_en = escapeHtml(item.name_en || '-');
+      const note = escapeHtml(item.note || '-');
+      const quantity = escapeHtml(String(item.quantity || '-'));
+      const size = item.size ? escapeHtml(String(item.size)) : null;
+
+      let addonNames = '';
+      if (item.addons && item.addons.length > 0) {
+        const addons = item.addons;
+        addonNames = addons
+          .map((a: any) => escapeHtml(a.name || ''))
+          .filter((name: string) => name)
+          .join(', ');
+      }
+
+      html += '<tr>';
+      html += `<td class="item-number">${itemNumber}</td>`;
+      html += `<td class="item-name">${name}`;
+      html += `<span class="size item-details">${name_en}</span>`;
+
+      if (size) {
+        html += `<span class="size item-details">الحجم: ${size}</span>`;
+      }
+
+      if (addonNames) {
+        html += `<span class="addons item-details">الإضافات: ${addonNames}</span>`;
+      }
+      if (note && note !== '-') {
+        html += `<span class="size item-details">الملاحظات: ${note}</span>`;
+      }
+
+      html += '</td>';
+      html += `<td class="item-quantity">${quantity}</td>`;
+      html += '</tr>';
+
+      itemNumber++;
+    });
+
+    html += `</tbody>
+                    </table>
+            </div>
+                </body>
+                </html>`;
+
+    return html;
   }
   hasDineInOrder(): boolean {
     return this.invoices?.some(
