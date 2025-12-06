@@ -875,3 +875,110 @@ input[type=number]::-webkit-outer-spin-button {
 .text-danger {
     color: #dc3545 !important;
 }
+
+/* Kitchen Print Section Styles */
+.printkitchen-wrapper {
+    font-family: Arial, "Segoe UI", Tahoma, sans-serif;
+    padding: 15px;
+    background: white;
+    width: 576px;
+    font-size: 30px;
+    min-height: 100px;
+    height: auto;
+    overflow: visible;
+    margin: 0;
+    direction: rtl;
+}
+
+.printkitchen-wrapper .content-wrapper {
+    width: 576px;
+    min-height: 100px;
+    background: white;
+    overflow: visible;
+}
+
+.printkitchen-wrapper .logo-container {
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 10px 0;
+}
+
+.printkitchen-wrapper .logo-container img {
+    max-width: 300px;
+    height: auto;
+    display: block;
+    margin: 0 auto;
+}
+
+.printkitchen-wrapper .order-details {
+    margin-bottom: 20px;
+}
+
+.printkitchen-wrapper .order-details p {
+    margin: 5px 0;
+    font-size: 30px;
+}
+
+.printkitchen-wrapper table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 10px auto 0;
+    background: white;
+}
+
+.printkitchen-wrapper th {
+    background-color: white;
+    color: black;
+    padding: 15px 10px;
+    text-align: center;
+    border: 5px solid #000;
+    font-weight: bold;
+    font-size: 30px;
+}
+
+.printkitchen-wrapper td {
+    padding: 12px 10px;
+    border: 5px solid #000;
+    text-align: center;
+    font-size: 30px;
+}
+
+.printkitchen-wrapper .item-number {
+    width: 50px;
+    font-weight: bold;
+}
+
+.printkitchen-wrapper .item-name {
+    text-align: right;
+    font-weight: bold;
+}
+
+.printkitchen-wrapper .item-quantity {
+    width: 80px;
+    font-weight: bold;
+}
+
+.printkitchen-wrapper .item-details {
+    font-size: 16px;
+    color: #333;
+    margin-top: 5px;
+    display: block;
+}
+
+.printkitchen-wrapper .size,
+.printkitchen-wrapper .addons {
+    display: block;
+    margin-top: 3px;
+    font-size: 30px;
+}
+
+@media print {
+    .printkitchen-wrapper {
+        width: 576px;
+        font-size: 30px;
+    }
+
+    .printkitchen-wrapper .content-wrapper {
+        width: 576px;
+    }
+}
