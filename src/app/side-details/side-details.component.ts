@@ -13,7 +13,7 @@ import {
   inject,
   OnDestroy,
 } from '@angular/core';
-// import html2canvas from 'html2canvas';
+import html2canvas from 'html2canvas';
 import { ProductsService } from '../services/products.service';
 import { PlaceOrderService } from '../services/place-order.service';
 import { FormsModule } from '@angular/forms';
@@ -3595,14 +3595,17 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       }
       // Generate complete HTML document like PHP function
       const completeHTML = this.formatTable(this.kitchenDrinks, order);
-      // Create a hidden iframe for printing
+      // Create a hidden iframe for rendering HTML
+      // XP-80C: 80mm paper width = 640px at 203 DPI
+      const printerWidth = 640; // 80mm at 203 DPI for XP-80C
       const iframe = document.createElement('iframe');
       iframe.style.position = 'fixed';
       iframe.style.right = '0';
       iframe.style.bottom = '0';
-      iframe.style.width = '0';
-      iframe.style.height = '0';
+      iframe.style.width = `${printerWidth}px`;
+      iframe.style.height = '800px'; // Initial height, will adjust
       iframe.style.border = '0';
+      iframe.style.visibility = 'hidden';
       document.body.appendChild(iframe);
 
       // Write HTML to iframe
@@ -3617,20 +3620,102 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       iframeDoc.write(completeHTML);
       iframeDoc.close();
 
-      // Wait for content to load
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // Wait for content and images to load
+      await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Print from iframe
-      iframe.contentWindow?.print();
+      // Wait for all images to load
+      const iframeWindow = iframe.contentWindow;
+      if (iframeWindow) {
+        const images = iframeDoc.querySelectorAll('img');
+        const imagePromises = Array.from(images).map((img) => {
+          if (img.complete) {
+            return Promise.resolve();
+          }
+          return new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve; // Continue even if image fails
+          });
+        });
+        await Promise.all(imagePromises);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
 
-      // Remove iframe after printing
-      setTimeout(() => {
-        if (iframe.parentNode) {
-          document.body.removeChild(iframe);
-        }
-      }, 1000);
+      // Convert iframe body to PNG using html2canvas
+      const bodyElement = iframeDoc.body;
+      if (!bodyElement) {
+        console.error('Failed to access iframe body');
+        document.body.removeChild(iframe);
+        return;
+      }
+
+      // XP-80C specifications: 80mm width = 640px at 203 DPI
+      // Calculate exact dimensions for the printer
+      const printerWidthPx = 640; // 80mm at 203 DPI for XP-80C
+      const contentHeight = bodyElement.scrollHeight;
+
+      // Create canvas with exact printer dimensions (scale 1 = 1:1 pixel ratio)
+      const canvas = await html2canvas(bodyElement, {
+        width: printerWidthPx,
+        height: contentHeight,
+        scale: 1, // Scale 1 ensures exact pixel dimensions match printer
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#ffffff',
+        logging: false,
+      });
+
+      // Create final canvas with exact XP-80C dimensions (640px width)
+      const finalCanvas = document.createElement('canvas');
+      finalCanvas.width = printerWidthPx; // Exactly 640px = 80mm at 203 DPI
+      finalCanvas.height = Math.max(canvas.height, contentHeight);
+
+      const ctx = finalCanvas.getContext('2d');
+      if (ctx) {
+        // Fill with white background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+        // Draw the captured content, scaling to exact printer width
+        ctx.drawImage(canvas, 0, 0, printerWidthPx, finalCanvas.height);
+      }
+
+      // Convert to PNG with exact XP-80C dimensions
+      const pngDataUrl = finalCanvas.toDataURL('image/png', 1.0);
+      console.log(`✅ PNG Image generated for XP-80C - Width: ${finalCanvas.width}px (80mm), Height: ${finalCanvas.height}px`);
+
+      // You can now use this PNG data URL for:
+      // 1. Saving to file
+      // 2. Sending to network printer
+      // 3. Displaying in an image element
+      // 4. Downloading
+
+      // Example: Create a download link (optional, for testing)
+      const link = document.createElement('a');
+      link.download = `kitchen-print-${Date.now()}.png`;
+      link.href = pngDataUrl;
+      link.click();
+
+      // Send image to network printer
+      // Get printer settings from localStorage or use defaults
+      const printerIP = '192.168.100.102';
+      const printerPort = 9100;
+
+      try {
+        await this.printImageToNetworkPrinter(pngDataUrl, printerIP, printerPort);
+        console.log('✅ Image sent to network printer successfully');
+      } catch (error) {
+        console.error('❌ Error sending image to network printer:', error);
+      }
+
+      // Remove iframe after conversion
+      if (iframe.parentNode) {
+        document.body.removeChild(iframe);
+      }
+
+      // Return the PNG data URL for further use
+      return pngDataUrl;
     } catch (error) {
       console.error('Error printing invoice image:', error);
+      throw error;
     }
   }
 
@@ -3658,6 +3743,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const orderType = order?.type || 'N/A';
     const orderStatus = order?.status || 'N/A';
     const orderCreatedAt = order?.date && order?.time ? `${order.date}   ${order.time}` : 'N/A';
+
+    // XP-80C: 80mm paper width = 640px at 203 DPI
+    const printerWidth = 640;
 
     // Calculate height
     const baseHeight = 200;
@@ -3692,82 +3780,84 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                 }
                 html, body {
                     font-family: Arial, "Segoe UI", Tahoma, sans-serif;
-                    padding: 15px;
+                    padding: 10px;
                     background: white;
-                    width: 576px;
-                    font-size: 30px;
+                    width: ${printerWidth}px;
+                    font-size: 24px;
                     min-height: ${finalHeight}px;
                     height: auto;
                     overflow: visible;
                     margin: 0;
                 }
                 .content-wrapper {
-                    width: 576px;
+                    width: ${printerWidth}px;
                     min-height: 100px;
                     background: white;
                     overflow: visible;
                 }
                 table {
-                    width: 100%;
+                    width: 95%;
                     border-collapse: collapse;
                     margin: 10px auto 0;
                     background: white;
+                    padding: 20px;
                 }
                 th {
                     background-color: white;
                     color: black;
-                    padding: 15px 10px;
+                    padding: 10px 8px;
                     text-align: center;
-                    border: 5px solid #000;
+                    border: 3px solid #000;
                     font-weight: bold;
-                    font-size:30px;
+                    font-size: 22px;
                 }
                 td {
-                    padding: 12px 10px;
-                    border: 5px solid #000;
+                    padding: 10px 8px;
+                    border: 3px solid #000;
                     text-align: center;
-                    font-size: 30px;
+                    font-size: 22px;
                 }
                 .item-number {
-                    width: 50px;
+                    width: 40px;
                     font-weight: bold;
                 }
                 .item-name {
+                    width: 100px;
                     text-align: right;
                     font-weight: bold;
                 }
                 .item-quantity {
-                    width: 80px;
+                    width: 60px;
                     font-weight: bold;
                 }
                 .item-details {
-                    font-size: 16px;
+                    font-size: 18px;
                     color: #333;
-                    margin-top: 5px;
+                    margin-top: 3px;
                     display: block;
                 }
                 .size, .addons {
                     display: block;
                     margin-top: 3px;
-                    font-size: 30px;
+                    font-size: 20px;
                 }
                 .logo-container {
                     text-align: center;
-                    margin-bottom: 20px;
-                    padding: 10px 0;
+                    margin-bottom: 15px;
+                    padding: 8px 0;
                 }
                 .logo-container img {
-                    max-width: 300px;
+                    max-width: 250px;
                     height: auto;
                     display: block;
                     margin: 0 auto;
                 }
                 .order-details {
-                    margin-bottom: 20px;
+                    margin-bottom: 15px;
                 }
                 .order-details p {
-                    margin: 5px 0;
-                    font-size: 30px;
+                    margin: 4px 0;
+                    font-size: 20px;
                 }
             </style>
         </head>
@@ -5444,124 +5534,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     );
   }
 
-  // Test printer connection
-  async testPrinterConnection(ip: string, port: number = 9100): Promise<boolean> {
-    try {
-      if (!window.deviceAPI) {
-        console.error('❌ Electron deviceAPI not available.');
-        return false;
-      }
-
-      console.log(`🔍 Testing connection to printer at ${ip}:${port}...`);
-      const result = await window.deviceAPI.testPrinterConnection(ip, port);
-
-      if (result.success) {
-        console.log(`✅ ${result.message || 'Connection successful'}`);
-        return true;
-      } else {
-        console.error(`❌ Connection test failed: ${result.error}`);
-        return false;
-      }
-    } catch (error: any) {
-      console.error('❌ Connection test error:', error.message || error);
-      return false;
-    }
-  }
-
-  // Create HTML receipt element
-  createReceiptHTML(cartItems?: any[]): string {
-    let items: any[] = [];
-
-    // Try to get items from different sources
-    if (cartItems && cartItems.length > 0) {
-      items = cartItems;
-    } else if (this.orderDetails && this.orderDetails[0] && this.orderDetails[0].length > 0) {
-      items = this.orderDetails[0];
-    } else if (this.cartItems && this.cartItems.length > 0) {
-      items = this.cartItems;
-    } else {
-      return '';
-    }
-
-    // Branch name
-    const branchName = this.branchDetails?.name ||
-                      (this.branchDetails && Array.isArray(this.branchDetails) && this.branchDetails[0]?.name) ||
-                      '';
-
-    // Date and time
-    const now = new Date();
-    const dateStr = now.toLocaleDateString('ar-SA');
-    const timeStr = now.toLocaleTimeString('ar-SA');
-
-    // Build items HTML
-    let itemsHTML = '';
-    items.forEach((item: any) => {
-      const dishName = item.dish_name || item.dish?.name || 'غير محدد';
-      const size = item.size || item.selectedSize?.name;
-      const quantity = item.quantity || 1;
-      const addons = item.addons || item.selectedAddons || [];
-      const note = item.note;
-
-      itemsHTML += `
-        <div class="receipt-item">
-          <div class="item-name">${dishName}</div>
-          ${size ? `<div class="item-detail">الحجم: ${size}</div>` : ''}
-          ${addons.length > 0 ? addons.map((addon: any) =>
-            `<div class="item-detail">+ ${addon.addon_name || addon.name}</div>`
-          ).join('') : ''}
-          ${note ? `<div class="item-detail">ملاحظات: ${note}</div>` : ''}
-          <div class="item-quantity">الكمية: ${quantity}</div>
-        </div>
-        <div class="receipt-divider"></div>
-      `;
-    });
-
-    return `
-      <div class="receipt-container" dir="rtl" style="
-        font-family: 'Arial', 'Tahoma', sans-serif;
-        width: 300px;
-        padding: 20px;
-        background: white;
-        color: black;
-        direction: rtl;
-        text-align: right;
-      ">
-        <div class="receipt-header" style="text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px;">
-          <h2 style="margin: 0; font-size: 24px; font-weight: bold;">الفاتورة</h2>
-        </div>
-
-        ${branchName ? `<div style="text-align: center; margin-bottom: 10px; font-weight: bold; font-size: 18px;">${branchName}</div>` : ''}
-
-        <div class="receipt-info" style="margin-bottom: 15px; font-size: 14px;">
-          <div>التاريخ: ${dateStr}</div>
-          <div>الوقت: ${timeStr}</div>
-          ${this.selectedOrderType ? `<div>نوع الطلب: ${this.selectedOrderType}</div>` : ''}
-          ${this.tableNumber ? `<div>رقم الطاولة: ${this.tableNumber}</div>` : ''}
-        </div>
-
-        <div class="receipt-divider" style="border-top: 1px solid #000; margin: 15px 0;"></div>
-
-        <div class="receipt-items" style="margin-bottom: 20px;">
-          <div style="font-weight: bold; margin-bottom: 10px; border-bottom: 1px solid #000; padding-bottom: 5px;">
-            <span style="display: inline-block; width: 60%;">الصنف</span>
-            <span style="display: inline-block; width: 40%; text-align: center;">الكمية</span>
-          </div>
-          ${itemsHTML}
-        </div>
-
-        <div class="receipt-divider" style="border-top: 1px solid #000; margin: 15px 0;"></div>
-
-        <div class="receipt-footer" style="text-align: center; margin-top: 20px; padding-top: 10px; border-top: 2px solid #000;">
-          <div style="font-weight: bold; font-size: 16px;">شكراً لزيارتكم</div>
-        </div>
-      </div>
-    `;
-  }
 
 
-
-  // Print to network printer
-  async printToNetworkPrinter(text: string, ip: string, port: number = 9100): Promise<void> {
+  /**
+   * Print PNG image to network printer (XP-80C)
+   * @param imageDataUrl - PNG image as data URL (base64)
+   * @param ip - Printer IP address
+   * @param port - Printer port (default: 9100)
+   */
+  async printImageToNetworkPrinter(imageDataUrl: string, ip: string, port: number = 9100): Promise<void> {
     try {
       if (!window.deviceAPI) {
         console.error('❌ Electron deviceAPI not available. This function only works in Electron.');
@@ -5569,31 +5550,45 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         return;
       }
 
-      console.log(`🖨️ Attempting to print to ${ip}:${port}...`);
-      console.log(`📝 Text to print: "${text}"`);
+      console.log(`🖨️ Attempting to print image to ${ip}:${port}...`);
+      console.log(`📷 Image data URL length: ${imageDataUrl.length} characters`);
 
-      // Optional: Test connection first (commented out for faster printing)
-      // const connectionOk = await this.testPrinterConnection(ip, port);
-      // if (!connectionOk) {
-      //   alert(`لا يمكن الاتصال بالطابعة في ${ip}:${port}. يرجى التحقق من إعدادات الطابعة.`);
-      //   return;
-      // }
+      // Extract base64 data from data URL
+      const base64Data = imageDataUrl.split(',')[1] || imageDataUrl;
 
-      const result = await window.deviceAPI.printToNetwork(text, ip, port);
+      // Check if deviceAPI has a method for printing images
+      // If not, we'll convert the image to ESC/POS commands or send as raw data
+      if (window.deviceAPI.printImageToNetwork) {
+        // Use dedicated image printing method if available
+        const result = await window.deviceAPI.printImageToNetwork(base64Data, ip, port);
 
-      if (result.success) {
-        console.log(`✅ Print successful! Bytes sent: ${result.bytesSent || 'unknown'}`);
-        // Optionally show success message
-        // this.successMessage = 'تم الطباعة بنجاح';
+        if (result.success) {
+          console.log(`✅ Image print successful!`);
+        } else {
+          const errorMsg = result.error || 'Unknown error';
+          console.error(`❌ Image print failed: ${errorMsg}`);
+          throw new Error(errorMsg);
+        }
+      } else if (window.deviceAPI.printToNetwork) {
+        // Fallback: Try sending image data as base64 string
+        // Note: This may need ESC/POS conversion depending on printer support
+        console.log('⚠️ Using printToNetwork for image (may need ESC/POS conversion)');
+        const result = await window.deviceAPI.printToNetwork(base64Data, ip, port);
+
+        if (result.success) {
+          console.log(`✅ Image sent successfully!`);
+        } else {
+          const errorMsg = result.error || 'Unknown error';
+          console.error(`❌ Image print failed: ${errorMsg}`);
+          throw new Error(errorMsg);
+        }
       } else {
-        const errorMsg = result.error || 'Unknown error';
-        console.error(`❌ Print failed: ${errorMsg}`);
-        alert(`فشلت الطباعة: ${errorMsg}\n\nيرجى التحقق من:\n- الطابعة متصلة بالشبكة\n- عنوان IP صحيح: ${ip}\n- المنفذ ${port} مفتوح`);
+        throw new Error('No printing method available in deviceAPI');
       }
     } catch (error: any) {
       const errorMessage = error.message || error.toString() || 'Unknown error';
-      console.error('❌ Error printing to network printer:', errorMessage);
-      alert(`خطأ في الطباعة: ${errorMessage}\n\nيرجى التحقق من اتصال الطابعة بالشبكة.`);
+      console.error('❌ Error printing image to network printer:', errorMessage);
+      throw new Error(`خطأ في طباعة الصورة: ${errorMessage}`);
     }
   }
 }
