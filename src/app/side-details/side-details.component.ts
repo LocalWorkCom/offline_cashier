@@ -3120,9 +3120,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               .printkitchen(orderData, this.orderedId)
               .subscribe({
                 next: (response) => {
-                  console.log('Kitchen print successful:', response);
+                  // console.log('Kitchen print successful:', response);
                   if(response.status && response.drinks && response.drinks.length > 0){
                     this.printInvoiceImage(response.drinks ,response.order);
+                  }
+                 if(response.status && response.fish && response.fish.length > 0){
+                    this.printInvoiceImage(response.fish ,response.order);
+                  }
+                  if(response.status && response.grills && response.grills.length > 0){
+                    this.printInvoiceImage(response.grills ,response.order);
                   }
                 },
                 error: (error) => {
@@ -3587,10 +3593,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         console.warn('No drinks data to print');
         return;
       }
-
       // Generate complete HTML document like PHP function
       const completeHTML = this.formatTable(this.kitchenDrinks, order);
-
       // Create a hidden iframe for printing
       const iframe = document.createElement('iframe');
       iframe.style.position = 'fixed';
