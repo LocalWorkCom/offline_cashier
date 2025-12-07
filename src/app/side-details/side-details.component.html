@@ -778,7 +778,7 @@ selectedOrderType === 'talabat') {
               <input type="number" class="form-control" id="cashAmountInput"
                 [(ngModel)]="cashAmountMixed"
                 [ngModelOptions]="{standalone: true}"
-                placeholder="المبلغ المدفوع كاش" min="0" 
+                placeholder="المبلغ المدفوع كاش" min="0"
                 (change)="openMixedPaymentTipModal(billAmount, tipModalContent)">
 
               <!-- رسالة خطأ للكاش -->
@@ -795,7 +795,7 @@ selectedOrderType === 'talabat') {
               <input type="number" class="form-control" id="creditAmountInput"
                 [(ngModel)]="creditAmountMixed"
                 [ngModelOptions]="{standalone: true}"
-                placeholder="المبلغ المدفوع فيزا" min="0" 
+                placeholder="المبلغ المدفوع فيزا" min="0"
                 (change)="openMixedPaymentTipModal(billAmount, tipModalContent)">
 
               <!-- رسالة خطأ للفيزا -->
@@ -1290,6 +1290,10 @@ selectedOrderType === 'talabat') {
     </div>
   </div>
 </div>
+
+<!-- Kitchen Print Section -->
+<div id="printkitchen" class="d-none"></div>
+
 <!-- Coupon Modal -->
 <div class="modal fade" id="couponModal" tabindex="-1"
   aria-labelledby="couponModalLabel" aria-hidden="true">
@@ -1665,3 +1669,6 @@ selectedOrderType === 'talabat') {
     <p>نتمنى لكم يومًا سعيدًا!</p>
   </div>
 </div> -->
+
+
+
