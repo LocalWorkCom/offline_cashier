@@ -39,7 +39,8 @@ export class PillDetailsService {
     credit?: number,
     DeliveredOrNot?: boolean,
     total?: any,
-    tip?: any
+    tip?: any,
+    referenceNumber?: string
   ): Observable<any> {
     const token = localStorage.getItem('authToken');
     if (!token) {
@@ -85,6 +86,11 @@ export class PillDetailsService {
       // تأكد من أن القيم غير سالبة
       payload.cash_amount = Math.max(0, cash || 0);
       payload.credit_amount = Math.max(0, credit || 0);
+      
+      // إضافة رقم المرجع إذا كان موجودًا
+      if (referenceNumber && referenceNumber.trim()) {
+        payload.reference_number = referenceNumber.trim();
+      }
       
       // تحقق من أن المبلغين ليسا صفر معًا إذا كانت الفاتورة مدفوعة
       if (payload.cash_amount === 0 && payload.credit_amount === 0) {

@@ -55,6 +55,9 @@ export class PillEditComponent {
   credit_value: number | null = null;
   amountError: boolean = false;
   Delivery_show_delivered_only: boolean = false;
+  referenceNumber: any;
+  referenceNumberTouched: boolean = false;
+  formSubmitted: boolean = false;
 
   constructor(
     private pillDetailsService: PillDetailsService,
@@ -92,6 +95,9 @@ export class PillEditComponent {
 
     this.fetchTrackingStatus();
     // this.getNoteFromLocalStorage();
+    this.referenceNumber = '';
+    this.referenceNumberTouched = false;
+    this.formSubmitted = false;
     this.cashier_machine_id = Number(
       localStorage.getItem('cashier_machine_id')
     );
@@ -297,8 +303,16 @@ export class PillEditComponent {
       this.amountError = true;
 
     }
-    var cashAmount = this.cash_value != null ? this.cash_value : 0;
+    
+    // التحقق من رقم المرجع للفيزا
     var creditAmount = this.credit_value != null ? this.credit_value : 0;
+    if (this.paymentStatus === 'paid' && creditAmount > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
+      this.referenceNumberTouched = true;
+      alert('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
+      return;
+    }
+    
+    var cashAmount = this.cash_value != null ? this.cash_value : 0;
     if (this.orderType == 'Delivery') {
       this.DeliveredOrNot = true;
     } else {
@@ -315,8 +329,10 @@ export class PillEditComponent {
           this.trackingStatus,
           cashAmount,
           creditAmount,
-          this.orderType === 'Delivery',
-          this.DeliveredOrNot, this.totalll
+          this.DeliveredOrNot,
+          this.totalll,
+          undefined,
+          this.referenceNumber
         ).pipe(finalize(() => this.loading = false))
         .subscribe({
           next: (response) => {
@@ -530,5 +546,15 @@ export class PillEditComponent {
 
   onPrintButtonClick() {
     this.confirmationDialog.confirm();
+  }
+
+  // دالة للتحقق من أن رقم المرجع يحتوي على أرقام فقط
+  onReferenceNumberInput(event: any): void {
+    const value = event.target.value;
+    // إزالة أي حرف غير رقمي
+    const numericValue = value.replace(/[^0-9]/g, '');
+    this.referenceNumber = numericValue;
+    // تحديث قيمة الحقل
+    event.target.value = numericValue;
   }
 }
