@@ -247,6 +247,27 @@
               name="credit_value" (ngModelChange)="setCreditAmount($event)" />
           </div>
         </div>
+        @if(this.credit_value && this.credit_value > 0){
+          <hr>
+          <div
+            class="mb-3 row mx-0 justify-content-center align-items-center">
+            <div class="col-4 text-center">
+              <label class="form-check-label w-100" for="reference_number">
+                رقم المرجع
+              </label>
+            </div>
+            <div class="col-8">
+              <input type="text" id="reference_number"
+                class="form-control" [(ngModel)]="referenceNumber"
+                name="referenceNumber" required #ref="ngModel" 
+                pattern="[0-9]*" (input)="onReferenceNumberInput($event)" />
+              <div *ngIf="ref.invalid && formSubmitted"
+                class="text-danger">
+                المرجو إدخال رقم المرجع للفيزا.
+              </div>
+            </div>
+          </div>
+        }
         @if (amountError) {
         <div class="alert alert-danger text-center" role="alert">
           يجب أن يكون مجموع الكاش والفيزا مساويًا لقيمة الطلب: {{ invoices[0].invoice_summary.total_price}} {{
