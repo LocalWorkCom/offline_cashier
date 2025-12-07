@@ -13,6 +13,7 @@ import {
   inject,
   OnDestroy,
 } from '@angular/core';
+import html2canvas from 'html2canvas';
 import { ProductsService } from '../services/products.service';
 import { PlaceOrderService } from '../services/place-order.service';
 import { FormsModule } from '@angular/forms';
@@ -131,6 +132,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   onholdOrdernote: any;
   table_number: any;
   table_id: any;
+  kitchenDrinks: any[] = [];
   coupon_Code: any;
   couponCode: any;
   couponTitle: any;
@@ -3101,6 +3103,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
       localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
 
+      // Save cart items for printing before clearing
+      const cartItemsForPrint = JSON.parse(JSON.stringify(this.cartItems));
+      console.log(cartItemsForPrint, 'cartItemsForPrint');
+
       this.clearCart();
       this.resetLocalStorage();
       this.resetAddress();
@@ -3110,6 +3116,27 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       if (this.successModal) {
         this.successModal.show();
+        this.printedInvoiceService
+              .printkitchen(orderData, this.orderedId)
+              .subscribe({
+                next: (response) => {
+                  // console.log('Kitchen print successful:', response);
+                  if(response.status && response.drinks && response.drinks.length > 0){
+                    this.printInvoiceImage(response.drinks ,response.order);
+                  }
+                 if(response.status && response.fish && response.fish.length > 0){
+                    this.printInvoiceImage(response.fish ,response.order);
+                  }
+                  if(response.status && response.grills && response.grills.length > 0){
+                    this.printInvoiceImage(response.grills ,response.order);
+                  }
+                },
+                error: (error) => {
+                  console.error('Kitchen print error:', error);
+                }
+              });
+        // Print invoice items without prices to network printer
+        // this.printInvoiceImage();
       }
 
       setTimeout(() => {
@@ -3126,6 +3153,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.loading = false;
     }
   }
+
+
 
   // دالة مساعدة بسيطة لعرض الأخطاء
   private showError(message: string): void {
@@ -3552,12 +3581,358 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   //     });
   // }
 
+  async printInvoiceImage(data?: any[], order?: any) {
+    try {
+      // Store drinks data for template binding
+      this.kitchenDrinks = data || [];
 
+      console.log(this.kitchenDrinks, 'kitchenDrinks');
+
+      // Validate data exists
+      if (!this.kitchenDrinks || this.kitchenDrinks.length === 0) {
+        console.warn('No drinks data to print');
+        return;
+      }
+      // Generate complete HTML document like PHP function
+      const completeHTML = this.formatTable(this.kitchenDrinks, order);
+      // Create a hidden iframe for rendering HTML
+      // XP-80C: 80mm paper width = 640px at 203 DPI
+      const printerWidth = 640; // 80mm at 203 DPI for XP-80C
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = `${printerWidth}px`;
+      iframe.style.height = '800px'; // Initial height, will adjust
+      iframe.style.border = '0';
+      iframe.style.visibility = 'hidden';
+      document.body.appendChild(iframe);
+
+      // Write HTML to iframe
+      const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+      if (!iframeDoc) {
+        console.error('Failed to access iframe document');
+        document.body.removeChild(iframe);
+        return;
+      }
+
+      iframeDoc.open();
+      iframeDoc.write(completeHTML);
+      iframeDoc.close();
+
+      // Wait for content and images to load
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Wait for all images to load
+      const iframeWindow = iframe.contentWindow;
+      if (iframeWindow) {
+        const images = iframeDoc.querySelectorAll('img');
+        const imagePromises = Array.from(images).map((img) => {
+          if (img.complete) {
+            return Promise.resolve();
+          }
+          return new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve; // Continue even if image fails
+          });
+        });
+        await Promise.all(imagePromises);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+      }
+
+      // Convert iframe body to PNG using html2canvas
+      const bodyElement = iframeDoc.body;
+      if (!bodyElement) {
+        console.error('Failed to access iframe body');
+        document.body.removeChild(iframe);
+        return;
+      }
+
+      // XP-80C specifications: 80mm width = 640px at 203 DPI
+      // Calculate exact dimensions for the printer
+      const printerWidthPx = 640; // 80mm at 203 DPI for XP-80C
+      const contentHeight = bodyElement.scrollHeight;
+
+      // Create canvas with exact printer dimensions (scale 1 = 1:1 pixel ratio)
+      const canvas = await html2canvas(bodyElement, {
+        width: printerWidthPx,
+        height: contentHeight,
+        scale: 1, // Scale 1 ensures exact pixel dimensions match printer
+        useCORS: true,
+        allowTaint: false,
+        backgroundColor: '#ffffff',
+        logging: false,
+      });
+
+      // Create final canvas with exact XP-80C dimensions (640px width)
+      const finalCanvas = document.createElement('canvas');
+      finalCanvas.width = printerWidthPx; // Exactly 640px = 80mm at 203 DPI
+      finalCanvas.height = Math.max(canvas.height, contentHeight);
+
+      const ctx = finalCanvas.getContext('2d');
+      if (ctx) {
+        // Fill with white background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+        // Draw the captured content, scaling to exact printer width
+        ctx.drawImage(canvas, 0, 0, printerWidthPx, finalCanvas.height);
+      }
+
+      // Convert to PNG with exact XP-80C dimensions
+      const pngDataUrl = finalCanvas.toDataURL('image/png', 1.0);
+      console.log(`✅ PNG Image generated for XP-80C - Width: ${finalCanvas.width}px (80mm), Height: ${finalCanvas.height}px`);
+
+      // You can now use this PNG data URL for:
+      // 1. Saving to file
+      // 2. Sending to network printer
+      // 3. Displaying in an image element
+      // 4. Downloading
+
+      // Example: Create a download link (optional, for testing)
+      const link = document.createElement('a');
+      link.download = `kitchen-print-${Date.now()}.png`;
+      link.href = pngDataUrl;
+      link.click();
+
+      // Send image to network printer
+      // Get printer settings from localStorage or use defaults
+      const printerIP = '192.168.100.102';
+      const printerPort = 9100;
+
+      try {
+        await this.printImageToNetworkPrinter(pngDataUrl, printerIP, printerPort);
+        console.log('✅ Image sent to network printer successfully');
+      } catch (error) {
+        console.error('❌ Error sending image to network printer:', error);
+      }
+
+      // Remove iframe after conversion
+      if (iframe.parentNode) {
+        document.body.removeChild(iframe);
+      }
+
+      // Return the PNG data URL for further use
+      return pngDataUrl;
+    } catch (error) {
+      console.error('Error printing invoice image:', error);
+      throw error;
+    }
+  }
 
   hasDeliveryOrDineIn(): boolean {
     return this.invoices?.some((invoice: { order_type: string }) =>
       ['Delivery', 'Dine-in'].includes(invoice.order_type)
     );
+  }
+
+  getAddonsNames(addons: any[]): string {
+    if (!addons || addons.length === 0) {
+      return '';
+    }
+    return addons.map((a: any) => a.name || '').filter((name: string) => name).join(', ');
+  }
+
+  formatTable(items: any[], order?: any): string {
+    if (!items || items.length === 0) {
+      return '<!DOCTYPE html><html><body>No items to print</body></html>';
+    }
+
+    // Get order information
+    const orderNumber = order?.order_number || 'N/A';
+    const tableNumber = order?.table_id || 'N/A';
+    const orderType = order?.type || 'N/A';
+    const orderStatus = order?.status || 'N/A';
+    const orderCreatedAt = order?.date && order?.time ? `${order.date}   ${order.time}` : 'N/A';
+
+    // XP-80C: 80mm paper width = 640px at 203 DPI
+    const printerWidth = 640;
+
+    // Calculate height
+    const baseHeight = 200;
+    const itemHeight = 100;
+    const headerHeight = 100;
+    const calculatedHeight = baseHeight + headerHeight + (items.length * itemHeight);
+    const finalHeight = Math.max(400, calculatedHeight + 200);
+
+    // Escape HTML to prevent XSS
+    const escapeHtml = (text: string): string => {
+      const map: { [key: string]: string } = {
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#039;'
+      };
+      return text ? text.replace(/[&<>"']/g, (m) => map[m]) : '';
+    };
+
+    // Start HTML document
+    let html = `<!DOCTYPE html>
+        <html dir="rtl" lang="ar">
+        <head>
+            <meta charset="UTF-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <style>
+                * {
+                    margin: 0;
+                    padding: 0;
+                    box-sizing: border-box;
+                }
+                html, body {
+                    font-family: Arial, "Segoe UI", Tahoma, sans-serif;
+                    padding: 10px;
+                    background: white;
+                    width: ${printerWidth}px;
+                    font-size: 24px;
+                    min-height: ${finalHeight}px;
+                    height: auto;
+                    overflow: visible;
+                    margin: 0;
+                }
+                .content-wrapper {
+                    width: ${printerWidth}px;
+                    min-height: 100px;
+                    background: white;
+                    overflow: visible;
+                }
+                table {
+                    width: 95%;
+                    border-collapse: collapse;
+                    margin: 10px auto 0;
+                    background: white;
+                    padding: 20px;
+                }
+                th {
+                    background-color: white;
+                    color: black;
+                    padding: 10px 8px;
+                    text-align: center;
+                    border: 3px solid #000;
+                    font-weight: bold;
+                    font-size: 22px;
+                }
+                td {
+                    padding: 10px 8px;
+                    border: 3px solid #000;
+                    text-align: center;
+                    font-size: 22px;
+                }
+                .item-number {
+                    width: 40px;
+                    font-weight: bold;
+                }
+                .item-name {
+                    width: 100px;
+                    text-align: right;
+                    font-weight: bold;
+                }
+                .item-quantity {
+                    width: 60px;
+                    font-weight: bold;
+                }
+                .item-details {
+                    font-size: 18px;
+                    color: #333;
+                    margin-top: 3px;
+                    display: block;
+                }
+                .size, .addons {
+                    display: block;
+                    margin-top: 3px;
+                    font-size: 20px;
+                }
+                .logo-container {
+                    text-align: center;
+                    margin-bottom: 15px;
+                    padding: 8px 0;
+                }
+                .logo-container img {
+                    max-width: 250px;
+                    height: auto;
+                    display: block;
+                    margin: 0 auto;
+                }
+                .order-details {
+                    margin-bottom: 15px;
+                }
+                .order-details p {
+                    margin: 4px 0;
+                    font-size: 20px;
+                }
+            </style>
+        </head>
+        <body style="height: ${finalHeight}px; min-height: ${finalHeight}px;">
+            <div class="content-wrapper" style="height: ${finalHeight}px; min-height: ${finalHeight}px;">
+            <div class="logo-container">`;
+
+    // Add logo (using asset path - in browser this will work)
+    html += '<img src="assets/images/logo-with-white-bg.png" alt="Logo" style="max-width: 100%; height: auto; display: block;" />';
+
+    html += `</div>
+        <div class="order-details">
+            <p>رقم الطلب: ${escapeHtml(String(orderNumber))}</p>
+            <p>رقم الطاولة: ${escapeHtml(String(tableNumber))}</p>
+            <p>نوع الطلب: ${escapeHtml(String(orderType))}</p>
+            <p>حالة الطلب: ${escapeHtml(String(orderStatus))}</p>
+            <p>تاريخ الطلب: ${escapeHtml(String(orderCreatedAt))}</p>
+        </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th class="item-number">ت</th>
+                        <th class="item-name">اسم الطبق</th>
+                        <th class="item-quantity">الكمية</th>
+                    </tr>
+                </thead>
+                <tbody>`;
+
+    let itemNumber = 1;
+    items.forEach((item: any) => {
+      const name = escapeHtml(item.name || '-');
+      const name_en = escapeHtml(item.name_en || '-');
+      const note = escapeHtml(item.note || '-');
+      const quantity = escapeHtml(String(item.quantity || '-'));
+      const size = item.size ? escapeHtml(String(item.size)) : null;
+
+      let addonNames = '';
+      if (item.addons && item.addons.length > 0) {
+        const addons = item.addons;
+        addonNames = addons
+          .map((a: any) => escapeHtml(a.name || ''))
+          .filter((name: string) => name)
+          .join(', ');
+      }
+
+      html += '<tr>';
+      html += `<td class="item-number">${itemNumber}</td>`;
+      html += `<td class="item-name">${name}`;
+      html += `<span class="size item-details">${name_en}</span>`;
+
+      if (size) {
+        html += `<span class="size item-details">الحجم: ${size}</span>`;
+      }
+
+      if (addonNames) {
+        html += `<span class="addons item-details">الإضافات: ${addonNames}</span>`;
+      }
+      if (note && note !== '-') {
+        html += `<span class="size item-details">الملاحظات: ${note}</span>`;
+      }
+
+      html += '</td>';
+      html += `<td class="item-quantity">${quantity}</td>`;
+      html += '</tr>';
+
+      itemNumber++;
+    });
+
+    html += `</tbody>
+                    </table>
+            </div>
+                </body>
+                </html>`;
+
+    return html;
   }
   hasDineInOrder(): boolean {
     return this.invoices?.some(
@@ -5167,5 +5542,62 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.referenceNumber = numericValue;
     // تحديث قيمة الحقل
     event.target.value = numericValue;
+  }
+
+  /**
+   * Print PNG image to network printer (XP-80C)
+   * @param imageDataUrl - PNG image as data URL (base64)
+   * @param ip - Printer IP address
+   * @param port - Printer port (default: 9100)
+   */
+  async printImageToNetworkPrinter(imageDataUrl: string, ip: string, port: number = 9100): Promise<void> {
+    
+    try {
+      if (!window.deviceAPI) {
+        console.error('❌ Electron deviceAPI not available. This function only works in Electron.');
+        alert('طابعة غير متاحة: يجب تشغيل التطبيق في Electron');
+        return;
+      }
+
+      console.log(`🖨️ Attempting to print image to ${ip}:${port}...`);
+      console.log(`📷 Image data URL length: ${imageDataUrl.length} characters`);
+
+      // Extract base64 data from data URL
+      const base64Data = imageDataUrl.split(',')[1] || imageDataUrl;
+
+      // Check if deviceAPI has a method for printing images
+      // If not, we'll convert the image to ESC/POS commands or send as raw data
+      if (window.deviceAPI.printImageToNetwork) {
+        // Use dedicated image printing method if available
+        const result = await window.deviceAPI.printImageToNetwork(base64Data, ip, port);
+
+        if (result.success) {
+          console.log(`✅ Image print successful!`);
+        } else {
+          const errorMsg = result.error || 'Unknown error';
+          console.error(`❌ Image print failed: ${errorMsg}`);
+          throw new Error(errorMsg);
+        }
+      } else if (window.deviceAPI.printToNetwork) {
+        // Fallback: Try sending image data as base64 string
+        // Note: This may need ESC/POS conversion depending on printer support
+        console.log('⚠️ Using printToNetwork for image (may need ESC/POS conversion)');
+        const result = await window.deviceAPI.printToNetwork(base64Data, ip, port);
+
+        if (result.success) {
+          console.log(`✅ Image sent successfully!`);
+        } else {
+          const errorMsg = result.error || 'Unknown error';
+          console.error(`❌ Image print failed: ${errorMsg}`);
+          throw new Error(errorMsg);
+        }
+      } else {
+        throw new Error('No printing method available in deviceAPI');
+      }
+    } catch (error: any) {
+      const errorMessage = error.message || error.toString() || 'Unknown error';
+      console.error('❌ Error printing image to network printer:', errorMessage);
+      throw new Error(`خطأ في طباعة الصورة: ${errorMessage}`);
+    }
   }
 }
