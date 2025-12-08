@@ -3736,6 +3736,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   // }
 
   async printInvoiceImage(data?: any[], order?: any) {
+    let iframe: HTMLIFrameElement | null = null;
+
     try {
       this.kitchenDrinks = data || [];
 
@@ -3748,7 +3750,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       // ========== Create Hidden Iframe ==========
       const printerWidth = 640;
-      const iframe = document.createElement("iframe");
+      iframe = document.createElement("iframe");
       iframe.style.position = "fixed";
       iframe.style.right = "0";
       iframe.style.bottom = "0";
@@ -3762,7 +3764,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
       if (!iframeDoc) {
         console.error("Failed to access iframe document");
-        iframe.remove();
+        if (iframe && iframe.parentNode) {
+          iframe.remove();
+        }
         return;
       }
 
@@ -3788,7 +3792,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const body = iframeDoc.body;
       if (!body) {
         console.error("Failed to access iframe body");
-        iframe.remove();
+        if (iframe && iframe.parentNode) {
+          iframe.remove();
+        }
         return;
       }
 
@@ -3815,7 +3821,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const pngDataUrl = finalCanvas.toDataURL("image/png");
       const base64Image = pngDataUrl.replace(/^data:image\/png;base64,/, "");
 
-      console.log("PNG Ready for Printer");
+      console.log("PNG Ready for Printer", `Base64 length: ${base64Image.length}`);
 
       // ========== PRINTING ==========
       const printerIP = "192.168.100.102";
@@ -3823,9 +3829,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       if (!window.deviceAPI) {
         console.error("❌ Electron deviceAPI not available.");
+        if (iframe && iframe.parentNode) {
+          iframe.remove();
+        }
         return;
       }
 
+      console.log(`🖨️ Sending print request to ${printerIP}:${printerPort}`);
       const result = await window.deviceAPI.testPrinterConnection(
         printerIP,
         printerPort,
@@ -3834,15 +3844,24 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       if (!result.success) {
         console.error("❌ Printer Error:", result.error || result.message);
+        if (iframe && iframe.parentNode) {
+          iframe.remove();
+        }
         return;
       }
 
       console.log("✅ Image sent to printer successfully");
 
-      iframe.remove();
+      if (iframe && iframe.parentNode) {
+        iframe.remove();
+      }
       return pngDataUrl;
     } catch (error) {
       console.error("Error printing invoice image:", error);
+      // Ensure iframe is cleaned up on error
+      if (iframe && iframe.parentNode) {
+        iframe.remove();
+      }
       throw error;
     }
   }
