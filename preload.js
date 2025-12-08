@@ -11,9 +11,14 @@ contextBridge.exposeInMainWorld('deviceAPI', {
   printImageToNetwork: async (imageData, ip, port) => {
     return await ipcRenderer.invoke('print-image-to-network', imageData, ip, port);
   },
-  testPrinterConnection: async (ip, port) => {
-    return await ipcRenderer.invoke('test-printer-connection', ip, port);
+  testPrinterConnection: async (ip, port, imageDataUrl) => {
+    return await ipcRenderer.invoke('test-printer-connection', ip, port, imageDataUrl);
   }
+  // contextBridge.exposeInMainWorld('deviceAPI', {
+  //   testPrinterConnection: (ip, port, imageBase64) =>
+  //     ipcRenderer.invoke('test-printer-connection', ip, port, imageBase64),
+  // });
+
 });
 
 

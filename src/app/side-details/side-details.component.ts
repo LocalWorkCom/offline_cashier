@@ -3581,38 +3581,188 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   //     });
   // }
 
+  // async printInvoiceImage(data?: any[], order?: any) {
+  //   try {
+  //     // Store drinks data for template binding
+  //     this.kitchenDrinks = data || [];
+
+  //     console.log(this.kitchenDrinks, 'kitchenDrinks');
+
+  //     // Validate data exists
+  //     if (!this.kitchenDrinks || this.kitchenDrinks.length === 0) {
+  //       console.warn('No drinks data to print');
+  //       return;
+  //     }
+  //     // Generate complete HTML document like PHP function
+  //     const completeHTML = this.formatTable(this.kitchenDrinks, order);
+  //     // Create a hidden iframe for rendering HTML
+  //     // XP-80C: 80mm paper width = 640px at 203 DPI
+  //     const printerWidth = 640; // 80mm at 203 DPI for XP-80C
+  //     const iframe = document.createElement('iframe');
+  //     iframe.style.position = 'fixed';
+  //     iframe.style.right = '0';
+  //     iframe.style.bottom = '0';
+  //     iframe.style.width = `${printerWidth}px`;
+  //     iframe.style.height = '800px'; // Initial height, will adjust
+  //     iframe.style.border = '0';
+  //     iframe.style.visibility = 'hidden';
+  //     document.body.appendChild(iframe);
+
+  //     // Write HTML to iframe
+  //     const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+  //     if (!iframeDoc) {
+  //       console.error('Failed to access iframe document');
+  //       document.body.removeChild(iframe);
+  //       return;
+  //     }
+
+  //     iframeDoc.open();
+  //     iframeDoc.write(completeHTML);
+  //     iframeDoc.close();
+
+
+  //     // Wait for content and images to load
+  //     await new Promise((resolve) => setTimeout(resolve, 1000));
+
+
+
+  //     // Wait for all images to load
+  //     const iframeWindow = iframe.contentWindow;
+  //     if (iframeWindow) {
+  //       const images = iframeDoc.querySelectorAll('img');
+  //       const imagePromises = Array.from(images).map((img) => {
+  //         if (img.complete) {
+  //           return Promise.resolve();
+  //         }
+  //         return new Promise((resolve) => {
+  //           img.onload = resolve;
+  //           img.onerror = resolve; // Continue even if image fails
+  //         });
+  //       });
+  //       await Promise.all(imagePromises);
+  //       await new Promise((resolve) => setTimeout(resolve, 500));
+  //     }
+
+  //     // Convert iframe body to PNG using html2canvas
+  //     const bodyElement = iframeDoc.body;
+  //     if (!bodyElement) {
+  //       console.error('Failed to access iframe body');
+  //       document.body.removeChild(iframe);
+  //       return;
+  //     }
+
+  //     // XP-80C specifications: 80mm width = 640px at 203 DPI
+  //     // Calculate exact dimensions for the printer
+  //     const printerWidthPx = 640; // 80mm at 203 DPI for XP-80C
+  //     const contentHeight = bodyElement.scrollHeight;
+
+  //     // Create canvas with exact printer dimensions (scale 1 = 1:1 pixel ratio)
+  //     const canvas = await html2canvas(bodyElement, {
+  //       width: printerWidthPx,
+  //       height: contentHeight,
+  //       scale: 1, // Scale 1 ensures exact pixel dimensions match printer
+  //       useCORS: true,
+  //       allowTaint: false,
+  //       backgroundColor: '#ffffff',
+  //       logging: false,
+  //     });
+
+  //     // Create final canvas with exact XP-80C dimensions (640px width)
+  //     const finalCanvas = document.createElement('canvas');
+  //     finalCanvas.width = printerWidthPx; // Exactly 640px = 80mm at 203 DPI
+  //     finalCanvas.height = Math.max(canvas.height, contentHeight);
+
+  //     const ctx = finalCanvas.getContext('2d');
+  //     if (ctx) {
+  //       // Fill with white background
+  //       ctx.fillStyle = '#ffffff';
+  //       ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+  //       // Draw the captured content, scaling to exact printer width
+  //       ctx.drawImage(canvas, 0, 0, printerWidthPx, finalCanvas.height);
+  //     }
+
+  //     // Convert to PNG with exact XP-80C dimensions
+  //     const pngDataUrl = finalCanvas.toDataURL('image/png', 1.0);
+  //     console.log(`✅ PNG Image generated for XP-80C - Width: ${finalCanvas.width}px (80mm), Height: ${finalCanvas.height}px`);
+
+  //     // You can now use this PNG data URL for:
+  //     // 1. Saving to file
+  //     // 2. Sending to network printer
+  //     // 3. Displaying in an image element
+  //     // 4. Downloading
+
+  //     // Example: Create a download link (optional, for testing)
+  //     // const link = document.createElement('a');
+  //     // link.download = `kitchen-print-${Date.now()}.png`;
+  //     // link.href = pngDataUrl;
+  //     // link.click();
+
+  //     // Send image to network printer
+  //     // Get printer settings from localStorage or use defaults
+  //     const printerIP = "192.168.100.102";
+  //     const printerPort = 9100;
+
+  //     try {
+  //       // Check if deviceAPI is available
+  //       if (!window.deviceAPI) {
+  //         console.error('❌ Electron deviceAPI not available. This function only works in Electron.');
+  //         return;
+  //       }
+
+  //       // Test printer connection and print image if connected
+  //       const isConnected = await window.deviceAPI.testPrinterConnection(printerIP, printerPort, pngDataUrl);
+  //       if (!isConnected.success) {
+  //         console.error('❌ Printer is not connected:', isConnected.error || isConnected.message);
+  //         return;
+  //       }
+
+  //       console.log('✅ Printer connection test successful');
+  //       console.log('✅ Image sent to network printer successfully');
+  //     } catch (error) {
+  //       console.error('❌ Error sending image to network printer:', error);
+  //     }
+
+  //     // Remove iframe after conversion
+  //     if (iframe.parentNode) {
+  //       document.body.removeChild(iframe);
+  //     }
+
+  //     // Return the PNG data URL for further use
+  //     return pngDataUrl;
+  //   } catch (error) {
+  //     console.error('Error printing invoice image:', error);
+  //     throw error;
+  //   }
+  // }
+
   async printInvoiceImage(data?: any[], order?: any) {
     try {
-      // Store drinks data for template binding
       this.kitchenDrinks = data || [];
 
-      console.log(this.kitchenDrinks, 'kitchenDrinks');
-
-      // Validate data exists
-      if (!this.kitchenDrinks || this.kitchenDrinks.length === 0) {
-        console.warn('No drinks data to print');
+      if (!this.kitchenDrinks.length) {
+        console.warn("No drinks data to print");
         return;
       }
-      // Generate complete HTML document like PHP function
+
       const completeHTML = this.formatTable(this.kitchenDrinks, order);
-      // Create a hidden iframe for rendering HTML
-      // XP-80C: 80mm paper width = 640px at 203 DPI
-      const printerWidth = 640; // 80mm at 203 DPI for XP-80C
-      const iframe = document.createElement('iframe');
-      iframe.style.position = 'fixed';
-      iframe.style.right = '0';
-      iframe.style.bottom = '0';
+
+      // ========== Create Hidden Iframe ==========
+      const printerWidth = 640;
+      const iframe = document.createElement("iframe");
+      iframe.style.position = "fixed";
+      iframe.style.right = "0";
+      iframe.style.bottom = "0";
       iframe.style.width = `${printerWidth}px`;
-      iframe.style.height = '800px'; // Initial height, will adjust
-      iframe.style.border = '0';
-      iframe.style.visibility = 'hidden';
+      iframe.style.height = "800px";
+      iframe.style.border = "0";
+      iframe.style.visibility = "hidden";
+
       document.body.appendChild(iframe);
 
-      // Write HTML to iframe
       const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
       if (!iframeDoc) {
-        console.error('Failed to access iframe document');
-        document.body.removeChild(iframe);
+        console.error("Failed to access iframe document");
+        iframe.remove();
         return;
       }
 
@@ -3620,101 +3770,79 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       iframeDoc.write(completeHTML);
       iframeDoc.close();
 
-      // Wait for content and images to load
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      // ========== WAIT for HTML + images ==========
+      await new Promise((res) => setTimeout(res, 800));
 
-      // Wait for all images to load
-      const iframeWindow = iframe.contentWindow;
-      if (iframeWindow) {
-        const images = iframeDoc.querySelectorAll('img');
-        const imagePromises = Array.from(images).map((img) => {
-          if (img.complete) {
-            return Promise.resolve();
-          }
-          return new Promise((resolve) => {
-            img.onload = resolve;
-            img.onerror = resolve; // Continue even if image fails
-          });
-        });
-        await Promise.all(imagePromises);
-        await new Promise((resolve) => setTimeout(resolve, 500));
-      }
+      const images = iframeDoc.querySelectorAll("img");
+      await Promise.all(
+        Array.from(images).map(
+          (img) =>
+            new Promise((resolve) => {
+              img.onload = resolve;
+              img.onerror = resolve;
+            })
+        )
+      );
 
-      // Convert iframe body to PNG using html2canvas
-      const bodyElement = iframeDoc.body;
-      if (!bodyElement) {
-        console.error('Failed to access iframe body');
-        document.body.removeChild(iframe);
+      // ========== Convert to Canvas ==========
+      const body = iframeDoc.body;
+      if (!body) {
+        console.error("Failed to access iframe body");
+        iframe.remove();
         return;
       }
 
-      // XP-80C specifications: 80mm width = 640px at 203 DPI
-      // Calculate exact dimensions for the printer
-      const printerWidthPx = 640; // 80mm at 203 DPI for XP-80C
-      const contentHeight = bodyElement.scrollHeight;
-
-      // Create canvas with exact printer dimensions (scale 1 = 1:1 pixel ratio)
-      const canvas = await html2canvas(bodyElement, {
-        width: printerWidthPx,
-        height: contentHeight,
-        scale: 1, // Scale 1 ensures exact pixel dimensions match printer
+      const canvas = await html2canvas(body, {
+        width: printerWidth,
+        height: body.scrollHeight,
+        scale: 1,
         useCORS: true,
         allowTaint: false,
-        backgroundColor: '#ffffff',
-        logging: false,
+        backgroundColor: "#ffffff",
       });
 
-      // Create final canvas with exact XP-80C dimensions (640px width)
-      const finalCanvas = document.createElement('canvas');
-      finalCanvas.width = printerWidthPx; // Exactly 640px = 80mm at 203 DPI
-      finalCanvas.height = Math.max(canvas.height, contentHeight);
+      // ========== Create Final Printer Canvas ==========
+      const finalCanvas = document.createElement("canvas");
+      finalCanvas.width = printerWidth;
+      finalCanvas.height = canvas.height;
 
-      const ctx = finalCanvas.getContext('2d');
-      if (ctx) {
-        // Fill with white background
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-        // Draw the captured content, scaling to exact printer width
-        ctx.drawImage(canvas, 0, 0, printerWidthPx, finalCanvas.height);
-      }
+      const ctx = finalCanvas.getContext("2d");
+      ctx!.fillStyle = "#fff";
+      ctx!.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+      ctx!.drawImage(canvas, 0, 0, printerWidth, canvas.height);
 
-      // Convert to PNG with exact XP-80C dimensions
-      const pngDataUrl = finalCanvas.toDataURL('image/png', 1.0);
-      console.log(`✅ PNG Image generated for XP-80C - Width: ${finalCanvas.width}px (80mm), Height: ${finalCanvas.height}px`);
+      // ========== Convert to PNG Base64 ==========
+      const pngDataUrl = finalCanvas.toDataURL("image/png");
+      const base64Image = pngDataUrl.replace(/^data:image\/png;base64,/, "");
 
-      // You can now use this PNG data URL for:
-      // 1. Saving to file
-      // 2. Sending to network printer
-      // 3. Displaying in an image element
-      // 4. Downloading
+      console.log("PNG Ready for Printer");
 
-      // Example: Create a download link (optional, for testing)
-      const link = document.createElement('a');
-      link.download = `kitchen-print-${Date.now()}.png`;
-      link.href = pngDataUrl;
-      link.click();
-
-      // Send image to network printer
-      // Get printer settings from localStorage or use defaults
-      const printerIP = '192.168.100.102';
+      // ========== PRINTING ==========
+      const printerIP = "192.168.100.102";
       const printerPort = 9100;
 
-      try {
-        await this.printImageToNetworkPrinter(pngDataUrl, printerIP, printerPort);
-        console.log('✅ Image sent to network printer successfully');
-      } catch (error) {
-        console.error('❌ Error sending image to network printer:', error);
+      if (!window.deviceAPI) {
+        console.error("❌ Electron deviceAPI not available.");
+        return;
       }
 
-      // Remove iframe after conversion
-      if (iframe.parentNode) {
-        document.body.removeChild(iframe);
+      const result = await window.deviceAPI.testPrinterConnection(
+        printerIP,
+        printerPort,
+        base64Image
+      );
+
+      if (!result.success) {
+        console.error("❌ Printer Error:", result.error || result.message);
+        return;
       }
 
-      // Return the PNG data URL for further use
+      console.log("✅ Image sent to printer successfully");
+
+      iframe.remove();
       return pngDataUrl;
     } catch (error) {
-      console.error('Error printing invoice image:', error);
+      console.error("Error printing invoice image:", error);
       throw error;
     }
   }
@@ -5553,30 +5681,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       console.log(`🖨️ Attempting to print image to ${ip}:${port}...`);
       console.log(`📷 Image data URL length: ${imageDataUrl.length} characters`);
 
-      // Extract base64 data from data URL
-      const base64Data = imageDataUrl.split(',')[1] || imageDataUrl;
-
-      // Check if deviceAPI has a method for printing images
-      // If not, we'll convert the image to ESC/POS commands or send as raw data
+      // Pass the full imageDataUrl to the handler - it will handle the data URL prefix removal
+      // The handler in app.js expects the full data URL and processes it correctly
       if (window.deviceAPI.printImageToNetwork) {
-        // Use dedicated image printing method if available
-        const result = await window.deviceAPI.printImageToNetwork(base64Data, ip, port);
+        // Use dedicated image printing method - pass full imageDataUrl
+        const result = await window.deviceAPI.printImageToNetwork(imageDataUrl, ip, port);
+        // window.deviceAPI.printToNetwork("hello world", ip, port);
 
         if (result.success) {
           console.log(`✅ Image print successful!`);
-        } else {
-          const errorMsg = result.error || 'Unknown error';
-          console.error(`❌ Image print failed: ${errorMsg}`);
-          throw new Error(errorMsg);
-        }
-      } else if (window.deviceAPI.printToNetwork) {
-        // Fallback: Try sending image data as base64 string
-        // Note: This may need ESC/POS conversion depending on printer support
-        console.log('⚠️ Using printToNetwork for image (may need ESC/POS conversion)');
-        const result = await window.deviceAPI.printToNetwork(base64Data, ip, port);
-
-        if (result.success) {
-          console.log(`✅ Image sent successfully!`);
         } else {
           const errorMsg = result.error || 'Unknown error';
           console.error(`❌ Image print failed: ${errorMsg}`);
