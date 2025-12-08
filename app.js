@@ -38,25 +38,130 @@ ipcMain.handle('get-system-info', async () => {
 // NEW TEST PRINTER CONNECTION
 ipcMain.handle("test-printer-connection", async (event, ip, port, base64Image) => {
   return new Promise((resolve) => {
+    let tempFilePath = null;
+
     try {
+      if (!base64Image) {
+        return resolve({
+          success: false,
+          error: 'No image data provided',
+          message: 'لم يتم توفير بيانات الصورة'
+        });
+      }
+
+      // Convert base64 to buffer
       const buff = Buffer.from(base64Image, "base64");
+      console.log(`📏 Base64 image length: ${base64Image.length}, Buffer size: ${buff.length} bytes`);
+
+      // Save buffer to temporary file (escpos.Image.load works better with file paths)
+      tempFilePath = path.join(os.tmpdir(), `print-${Date.now()}.png`);
+      fs.writeFileSync(tempFilePath, buff);
+      console.log(`✅ Image saved to temporary file: ${tempFilePath}`);
 
       const device = new escpos.Network(ip, port);
       const printer = new escpos.Printer(device);
 
       device.open((error) => {
-        if (error) return resolve({ success: false, error });
+        if (error) {
+          // Clean up temp file
+          if (tempFilePath) {
+            try { fs.unlinkSync(tempFilePath); } catch (e) {}
+          }
+          const errorMsg = error.message || error.toString() || error.code || 'فشل الاتصال بالطابعة';
+          console.error('❌ Printer connection failed:', errorMsg);
+          return resolve({
+            success: false,
+            error: errorMsg,
+            message: `لا يمكن الاتصال بالطابعة على ${ip}:${port}: ${errorMsg}`
+          });
+        }
 
-        escpos.Image.load(buff, (image) => {
-          printer.align("ct");
-          printer.raster(image);
-          printer.cut();
-          printer.close();
-          resolve({ success: true });
+        console.log('✅ Printer connected, loading image...');
+
+        // escpos.Image.load callback can be (err, image) or (image, err) - handle both
+        escpos.Image.load(tempFilePath, (arg1, arg2) => {
+          let image, imageErr;
+
+          // Determine callback pattern
+          if (arg1 instanceof Error) {
+            // Error-first: (err, image)
+            imageErr = arg1;
+            image = arg2;
+          } else if (arg2 instanceof Error) {
+            // Image-first: (image, err)
+            image = arg1;
+            imageErr = arg2;
+          } else {
+            // Assume image-first, no error
+            image = arg1;
+            imageErr = null;
+          }
+
+          if (imageErr || !image) {
+            // Clean up temp file
+            if (tempFilePath) {
+              try { fs.unlinkSync(tempFilePath); } catch (e) {}
+            }
+            const errorMsg = imageErr?.message || imageErr?.toString() || 'فشل تحميل الصورة';
+            console.error('❌ Image load failed:', errorMsg);
+            try { device.close(); } catch (e) {}
+            return resolve({
+              success: false,
+              error: errorMsg,
+              message: `فشل في تحميل الصورة: ${errorMsg}`
+            });
+          }
+
+          console.log('✅ Image loaded, printing...');
+
+          try {
+            printer.align("ct");
+            printer.raster(image);
+            printer.feed(2);
+            printer.cut();
+
+            // Close device with callback to ensure data is sent
+            printer.close(() => {
+              // Clean up temp file
+              if (tempFilePath) {
+                try { fs.unlinkSync(tempFilePath); } catch (e) {}
+              }
+              console.log("🟢 Printer closed, data sent to printer");
+              resolve({
+                success: true,
+                message: `تم الاتصال والطباعة بنجاح على ${ip}:${port}`
+              });
+            });
+
+          } catch (printErr) {
+            // Clean up temp file
+            if (tempFilePath) {
+              try { fs.unlinkSync(tempFilePath); } catch (e) {}
+            }
+            const errorMsg = printErr.message || printErr.toString() || 'خطأ في الطباعة';
+            console.error('❌ Print error:', errorMsg);
+            try { device.close(); } catch (e) {}
+            return resolve({
+              success: false,
+              error: errorMsg,
+              message: `فشل في الطباعة: ${errorMsg}`
+            });
+          }
         });
       });
+
     } catch (err) {
-      resolve({ success: false, error: err });
+      // Clean up temp file if it was created
+      if (tempFilePath) {
+        try { fs.unlinkSync(tempFilePath); } catch (e) {}
+      }
+      const errorMsg = err.message || err.toString() || 'خطأ في معالجة الصورة';
+      console.error('❌ Error processing image:', errorMsg);
+      resolve({
+        success: false,
+        error: errorMsg,
+        message: `خطأ في معالجة الصورة: ${errorMsg}`
+      });
     }
   });
 });
