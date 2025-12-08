@@ -5681,7 +5681,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     );
   }
 
-
+  // دالة للتحقق من أن رقم المرجع يحتوي على أرقام فقط
+  onReferenceNumberInput(event: any): void {
+    const value = event.target.value;
+    // إزالة أي حرف غير رقمي
+    const numericValue = value.replace(/[^0-9]/g, '');
+    this.referenceNumber = numericValue;
+    // تحديث قيمة الحقل
+    event.target.value = numericValue;
+  }
 
   /**
    * Print PNG image to network printer (XP-80C)
@@ -5690,6 +5698,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
    * @param port - Printer port (default: 9100)
    */
   async printImageToNetworkPrinter(imageDataUrl: string, ip: string, port: number = 9100): Promise<void> {
+    
     try {
       if (!window.deviceAPI) {
         console.error('❌ Electron deviceAPI not available. This function only works in Electron.');
