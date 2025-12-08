@@ -3120,15 +3120,24 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               .printkitchen(orderData, this.orderedId)
               .subscribe({
                 next: (response) => {
-                  // console.log('Kitchen print successful:', response);
+                  console.log('🖨️ [Kitchen Print] Response received:', response);
                   if(response.status && response.drinks && response.drinks.length > 0){
-                    this.printInvoiceImage(response.drinks ,response.order);
+                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
+                    this.printInvoiceImage(response.drinks ,response.order).catch(err => {
+                      console.error('❌ [Kitchen Print] Error printing drinks:', err);
+                    });
                   }
                  if(response.status && response.fish && response.fish.length > 0){
-                    this.printInvoiceImage(response.fish ,response.order);
+                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
+                    this.printInvoiceImage(response.fish ,response.order).catch(err => {
+                      console.error('❌ [Kitchen Print] Error printing fish:', err);
+                    });
                   }
                   if(response.status && response.grills && response.grills.length > 0){
-                    this.printInvoiceImage(response.grills ,response.order);
+                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
+                    this.printInvoiceImage(response.grills ,response.order).catch(err => {
+                      console.error('❌ [Kitchen Print] Error printing grills:', err);
+                    });
                   }
                 },
                 error: (error) => {
@@ -3736,19 +3745,24 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   // }
 
   async printInvoiceImage(data?: any[], order?: any) {
+    console.log('🖨️ [printInvoiceImage] Function called', { dataLength: data?.length, order });
     let iframe: HTMLIFrameElement | null = null;
 
     try {
       this.kitchenDrinks = data || [];
+      console.log('🖨️ [printInvoiceImage] kitchenDrinks set', this.kitchenDrinks.length);
 
       if (!this.kitchenDrinks.length) {
-        console.warn("No drinks data to print");
+        console.warn("⚠️ [printInvoiceImage] No drinks data to print");
         return;
       }
 
+      console.log('🖨️ [printInvoiceImage] Calling formatTable...');
       const completeHTML = this.formatTable(this.kitchenDrinks, order);
+      console.log('🖨️ [printInvoiceImage] HTML generated, length:', completeHTML.length);
 
       // ========== Create Hidden Iframe ==========
+      console.log('🖨️ [printInvoiceImage] Creating iframe...');
       const printerWidth = 640;
       iframe = document.createElement("iframe");
       iframe.style.position = "fixed";
@@ -3760,43 +3774,84 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       iframe.style.visibility = "hidden";
 
       document.body.appendChild(iframe);
+      console.log('🖨️ [printInvoiceImage] Iframe appended to body');
 
       const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
       if (!iframeDoc) {
-        console.error("Failed to access iframe document");
+        console.error("❌ [printInvoiceImage] Failed to access iframe document");
         if (iframe && iframe.parentNode) {
           iframe.remove();
         }
         return;
       }
 
+      console.log('🖨️ [printInvoiceImage] Writing HTML to iframe...');
       iframeDoc.open();
       iframeDoc.write(completeHTML);
       iframeDoc.close();
+      console.log('🖨️ [printInvoiceImage] HTML written to iframe');
 
       // ========== WAIT for HTML + images ==========
+      console.log('🖨️ [printInvoiceImage] Waiting 800ms for HTML/images to load...');
       await new Promise((res) => setTimeout(res, 800));
 
       const images = iframeDoc.querySelectorAll("img");
-      await Promise.all(
-        Array.from(images).map(
-          (img) =>
-            new Promise((resolve) => {
-              img.onload = resolve;
-              img.onerror = resolve;
-            })
-        )
-      );
+      console.log('🖨️ [printInvoiceImage] Found', images.length, 'images, waiting for load...');
+
+      if (images.length > 0) {
+        // Wait for images to load with timeout
+        await Promise.all(
+          Array.from(images).map(
+            (img) =>
+              new Promise((resolve) => {
+                // If image is already loaded, resolve immediately
+                if (img.complete && img.naturalHeight !== 0) {
+                  console.log('🖨️ [printInvoiceImage] Image already loaded:', img.src.substring(0, 50));
+                  resolve(null);
+                  return;
+                }
+
+                // Set up load/error handlers
+                const onLoad = () => {
+                  console.log('🖨️ [printInvoiceImage] Image loaded:', img.src.substring(0, 50));
+                  resolve(null);
+                };
+                const onError = () => {
+                  console.warn('🖨️ [printInvoiceImage] Image failed to load:', img.src.substring(0, 50));
+                  resolve(null); // Resolve anyway to continue
+                };
+
+                img.addEventListener('load', onLoad, { once: true });
+                img.addEventListener('error', onError, { once: true });
+
+                // Timeout after 5 seconds to prevent hanging
+                setTimeout(() => {
+                  console.warn('🖨️ [printInvoiceImage] Image load timeout:', img.src.substring(0, 50));
+                  img.removeEventListener('load', onLoad);
+                  img.removeEventListener('error', onError);
+                  resolve(null); // Resolve anyway to continue
+                }, 5000);
+              })
+          )
+        );
+      }
+
+      console.log('🖨️ [printInvoiceImage] Images loaded/processed');
 
       // ========== Convert to Canvas ==========
       const body = iframeDoc.body;
       if (!body) {
-        console.error("Failed to access iframe body");
+        console.error("❌ [printInvoiceImage] Failed to access iframe body");
         if (iframe && iframe.parentNode) {
           iframe.remove();
         }
         return;
       }
+
+      console.log('🖨️ [printInvoiceImage] Starting html2canvas conversion...', {
+        width: printerWidth,
+        height: body.scrollHeight
+      });
 
       const canvas = await html2canvas(body, {
         width: printerWidth,
@@ -3807,57 +3862,72 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         backgroundColor: "#ffffff",
       });
 
+      console.log('🖨️ [printInvoiceImage] html2canvas completed', {
+        canvasWidth: canvas.width,
+        canvasHeight: canvas.height
+      });
+
       // ========== Create Final Printer Canvas ==========
+      console.log('🖨️ [printInvoiceImage] Creating final canvas...');
       const finalCanvas = document.createElement("canvas");
       finalCanvas.width = printerWidth;
       finalCanvas.height = canvas.height;
 
       const ctx = finalCanvas.getContext("2d");
-      ctx!.fillStyle = "#fff";
-      ctx!.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
-      ctx!.drawImage(canvas, 0, 0, printerWidth, canvas.height);
+      if (!ctx) {
+        throw new Error("Failed to get 2d context from canvas");
+      }
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+      ctx.drawImage(canvas, 0, 0, printerWidth, canvas.height);
+      console.log('🖨️ [printInvoiceImage] Final canvas created');
 
       // ========== Convert to PNG Base64 ==========
+      console.log('🖨️ [printInvoiceImage] Converting to PNG...');
       const pngDataUrl = finalCanvas.toDataURL("image/png");
       const base64Image = pngDataUrl.replace(/^data:image\/png;base64,/, "");
 
-      console.log("PNG Ready for Printer", `Base64 length: ${base64Image.length}`);
+      console.log("🖨️ [printInvoiceImage] PNG Ready for Printer", `Base64 length: ${base64Image.length}`);
 
       // ========== PRINTING ==========
       const printerIP = "192.168.100.102";
       const printerPort = 9100;
 
+      console.log('🖨️ [printInvoiceImage] Checking deviceAPI...');
       if (!window.deviceAPI) {
-        console.error("❌ Electron deviceAPI not available.");
+        console.error("❌ [printInvoiceImage] Electron deviceAPI not available.");
         if (iframe && iframe.parentNode) {
           iframe.remove();
         }
         return;
       }
 
-      console.log(`🖨️ Sending print request to ${printerIP}:${printerPort}`);
+      console.log(`🖨️ [printInvoiceImage] Sending print request to ${printerIP}:${printerPort}`);
       const result = await window.deviceAPI.testPrinterConnection(
         printerIP,
         printerPort,
         base64Image
       );
 
+      console.log('🖨️ [printInvoiceImage] Print result received:', result);
+
       if (!result.success) {
-        console.error("❌ Printer Error:", result.error || result.message);
+        console.error("❌ [printInvoiceImage] Printer Error:", result.error || result.message);
         if (iframe && iframe.parentNode) {
           iframe.remove();
         }
         return;
       }
 
-      console.log("✅ Image sent to printer successfully");
+      console.log("✅ [printInvoiceImage] Image sent to printer successfully");
 
       if (iframe && iframe.parentNode) {
         iframe.remove();
       }
       return pngDataUrl;
     } catch (error) {
-      console.error("Error printing invoice image:", error);
+      console.error("❌ [printInvoiceImage] Error printing invoice image:", error);
+      console.error("❌ [printInvoiceImage] Error stack:", error instanceof Error ? error.stack : 'No stack trace');
       // Ensure iframe is cleaned up on error
       if (iframe && iframe.parentNode) {
         iframe.remove();
@@ -3880,6 +3950,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   }
 
   formatTable(items: any[], order?: any): string {
+    console.log('formatTable');
     if (!items || items.length === 0) {
       return '<!DOCTYPE html><html><body>No items to print</body></html>';
     }
@@ -5698,7 +5769,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
    * @param port - Printer port (default: 9100)
    */
   async printImageToNetworkPrinter(imageDataUrl: string, ip: string, port: number = 9100): Promise<void> {
-    
+
     try {
       if (!window.deviceAPI) {
         console.error('❌ Electron deviceAPI not available. This function only works in Electron.');

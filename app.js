@@ -37,8 +37,7 @@ ipcMain.handle('get-system-info', async () => {
 
 // NEW TEST PRINTER CONNECTION
 ipcMain.handle("test-printer-connection", async (event, ip, port, base64Image) => {
-  return new Promise((resolve) => {
-    let tempFilePath = null;
+  return new Promise((resolve) => {    let tempFilePath = null;
 
     try {
       if (!base64Image) {
