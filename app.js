@@ -1159,11 +1159,22 @@ async function createWindow() {
   const fullPath = path.join(__dirname, 'dist/cashier/index.html');
   console.log('📂 Full path to index.html:', fullPath);
 
+  // Get preload script path - works in both dev and production
+  const preloadPath = path.join(__dirname, 'preload.js');
+  console.log('📂 Preload script path:', preloadPath);
+
+  // Verify preload file exists
+  if (!fs.existsSync(preloadPath)) {
+    console.error('❌ Preload script not found at:', preloadPath);
+  } else {
+    console.log('✅ Preload script found');
+  }
+
   mainWindow = new BrowserWindow({
     width: 1500,
     height: 1400,
     webPreferences: {
-      preload: path.join(__dirname, 'preload.js'),
+      preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: true,
     }
