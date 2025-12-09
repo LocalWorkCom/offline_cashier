@@ -234,5 +234,9 @@ export class TablesComponent implements OnInit, OnDestroy {
   trackByTableId(index: number, table: any) {
     return table.id;
   }
+  onTableOrderDetailsClick(tableId: number): void {
+    
+    this.router.navigate(['/table-order-details', tableId]);
+  }
 
 }
