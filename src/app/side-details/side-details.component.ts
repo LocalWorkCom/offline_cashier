@@ -3137,9 +3137,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         // Kitchen print takes ~2-3 seconds, so delay invoice print by 4 seconds to ensure completion
         setTimeout(() => {
           this.printInvoice();
-        }, 4000);
+        }, 8000);
 
-        
+
 
       }
 
@@ -3178,7 +3178,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                   if(response.status && response.drinks && response.drinks.length > 0){
                     console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
                     try {
-                      await this.printInvoiceImage(response.drinks ,response.order, "192.168.100.102");
+                      await this.printInvoiceImage(response.drinks ,response.order, response.IPdrinks);
                       console.log('✅ [Kitchen Print] Drinks printed successfully');
                     } catch (err) {
                       console.error('❌ [Kitchen Print] Error printing drinks:', err);
@@ -3192,7 +3192,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                   if(response.status && response.fish && response.fish.length > 0){
                     console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
                     try {
-                      await this.printInvoiceImage(response.fish ,response.order, "192.168.100.160");
+                      await this.printInvoiceImage(response.fish ,response.order, response.IPfish);
                       console.log('✅ [Kitchen Print] Fish printed successfully');
                     } catch (err) {
                       console.error('❌ [Kitchen Print] Error printing fish:', err);
@@ -3203,7 +3203,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                   // Print grills to different printer (can run in parallel)
                   if(response.status && response.grills && response.grills.length > 0){
                     console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
-                    this.printInvoiceImage(response.grills ,response.order, "192.168.100.107").catch(err => {
+                    this.printInvoiceImage(response.grills ,response.order, response.IPgrills).catch(err => {
                       console.error('❌ [Kitchen Print] Error printing grills:', err);
                     });
                   }
