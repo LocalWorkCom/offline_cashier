@@ -303,7 +303,7 @@ export class PillEditComponent {
       this.amountError = true;
 
     }
-    
+
     // التحقق من رقم المرجع للفيزا
     var creditAmount = this.credit_value != null ? this.credit_value : 0;
     if (this.paymentStatus === 'paid' && creditAmount > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
@@ -311,7 +311,7 @@ export class PillEditComponent {
       alert('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
       return;
     }
-    
+
     var cashAmount = this.cash_value != null ? this.cash_value : 0;
     if (this.orderType == 'Delivery') {
       this.DeliveredOrNot = true;
@@ -382,7 +382,7 @@ export class PillEditComponent {
         .toPromise();
       console.log(response, 'testttttt')
       console.log('Print invoice response:', response);
-      const printContent = document.getElementById('printSection');
+      const printContent = document.getElementById('printSectionn');
       if (!printContent) {
         console.error('Print section not found.');
         return;
@@ -556,5 +556,16 @@ export class PillEditComponent {
     this.referenceNumber = numericValue;
     // تحديث قيمة الحقل
     event.target.value = numericValue;
+  }
+
+  getOrderTypeLabel(type: string): string {
+    const map: any = {
+      'dine-in': 'في المطعم',
+      'Takeaway': 'استلام',
+      'talabat': 'طلبات',
+      'Delivery': 'توصيل'
+    };
+
+    return map[type] || type;
   }
 }
