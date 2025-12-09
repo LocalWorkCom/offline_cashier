@@ -15,6 +15,8 @@ declare var bootstrap: any;
 import { FormsModule } from '@angular/forms';
 import { ConfirmDialogComponent } from "../shared/ui/component/confirm-dialog/confirm-dialog.component";
 import { finalize } from 'rxjs';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { baseUrl } from '../environment';
 
 @Component({
   selector: 'app-pill-edit',
@@ -46,7 +48,6 @@ export class PillEditComponent {
   isShow: boolean = true;
   note: string = 'لا يوجد';
   cuponValue: any;
-  couponType: any;
   cashier_machine_id!: number;
   showPrices?: boolean;
   test?: boolean;
@@ -58,6 +59,17 @@ export class PillEditComponent {
   referenceNumber: any;
   referenceNumberTouched: boolean = false;
   formSubmitted: boolean = false;
+  // Coupon / Discount
+  couponCode: string = '';
+  appliedCoupon: any = null;
+  discountAmount: number = 0;
+  couponTitle: string = '';
+  couponType: 'percentage' | 'fixed' | '' = '';
+  couponMessage: string = '';
+  couponError: string = '';
+  manualDiscountType: 'percentage' | 'fixed' | null = null;
+  manualDiscountValue: number | null = null;
+  isApplyingCoupon: boolean = false;
 
   constructor(
     private pillDetailsService: PillDetailsService,
@@ -66,7 +78,8 @@ export class PillEditComponent {
     private cdr: ChangeDetectorRef,
     private datePipe: DatePipe,
     private printedInvoiceService: PrintedInvoiceService,
-    private router: Router
+    private router: Router,
+    private http: HttpClient
   ) { }
 
   private extractDateAndTime(branch: any): void {
@@ -160,6 +173,15 @@ export class PillEditComponent {
         console.log(this.invoices[0].order_type);
         this.totalll = this.invoices[0].invoice_summary.total_price
         this.orderType = this.invoices[0].order_type;
+
+        // restore coupon data if exists on invoice
+        const summary = this.invoices?.[0]?.invoice_summary;
+        if (summary) {
+          this.couponType = summary.coupon_type || '';
+          this.couponTitle = summary.coupon_title || '';
+          this.discountAmount = Number(summary.coupon_value) || 0;
+          this.couponCode = summary.coupon_code || '';
+        }
 
         // const trackingKey = this.invoices[0]?.['tracking-status'];
         // this.trackingStatus = trackingKey || '';
@@ -368,6 +390,178 @@ export class PillEditComponent {
         });
     }
   }
+
+  // ===== Coupon / Discount handling for existing unpaid orders =====
+  private buildOrderItemsForCoupon(): any[] {
+    const items = this.invoices?.[0]?.orderDetails || this.orderDetails?.[0] || [];
+    return (items || []).map((item: any) => {
+      const dishId = item.dish_id || item.dish?.id || item.id;
+      const quantity = item.quantity || item.qty || 1;
+      const sizeId = item.size_id || item.sizeId || item.selectedSize?.id;
+      const dish: any = { dish_id: dishId, quantity };
+      if (sizeId) dish.size_id = sizeId;
+      return dish;
+    }).filter((d: any) => d.dish_id);
+  }
+
+  private recalcTotalsWithDiscount(discount: number, title: string, type: 'percentage' | 'fixed' | ''): void {
+    const summary = this.invoices?.[0]?.invoice_summary;
+    if (!summary) return;
+
+    const subtotalBefore = Number(summary.subtotal_price_before_coupon ?? summary.total_price ?? 0);
+    const servicePerc = Number(summary.service_percentage || 0);
+    const serviceFixed = Number(summary.service_fees || 0);
+    const taxPerc = Number(summary.tax_percentage || 0);
+
+    const discountValue = Math.min(discount, subtotalBefore);
+    let subtotalAfter = subtotalBefore - discountValue;
+
+    const serviceAmount = servicePerc ? (subtotalAfter * servicePerc) / 100 : serviceFixed;
+    subtotalAfter += serviceAmount;
+
+    const taxAmount = taxPerc ? (subtotalAfter * taxPerc) / 100 : 0;
+    const totalAfter = subtotalAfter + taxAmount;
+
+    summary.coupon_value = discountValue;
+    summary.coupon_title = title;
+    summary.coupon_type = type;
+    summary.coupon_code = this.couponCode || title;
+    summary.subtotal_price_before_coupon = subtotalBefore;
+    summary.total_price = Number(totalAfter.toFixed(2));
+    summary.total_after_tax = summary.total_price;
+    summary.tax = Number(taxAmount.toFixed(2));
+
+    this.discountAmount = discountValue;
+    this.couponTitle = title;
+    this.couponType = type;
+    this.totalll = summary.total_price;
+    this.cdr.detectChanges();
+  }
+
+  applyCouponForInvoice(): void {
+    if (this.paymentStatus === 'paid' || this.invoices?.[0]?.transactions?.[0]?.payment_status === 'paid') {
+      this.couponError = 'لا يمكن إضافة خصم لطلب مدفوع.';
+      return;
+    }
+    if (!this.couponCode || !this.couponCode.trim()) {
+      this.couponError = 'يرجى إدخال كود الكوبون.';
+      return;
+    }
+    this.couponError = '';
+    this.couponMessage = '';
+    this.isApplyingCoupon = true;
+
+    const token = localStorage.getItem('authToken');
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token || ''}`,
+      'Content-Type': 'application/json',
+    });
+    const branchId = localStorage.getItem('branch_id');
+    const baseAmount = Number(this.invoices?.[0]?.invoice_summary?.subtotal_price_before_coupon ?? this.invoices?.[0]?.invoice_summary?.total_price ?? 0);
+    const requestData = {
+      code: this.couponCode.trim(),
+      amount: baseAmount,
+      branch_id: branchId,
+      dishes: this.buildOrderItemsForCoupon()
+    };
+
+    this.http.post(`${baseUrl}api/coupons/check-coupon`, requestData, { headers })
+      .pipe(finalize(() => { this.isApplyingCoupon = false; }))
+      .subscribe({
+        next: (res: any) => {
+          if (!res?.status) {
+            this.couponError = res?.errorData?.error || 'Invalid or expired coupon.';
+            this.appliedCoupon = null;
+            this.discountAmount = 0;
+            return;
+          }
+          this.appliedCoupon = res.data;
+          this.discountAmount = res.data.total_discount || 0;
+          this.couponTitle = res.data.coupon_title || this.couponCode;
+          this.couponType = res.data.value_type || '';
+          this.couponMessage = `تم تطبيق الكوبون: -${this.discountAmount.toFixed(2)} ${res.data.currency_symbol || ''}`;
+
+          const amountAfter = Number(res.data.amount_after_coupon ?? baseAmount - this.discountAmount);
+          const summary = this.invoices?.[0]?.invoice_summary;
+          if (summary) {
+            summary.coupon_value = this.discountAmount;
+            summary.coupon_title = this.couponTitle;
+            summary.coupon_type = this.couponType;
+            summary.coupon_code = this.couponCode;
+            summary.total_price = amountAfter;
+            summary.total_after_tax = res.data.total_after_tax ?? amountAfter;
+            if (res.data.tax !== undefined) summary.tax = res.data.tax;
+            if (res.data.amount_before_coupon) summary.subtotal_price_before_coupon = res.data.amount_before_coupon;
+          }
+          this.totalll = this.invoices?.[0]?.invoice_summary?.total_price;
+          this.cdr.detectChanges();
+        },
+        error: (err) => {
+          this.couponError = err?.error?.errorData?.error || 'Cannot apply coupon. Please check coupon conditions or order eligibility.';
+        }
+      });
+  }
+
+  applyManualDiscount(): void {
+    if (this.paymentStatus === 'paid' || this.invoices?.[0]?.transactions?.[0]?.payment_status === 'paid') {
+      this.couponError = 'لا يمكن إضافة خصم لطلب مدفوع.';
+      return;
+    }
+    if (!this.manualDiscountType || this.manualDiscountValue === null) {
+      this.couponError = 'حدد نوع وقيمة الخصم.';
+      return;
+    }
+    const summary = this.invoices?.[0]?.invoice_summary;
+    const baseAmount = Number(summary?.subtotal_price_before_coupon ?? summary?.total_price ?? 0);
+    if (!baseAmount) {
+      this.couponError = 'فشل حساب إجمالي الطلب.';
+      return;
+    }
+
+    let discountValue = 0;
+    if (this.manualDiscountType === 'percentage') {
+      discountValue = (baseAmount * Number(this.manualDiscountValue)) / 100;
+    } else {
+      discountValue = Number(this.manualDiscountValue);
+    }
+    discountValue = Math.max(0, Math.min(discountValue, baseAmount));
+    this.couponCode = '';
+    this.appliedCoupon = null;
+    this.couponMessage = `تم تطبيق خصم يدوي (${this.manualDiscountType === 'percentage' ? '%' : 'مبلغ ثابت'})`;
+    this.couponError = '';
+    this.recalcTotalsWithDiscount(discountValue, 'خصم يدوي', this.manualDiscountType);
+  }
+
+  removeDiscount(): void {
+    const summary = this.invoices?.[0]?.invoice_summary;
+    if (!summary) return;
+    summary.coupon_value = 0;
+    summary.coupon_title = '';
+    summary.coupon_type = '';
+    summary.coupon_code = '';
+
+    const originalSubtotal = Number(summary.subtotal_price_before_coupon || summary.total_price || 0);
+    const taxPerc = Number(summary.tax_percentage || 0);
+    const servicePerc = Number(summary.service_percentage || 0);
+    const serviceFixed = Number(summary.service_fees || 0);
+    let subtotalAfter = originalSubtotal;
+    const serviceAmount = servicePerc ? (subtotalAfter * servicePerc) / 100 : serviceFixed;
+    subtotalAfter += serviceAmount;
+    const taxAmount = taxPerc ? (subtotalAfter * taxPerc) / 100 : 0;
+    const total = subtotalAfter + taxAmount;
+    summary.total_price = Number(total.toFixed(2));
+    summary.total_after_tax = summary.total_price;
+    summary.tax = Number(taxAmount.toFixed(2));
+
+    this.discountAmount = 0;
+    this.couponTitle = '';
+    this.couponType = '';
+    this.couponCode = '';
+    this.couponMessage = '';
+    this.couponError = '';
+    this.totalll = summary.total_price;
+    this.cdr.detectChanges();
+  }
   isFinal: boolean = false;
   async printInvoice(isfinal: boolean) {
     this.isFinal = isfinal
@@ -556,5 +750,18 @@ export class PillEditComponent {
     this.referenceNumber = numericValue;
     // تحديث قيمة الحقل
     event.target.value = numericValue;
+  }
+
+  // دالة لتطبيق الكوبون تلقائياً عند تغيير القيمة
+  onCouponCodeChange(value: string): void {
+    // تطبيق الكوبون تلقائياً إذا تم إدخال كود
+    if (value && value.trim()) {
+      // تطبيق الكوبون تلقائياً بعد تأخير بسيط لتجنب الطلبات المتكررة
+      setTimeout(() => {
+        if (this.couponCode && this.couponCode.trim() === value.trim()) {
+          this.applyCouponForInvoice();
+        }
+      }, 500);
+    }
   }
 }
