@@ -3174,6 +3174,19 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                 next: async (response) => {
                   console.log('🖨️ [Kitchen Print] Response received:', response);
 
+                  if(response.status && response.allDish && response.allDish.length > 0){
+                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
+                    try {
+                      await this.printInvoiceImage(response.allDish ,response.order, response.Ipall);
+                      console.log('✅ [Kitchen Print] Drinks printed successfully');
+                    } catch (err) {
+                      console.error('❌ [Kitchen Print] Error printing drinks:', err);
+                    }
+                  }
+
+
+                  await new Promise(resolve => setTimeout(resolve, 500));
+
                   // Print drinks first
                   if(response.status && response.drinks && response.drinks.length > 0){
                     console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
