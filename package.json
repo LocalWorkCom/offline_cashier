@@ -1,6 +1,7 @@
 {
   "name": "cashier",
   "version": "0.0.0",
+  "main": "app.js",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
@@ -11,7 +12,9 @@
     "electron:prod": "npm run build && electron ./app.js",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "serve:ssr:cashier": "node dist/cashier/server/server.mjs"
+    "serve:ssr:cashier": "node dist/cashier/server/server.mjs",
+    "electron:build": "ng build --configuration production && electron-builder"
+
   },
   "private": true,
   "dependencies": {
@@ -77,5 +80,30 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~5.7.2"
+  },
+  "build": {
+  "appId": "com.cashier.app",
+  "productName": "Cashier System",
+  "directories": {
+    "output": "release"
+  },
+  "files": [
+    "dist/**/*",
+    "electron/**/*",
+    "app.js",
+    "preload.js",
+    "package.json"
+  ],
+  "asarUnpack": [
+    "preload.js"
+  ],
+  "win": {
+    "target": "nsis",
+    "forceCodeSigning": false
   }
 }
+
+
+}
+
+

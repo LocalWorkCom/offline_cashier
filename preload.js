@@ -1,6 +1,8 @@
 // import { contextBridge, ipcRenderer } from 'electron';
 const { contextBridge, ipcRenderer } = require('electron');
 
+console.log('✅ Preload script loaded successfully');
+
 contextBridge.exposeInMainWorld('deviceAPI', {
   getSystemInfo: async () => {
     return await ipcRenderer.invoke('get-system-info');
@@ -14,12 +16,9 @@ contextBridge.exposeInMainWorld('deviceAPI', {
   testPrinterConnection: async (ip, port, imageDataUrl) => {
     return await ipcRenderer.invoke('test-printer-connection', ip, port, imageDataUrl);
   }
-  // contextBridge.exposeInMainWorld('deviceAPI', {
-  //   testPrinterConnection: (ip, port, imageBase64) =>
-  //     ipcRenderer.invoke('test-printer-connection', ip, port, imageBase64),
-  // });
-
 });
+
+console.log('✅ deviceAPI exposed to window');
 
 
 
