@@ -3085,10 +3085,62 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         const dataOrderId = (response as any).data.order_id;
         this.createdOrderId = dataOrderId;
         await this.fetchPillsDetails(this.pillId);
+
+        this.removeCouponFromLocalStorage();
+
+        // Print kitchen orders for Takeaway FIRST (before printInvoice which reloads the page)
+        // this.printedInvoiceService
+        //   .printkitchen(orderData, this.orderedId)
+        //   .subscribe({
+        //     next: async (response) => {
+        //       console.log('🖨️ [Kitchen Print - Takeaway] Response received:', response);
+
+        //       // Print drinks first
+        //       if(response.status && response.drinks && response.drinks.length > 0){
+        //         console.log('🖨️ [Kitchen Print - Takeaway] Calling printInvoiceImage for drinks...');
+        //         try {
+        //           await this.printInvoiceImage(response.drinks ,response.order, "192.168.100.102");
+        //           console.log('✅ [Kitchen Print - Takeaway] Drinks printed successfully');
+        //         } catch (err) {
+        //           console.error('❌ [Kitchen Print - Takeaway] Error printing drinks:', err);
+        //         }
+        //       }
+
+        //       // Wait a bit before printing fish to the same printer
+        //       await new Promise(resolve => setTimeout(resolve, 500));
+
+        //       // Print fish
+        //       if(response.status && response.fish && response.fish.length > 0){
+        //         console.log('🖨️ [Kitchen Print - Takeaway] Calling printInvoiceImage for fish...');
+        //         try {
+        //           await this.printInvoiceImage(response.fish ,response.order, "192.168.100.160");
+        //           console.log('✅ [Kitchen Print - Takeaway] Fish printed successfully');
+        //         } catch (err) {
+        //           console.error('❌ [Kitchen Print - Takeaway] Error printing fish:', err);
+        //         }
+        //       }
+        //       await new Promise(resolve => setTimeout(resolve, 500));
+
+        //       // Print grills to different printer (can run in parallel)
+        //       if(response.status && response.grills && response.grills.length > 0){
+        //         console.log('🖨️ [Kitchen Print - Takeaway] Calling printInvoiceImage for grills...');
+        //         this.printInvoiceImage(response.grills ,response.order, "192.168.100.107").catch(err => {
+        //           console.error('❌ [Kitchen Print - Takeaway] Error printing grills:', err);
+        //         });
+        //       }
+        //     },
+        //     error: (error) => {
+        //       console.error('Kitchen print error - Takeaway:', error);
+        //     }
+        //   });
+        // Print invoice AFTER starting kitchen print (delay enough to let kitchen print complete before reload)
+        // Kitchen print takes ~2-3 seconds, so delay invoice print by 4 seconds to ensure completion
         setTimeout(() => {
           this.printInvoice();
-        }, 200);
-        this.removeCouponFromLocalStorage();
+        }, 4000);
+
+        
+
       }
 
       const orderId = (response as any).data?.order_id;
@@ -3119,23 +3171,39 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         this.printedInvoiceService
               .printkitchen(orderData, this.orderedId)
               .subscribe({
-                next: (response) => {
+                next: async (response) => {
                   console.log('🖨️ [Kitchen Print] Response received:', response);
+
+                  // Print drinks first
                   if(response.status && response.drinks && response.drinks.length > 0){
                     console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
-                    this.printInvoiceImage(response.drinks ,response.order).catch(err => {
+                    try {
+                      await this.printInvoiceImage(response.drinks ,response.order, "192.168.100.102");
+                      console.log('✅ [Kitchen Print] Drinks printed successfully');
+                    } catch (err) {
                       console.error('❌ [Kitchen Print] Error printing drinks:', err);
-                    });
+                    }
                   }
-                 if(response.status && response.fish && response.fish.length > 0){
+
+                  // Wait a bit before printing fish to the same printer
+                  await new Promise(resolve => setTimeout(resolve, 500));
+
+                  // Print fish
+                  if(response.status && response.fish && response.fish.length > 0){
                     console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
-                    this.printInvoiceImage(response.fish ,response.order).catch(err => {
+                    try {
+                      await this.printInvoiceImage(response.fish ,response.order, "192.168.100.160");
+                      console.log('✅ [Kitchen Print] Fish printed successfully');
+                    } catch (err) {
                       console.error('❌ [Kitchen Print] Error printing fish:', err);
-                    });
+                    }
                   }
+                  await new Promise(resolve => setTimeout(resolve, 500));
+
+                  // Print grills to different printer (can run in parallel)
                   if(response.status && response.grills && response.grills.length > 0){
                     console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
-                    this.printInvoiceImage(response.grills ,response.order).catch(err => {
+                    this.printInvoiceImage(response.grills ,response.order, "192.168.100.107").catch(err => {
                       console.error('❌ [Kitchen Print] Error printing grills:', err);
                     });
                   }
@@ -3744,26 +3812,33 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   //   }
   // }
 
-  async printInvoiceImage(data?: any[], order?: any) {
-    console.log('🖨️ [printInvoiceImage] Function called', { dataLength: data?.length, order });
+  async printInvoiceImage(data?: any[], order?: any, printerIP: string = "192.168.100.102") {
+    console.log('🖨️ [printInvoiceImage] Function called', { dataLength: data?.length, order, printerIP });
     let iframe: HTMLIFrameElement | null = null;
 
     try {
-      this.kitchenDrinks = data || [];
-      console.log('🖨️ [printInvoiceImage] kitchenDrinks set', this.kitchenDrinks.length);
+      // Use local variable instead of shared class property to avoid conflicts when printing to multiple printers
+      const itemsToPrint = data || [];
+      console.log('🖨️ [printInvoiceImage] Items to print:', itemsToPrint.length, 'for printer:', printerIP);
 
-      if (!this.kitchenDrinks.length) {
-        console.warn("⚠️ [printInvoiceImage] No drinks data to print");
+      if (!itemsToPrint.length) {
+        console.warn("⚠️ [printInvoiceImage] No data to print");
+        return;
+      }
+
+      // Validate printerIP
+      if (!printerIP || printerIP.trim() === '') {
+        console.error("❌ [printInvoiceImage] Printer IP is required");
         return;
       }
 
       console.log('🖨️ [printInvoiceImage] Calling formatTable...');
-      const completeHTML = this.formatTable(this.kitchenDrinks, order);
+      const completeHTML = this.formatTable(itemsToPrint, order);
       console.log('🖨️ [printInvoiceImage] HTML generated, length:', completeHTML.length);
 
       // ========== Create Hidden Iframe ==========
       console.log('🖨️ [printInvoiceImage] Creating iframe...');
-      const printerWidth = 640;
+      const printerWidth = 576;
       iframe = document.createElement("iframe");
       iframe.style.position = "fixed";
       iframe.style.right = "0";
@@ -3890,7 +3965,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       console.log("🖨️ [printInvoiceImage] PNG Ready for Printer", `Base64 length: ${base64Image.length}`);
 
       // ========== PRINTING ==========
-      const printerIP = "192.168.100.102";
       const printerPort = 9100;
 
       console.log('🖨️ [printInvoiceImage] Checking deviceAPI...');
@@ -3963,7 +4037,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const orderCreatedAt = order?.date && order?.time ? `${order.date}   ${order.time}` : 'N/A';
 
     // XP-80C: 80mm paper width = 640px at 203 DPI
-    const printerWidth = 640;
+    const printerWidth = 576;
 
     // Calculate height
     const baseHeight = 200;
@@ -4001,22 +4075,24 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                     padding: 10px;
                     background: white;
                     width: ${printerWidth}px;
-                    font-size: 24px;
-                    min-height: ${finalHeight}px;
+                    font-size: 30px;
                     height: auto;
+                    min-height: auto;
                     overflow: visible;
                     margin: 0;
                 }
                 .content-wrapper {
                     width: ${printerWidth}px;
-                    min-height: 100px;
+                    height: auto;
+                    min-height: auto;
                     background: white;
                     overflow: visible;
                 }
                 table {
-                    width: 95%;
+                    width: 90%;
+                    height: auto;
                     border-collapse: collapse;
-                    margin: 10px auto 0;
+                    margin: 10px auto;
                     background: white;
                     padding: 20px;
                 }
@@ -4027,29 +4103,32 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                     text-align: center;
                     border: 3px solid #000;
                     font-weight: bold;
-                    font-size: 22px;
+                    font-size: 30px;
                 }
                 td {
                     padding: 10px 8px;
                     border: 3px solid #000;
                     text-align: center;
-                    font-size: 22px;
+                    font-size: 30px;
                 }
                 .item-number {
                     width: 40px;
                     font-weight: bold;
+                    font-size: 30px;
                 }
                 .item-name {
                     width: 100px;
                     text-align: right;
                     font-weight: bold;
+                    font-size: 30px;
                 }
                 .item-quantity {
-                    width: 60px;
+                    width: 40px;
                     font-weight: bold;
+                    font-size: 30px;
                 }
                 .item-details {
-                    font-size: 18px;
+                    font-size: 30px;
                     color: #333;
                     margin-top: 3px;
                     display: block;
@@ -4057,7 +4136,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                 .size, .addons {
                     display: block;
                     margin-top: 3px;
-                    font-size: 20px;
+                    font-size: 30px;
                 }
                 .logo-container {
                     text-align: center;
@@ -4075,12 +4154,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                 }
                 .order-details p {
                     margin: 4px 0;
-                    font-size: 20px;
+                    font-size: 30px;
                 }
             </style>
         </head>
-        <body style="height: ${finalHeight}px; min-height: ${finalHeight}px;">
-            <div class="content-wrapper" style="height: ${finalHeight}px; min-height: ${finalHeight}px;">
+        <body style="height: auto; min-height: auto;">
+            <div class="content-wrapper" style="height: auto; min-height: auto;">
             <div class="logo-container">`;
 
     // Add logo (using asset path - in browser this will work)
