@@ -187,6 +187,34 @@
         </div>
       </div>
     </div>
+    <!-- Coupon / Discount for unpaid orders -->
+    <div *ngIf="invoices?.[0]?.transactions?.[0]?.payment_status !== 'paid'" class="card px-4 py-3 my-2">
+      <h5 class="fw-bold mb-2"><i class="fas fa-percent me-2"></i> الكوبون / الخصم</h5>
+      <button class="btn reversed main-color d-flex align-items-center mx-2 mb-3" data-bs-toggle="modal"
+        data-bs-target="#couponModal">
+        <i class="fa fa-plus" aria-hidden="true"></i>
+        <span class="mb-0 w-100"> أضف كوبون </span>
+      </button>
+
+      <div *ngIf="couponMessage" class="alert alert-success py-2 mb-2">
+        {{ couponMessage }}
+      </div>
+      <div *ngIf="couponError" class="alert alert-danger py-2 mb-2">
+        {{ couponError }}
+      </div>
+      <div *ngIf="discountAmount > 0" class="d-flex justify-content-between align-items-center mt-2">
+        <span>الخصم المطبق:</span>
+        <span class="fw-bold">-{{ discountAmount | number:'1.2-2' }} {{ invoices[0]?.invoice_summary?.currency_symbol
+          }}</span>
+      </div>
+      <div *ngIf="appliedCoupon && appliedCoupon.coupon_title" class="mt-2">
+        <p class="main-color fw-bold mb-0">
+          كوبون خصم:
+          <span class="btn-static-secondary p-1 rounded">{{ appliedCoupon.coupon_title }}</span>
+        </p>
+      </div>
+      <div *ngIf="couponTitle" class="text-muted small mt-2">الخصم: {{ couponTitle }}</div>
+    </div>
 
     <div class="card px-4 py-2 my-2">
       <h5 class="mb-3"><i class="fas fa-file-alt main-color fs-4 ps-2"></i>معلومات الدفع</h5>
@@ -243,30 +271,27 @@
             </label>
           </div>
           <div class="col-8">
-            <input class="form-control" type="number" id="credit_amount" [(ngModel)]="credit_value"
-              name="credit_value" (ngModelChange)="setCreditAmount($event)" />
+            <input class="form-control" type="number" id="credit_amount" [(ngModel)]="credit_value" name="credit_value"
+              (ngModelChange)="setCreditAmount($event)" />
           </div>
         </div>
         @if(this.credit_value && this.credit_value > 0){
-          <hr>
-          <div
-            class="mb-3 row mx-0 justify-content-center align-items-center">
-            <div class="col-4 text-center">
-              <label class="form-check-label w-100" for="reference_number">
-                رقم المرجع
-              </label>
-            </div>
-            <div class="col-8">
-              <input type="text" id="reference_number"
-                class="form-control" [(ngModel)]="referenceNumber"
-                name="referenceNumber" required #ref="ngModel" 
-                pattern="[0-9]*" (input)="onReferenceNumberInput($event)" />
-              <div *ngIf="ref.invalid && formSubmitted"
-                class="text-danger">
-                المرجو إدخال رقم المرجع للفيزا.
-              </div>
+        <hr>
+        <div class="mb-3 row mx-0 justify-content-center align-items-center">
+          <div class="col-4 text-center">
+            <label class="form-check-label w-100" for="reference_number">
+              رقم المرجع
+            </label>
+          </div>
+          <div class="col-8">
+            <input type="text" id="reference_number" class="form-control" [(ngModel)]="referenceNumber"
+              name="referenceNumber" required #ref="ngModel" pattern="[0-9]*"
+              (input)="onReferenceNumberInput($event)" />
+            <div *ngIf="ref.invalid && formSubmitted" class="text-danger">
+              المرجو إدخال رقم المرجع للفيزا.
             </div>
           </div>
+        </div>
         }
         @if (amountError) {
         <div class="alert alert-danger text-center" role="alert">
@@ -312,13 +337,15 @@
       <!-- Cash - visa -->
     </div>
 
+
     <div class="card px-4 py-2 my-2" *ngFor="let item of invoiceSummary">
       <h5><i class="fas fa-file-alt main-color fs-4 ps-2"></i> الفاتورة</h5>
       <div class="d-flex justify-content-between px-2 mb-1">
         <h6>مجموع الطلب</h6>
 
         <h6>
-          <span>{{ invoices[0].invoice_summary.subtotal_price_before_coupon.toFixed(2) }}
+          <span>{{ (invoices[0].invoice_summary.subtotal_price_before_coupon || invoices[0].invoice_summary.total_price
+            || 0).toFixed(2) }}
             {{ item.currency_symbol }}</span>
         </h6>
       </div>
@@ -330,7 +357,7 @@
         ">
         <h6>كوبون خصم
           <span class="btn-static-secondary p-1 rounded">{{ invoices[0].invoice_summary.coupon_title
-          }} </span>
+            }} </span>
         </h6>
 
         <h6>
@@ -541,7 +568,7 @@
             ">
             <h6>تخفيض:
               <span class="btn-static-secondary p-1 rounded">{{ invoices[0].invoice_summary.coupon_title
-          }} </span>
+                }} </span>
             </h6>
             <span>-{{ item.coupon_value }} {{ item.currency_symbol }}</span>
           </div>
@@ -651,4 +678,43 @@
   </div>
 </div>
 <app-confirm-dialog #printDialog (actionResult)="printInvoice($event)" [header]="'تأكيد'"
-  message='هل هذه الطباعة النهائية؟' [acceptLabel]="'نعم'" [rejectLabel]="'لا'"></app-confirm-dialog> 
+  message='هل هذه الطباعة النهائية؟' [acceptLabel]="'نعم'" [rejectLabel]="'لا'"></app-confirm-dialog>
+
+<!-- Coupon Modal -->
+<div class="modal fade" id="couponModal" tabindex="-1" aria-labelledby="couponModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <h1 class="modal-title fs-5 text-center" id="couponModalLabel">
+          اضافة كوبون
+        </h1>
+        <h6 class="fw-bold">
+          <img src="assets/images/coupon-icon.png" alt />
+          وفرناها عليك
+        </h6>
+        <input class="form-control" type="text" [(ngModel)]="couponCode" placeholder="أدخل الكوبون"
+          (ngModelChange)="onCouponCodeChange($event)" />
+        @if (couponMessage) {
+        <p class="message text-success">{{ couponMessage }}</p>
+        }
+        @if (couponError) {
+        <p class="message text-danger">{{ couponError }}</p>
+        }
+
+      </div>
+      <div class="modal-footer">
+        @if (discountAmount > 0) {
+        <button class="btn" (click)="applyCouponForInvoice()" [disabled]="isApplyingCoupon">
+          {{ isApplyingCoupon ? "جاري التحقق...." : "تطبيق" }}
+        </button>
+        <button class="btn reversed main-color" (click)="removeDiscount()">
+          حذف الكوبون
+        </button>
+        }
+      </div>
+    </div>
+  </div>
+</div>
