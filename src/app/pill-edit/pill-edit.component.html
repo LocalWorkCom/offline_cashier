@@ -262,6 +262,9 @@
             <div *ngIf="ref.invalid && formSubmitted" class="text-danger">
               المرجو إدخال رقم المرجع للفيزا.
             </div>
+            <div *ngIf="referenceNumberError" class="text-danger mt-1">
+              {{ referenceNumberError }}
+            </div>
           </div>
         </div>
         }
@@ -269,6 +272,11 @@
         <div class="alert alert-danger text-center" role="alert">
           يجب أن يكون مجموع الكاش والفيزا مساويًا لقيمة الطلب: {{ invoices[0].invoice_summary.total_price}} {{
           invoices[0].currency_symbol }}
+        </div>
+        }
+        @if (paymentAmountError) {
+        <div class="alert alert-danger text-center" role="alert">
+          {{ paymentAmountError }}
         </div>
         }
         <!-- <div class="total d-flex">
