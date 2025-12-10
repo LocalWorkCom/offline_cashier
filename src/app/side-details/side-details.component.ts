@@ -2687,7 +2687,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     if (this.selectedPaymentStatus === 'paid' && this.selectedPaymentMethod === 'credit') {
       const cartTotal = this.finalTipSummary?.billAmount ?? this.getCartTotal();
       const creditAmount = Number(this.credit_amountt) || 0;
-      
+
       if (creditAmount > 0 && creditAmount < cartTotal) {
         this.isLoading = false;
         this.loading = false;
@@ -2978,14 +2978,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         // ✅ التعديل المطلوب: إذا كاش يحط في cash_amount، إذا فيزا يحط في credit_amount
         if (this.selectedPaymentMethod === 'cash') {
           const cashAmount = this.cashPaymentInput > 0 ? this.cashPaymentInput : billAmount;
-          
+
           // 🔒 التحقق من أن مبلغ الكاش لا يقل عن الإجمالي
           if (cashAmount < billAmount) {
             this.amountError = true;
             this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmount} ${this.currencySymbol}`;
             return;
           }
-          
+
           // تسجيل الإجمالي بالضبط في cash_amount
           orderData.cash_amount = billAmount;
           orderData.credit_amount = 0;
@@ -3023,7 +3023,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           // 🔒 الخطوة 1: التحقق أولاً من أن مبلغ الفيزا المدخل لا يقل عن الإجمالي
           const enteredCreditAmount = Number(this.credit_amountt) || 0;
           const billAmountNum = Number(billAmount) || 0;
-          
+
           // إذا تم إدخال مبلغ وكان أقل من الإجمالي، منع التنفيذ
           if (enteredCreditAmount > 0 && enteredCreditAmount < billAmountNum) {
             this.amountError = true;
@@ -3035,7 +3035,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             });
             return;
           }
-          
+
           // 🔒 الخطوة 2: إذا كان المبلغ صحيحاً (>= الإجمالي)، تسجيل الإجمالي بالضبط
           orderData.credit_amount = billAmount;
           orderData.cash_amount = 0;
@@ -3321,7 +3321,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               });
         // Print invoice items without prices to network printer
         // this.printInvoiceImage();
-        location.reload();
+        // location.reload();
       }
 
       setTimeout(() => {

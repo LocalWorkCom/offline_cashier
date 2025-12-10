@@ -510,11 +510,11 @@
                 </button>
                 }
                 @else if(order.order_details.payment_status == 'unpaid' && order.order_details.status === 'pending'  && order.order_details.order_type != "talabat") {
-                  <!-- <button type="button" class="btn btn-transparent w-100 py-2" routerLink="/tables">
+                  <button type="button" class="btn btn-transparent w-100 py-2" routerLink="/tableavailable">
                       <span>
                         تغير الطاولة
                         </span>
-                    </button> -->
+                    </button>
 
                   <button type="button" class="btn btn-transparent w-100 py-2" data-bs-toggle="modal"
                   [attr.data-bs-target]="'#modal-' + order.order_details.order_id">
