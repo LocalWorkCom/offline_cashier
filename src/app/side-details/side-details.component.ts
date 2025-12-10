@@ -2970,6 +2970,17 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           orderData.credit_amount = 0;
         }
 
+        // 🔒 تأكيد أن المبلغ المدفوع لا يقل عن الإجمالي قبل متابعة الطلب
+        if (this.selectedPaymentMethod !== 'deferred') {
+          const totalPaidFinal = Number((Number(orderData.cash_amount || 0) + Number(orderData.credit_amount || 0)).toFixed(2));
+          const billAmountFinal = Number((billAmount || 0).toFixed(2));
+          if (totalPaidFinal < billAmountFinal) {
+            this.amountError = true;
+            this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountFinal} ${this.currencySymbol}`;
+            return;
+          }
+        }
+
         console.log('💰 تم تعيين مبالغ الدفع:', {
           method: this.selectedPaymentMethod,
           cash_amount: orderData.cash_amount,
