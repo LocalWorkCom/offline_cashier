@@ -307,10 +307,10 @@ export class PillEditComponent {
     // التحقق من رقم المرجع للفيزا
     var creditAmount = this.credit_value != null ? this.credit_value : 0;
     var cashAmount = this.cash_value != null ? this.cash_value : 0;
-    
+
     if (this.paymentStatus === 'paid') {
       const total = Number(this.getInvoiceTotal().toFixed(2));
-      
+
       // 🔒 حالة الدفع بالفيزا فقط: التحقق من أن المبلغ المدخل >= الإجمالي
       if (creditAmount > 0 && cashAmount === 0) {
         const enteredCreditAmount = Number(creditAmount);
@@ -322,7 +322,7 @@ export class PillEditComponent {
         // إذا كان المبلغ صحيحاً (>= الإجمالي)، تسجيل الإجمالي فقط
         creditAmount = total;
         cashAmount = 0;
-        
+
         // مزامنة القيم المعروضة
         this.credit_value = creditAmount;
         this.cash_value = cashAmount;
@@ -339,11 +339,11 @@ export class PillEditComponent {
         this.cash_value = cashAmount;
         this.credit_value = creditAmount;
       }
-      
+
       // التحقق من رقم المرجع للفيزا بعد التأكد من المبلغ
       if (creditAmount > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
         this.referenceNumberTouched = true;
-        alert('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
+        // alert('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
         return;
       }
     }
