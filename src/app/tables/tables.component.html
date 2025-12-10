@@ -185,11 +185,11 @@
       class="col-6 col-sm-6 col-lg-4 col-xl-3"
       *ngFor="let table of tables; trackBy: trackByTableId"
     >
-      <!-- <div class="card p-2 pb-3"
+      <div class="card p-2 pb-3"
            [class.disabled]="table.status === 2"
-           (click)="table.status === 2 ? onTableOrderDetailsClick(table.id) : onTableClick(table.id)"> -->
+           (click)="table.status === 2 ? onTableOrderDetailsClick(table.id) : onTableClick(table.id)">
 
-      <div class="card p-2 pb-3" (click)="onTableClick(table.id)" [class.disabled]="table.status === 2">
+      <!-- <div class="card p-2 pb-3" (click)="onTableClick(table.id)" [class.disabled]="table.status === 2"> -->
 
         <div class="floor_number">
           <div>
