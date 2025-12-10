@@ -2670,6 +2670,42 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.isLoading = true;
     this.loading = true;
 
+    // 🔒 التحقق من paymentError قبل المتابعة
+    if (this.paymentError && this.paymentError.trim() !== '') {
+      this.isLoading = false;
+      this.loading = false;
+      this.falseMessage = this.paymentError;
+      console.error('❌ خطأ في المبلغ المدخل:', this.paymentError);
+      setTimeout(() => {
+        this.falseMessage = '';
+        this.paymentError = '';
+      }, 3500);
+      return;
+    }
+
+    // 🔒 التحقق من مبلغ الفيزا إذا كانت طريقة الدفع فيزا
+    if (this.selectedPaymentStatus === 'paid' && this.selectedPaymentMethod === 'credit') {
+      const cartTotal = this.finalTipSummary?.billAmount ?? this.getCartTotal();
+      const creditAmount = Number(this.credit_amountt) || 0;
+      
+      if (creditAmount > 0 && creditAmount < cartTotal) {
+        this.isLoading = false;
+        this.loading = false;
+        this.amountError = true;
+        this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${cartTotal.toFixed(2)} ${this.currencySymbol}`;
+        console.error('❌ خطأ في التحقق من مبلغ الفيزا في بداية submitOrder:', {
+          creditAmount,
+          cartTotal,
+          credit_amountt: this.credit_amountt
+        });
+        setTimeout(() => {
+          this.amountError = false;
+          this.falseMessage = '';
+        }, 3500);
+        return;
+      }
+    }
+
     // التحقق الأساسي
     if (!this.cartItems.length) {
       this.isLoading = false;
@@ -2818,6 +2854,26 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
           totalEntered = Number(((this.cashAmountMixed || 0) + (this.creditAmountMixed || 0)));
         }
+        // ✅ حالة الفيزا - التحقق من المبلغ المدخل
+        else if (this.selectedPaymentMethod === 'credit') {
+          const creditAmount = Number(this.credit_amountt) || 0;
+          if (creditAmount > 0 && creditAmount < cartTotal) {
+            this.amountError = true;
+            this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${cartTotal.toFixed(2)} ${this.currencySymbol}`;
+            console.error('❌ خطأ في التحقق من مبلغ الفيزا:', {
+              creditAmount,
+              cartTotal,
+              credit_amountt: this.credit_amountt
+            });
+            this.isLoading = false;
+            setTimeout(() => {
+              this.amountError = false;
+              this.falseMessage = '';
+            }, 3500);
+            return;
+          }
+          totalEntered = creditAmount > 0 ? creditAmount : cartTotal;
+        }
         // ✅ النظام القديم
         else {
           totalEntered = Number((((Number(this.cash_amountt) || 0) + (Number(this.credit_amountt) || 0))));
@@ -2921,7 +2977,17 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
         // ✅ التعديل المطلوب: إذا كاش يحط في cash_amount، إذا فيزا يحط في credit_amount
         if (this.selectedPaymentMethod === 'cash') {
-          orderData.cash_amount = this.cashPaymentInput > 0 ? this.cashPaymentInput : billAmount;
+          const cashAmount = this.cashPaymentInput > 0 ? this.cashPaymentInput : billAmount;
+          
+          // 🔒 التحقق من أن مبلغ الكاش لا يقل عن الإجمالي
+          if (cashAmount < billAmount) {
+            this.amountError = true;
+            this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmount} ${this.currencySymbol}`;
+            return;
+          }
+          
+          // تسجيل الإجمالي بالضبط في cash_amount
+          orderData.cash_amount = billAmount;
           orderData.credit_amount = 0;
         } else if (this.selectedPaymentMethod === 'cash + credit') {
 
@@ -2954,7 +3020,24 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           // const creditAmount = Number(this.creditAmountMixed) || 0;
         }
         else if (this.selectedPaymentMethod === 'credit') {
-          orderData.credit_amount = this.credit_amountt > 0 ? this.credit_amountt : billAmount;
+          // 🔒 الخطوة 1: التحقق أولاً من أن مبلغ الفيزا المدخل لا يقل عن الإجمالي
+          const enteredCreditAmount = Number(this.credit_amountt) || 0;
+          const billAmountNum = Number(billAmount) || 0;
+          
+          // إذا تم إدخال مبلغ وكان أقل من الإجمالي، منع التنفيذ
+          if (enteredCreditAmount > 0 && enteredCreditAmount < billAmountNum) {
+            this.amountError = true;
+            this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountNum.toFixed(2)} ${this.currencySymbol}`;
+            console.error('❌ خطأ في التحقق من مبلغ الفيزا:', {
+              enteredCreditAmount,
+              billAmountNum,
+              credit_amountt: this.credit_amountt
+            });
+            return;
+          }
+          
+          // 🔒 الخطوة 2: إذا كان المبلغ صحيحاً (>= الإجمالي)، تسجيل الإجمالي بالضبط
+          orderData.credit_amount = billAmount;
           orderData.cash_amount = 0;
 
           console.log('💳 تم تعيين مبالغ الدفع بالفيزا:', {
@@ -5715,6 +5798,19 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
     if (currentPaymentInput < billAmount) {
       this.paymentError = `المبلغ المدخل (${currentPaymentInput}) أقل من المبلغ المستحق (${billAmount})`;
+      // 🔒 منع حفظ القيمة الخاطئة
+      if (this.selectedPaymentMethod === 'credit') {
+        this.credit_amountt = 0;
+        this.credit_amount = 0;
+      } else if (this.selectedPaymentMethod === 'cash') {
+        this.cash_amountt = 0;
+        this.cash_amount = 0;
+      }
+      console.error('❌ منع حفظ المبلغ الخاطئ:', {
+        currentPaymentInput,
+        billAmount,
+        method: this.selectedPaymentMethod
+      });
       return;
     }
     // مسح أي أخطاء سابقة إذا كان المبلغ صحيحاً

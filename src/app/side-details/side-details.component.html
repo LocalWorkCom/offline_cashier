@@ -943,13 +943,6 @@ selectedOrderType === 'talabat') {
 
         </div>
       </div>
-      @if (amountError) {
-      <div class="alert alert-danger text-center" role="alert">
-        يجب أدخال الإجمالي. {{ getCartTotal().toFixed(2) }} {{ currencySymbol }}
-      </div>
-
-      <!-- } -->
-      }
 
       @if (trueMessage) {
       <p class="message">{{ trueMessage }}</p>
