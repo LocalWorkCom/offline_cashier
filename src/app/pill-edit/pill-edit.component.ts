@@ -313,6 +313,18 @@ export class PillEditComponent {
     }
 
     var cashAmount = this.cash_value != null ? this.cash_value : 0;
+    if (this.paymentStatus === 'paid') {
+      const total = Number(this.getInvoiceTotal().toFixed(2));
+      // نجعل المبلغ المسجل دائماً يساوي الإجمالي: نستخدم الكاش أولاً ثم نكمل بالفيزا
+      const usedCash = Math.min(Number(cashAmount || 0), total);
+      const remaining = Number((total - usedCash).toFixed(2));
+      cashAmount = usedCash;
+      creditAmount = remaining > 0 ? remaining : 0;
+
+      // مزامنة القيم المعروضة بعد التصحيح
+      this.cash_value = cashAmount;
+      this.credit_value = creditAmount;
+    }
     if (this.orderType == 'Delivery') {
       this.DeliveredOrNot = true;
     } else {
