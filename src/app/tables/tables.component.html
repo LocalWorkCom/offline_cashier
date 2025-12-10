@@ -185,7 +185,9 @@
       class="col-6 col-sm-6 col-lg-4 col-xl-3"
       *ngFor="let table of tables; trackBy: trackByTableId"
     >
-      <div class="card p-2 pb-3" (click)="onTableClick(table.id)" [class.disabled]="table.status === 2">
+      <div class="card p-2 pb-3"
+           [class.disabled]="table.status === 2"
+           (click)="table.status === 2 ? onTableOrderDetailsClick(table.id) : onTableClick(table.id)">
         <div class="floor_number">
           <div>
             <span class="fw-medium">{{ table.floors?.name }} - {{ table.floor_partitions?.name }}</span>
@@ -199,7 +201,7 @@
 
         <div class="d-flex flex-column flex-sm-row justify-content-between align-items-center" style="cursor: pointer">
           <div class="d-flex flex-nowrap align-items-center">
-            <div (click)="onTableOrderDetailsClick(table.id)"
+            <div
               class="d-inline-flex align-items-center btn-static bg-success text-white fw-bold text-center mx-2 mt-2 px-2"
             >
               <img src="assets/images/table.png" alt="Table Icon" class="me-1" style="max-width: 20px;" />
@@ -215,6 +217,7 @@
           >
             {{ getStatusText(table.status) }}
           </span>
+          <!-- if table.status is 1, show the order details button -->
         </div>
       </div>
     </div>
