@@ -3227,6 +3227,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               });
         // Print invoice items without prices to network printer
         // this.printInvoiceImage();
+        location.reload();
       }
 
       setTimeout(() => {
