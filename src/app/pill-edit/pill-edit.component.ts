@@ -306,24 +306,46 @@ export class PillEditComponent {
 
     // التحقق من رقم المرجع للفيزا
     var creditAmount = this.credit_value != null ? this.credit_value : 0;
-    if (this.paymentStatus === 'paid' && creditAmount > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
-      this.referenceNumberTouched = true;
-      alert('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
-      return;
-    }
-
     var cashAmount = this.cash_value != null ? this.cash_value : 0;
+    
     if (this.paymentStatus === 'paid') {
       const total = Number(this.getInvoiceTotal().toFixed(2));
-      // نجعل المبلغ المسجل دائماً يساوي الإجمالي: نستخدم الكاش أولاً ثم نكمل بالفيزا
-      const usedCash = Math.min(Number(cashAmount || 0), total);
-      const remaining = Number((total - usedCash).toFixed(2));
-      cashAmount = usedCash;
-      creditAmount = remaining > 0 ? remaining : 0;
+      
+      // 🔒 حالة الدفع بالفيزا فقط: التحقق من أن المبلغ المدخل >= الإجمالي
+      if (creditAmount > 0 && cashAmount === 0) {
+        const enteredCreditAmount = Number(creditAmount);
+        if (enteredCreditAmount < total) {
+          this.amountError = true;
+          alert(`المبلغ المدفوع غير كافي. المطلوب: ${total.toFixed(2)} ${this.invoices[0]?.invoice_summary?.currency_symbol || ''}`);
+          return;
+        }
+        // إذا كان المبلغ صحيحاً (>= الإجمالي)، تسجيل الإجمالي فقط
+        creditAmount = total;
+        cashAmount = 0;
+        
+        // مزامنة القيم المعروضة
+        this.credit_value = creditAmount;
+        this.cash_value = cashAmount;
+      }
+      // حالة الدفع المختلط أو الكاش فقط
+      else {
+        // نجعل المبلغ المسجل دائماً يساوي الإجمالي: نستخدم الكاش أولاً ثم نكمل بالفيزا
+        const usedCash = Math.min(Number(cashAmount || 0), total);
+        const remaining = Number((total - usedCash).toFixed(2));
+        cashAmount = usedCash;
+        creditAmount = remaining > 0 ? remaining : 0;
 
-      // مزامنة القيم المعروضة بعد التصحيح
-      this.cash_value = cashAmount;
-      this.credit_value = creditAmount;
+        // مزامنة القيم المعروضة بعد التصحيح
+        this.cash_value = cashAmount;
+        this.credit_value = creditAmount;
+      }
+      
+      // التحقق من رقم المرجع للفيزا بعد التأكد من المبلغ
+      if (creditAmount > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
+        this.referenceNumberTouched = true;
+        alert('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
+        return;
+      }
     }
     if (this.orderType == 'Delivery') {
       this.DeliveredOrNot = true;
