@@ -58,6 +58,8 @@ export class PillEditComponent {
   referenceNumber: any;
   referenceNumberTouched: boolean = false;
   formSubmitted: boolean = false;
+  referenceNumberError: string = '';
+  paymentAmountError: string = '';
 
   constructor(
     private pillDetailsService: PillDetailsService,
@@ -260,6 +262,11 @@ export class PillEditComponent {
 
   saveOrder() {
     console.log('pa', this.paymentStatus);
+    
+    // مسح رسائل الخطأ السابقة
+    this.referenceNumberError = '';
+    this.paymentAmountError = '';
+    this.amountError = false;
 
     if (!this.paymentStatus && this.trackingStatus !== 'on_way') {
       alert('يجب تحديد حالة الدفع  قبل الحفظ!');
@@ -311,14 +318,16 @@ export class PillEditComponent {
     if (this.paymentStatus === 'paid') {
       const total = Number(this.getInvoiceTotal().toFixed(2));
 
-      // 🔒 حالة الدفع بالفيزا فقط: التحقق من أن المبلغ المدخل >= الإجمالي
-      if (creditAmount > 0 && cashAmount === 0) {
-        const enteredCreditAmount = Number(creditAmount);
-        if (enteredCreditAmount < total) {
-          this.amountError = true;
-          alert(`المبلغ المدفوع غير كافي. المطلوب: ${total.toFixed(2)} ${this.invoices[0]?.invoice_summary?.currency_symbol || ''}`);
-          return;
-        }
+        // 🔒 حالة الدفع بالفيزا فقط: التحقق من أن المبلغ المدخل >= الإجمالي
+        if (creditAmount > 0 && cashAmount === 0) {
+          const enteredCreditAmount = Number(creditAmount);
+          if (enteredCreditAmount < total) {
+            this.amountError = true;
+            this.paymentAmountError = `المبلغ المدفوع غير كافي. المطلوب: ${total.toFixed(2)} ${this.invoices[0]?.invoice_summary?.currency_symbol || ''}`;
+            return;
+          } else {
+            this.paymentAmountError = '';
+          }
         // إذا كان المبلغ صحيحاً (>= الإجمالي)، تسجيل الإجمالي فقط
         creditAmount = total;
         cashAmount = 0;
@@ -340,12 +349,14 @@ export class PillEditComponent {
         this.credit_value = creditAmount;
       }
 
-      // التحقق من رقم المرجع للفيزا بعد التأكد من المبلغ
-      if (creditAmount > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
-        this.referenceNumberTouched = true;
-        // alert('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
-        return;
-      }
+        // التحقق من رقم المرجع للفيزا بعد التأكد من المبلغ
+        if (creditAmount > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
+          this.referenceNumberTouched = true;
+          this.referenceNumberError = '❌ رقم المرجع مطلوب عند الدفع بالفيزا.';
+          return;
+        } else {
+          this.referenceNumberError = '';
+        }
     }
     if (this.orderType == 'Delivery') {
       this.DeliveredOrNot = true;
@@ -553,6 +564,12 @@ export class PillEditComponent {
   setCreditAmount(value: number) {
     this.credit_value = value;
     localStorage.setItem('credit_value', String(value));
+    
+    // مسح رسالة الخطأ عند تغيير قيمة الفيزا
+    if (value === 0 || value === null) {
+      this.referenceNumberError = '';
+      this.paymentAmountError = '';
+    }
   }
   // setCashAmount(value: number | null): void {
   //   this.cash_value = Number((value ?? 0).toFixed(2));
@@ -590,6 +607,11 @@ export class PillEditComponent {
     this.referenceNumber = numericValue;
     // تحديث قيمة الحقل
     event.target.value = numericValue;
+    
+    // مسح رسالة الخطأ عند إدخال رقم المرجع
+    if (numericValue && numericValue.trim() !== '') {
+      this.referenceNumberError = '';
+    }
   }
 
   getOrderTypeLabel(type: string): string {
