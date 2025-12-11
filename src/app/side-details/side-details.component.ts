@@ -3328,6 +3328,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               await new Promise(resolve => setTimeout(resolve, 10000));
               this.successModal.show();
               location.reload();
+              
         // Print invoice items without prices to network printer
         // this.printInvoiceImage();
 
