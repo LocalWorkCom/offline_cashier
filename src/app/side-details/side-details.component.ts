@@ -4189,7 +4189,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                     box-sizing: border-box;
                 }
                 html, body {
-                    font-family: Arial, "Segoe UI", Tahoma, sans-serif;
+                    font-family: 'Cairo', sans-serif;
                     padding: 10px;
                     background: white;
                     width: ${printerWidth}px;
