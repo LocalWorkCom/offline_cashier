@@ -3261,7 +3261,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.successMessage = 'تم تنفيذ طلبك بنجاح';
 
       if (this.successModal) {
-        this.successModal.show();
+
         this.printedInvoiceService
               .printkitchen(orderData, this.orderedId)
               .subscribe({
@@ -3305,7 +3305,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                       console.error('❌ [Kitchen Print] Error printing fish:', err);
                     }
                   }
-                  await new Promise(resolve => setTimeout(resolve, 500));
+
 
                   // Print grills to different printer (can run in parallel)
                   if(response.status && response.grills && response.grills.length > 0){
@@ -3314,13 +3314,20 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                       console.error('❌ [Kitchen Print] Error printing grills:', err);
                     });
                   }
-                  location.reload();
+
+                  // await new Promise(resolve => setTimeout(resolve, 60000));
+
+
                 },
                 error: (error) => {
                   console.error('Kitchen print error:', error);
                   location.reload();
                 }
               });
+
+              await new Promise(resolve => setTimeout(resolve, 10000));
+              this.successModal.show();
+              location.reload();
         // Print invoice items without prices to network printer
         // this.printInvoiceImage();
 
@@ -4860,12 +4867,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // if (_removeCoupon == true) {
     //   this.removeCoupon()
     // }
+
     const modals = document.querySelectorAll('.modal.show');
     modals.forEach((modalEl: any) => {
       const modalInstance = bootstrap.Modal.getInstance(modalEl);
       if (modalInstance) {
         modalInstance.hide();
       }
+
     });
     // إزالة أي Backdrop يدويًا
     const backdrops = document.querySelectorAll('.modal-backdrop');
