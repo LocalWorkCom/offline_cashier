@@ -40,6 +40,7 @@ export const routes: Routes = [
       { path: 'home', component: HomeComponent },
       { path: 'orders', component: OrdersComponent },
       { path: 'tables', component: TablesComponent },
+      { path: 'tableavailable/:orderId', component: TableAvailableComponent },
       { path: 'tableavailable', component: TableAvailableComponent },
       { path: 'pills', component: PillsComponent },
       { path: 'delivery-details', component: DeliveryDetailsComponent },

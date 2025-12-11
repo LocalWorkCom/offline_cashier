@@ -1,11 +1,12 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { TablesService } from '../services/tables.service';
-import { CommonModule, Location } from '@angular/common';
-import { Router } from '@angular/router';
+import { CommonModule, Location, isPlatformBrowser } from '@angular/common';
+import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TableCrudOperationService } from '../services/pusher/tableCrudOperation';
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
 import { finalize } from 'rxjs';
+import { COLORS } from 'html2canvas/dist/types/css/types/color';
 
 @Component({
   selector: 'app-tables',
@@ -24,15 +25,26 @@ export class TableAvailableComponent implements OnInit, OnDestroy {
   searchText: string = '';
   loading: boolean = true;
   errorMessage: any;
+  orderId: number | null = null;
 
   constructor(
     private tablesRequestService: TablesService,
     private router: Router,
     private location: Location,
-    private tableOperation: TableCrudOperationService
+    private tableOperation: TableCrudOperationService,
+    private route: ActivatedRoute,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) { }
 
   ngOnInit(): void {
+    // Get order_id from route parameter if available
+    this.route.params.subscribe(params => {
+      if (params['orderId']) {
+        this.orderId = +params['orderId'];
+        console.log('Order ID from route:', this.orderId);
+      }
+    });
+
     if (navigator.onLine) {
       this.fetchTablesData();
     }
@@ -192,6 +204,8 @@ export class TableAvailableComponent implements OnInit, OnDestroy {
   onTableClick(tableId: number): void {
     const selectedTable = this.tables.find((table) => table.id === tableId);
 
+    console.log(selectedTable, 'selectedTable');
+
     if (!selectedTable) {
       console.warn('Table not found:', tableId);
       return;
@@ -201,18 +215,36 @@ export class TableAvailableComponent implements OnInit, OnDestroy {
       alert('هذه الطاولة مشغولة، يرجى اختيار طاولة أخرى.');
       return;
     }
+    // Use order_id from route if available, otherwise use table's order_id
+    const orderIdToUse = this.orderId || selectedTable.order_id;
+    this.tablesRequestService.updateTableStatus(tableId, orderIdToUse).subscribe({
+      next: (response) => {
+        console.log(response, 'response');
+        if (response.status) {
+          // Show success modal
+          if (isPlatformBrowser(this.platformId)) {
+            import('bootstrap').then(({ Modal }) => {
+              const modalElement = document.getElementById('successTableModal');
+              if (modalElement) {
+                const successModal = new Modal(modalElement);
+                successModal.show();
 
-    localStorage.setItem('selected_table', JSON.stringify(selectedTable));
-    localStorage.setItem('table_id', JSON.stringify(tableId));
-    localStorage.setItem(
-      'table_number',
-      JSON.stringify(selectedTable.table_number)
-    );
-    this.router.navigate(['/home']);
-    if (localStorage.getItem('cameFromSideDetails') === 'true') {
-      this.router.navigate(['/home']);
-      localStorage.removeItem('cameFromSideDetails');
-    }
+                // Navigate to orders page after modal is shown
+                setTimeout(() => {
+                  successModal.hide();
+                  this.router.navigate(['/orders']);
+                }, 2000);
+              }
+            });
+          }
+        }
+      },
+      error: (err) => {
+        console.error('Error updating table status:', err);
+      }
+    });
+
+
   }
   ngOnDestroy(): void {
     this.tableOperation.stopListeningForChangeTableStatus();
