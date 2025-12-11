@@ -82,8 +82,8 @@
     "typescript": "~5.7.2"
   },
   "build": {
-  "appId": "com.cashier.app",
-  "productName": "Cashier System",
+  "appId": "com.cashier.sprint",
+  "productName": "Cashier sprint",
   "directories": {
     "output": "release"
   },

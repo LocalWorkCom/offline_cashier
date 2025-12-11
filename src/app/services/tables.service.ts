@@ -32,6 +32,18 @@ export class TablesService {
     };
     return this.http.post(`${this.apiUrl}/orders/tableorderDetails`, body, { headers });
   }
+  // UPDATE TABLE STATUS
+  updateTableStatus(tableId: number, orderId: number): Observable<any> {
+    const headers = new HttpHeaders().set(
+      'Authorization',
+      `Bearer ${this.token}`
+    );
+    const body = {
+      table_id: tableId,
+      order_id: orderId
+    };
+    return this.http.post(`${this.apiUrl}/orders/order-change-table`, body, { headers });
+  }
   //start dalia
   fetchAndSave(): Observable<any> {
     return new Observable(observer => {
