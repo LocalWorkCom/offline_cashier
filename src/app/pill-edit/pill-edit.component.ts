@@ -340,10 +340,30 @@ export class PillEditComponent {
     } else {
       this.DeliveredOrNot = false;
     }
-    console.log(cashAmount,
-      creditAmount)
+    // التأكد من أن totalll محدث بشكل صحيح
+    const finalTotal = this.totalll || this.getInvoiceTotal();
+    
+    console.log('💰 Payment amounts before save:', {
+      cashAmount,
+      creditAmount,
+      totalll: this.totalll,
+      getInvoiceTotal: this.getInvoiceTotal(),
+      finalTotal: finalTotal,
+      paymentStatus: this.paymentStatus,
+      invoiceSummary: this.invoices?.[0]?.invoice_summary
+    });
+    
     if (this.amountError == false && this.loading == false) {
       this.loading = true
+      
+      // إعداد بيانات الكوبون إذا كان موجوداً
+      const couponData = (this.discountAmount > 0 || this.couponCode) ? {
+        coupon_code: this.couponCode || this.invoices?.[0]?.invoice_summary?.coupon_code || '',
+        coupon_value: this.discountAmount || this.invoices?.[0]?.invoice_summary?.coupon_value || 0,
+        coupon_type: this.couponType || this.invoices?.[0]?.invoice_summary?.coupon_type || '',
+        coupon_title: this.couponTitle || this.invoices?.[0]?.invoice_summary?.coupon_title || ''
+      } : undefined;
+      
       this.orderService
         .updateInvoiceStatus(
           this.orderNumber,
@@ -352,9 +372,10 @@ export class PillEditComponent {
           cashAmount,
           creditAmount,
           this.DeliveredOrNot,
-          this.totalll,
+          finalTotal, // استخدام finalTotal بدلاً من totalll || getInvoiceTotal
           undefined,
-          this.referenceNumber
+          this.referenceNumber,
+          couponData // إرسال بيانات الكوبون
         ).pipe(finalize(() => this.loading = false))
         .subscribe({
           next: (response) => {
@@ -407,35 +428,68 @@ export class PillEditComponent {
   private recalcTotalsWithDiscount(discount: number, title: string, type: 'percentage' | 'fixed' | ''): void {
     const summary = this.invoices?.[0]?.invoice_summary;
     if (!summary) return;
-
+  
+    // حفظ القيم الأصلية
     const subtotalBefore = Number(summary.subtotal_price_before_coupon ?? summary.total_price ?? 0);
     const servicePerc = Number(summary.service_percentage || 0);
     const serviceFixed = Number(summary.service_fees || 0);
     const taxPerc = Number(summary.tax_percentage || 0);
-
+    
+    // حساب المبلغ بعد الخصم
     const discountValue = Math.min(discount, subtotalBefore);
-    let subtotalAfter = subtotalBefore - discountValue;
-
-    const serviceAmount = servicePerc ? (subtotalAfter * servicePerc) / 100 : serviceFixed;
-    subtotalAfter += serviceAmount;
-
-    const taxAmount = taxPerc ? (subtotalAfter * taxPerc) / 100 : 0;
-    const totalAfter = subtotalAfter + taxAmount;
-
+    let subtotalAfterDiscount = subtotalBefore - discountValue;
+    
+    // إضافة رسوم الخدمة (نسبة أو مبلغ ثابت)
+    let serviceAmount = 0;
+    if (servicePerc > 0) {
+      serviceAmount = (subtotalAfterDiscount * servicePerc) / 100;
+    } else {
+      serviceAmount = serviceFixed;
+    }
+    
+    // إضافة رسوم الخدمة إلى المبلغ
+    let amountAfterService = subtotalAfterDiscount + serviceAmount;
+    
+    // حساب الضريبة
+    let taxAmount = 0;
+    if (taxPerc > 0) {
+      taxAmount = (amountAfterService * taxPerc) / 100;
+    }
+    
+    // الحساب النهائي
+    const finalTotal = amountAfterService + taxAmount;
+  
+    // تحديث بيانات الفاتورة
     summary.coupon_value = discountValue;
     summary.coupon_title = title;
     summary.coupon_type = type;
     summary.coupon_code = this.couponCode || title;
     summary.subtotal_price_before_coupon = subtotalBefore;
-    summary.total_price = Number(totalAfter.toFixed(2));
-    summary.total_after_tax = summary.total_price;
+    summary.total_price = Number(finalTotal.toFixed(2));
+    summary.total_after_tax = Number(finalTotal.toFixed(2));
     summary.tax = Number(taxAmount.toFixed(2));
-
+    
+    // تحديث بيانات رسوم الخدمة إذا كانت نسبة
+    if (servicePerc > 0) {
+      summary.service_fees = Number(serviceAmount.toFixed(2));
+    }
+  
     this.discountAmount = discountValue;
     this.couponTitle = title;
     this.couponType = type;
     this.totalll = summary.total_price;
     this.cdr.detectChanges();
+    
+    console.log('✅ Manual discount applied - Updated totals:', {
+      subtotalBefore,
+      discountValue,
+      subtotalAfterDiscount,
+      serviceAmount,
+      amountAfterService,
+      taxAmount,
+      finalTotal,
+      totalll: this.totalll
+    });
   }
 
   applyCouponForInvoice(): void {
@@ -450,21 +504,22 @@ export class PillEditComponent {
     this.couponError = '';
     this.couponMessage = '';
     this.isApplyingCoupon = true;
-
+  
     const token = localStorage.getItem('authToken');
     const headers = new HttpHeaders({
       Authorization: `Bearer ${token || ''}`,
       'Content-Type': 'application/json',
     });
     const branchId = localStorage.getItem('branch_id');
-    const baseAmount = Number(this.invoices?.[0]?.invoice_summary?.subtotal_price_before_coupon ?? this.invoices?.[0]?.invoice_summary?.total_price ?? 0);
+    const summary = this.invoices?.[0]?.invoice_summary;
+    const baseAmount = Number(summary?.subtotal_price_before_coupon ?? summary?.total_price ?? 0);
     const requestData = {
       code: this.couponCode.trim(),
       amount: baseAmount,
       branch_id: branchId,
       dishes: this.buildOrderItemsForCoupon()
     };
-
+  
     this.http.post(`${baseUrl}api/coupons/check-coupon`, requestData, { headers })
       .pipe(finalize(() => { this.isApplyingCoupon = false; }))
       .subscribe({
@@ -475,26 +530,28 @@ export class PillEditComponent {
             this.discountAmount = 0;
             return;
           }
+          
           this.appliedCoupon = res.data;
           this.discountAmount = res.data.total_discount || 0;
           this.couponTitle = res.data.coupon_title || this.couponCode;
           this.couponType = res.data.value_type || '';
+          
+          // حساب المبلغ الجديد مع الضريبة والرسوم
+          this.recalcTotalsWithDiscount(
+            this.discountAmount, 
+            this.couponTitle, 
+            this.couponType
+          );
+          
           this.couponMessage = `تم تطبيق الكوبون: -${this.discountAmount.toFixed(2)} ${res.data.currency_symbol || ''}`;
-
-          const amountAfter = Number(res.data.amount_after_coupon ?? baseAmount - this.discountAmount);
-          const summary = this.invoices?.[0]?.invoice_summary;
-          if (summary) {
-            summary.coupon_value = this.discountAmount;
-            summary.coupon_title = this.couponTitle;
-            summary.coupon_type = this.couponType;
-            summary.coupon_code = this.couponCode;
-            summary.total_price = amountAfter;
-            summary.total_after_tax = res.data.total_after_tax ?? amountAfter;
-            if (res.data.tax !== undefined) summary.tax = res.data.tax;
-            if (res.data.amount_before_coupon) summary.subtotal_price_before_coupon = res.data.amount_before_coupon;
-          }
-          this.totalll = this.invoices?.[0]?.invoice_summary?.total_price;
-          this.cdr.detectChanges();
+          
+          console.log('✅ Coupon applied successfully:', {
+            discountAmount: this.discountAmount,
+            oldTotal: baseAmount,
+            newTotal: this.totalll,
+            couponTitle: this.couponTitle,
+            couponType: this.couponType
+          });
         },
         error: (err) => {
           this.couponError = err?.error?.errorData?.error || 'Cannot apply coupon. Please check coupon conditions or order eligibility.';
@@ -535,24 +592,48 @@ export class PillEditComponent {
   removeDiscount(): void {
     const summary = this.invoices?.[0]?.invoice_summary;
     if (!summary) return;
-    summary.coupon_value = 0;
-    summary.coupon_title = '';
-    summary.coupon_type = '';
-    summary.coupon_code = '';
-
+    
+    // حفظ القيم الأصلية
     const originalSubtotal = Number(summary.subtotal_price_before_coupon || summary.total_price || 0);
     const taxPerc = Number(summary.tax_percentage || 0);
     const servicePerc = Number(summary.service_percentage || 0);
     const serviceFixed = Number(summary.service_fees || 0);
+    
+    // إعادة الحساب من الصفر
     let subtotalAfter = originalSubtotal;
-    const serviceAmount = servicePerc ? (subtotalAfter * servicePerc) / 100 : serviceFixed;
+    
+    // حساب رسوم الخدمة
+    let serviceAmount = 0;
+    if (servicePerc > 0) {
+      serviceAmount = (subtotalAfter * servicePerc) / 100;
+    } else {
+      serviceAmount = serviceFixed;
+    }
+    
     subtotalAfter += serviceAmount;
-    const taxAmount = taxPerc ? (subtotalAfter * taxPerc) / 100 : 0;
-    const total = subtotalAfter + taxAmount;
-    summary.total_price = Number(total.toFixed(2));
-    summary.total_after_tax = summary.total_price;
+    
+    // حساب الضريبة
+    let taxAmount = 0;
+    if (taxPerc > 0) {
+      taxAmount = (subtotalAfter * taxPerc) / 100;
+    }
+    
+    const finalTotal = subtotalAfter + taxAmount;
+  
+    // تحديث بيانات الفاتورة
+    summary.coupon_value = 0;
+    summary.coupon_title = '';
+    summary.coupon_type = '';
+    summary.coupon_code = '';
+    summary.total_price = Number(finalTotal.toFixed(2));
+    summary.total_after_tax = Number(finalTotal.toFixed(2));
     summary.tax = Number(taxAmount.toFixed(2));
-
+    
+    // تحديث بيانات رسوم الخدمة إذا كانت نسبة
+    if (servicePerc > 0) {
+      summary.service_fees = Number(serviceAmount.toFixed(2));
+    }
+  
     this.discountAmount = 0;
     this.couponTitle = '';
     this.couponType = '';
@@ -561,6 +642,14 @@ export class PillEditComponent {
     this.couponError = '';
     this.totalll = summary.total_price;
     this.cdr.detectChanges();
+    
+    console.log('✅ Discount removed - Reset to original:', {
+      originalSubtotal,
+      serviceAmount,
+      taxAmount,
+      finalTotal,
+      totalll: this.totalll
+    });
   }
   isFinal: boolean = false;
   async printInvoice(isfinal: boolean) {
