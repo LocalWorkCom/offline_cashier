@@ -424,8 +424,8 @@
           </h4>
 
           <h6 class="fw-bold mb-0 fs-4">
-            <!-- <span>{{ item.total_price }} {{ item.currency_symbol }}</span> -->
-            <span>{{ invoices[0].invoice_summary.total_price}} {{ invoices[0].currency_symbol }}</span>
+            <!-- استخدام totalll إذا كان محدثاً (بعد تطبيق الكوبون)، وإلا استخدام invoice_summary.total_price -->
+            <span>{{ (totalll && totalll > 0 ? totalll : invoices[0].invoice_summary.total_price) | number:'1.2-2' }} {{ invoices[0].currency_symbol }}</span>
           </h6>
         </div>
       </div>
