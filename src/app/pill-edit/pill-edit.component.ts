@@ -171,7 +171,6 @@ export class PillEditComponent {
 
         this.trackingStatus = trackingKey || '';
         console.log(this.invoices[0].order_type);
-        this.totalll = this.invoices[0].invoice_summary.total_price
         this.orderType = this.invoices[0].order_type;
 
         // restore coupon data if exists on invoice
@@ -181,6 +180,17 @@ export class PillEditComponent {
           this.couponTitle = summary.coupon_title || '';
           this.discountAmount = Number(summary.coupon_value) || 0;
           this.couponCode = summary.coupon_code || '';
+          
+          // التأكد من وجود subtotal_price_before_coupon، وإلا استخدام subtotal_price أو total_price
+          if (!summary.subtotal_price_before_coupon) {
+            summary.subtotal_price_before_coupon = summary.subtotal_price || summary.total_price || 0;
+          }
+          
+          // تحديث totalll من invoice_summary.total_price (يجب أن يكون محدثاً من الـ backend)
+          // إذا كان هناك كوبون مطبق، يجب أن يكون total_price محدثاً بالفعل
+          this.totalll = Number(summary.total_price) || 0;
+        } else {
+          this.totalll = this.invoices[0].invoice_summary.total_price;
         }
 
         // const trackingKey = this.invoices[0]?.['tracking-status'];
@@ -434,6 +444,7 @@ export class PillEditComponent {
     const servicePerc = Number(summary.service_percentage || 0);
     const serviceFixed = Number(summary.service_fees || 0);
     const taxPerc = Number(summary.tax_percentage || 0);
+    const deliveryFees = Number(summary.delivery_fees || 0);
     
     // حساب المبلغ بعد الخصم
     const discountValue = Math.min(discount, subtotalBefore);
@@ -456,8 +467,8 @@ export class PillEditComponent {
       taxAmount = (amountAfterService * taxPerc) / 100;
     }
     
-    // الحساب النهائي
-    const finalTotal = amountAfterService + taxAmount;
+    // الحساب النهائي (يشمل delivery_fees)
+    const finalTotal = amountAfterService + taxAmount + deliveryFees;
   
     // تحديث بيانات الفاتورة
     summary.coupon_value = discountValue;
@@ -487,6 +498,7 @@ export class PillEditComponent {
       serviceAmount,
       amountAfterService,
       taxAmount,
+      deliveryFees,
       finalTotal,
       totalll: this.totalll
     });
@@ -598,6 +610,7 @@ export class PillEditComponent {
     const taxPerc = Number(summary.tax_percentage || 0);
     const servicePerc = Number(summary.service_percentage || 0);
     const serviceFixed = Number(summary.service_fees || 0);
+    const deliveryFees = Number(summary.delivery_fees || 0);
     
     // إعادة الحساب من الصفر
     let subtotalAfter = originalSubtotal;
@@ -618,7 +631,8 @@ export class PillEditComponent {
       taxAmount = (subtotalAfter * taxPerc) / 100;
     }
     
-    const finalTotal = subtotalAfter + taxAmount;
+    // الحساب النهائي (يشمل delivery_fees)
+    const finalTotal = subtotalAfter + taxAmount + deliveryFees;
   
     // تحديث بيانات الفاتورة
     summary.coupon_value = 0;
@@ -647,6 +661,7 @@ export class PillEditComponent {
       originalSubtotal,
       serviceAmount,
       taxAmount,
+      deliveryFees,
       finalTotal,
       totalll: this.totalll
     });
@@ -774,6 +789,10 @@ export class PillEditComponent {
     }, 1000); // بعد 1 ثانية (1000 ميلي ثانية)
   }
   getInvoiceTotal(): number {
+    // استخدام totalll إذا كان محدثاً (بعد تطبيق الكوبون)، وإلا استخدام invoice_summary.total_price
+    if (this.totalll && this.totalll > 0) {
+      return this.totalll;
+    }
     return this.invoices?.[0]?.invoice_summary?.total_price || 0;
   }
 
