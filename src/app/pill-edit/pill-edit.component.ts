@@ -540,6 +540,8 @@ export class PillEditComponent {
             this.couponError = res?.errorData?.error || 'Invalid or expired coupon.';
             this.appliedCoupon = null;
             this.discountAmount = 0;
+            this.couponMessage = '';
+            // لا نغلق المودال عند الخطأ
             return;
           }
           
@@ -547,6 +549,18 @@ export class PillEditComponent {
           this.discountAmount = res.data.total_discount || 0;
           this.couponTitle = res.data.coupon_title || this.couponCode;
           this.couponType = res.data.value_type || '';
+          
+          // التأكد من أن هناك خصم فعلي قبل المتابعة
+          if (this.discountAmount <= 0) {
+            this.couponError = 'الكوبون لا يحتوي على خصم صالح.';
+            this.appliedCoupon = null;
+            this.discountAmount = 0;
+            this.couponMessage = '';
+            return;
+          }
+          
+          // مسح أي أخطاء سابقة
+          this.couponError = '';
           
           // حساب المبلغ الجديد مع الضريبة والرسوم
           this.recalcTotalsWithDiscount(
@@ -564,6 +578,11 @@ export class PillEditComponent {
             couponTitle: this.couponTitle,
             couponType: this.couponType
           });
+          
+          // إغلاق المودال تلقائياً بعد تطبيق الكوبون بنجاح فقط
+          setTimeout(() => {
+            this.closeCouponModal();
+          }, 300); // تأخير بسيط لضمان عرض رسالة النجاح
         },
         error: (err) => {
           this.couponError = err?.error?.errorData?.error || 'Cannot apply coupon. Please check coupon conditions or order eligibility.';
@@ -787,6 +806,38 @@ export class PillEditComponent {
     setTimeout(() => {
       modal.hide();
     }, 1000); // بعد 1 ثانية (1000 ميلي ثانية)
+  }
+
+  closeCouponModal() {
+    const modalElement = document.getElementById('couponModal');
+    if (!modalElement) return;
+
+    // الحصول على instance المودال أو إنشاء واحد جديد
+    let modal = bootstrap.Modal.getInstance(modalElement);
+    if (!modal) {
+      modal = new bootstrap.Modal(modalElement);
+    }
+    
+    // دالة التنظيف
+    const cleanup = () => {
+      // إزالة جميع الـ backdrops المتبقية
+      const backdrops = document.querySelectorAll('.modal-backdrop');
+      backdrops.forEach(backdrop => backdrop.remove());
+      
+      // تنظيف body
+      document.body.classList.remove('modal-open');
+      document.body.style.overflow = '';
+      document.body.style.paddingRight = '';
+    };
+    
+    // إزالة الـ backdrop والتنظيف بعد إغلاق المودال
+    modalElement.addEventListener('hidden.bs.modal', cleanup, { once: true });
+    
+    // إغلاق المودال
+    modal.hide();
+    
+    // تنظيف فوري أيضاً في حالة عدم تشغيل الـ event
+    setTimeout(cleanup, 300);
   }
   getInvoiceTotal(): number {
     // استخدام totalll إذا كان محدثاً (بعد تطبيق الكوبون)، وإلا استخدام invoice_summary.total_price
