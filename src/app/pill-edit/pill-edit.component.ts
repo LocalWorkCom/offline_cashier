@@ -58,6 +58,8 @@ export class PillEditComponent {
   Delivery_show_delivered_only: boolean = false;
   referenceNumber: any;
   referenceNumberTouched: boolean = false;
+  referenceNumberError: string = '';
+  paymentAmountError: string = '';
   formSubmitted: boolean = false;
   // Coupon / Discount
   couponCode: string = '';
