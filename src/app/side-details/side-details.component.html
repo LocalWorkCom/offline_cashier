@@ -1306,7 +1306,7 @@ selectedOrderType === 'talabat') {
           وفرناها عليك
         </h6>
         <input class="form-control" type="text" [(ngModel)]="couponCode"
-          placeholder="أدخل الكوبون" />
+          placeholder="أدخل الكوبون" (ngModelChange)="onCouponCodeChange($event)" />
         @if (successMessage) {
         <p class="message">{{ successMessage }}</p>
         } @if (errorMessage) {
@@ -1319,12 +1319,14 @@ selectedOrderType === 'talabat') {
 
       </div>
       <div class="modal-footer">
+        @if (discountAmount > 0) {
         <button class="btn" (click)="applyCoupon()" [disabled]="isLoading">
           {{ isLoading ? "جاري التحقق...." : "تطبيق" }}
         </button>
         <button class="btn reversed main-color" (click)="removeCoupon()">
           حذف الكوبون
         </button>
+        }
       </div>
     </div>
   </div>

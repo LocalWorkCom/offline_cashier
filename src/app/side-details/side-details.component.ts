@@ -2076,6 +2076,20 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     couponKeys.forEach(key => localStorage.removeItem(key));
   }
+
+  // دالة لتطبيق الكوبون تلقائياً عند تغيير القيمة
+  onCouponCodeChange(value: string): void {
+    // تطبيق الكوبون تلقائياً إذا تم إدخال كود
+    if (value && value.trim()) {
+      // تطبيق الكوبون تلقائياً بعد تأخير بسيط لتجنب الطلبات المتكررة
+      setTimeout(() => {
+        if (this.couponCode && this.couponCode.trim() === value.trim()) {
+          this.applyCoupon();
+        }
+      }, 500);
+    }
+  }
+
   getTotal(): number {
     const itemsHash = JSON.stringify(this.cartItems);
     if (this._cachedTotal !== null && this._cachedCartItemsHash === itemsHash) {

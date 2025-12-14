@@ -6,7 +6,8 @@
 /out-tsc
 /bazel-out
 /release
-
+/erp2
+/erp
 # Node
 /node_modules
 npm-debug.log

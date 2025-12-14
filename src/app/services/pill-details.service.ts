@@ -40,7 +40,13 @@ export class PillDetailsService {
     DeliveredOrNot?: boolean,
     total?: any,
     tip?: any,
-    referenceNumber?: string
+    referenceNumber?: string,
+    couponData?: {
+      coupon_code?: string;
+      coupon_value?: number;
+      coupon_type?: string;
+      coupon_title?: string;
+    }
   ): Observable<any> {
     const token = localStorage.getItem('authToken');
     if (!token) {
@@ -99,11 +105,33 @@ export class PillDetailsService {
     }
   
     // 3. إضافة الحقول المشتركة الإضافية
-    if (total) {
-      payload.total = total;
+    // إرسال total دائماً حتى لو كان 0 أو null للتأكد من أن الـ backend يستخدمه
+    payload.total = total !== null && total !== undefined ? Number(total) : null;
+    
+    // 4. إضافة بيانات الكوبون إذا كانت موجودة
+    if (couponData) {
+      if (couponData.coupon_code) payload.coupon_code = couponData.coupon_code;
+      if (couponData.coupon_value !== undefined && couponData.coupon_value !== null) {
+        payload.coupon_value = Number(couponData.coupon_value);
+      }
+      if (couponData.coupon_type) payload.coupon_type = couponData.coupon_type;
+      if (couponData.coupon_title) payload.coupon_title = couponData.coupon_title;
     }
   
-    console.log('Sending Payload to API:', JSON.stringify(payload, null, 2));
+    console.log('📤 Sending Payload to API:', {
+      orderNumber,
+      paymentStatus,
+      cash_amount: payload.cash_amount,
+      credit_amount: payload.credit_amount,
+      total: payload.total,
+      couponData: payload.coupon_code ? {
+        coupon_code: payload.coupon_code,
+        coupon_value: payload.coupon_value,
+        coupon_type: payload.coupon_type,
+        coupon_title: payload.coupon_title
+      } : null,
+      fullPayload: JSON.stringify(payload, null, 2)
+    });
   
     return this.http
       .post<any>(`${this.apiUrl}/invoices/update/${orderNumber}`, payload, {
