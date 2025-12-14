@@ -1218,7 +1218,7 @@ async function createWindow() {
   await mainWindow.webContents.session.clearCache();
   console.log('✅ Cache cleared');
 
-  mainWindow.webContents.openDevTools();
+  // mainWindow.webContents.openDevTools();
 
   mainWindow.on('closed', () => {
     mainWindow = null;

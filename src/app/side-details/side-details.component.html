@@ -745,15 +745,15 @@ selectedOrderType === 'talabat') {
                   <hr>
                   <div
                     class="mb-3 row mx-0 justify-content-center align-items-center">
-                    <div class="col-4 text-center">
+                    <div class="col-12 text-center mb-2">
                       <label class="form-check-label w-100" for="cash_amount">
                         رقم المرجع
                       </label>
                     </div>
-                    <div class="col-8">
+                    <div class="col-12">
                       <input type="text" id="reference_number"
                         class="form-control" [(ngModel)]="referenceNumber"
-                        name="referenceNumber" required #ref="ngModel" 
+                        name="referenceNumber" required #ref="ngModel"
                         pattern="[0-9]*" (input)="onReferenceNumberInput($event)" />
                       <div *ngIf="ref.invalid && formSubmitted"
                         class="text-danger">
@@ -807,15 +807,15 @@ selectedOrderType === 'talabat') {
 <hr>
                   <div
                     class="mb-3 row mx-0 justify-content-center align-items-center">
-                    <div class="col-4 text-center">
+                    <div class="col-12 text-center mb-2">
                       <label class="form-check-label w-100" for="cash_amount">
                         رقم المرجع
                       </label>
                     </div>
-                    <div class="col-8">
+                    <div class="col-12">
                       <input type="text" id="reference_number"
                         class="form-control" [(ngModel)]="referenceNumber"
-                        name="referenceNumber" required #ref="ngModel" 
+                        name="referenceNumber" required #ref="ngModel"
                         pattern="[0-9]*" (input)="onReferenceNumberInput($event)" />
                       <div *ngIf="ref.invalid && formSubmitted"
                         class="text-danger">
@@ -943,13 +943,6 @@ selectedOrderType === 'talabat') {
 
         </div>
       </div>
-      @if (amountError) {
-      <div class="alert alert-danger text-center" role="alert">
-        يجب أدخال الإجمالي. {{ getCartTotal().toFixed(2) }} {{ currencySymbol }}
-      </div>
-
-      <!-- } -->
-      }
 
       @if (trueMessage) {
       <p class="message">{{ trueMessage }}</p>
