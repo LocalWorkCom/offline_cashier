@@ -237,6 +237,17 @@ private processPillDetails(data: any): void {
   //   location.reload();
   // }
 
+  getOrderTypeLabel(type: string): string {
+    const map: any = {
+      'dine-in': 'في المطعم',
+      'Takeaway': 'استلام',
+      'talabat': 'طلبات',
+      'Delivery': 'توصيل'
+    };
+
+  return map[type] || type;
+}
+
   fetchTrackingStatus() {
     this.pillDetailsService
       .getPillsDetailsById(this.pillId)

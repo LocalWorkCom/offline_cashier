@@ -58,6 +58,8 @@ export class PillEditComponent {
   Delivery_show_delivered_only: boolean = false;
   referenceNumber: any;
   referenceNumberTouched: boolean = false;
+  referenceNumberError: string = '';
+  paymentAmountError: string = '';
   formSubmitted: boolean = false;
   // Coupon / Discount
   couponCode: string = '';
@@ -292,6 +294,11 @@ export class PillEditComponent {
 
   saveOrder() {
     console.log('pa', this.paymentStatus);
+    
+    // مسح رسائل الخطأ السابقة
+    this.referenceNumberError = '';
+    this.paymentAmountError = '';
+    this.amountError = false;
 
     if (!this.paymentStatus && this.trackingStatus !== 'on_way') {
       alert('يجب تحديد حالة الدفع  قبل الحفظ!');
@@ -335,16 +342,54 @@ export class PillEditComponent {
       this.amountError = true;
 
     }
-    
+
     // التحقق من رقم المرجع للفيزا
     var creditAmount = this.credit_value != null ? this.credit_value : 0;
-    if (this.paymentStatus === 'paid' && creditAmount > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
-      this.referenceNumberTouched = true;
-      alert('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
-      return;
-    }
-    
     var cashAmount = this.cash_value != null ? this.cash_value : 0;
+
+    if (this.paymentStatus === 'paid') {
+      const total = Number(this.getInvoiceTotal().toFixed(2));
+
+        // 🔒 حالة الدفع بالفيزا فقط: التحقق من أن المبلغ المدخل >= الإجمالي
+        if (creditAmount > 0 && cashAmount === 0) {
+          const enteredCreditAmount = Number(creditAmount);
+          if (enteredCreditAmount < total) {
+            this.amountError = true;
+            this.paymentAmountError = `المبلغ المدفوع غير كافي. المطلوب: ${total.toFixed(2)} ${this.invoices[0]?.invoice_summary?.currency_symbol || ''}`;
+            return;
+          } else {
+            this.paymentAmountError = '';
+          }
+        // إذا كان المبلغ صحيحاً (>= الإجمالي)، تسجيل الإجمالي فقط
+        creditAmount = total;
+        cashAmount = 0;
+
+        // مزامنة القيم المعروضة
+        this.credit_value = creditAmount;
+        this.cash_value = cashAmount;
+      }
+      // حالة الدفع المختلط أو الكاش فقط
+      else {
+        // نجعل المبلغ المسجل دائماً يساوي الإجمالي: نستخدم الكاش أولاً ثم نكمل بالفيزا
+        const usedCash = Math.min(Number(cashAmount || 0), total);
+        const remaining = Number((total - usedCash).toFixed(2));
+        cashAmount = usedCash;
+        creditAmount = remaining > 0 ? remaining : 0;
+
+        // مزامنة القيم المعروضة بعد التصحيح
+        this.cash_value = cashAmount;
+        this.credit_value = creditAmount;
+      }
+
+        // التحقق من رقم المرجع للفيزا بعد التأكد من المبلغ
+        if (creditAmount > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
+          this.referenceNumberTouched = true;
+          this.referenceNumberError = '❌ رقم المرجع مطلوب عند الدفع بالفيزا.';
+          return;
+        } else {
+          this.referenceNumberError = '';
+        }
+    }
     if (this.orderType == 'Delivery') {
       this.DeliveredOrNot = true;
     } else {
@@ -699,7 +744,7 @@ export class PillEditComponent {
         .toPromise();
       console.log(response, 'testttttt')
       console.log('Print invoice response:', response);
-      const printContent = document.getElementById('printSection');
+      const printContent = document.getElementById('printSectionn');
       if (!printContent) {
         console.error('Print section not found.');
         return;
@@ -872,6 +917,12 @@ export class PillEditComponent {
   setCreditAmount(value: number) {
     this.credit_value = value;
     localStorage.setItem('credit_value', String(value));
+    
+    // مسح رسالة الخطأ عند تغيير قيمة الفيزا
+    if (value === 0 || value === null) {
+      this.referenceNumberError = '';
+      this.paymentAmountError = '';
+    }
   }
   // setCashAmount(value: number | null): void {
   //   this.cash_value = Number((value ?? 0).toFixed(2));
@@ -909,6 +960,22 @@ export class PillEditComponent {
     this.referenceNumber = numericValue;
     // تحديث قيمة الحقل
     event.target.value = numericValue;
+    
+    // مسح رسالة الخطأ عند إدخال رقم المرجع
+    if (numericValue && numericValue.trim() !== '') {
+      this.referenceNumberError = '';
+    }
+  }
+
+  getOrderTypeLabel(type: string): string {
+    const map: any = {
+      'dine-in': 'في المطعم',
+      'Takeaway': 'استلام',
+      'talabat': 'طلبات',
+      'Delivery': 'توصيل'
+    };
+
+    return map[type] || type;
   }
 
   // دالة لتطبيق الكوبون تلقائياً عند تغيير القيمة
