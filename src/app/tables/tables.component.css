@@ -3,6 +3,14 @@
     /* opacity: 0.8; */
     cursor: not-allowed;
   }
+
+  /* Make disabled card clickable for order details when status is 2 */
+  .card.disabled {
+    pointer-events: auto !important;
+    cursor: pointer !important;
+  }
+
+ 
   .floor_number{
     display: flex;
     justify-content: space-between;
@@ -33,4 +41,4 @@
  border-top-left-radius:0px !important;
     border-bottom-left-radius:0px !important;
     border-left: 0px;
-} 
+}
