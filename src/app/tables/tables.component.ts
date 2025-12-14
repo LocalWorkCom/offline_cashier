@@ -235,4 +235,33 @@ export class TablesComponent implements OnInit, OnDestroy {
     return table.id;
   }
 
+  onTableOrderDetailsClick(tableId: number): void {
+    console.log(tableId, 'tableId');
+
+    //get all orders for this table
+    this.tablesRequestService.getOrdersByTableId(tableId).subscribe({
+      next: (response) => {
+        // Check if response has orders
+        if (response && response.data) {
+          // Get the first order's ID
+          const firstOrder = response.data;
+          const orderId = firstOrder.order_id;
+          if (orderId) {
+            // Navigate to order details page
+            this.router.navigate(['/order-details/', orderId]);
+          } else {
+            console.warn('Order ID not found in response');
+            alert('لم يتم العثور على معرف الطلب');
+          }
+        } else {
+          alert('لا توجد طلبات لهذه الطاولة');
+        }
+      },
+      error: (err) => {
+        console.error('Error fetching orders:', err);
+        alert('حدث خطأ أثناء جلب الطلبات');
+      }
+    });
+  }
+
 }
