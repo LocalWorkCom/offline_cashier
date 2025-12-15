@@ -1,4 +1,4 @@
-import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { TablesService } from '../services/tables.service';
 import { CommonModule, Location } from '@angular/common';
 import { Router } from '@angular/router';
@@ -6,6 +6,7 @@ import { FormsModule } from '@angular/forms';
 import { TableCrudOperationService } from '../services/pusher/tableCrudOperation';
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
 import { finalize } from 'rxjs';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 
 @Component({
   selector: 'app-tables',
@@ -24,12 +25,15 @@ export class TablesComponent implements OnInit, OnDestroy {
   searchText: string = '';
   loading: boolean = true;
   errorMessage: any;
+  message: string = '';
+  messageType: 'success' | 'error' = 'error';
 
   constructor(
     private tablesRequestService: TablesService,
     private router: Router,
     private location: Location,
-    private tableOperation: TableCrudOperationService
+    private tableOperation: TableCrudOperationService,
+    private NgbModal: NgbModal
   ) { }
 
   ngOnInit(): void {
@@ -202,7 +206,7 @@ export class TablesComponent implements OnInit, OnDestroy {
     }
 
     if (selectedTable.status === 2) {
-      alert('هذه الطاولة مشغولة، يرجى اختيار طاولة أخرى.');
+      this.showMessageModal('هذه الطاولة مشغولة، يرجى اختيار طاولة أخرى.', 'error');
       return;
     }
 
@@ -233,6 +237,25 @@ export class TablesComponent implements OnInit, OnDestroy {
 
   trackByTableId(index: number, table: any) {
     return table.id;
+  }
+
+  @ViewChild('messageModal') messageModal: any;
+
+  showMessageModal(msg: string, type: 'success' | 'error') {
+    this.message = msg;
+    this.messageType = type;
+
+    const modalRef = this.NgbModal.open(this.messageModal, {
+      centered: true,
+      size: 'sm',
+      keyboard: false,
+    });
+
+    setTimeout(() => {
+      modalRef.close();
+      const backdrops = document.querySelectorAll('.modal-backdrop');
+      backdrops.forEach((backdrop) => backdrop.remove());
+    }, 1500);
   }
 
   onTableOrderDetailsClick(tableId: number): void {
