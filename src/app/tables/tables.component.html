@@ -227,3 +227,12 @@
   </div>
 </ng-template>
 </section>
+
+<ng-template #messageModal let-modal>
+  <div class="d-flex justify-content-center align-items-center h-100">
+    <p class="alert text-center fw-bold mb-0 w-100"
+      [ngClass]="messageType === 'success' ? 'alert-success' : 'alert-danger'">
+      {{ message }}
+    </p>
+  </div>
+</ng-template>
