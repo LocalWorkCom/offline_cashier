@@ -3342,7 +3342,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               await new Promise(resolve => setTimeout(resolve, 10000));
               this.successModal.show();
               location.reload();
-              
+
         // Print invoice items without prices to network printer
         // this.printInvoiceImage();
 
@@ -4203,7 +4203,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                     box-sizing: border-box;
                 }
                 html, body {
-                    font-family: Arial, "Segoe UI", Tahoma, sans-serif;
+                    font-family: 'Cairo', sans-serif;
                     padding: 10px;
                     background: white;
                     width: ${printerWidth}px;
