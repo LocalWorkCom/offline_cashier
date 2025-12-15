@@ -5,8 +5,13 @@
     width: 10px;
 }
 
-body {
+* {
+    font-family: 'Cairo', sans-serif;
+}
+
+html, body {
     overflow: auto !important;
+    font-family: 'Cairo', sans-serif;
 }
 
 ::selection {

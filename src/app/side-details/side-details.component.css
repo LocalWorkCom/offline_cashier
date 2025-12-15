@@ -878,7 +878,7 @@ input[type=number]::-webkit-outer-spin-button {
 
 /* Kitchen Print Section Styles */
 .printkitchen-wrapper {
-    font-family: Arial, "Segoe UI", Tahoma, sans-serif;
+    font-family: 'Cairo', sans-serif;
     padding: 15px;
     background: white;
     width: 576px;
