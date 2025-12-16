@@ -669,6 +669,11 @@ export class PillEditComponent {
     const summary = this.invoices?.[0]?.invoice_summary;
     if (!summary) return;
     
+    // التحقق من وجود كوبون مطبق (من البيانات الأصلية أو المطبق حديثاً)
+    const hasCoupon = (this.discountAmount > 0) || 
+                      (summary.coupon_value && summary.coupon_value > 0);
+    if (!hasCoupon) return;
+    
     // حفظ القيم الأصلية
     const originalSubtotal = Number(summary.subtotal_price_before_coupon || summary.total_price || 0);
     const taxPerc = Number(summary.tax_percentage || 0);
@@ -718,6 +723,7 @@ export class PillEditComponent {
     this.couponCode = '';
     this.couponMessage = '';
     this.couponError = '';
+    this.appliedCoupon = null;
     this.totalll = summary.total_price;
     this.cdr.detectChanges();
     
@@ -729,6 +735,17 @@ export class PillEditComponent {
       finalTotal,
       totalll: this.totalll
     });
+    
+    // إغلاق المودال بعد حذف الكوبون (فقط إذا كان مفتوحاً)
+    const modalElement = document.getElementById('couponModal');
+    if (modalElement) {
+      const modal = bootstrap.Modal.getInstance(modalElement);
+      if (modal && modal._isShown) {
+        setTimeout(() => {
+          this.closeCouponModal();
+        }, 300);
+      }
+    }
   }
   isFinal: boolean = false;
   async printInvoice(isfinal: boolean) {
@@ -978,16 +995,14 @@ export class PillEditComponent {
     return map[type] || type;
   }
 
-  // دالة لتطبيق الكوبون تلقائياً عند تغيير القيمة
+  // دالة لمسح الرسائل عند تغيير القيمة (بدون تطبيق تلقائي)
   onCouponCodeChange(value: string): void {
-    // تطبيق الكوبون تلقائياً إذا تم إدخال كود
-    if (value && value.trim()) {
-      // تطبيق الكوبون تلقائياً بعد تأخير بسيط لتجنب الطلبات المتكررة
-      setTimeout(() => {
-        if (this.couponCode && this.couponCode.trim() === value.trim()) {
-          this.applyCouponForInvoice();
-        }
-      }, 500);
+    // مسح رسائل الخطأ والنجاح عند تغيير الكود
+    if (value && value.trim() !== this.couponCode) {
+      this.couponError = '';
+      this.couponMessage = '';
+      this.appliedCoupon = null;
+      this.discountAmount = 0;
     }
   }
 }
