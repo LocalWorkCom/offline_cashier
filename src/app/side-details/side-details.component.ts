@@ -2049,23 +2049,23 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.couponCode = '';
     this.successMessage = '';
     this.errorMessage = '';
+    this.falseMessage = '';
+    this.tableError = '';
+    this.validCoupon = false;
     this.removeCouponFromLocalStorage();
     this.updateTotalPrice();
-    // setTimeout(() => {
-    //  const modalEl = document.getElementById('couponModal');
-    // if (modalEl) {
-    //     let bsModal = bootstrap.Modal.getInstance(modalEl);
-    //     if (!bsModal) {
-    //     bsModal = new bootstrap.Modal(modalEl);
-    //     }
-    //    bsModal.hide();
-    //      const backdrops = document.querySelectorAll('.modal-backdrop');
-    //     backdrops.forEach((el) => el.remove());
-    //    document.body.classList.remove('modal-open');
-    //   document.body.style.removeProperty('padding-right');
-    //}
-    // }, 1000);
     this.initializePaymentAmount();
+    
+    // إغلاق المودال بعد حذف الكوبون (فقط إذا كان مفتوحاً)
+    const modalElement = document.getElementById('couponModal');
+    if (modalElement) {
+      const modal = bootstrap.Modal.getInstance(modalElement);
+      if (modal && modal._isShown) {
+        setTimeout(() => {
+          this.closeModal();
+        }, 300);
+      }
+    }
   }
 
   removeCouponFromLocalStorage() {
@@ -2077,16 +2077,17 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     couponKeys.forEach(key => localStorage.removeItem(key));
   }
 
-  // دالة لتطبيق الكوبون تلقائياً عند تغيير القيمة
+  // دالة لمسح الرسائل عند تغيير القيمة (بدون تطبيق تلقائي)
   onCouponCodeChange(value: string): void {
-    // تطبيق الكوبون تلقائياً إذا تم إدخال كود
-    if (value && value.trim()) {
-      // تطبيق الكوبون تلقائياً بعد تأخير بسيط لتجنب الطلبات المتكررة
-      setTimeout(() => {
-        if (this.couponCode && this.couponCode.trim() === value.trim()) {
-          this.applyCoupon();
-        }
-      }, 500);
+    // مسح رسائل الخطأ والنجاح عند تغيير الكود
+    if (value && value.trim() !== this.couponCode) {
+      this.errorMessage = '';
+      this.successMessage = '';
+      this.falseMessage = '';
+      this.tableError = '';
+      this.appliedCoupon = null;
+      this.discountAmount = 0;
+      this.validCoupon = false;
     }
   }
 
