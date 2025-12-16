@@ -442,10 +442,16 @@ selectedOrderType === 'talabat') {
             class="btn-static-secondary p-1 rounded">{{this.appliedCoupon.coupon_title}}</span>
         </p>
         @if (discountAmount > 0 ) {
-        <p class="fw-bold main-color">
-          -
-          {{ discountAmount.toFixed(2) || this.appliedCoupon.total_discount }}
-          {{ currencySymbol }}
+        <p class="fw-bold main-color d-flex align-items-center gap-2">
+          <span>
+            -
+            {{ discountAmount.toFixed(2) || this.appliedCoupon.total_discount }}
+            {{ currencySymbol }}
+          </span>
+          <i class="fa-solid fa-trash text-danger cursor-pointer" 
+            (click)="removeCoupon()" 
+            style="cursor: pointer; font-size: 16px;"
+            title="حذف الكوبون"></i>
         </p>
         }
       </li>
@@ -1319,14 +1325,13 @@ selectedOrderType === 'talabat') {
 
       </div>
       <div class="modal-footer">
-        @if (discountAmount > 0) {
-        <button class="btn" (click)="applyCoupon()" [disabled]="isLoading">
-          {{ isLoading ? "جاري التحقق...." : "تطبيق" }}
+        <button class="btn" (click)="applyCoupon()" [disabled]="isLoading || !couponCode || !couponCode.trim()">
+          {{ isLoading ? "جاري التحقق...." : "تطبيق الكوبون" }}
         </button>
-        <button class="btn reversed main-color" (click)="removeCoupon()">
+        <button class="btn reversed main-color" (click)="removeCoupon()" 
+          [disabled]="!discountAmount || discountAmount === 0">
           حذف الكوبون
         </button>
-        }
       </div>
     </div>
   </div>
