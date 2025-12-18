@@ -6029,4 +6029,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       throw new Error(`خطأ في طباعة الصورة: ${errorMessage}`);
     }
   }
+
+  getOrderTypeLabel(type: string): string {
+    const map: any = {
+      'dine-in': 'في المطعم',
+      'Takeaway': 'استلام',
+      'talabat': 'طلبات',
+      'Delivery': 'توصيل'
+    };
+
+    return map[type] || type;
+  }
 }
