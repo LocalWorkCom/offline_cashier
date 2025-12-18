@@ -18,7 +18,7 @@ export class OrderListDetailsService {
       `Bearer ${this.token}`
     );
 
-    return this.http.get(`https://erpsystem.testdomain100.online/api/orders/orderDetails/${orderId}`, {
+    return this.http.get(`https://erp-cashier.testdomain100.online/api/orders/orderDetails/${orderId}`, {
       headers,
     });
   }
