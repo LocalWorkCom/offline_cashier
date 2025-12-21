@@ -2055,7 +2055,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.removeCouponFromLocalStorage();
     this.updateTotalPrice();
     this.initializePaymentAmount();
-    
+
     // إغلاق المودال بعد حذف الكوبون (فقط إذا كان مفتوحاً)
     const modalElement = document.getElementById('couponModal');
     if (modalElement) {
