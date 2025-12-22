@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import Pusher from 'pusher-js';
-import { baseUrl, environment } from '../../environment';
+import { baseUrl, environment ,baseUrl2} from '../../environment';
 import { BasicsConstance } from '../../constants';
 
 @Injectable({
@@ -17,7 +17,7 @@ export class PusherService {
   connect(): void {
     this.pusher = new Pusher(environment.pusher.key, {
       cluster: environment.pusher.cluster,
-      authEndpoint: `${baseUrl}broadcasting/auth`,
+      authEndpoint: `${baseUrl2}broadcasting/auth`,
       auth: {
         headers: {
           Authorization: `Bearer ${this.token}`,
@@ -27,7 +27,7 @@ export class PusherService {
       },
     });
   }
- 
+
   // connect(): void {
   //   this.pusher = new Pusher('77f608d73899bd256cfa', {
   //     cluster: 'mt1',
@@ -61,7 +61,7 @@ export class PusherService {
     callback: (data: any) => void) {
 
     // Make an authentication request to your server for the private channel
-    fetch(`${baseUrl}${endPoint}`, {
+    fetch(`${baseUrl2}${endPoint}`, {
       method: 'POST',credentials: 'include',
       headers: {
         'Content-Type': 'application/json',

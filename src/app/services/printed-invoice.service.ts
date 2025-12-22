@@ -1,13 +1,14 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
-import { baseUrl } from '../environment';
+import { baseUrl,baseUrl2 } from '../environment';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PrintedInvoiceService {
   private apiUrl = `${baseUrl}api`;
+  private apiUrl2 = `${baseUrl2}`;
 
   private token = localStorage.getItem('authToken');
 
@@ -40,5 +41,18 @@ export class PrintedInvoiceService {
     };
 
     return this.http.post(`${this.apiUrl}/print-kitchen`, body, { headers });
+  }
+
+  printWaiter(order_id:any): Observable<any> {
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${this.token}`,
+      'Content-Type': 'application/json',
+    });
+
+    const body = {
+      order_id:order_id
+    };
+
+    return this.http.post(`${this.apiUrl2}/print-waiter`, body, { headers });
   }
 }
