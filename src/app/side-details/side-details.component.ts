@@ -3277,72 +3277,72 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       if (this.successModal) {
 
-        this.printedInvoiceService
-              .printkitchen(orderData, this.orderedId)
-              .subscribe({
-                next: async (response) => {
-                  console.log('🖨️ [Kitchen Print] Response received:', response);
+        // this.printedInvoiceService
+        //       .printkitchen(orderData, this.orderedId)
+        //       .subscribe({
+        //         next: async (response) => {
+        //           console.log('🖨️ [Kitchen Print] Response received:', response);
 
-                  if(response.status && response.allDish && response.allDish.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
-                    try {
-                      await this.printInvoiceImage(response.allDish ,response.order, response.Ipall);
-                      console.log('✅ [Kitchen Print] Drinks printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing drinks:', err);
-                    }
-                  }
-
-
-                  await new Promise(resolve => setTimeout(resolve, 500));
-
-                  // Print drinks first
-                  if(response.status && response.drinks && response.drinks.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
-                    try {
-                      await this.printInvoiceImage(response.drinks ,response.order, response.IPdrinks);
-                      console.log('✅ [Kitchen Print] Drinks printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing drinks:', err);
-                    }
-                  }
-
-                  // Wait a bit before printing fish to the same printer
-                  await new Promise(resolve => setTimeout(resolve, 500));
-
-                  // Print fish
-                  if(response.status && response.fish && response.fish.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
-                    try {
-                      await this.printInvoiceImage(response.fish ,response.order, response.IPfish);
-                      console.log('✅ [Kitchen Print] Fish printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing fish:', err);
-                    }
-                  }
+        //           if(response.status && response.allDish && response.allDish.length > 0){
+        //             console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
+        //             try {
+        //               await this.printInvoiceImage(response.allDish ,response.order, response.Ipall);
+        //               console.log('✅ [Kitchen Print] Drinks printed successfully');
+        //             } catch (err) {
+        //               console.error('❌ [Kitchen Print] Error printing drinks:', err);
+        //             }
+        //           }
 
 
-                  // Print grills to different printer (can run in parallel)
-                  if(response.status && response.grills && response.grills.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
-                    this.printInvoiceImage(response.grills ,response.order, response.IPgrills).catch(err => {
-                      console.error('❌ [Kitchen Print] Error printing grills:', err);
-                    });
-                  }
+        //           await new Promise(resolve => setTimeout(resolve, 500));
 
-                  // await new Promise(resolve => setTimeout(resolve, 60000));
+        //           // Print drinks first
+        //           if(response.status && response.drinks && response.drinks.length > 0){
+        //             console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
+        //             try {
+        //               await this.printInvoiceImage(response.drinks ,response.order, response.IPdrinks);
+        //               console.log('✅ [Kitchen Print] Drinks printed successfully');
+        //             } catch (err) {
+        //               console.error('❌ [Kitchen Print] Error printing drinks:', err);
+        //             }
+        //           }
+
+        //           // Wait a bit before printing fish to the same printer
+        //           await new Promise(resolve => setTimeout(resolve, 500));
+
+        //           // Print fish
+        //           if(response.status && response.fish && response.fish.length > 0){
+        //             console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
+        //             try {
+        //               await this.printInvoiceImage(response.fish ,response.order, response.IPfish);
+        //               console.log('✅ [Kitchen Print] Fish printed successfully');
+        //             } catch (err) {
+        //               console.error('❌ [Kitchen Print] Error printing fish:', err);
+        //             }
+        //           }
 
 
-                },
-                error: (error) => {
-                  console.error('Kitchen print error:', error);
-                  location.reload();
-                }
-              });
+        //           // Print grills to different printer (can run in parallel)
+        //           if(response.status && response.grills && response.grills.length > 0){
+        //             console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
+        //             this.printInvoiceImage(response.grills ,response.order, response.IPgrills).catch(err => {
+        //               console.error('❌ [Kitchen Print] Error printing grills:', err);
+        //             });
+        //           }
 
-              await new Promise(resolve => setTimeout(resolve, 10000));
+        //           // await new Promise(resolve => setTimeout(resolve, 60000));
+
+
+        //         },
+        //         error: (error) => {
+        //           console.error('Kitchen print error:', error);
+        //           location.reload();
+        //         }
+        //       });
+
+        //       await new Promise(resolve => setTimeout(resolve, 10000));
               this.successModal.show();
-              location.reload();
+              // location.reload();
 
         // Print invoice items without prices to network printer
         // this.printInvoiceImage();
@@ -6029,5 +6029,16 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       console.error('❌ Error printing image to network printer:', errorMessage);
       throw new Error(`خطأ في طباعة الصورة: ${errorMessage}`);
     }
+  }
+
+  getOrderTypeLabel(type: string): string {
+    const map: any = {
+      'dine-in': 'في المطعم',
+      'Takeaway': 'استلام',
+      'talabat': 'طلبات',
+      'Delivery': 'توصيل'
+    };
+
+    return map[type] || type;
   }
 }
