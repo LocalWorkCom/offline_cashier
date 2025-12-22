@@ -1177,6 +1177,7 @@ async function createWindow() {
       preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: true,
+      webSecurity: true, // Keep security enabled but allow WebSocket connections
     }
   });
 
