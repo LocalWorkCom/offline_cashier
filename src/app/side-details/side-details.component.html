@@ -1,13 +1,15 @@
-@if(!currentOrderData){
-@if (isUpdatingPrices) {
+<!-- رسالة تحديث الأسعار -->
+@if (!currentOrderData && isUpdatingPrices) {
 <div class="alert alert-info text-center" role="alert"
   style="position: fixed; top: 20px; left: 50%; transform: translateX(-50%); z-index: 9999; min-width: 300px;">
   <i class="fas fa-spinner fa-spin me-2"></i>
   جاري تحديث الأسعار...
 </div>
 }
-@if (selectedOrderType === 'Takeaway'|| selectedOrderType === 'dine-in' ||
-selectedOrderType === 'talabat') {
+
+<!-- معلومات العميل -->
+@if (!currentOrderData && (selectedOrderType === 'Takeaway' || selectedOrderType === 'dine-in' || selectedOrderType ===
+'talabat')) {
 <div class="card mt-3 p-3" data-bs-toggle="modal" data-bs-target="#clientModal">
   <div class="d-flex justify-content-between align-items-center">
     <div>
@@ -15,10 +17,8 @@ selectedOrderType === 'talabat') {
       <span class="h5">اضف معلومات العميل</span>
     </div>
     <i class="fas fa-chevron-left"></i>
-
   </div>
-  <!-- @if (this.clientInfoApplied) { -->
-  @if (clientStoredInLocal&&clientPhoneStoredInLocal) {
+  @if (clientStoredInLocal && clientPhoneStoredInLocal) {
   @if (clientStoredInLocal) {
   <div class="text-muted fw-bold">
     اسم العميل:
@@ -38,15 +38,40 @@ selectedOrderType === 'talabat') {
   }
   }
 </div>
+} @else if (currentOrderData) {
+<div class="card mt-3 p-3">
+  <div class="d-flex justify-content-between align-items-center">
+    <div>
+      <i class="fas fa-user-alt ms-1 main-color"></i>
+      <span class="h5">معلومات العميل</span>
+    </div>
+  </div>
+  <div class="text-muted fw-bold">
+    اسم العميل:
+    <small class="fw-medium">{{ currentOrderData?.order_details?.client_name }}</small>
+  </div>
+  <div class="text-muted fw-bold">
+    رقم العميل:
+    <small class="fw-medium">{{ currentOrderData?.order_details?.client_phone }}</small>
+  </div>
+</div>
 }
 
+<!-- تبويبات نوع الطلب -->
 <div class="card p-3 mt-3">
-  <ul class="nav nav-pills px-0 align-items-center" id="pills-tab" role="tablist">
+  <ul class="nav nav-pills px-0 align-items-center" [attr.id]="!currentOrderData ? 'pills-tab' : null"
+    [attr.role]="!currentOrderData ? 'tablist' : null">
     <!-- Dine-in Tab -->
-    <li class="nav-item mb-2" role="presentation">
-      <button class="nav-link sub" [class.active]="selectedOrderType === 'dine-in'" (click)="selectOrderType('dine-in')"
-        id="pills-side-in-tab" data-bs-toggle="pill" data-bs-target="#pills-side-in" type="button" role="tab"
-        aria-controls="pills-side-in" aria-selected="true">
+    <li class="nav-item mb-2" [attr.role]="!currentOrderData ? 'presentation' : null">
+      <button class="nav-link sub"
+        [class.active]="(!currentOrderData && selectedOrderType === 'dine-in') || (currentOrderData && currentOrderData?.order_details?.order_type === 'dine-in')"
+        [attr.id]="!currentOrderData ? 'pills-side-in-tab' : null"
+        [attr.data-bs-toggle]="!currentOrderData ? 'pill' : null"
+        [attr.data-bs-target]="!currentOrderData ? '#pills-side-in' : null" type="button"
+        [attr.role]="!currentOrderData ? 'tab' : null" [attr.aria-controls]="!currentOrderData ? 'pills-side-in' : null"
+        [attr.aria-selected]="!currentOrderData ? 'true' : null"
+        [disabled]="currentOrderData && currentOrderData?.order_details?.order_type !== 'dine-in'"
+        (click)="!currentOrderData && selectOrderType('dine-in')">
         <figure class="mb-0">
           <img src="assets/images/in.png" alt />
         </figure>
@@ -55,23 +80,36 @@ selectedOrderType === 'talabat') {
     </li>
 
     <!-- Takeaway Tab -->
-    <li class="nav-item mb-2" role="presentation">
-      <button class="nav-link sub" [class.active]="selectedOrderType === 'Takeaway'"
-        (click)="selectOrderType('Takeaway')" id="pills-side-out-tab" data-bs-toggle="pill"
-        data-bs-target="#pills-side-out" type="button" role="tab" aria-controls="pills-side-out" aria-selected="false">
+    <li class="nav-item mb-2" [attr.role]="!currentOrderData ? 'presentation' : null">
+      <button class="nav-link sub"
+        [class.active]="(!currentOrderData && selectedOrderType === 'Takeaway') || (currentOrderData && currentOrderData?.order_details?.order_type === 'Takeaway')"
+        [attr.id]="!currentOrderData ? 'pills-side-out-tab' : null"
+        [attr.data-bs-toggle]="!currentOrderData ? 'pill' : null"
+        [attr.data-bs-target]="!currentOrderData ? '#pills-side-out' : null" type="button"
+        [attr.role]="!currentOrderData ? 'tab' : null"
+        [attr.aria-controls]="!currentOrderData ? 'pills-side-out' : null"
+        [attr.aria-selected]="!currentOrderData ? 'false' : null"
+        [disabled]="currentOrderData && currentOrderData?.order_details?.order_type !== 'Takeaway'"
+        (click)="!currentOrderData && selectOrderType('Takeaway')">
         <figure class="mb-0">
           <img src="assets/images/out.png" alt />
         </figure>
-        <span> إستلام</span>
+        <span>إستلام</span>
       </button>
     </li>
 
     <!-- Delivery Tab -->
-    <li class="nav-item mb-2" role="presentation">
-      <button class="nav-link sub" [class.active]="selectedOrderType === 'Delivery'"
-        (click)="selectOrderType('Delivery')" id="pills-side-delivery-tab" data-bs-toggle="pill"
-        data-bs-target="#pills-side-delivery" type="button" role="tab" aria-controls="pills-side-delivery"
-        aria-selected="false">
+    <li class="nav-item mb-2" [attr.role]="!currentOrderData ? 'presentation' : null">
+      <button class="nav-link sub"
+        [class.active]="(!currentOrderData && selectedOrderType === 'Delivery') || (currentOrderData && currentOrderData?.order_details?.order_type === 'Delivery')"
+        [attr.id]="!currentOrderData ? 'pills-side-delivery-tab' : null"
+        [attr.data-bs-toggle]="!currentOrderData ? 'pill' : null"
+        [attr.data-bs-target]="!currentOrderData ? '#pills-side-delivery' : null" type="button"
+        [attr.role]="!currentOrderData ? 'tab' : null"
+        [attr.aria-controls]="!currentOrderData ? 'pills-side-delivery' : null"
+        [attr.aria-selected]="!currentOrderData ? 'false' : null"
+        [disabled]="currentOrderData && currentOrderData?.order_details?.order_type !== 'Delivery'"
+        (click)="!currentOrderData && selectOrderType('Delivery')">
         <figure class="mb-0">
           <img src="assets/images/delivery.png" alt />
         </figure>
@@ -80,166 +118,17 @@ selectedOrderType === 'talabat') {
     </li>
 
     <!-- talabat Tab -->
-    <li class="nav-item mb-2" role="presentation">
-      <button class="nav-link sub" [class.active]="selectedOrderType === 'talabat'" (click)="selectOrderType('talabat')"
-        id="pills-side-out-tab" data-bs-toggle="pill" data-bs-target="#pills-side-out" type="button" role="tab"
-        aria-controls="pills-side-out" aria-selected="false">
-        <figure class="mb-0">
-          <img src="assets/images/out.png" alt />
-        </figure>
-        <span> طلبات</span>
-      </button>
-    </li>
-  </ul>
-
-  <div class="tab-content py-2" id="pills-tabContent">
-    <!-- Dine-in Tab Pane -->
-    <div class="tab-pane fade" [class.active]="selectedOrderType === 'dine-in'"
-      [class.show]="selectedOrderType === 'dine-in'" id="pills-side-in" role="tabpanel"
-      aria-labelledby="pills-side-in-tab">
-      <a class="d-flex align-items-center mb-2 justify-content-between" routerLink="/tables"
-        routerLinkActive="active_link" [routerLinkActiveOptions]="{ exact: true }" (click)="setCameFromSideDetails()">
-        <div>
-          <div class="d-flex">
-            <img src="assets/images/red-table.png" alt />
-            <div class="h5">أختر طاولة</div>
-          </div>
-          @if (tableNumber ||table_number) {
-          <div class="text-muted fw-bold">
-            الطاولة المختارة :
-            <small class="fw-medium">{{ tableNumber || table_number}}</small>
-
-          </div>
-          }
-        </div>
-        <i class="fas fa-chevron-left"></i>
-      </a>
-    </div>
-
-    <!-- Takeaway Tab Pane -->
-    <div class="tab-pane fade" [class.active]="selectedOrderType === 'Takeaway'"
-      [class.show]="selectedOrderType === 'Takeaway'" id="pills-side-out" role="tabpanel"
-      aria-labelledby="pills-side-out-tab">
-      <!-- Takeaway content (if any) -->
-    </div>
-
-    <!-- Delivery Tab Pane -->
-    <div class="tab-pane fade" [class.active]="selectedOrderType === 'Delivery'"
-      [class.show]="selectedOrderType === 'Delivery'" id="pills-side-delivery" role="tabpanel"
-      aria-labelledby="pills-side-delivery-tab">
-      <a class="d-flex align-items-center mb-2 justify-content-between" routerLink="/delivery-details"
-        routerLinkActive="active_link" [routerLinkActiveOptions]="{ exact: true }">
-        <div>
-          <img src="assets/images/location.png" alt />
-          <span class="h5">اضف معلومات التوصيل</span>
-        </div>
-        <i class="fas fa-chevron-left"></i>
-      </a>
-      <!-- <pre>{{FormDataDetails }}</pre> -->
-      <!-- @if (FormDataDetails ) {
-      <div>
-        <small class="fw-bold text-muted">الاسم : </small>
-        <small class="text-muted">{{FormDataDetails.client_name}}</small>
-      </div>
-
-      <div>
-        <small class="fw-bold text-muted">العنوان : </small>
-        <small class="text-muted">{{
-          FormDataDetails.address || "لم يتم تحديد العنوان"
-          }}</small>
-      </div>
-      <div>
-        <small class="fw-bold text-muted">رقم الهاتف : </small>
-        <small class="text-muted">{{FormDataDetails.address_phone}}</small>
-      </div>
-
-      } -->
-      @if (clientName) {
-      <div>
-        <small class="fw-bold text-muted">الاسم : </small>
-        <small class="text-muted">{{clientName}}</small>
-      </div>
-      }
-      <div *ngIf="address">
-        <small class="fw-bold text-muted">العنوان : </small>
-        <small class="text-muted">{{
-          address || "لم يتم تحديد العنوان"
-          }}</small>
-      </div>
-      @if (addressPhone ) {
-      <div>
-        <small class="fw-bold text-muted">رقم الهاتف : </small>
-        <small class="text-muted">{{addressPhone}}</small>
-      </div>
-      }
-    </div>
-    <!-- talabat Tab Pane -->
-    <div class="tab-pane fade" [class.active]="selectedOrderType === 'talabat'"
-      [class.show]="selectedOrderType === 'talabat'" id="pills-side-out" role="tabpanel"
-      aria-labelledby="pills-side-out-tab">
-      <!-- talabat content (if any) -->
-    </div>
-  </div>
-</div>
-}@else if(currentOrderData) {
-<div class="card mt-3 p-3">
-  <div class="d-flex justify-content-between align-items-center">
-    <div>
-      <i class="fas fa-user-alt ms-1 main-color"></i>
-      <span class="h5">معلومات العميل</span>
-    </div>
-  </div>
-
-  <div class="text-muted fw-bold">
-    اسم العميل:
-    <small class="fw-medium">{{ currentOrderData?.order_details?.client_name
-      }}</small>
-  </div>
-  <div class="text-muted fw-bold">
-    رقم العميل:
-    <small class="fw-medium">{{ currentOrderData?.order_details?.client_phone
-      }}</small>
-  </div>
-</div>
-<div class="card p-3 mt-3">
-  <ul class="nav nav-pills px-0 align-items-center">
-    <!-- dine-in -->
-    <li class="nav-item mb-2">
-      <button class="nav-link sub {{ currentOrderData?.order_details?.order_type === 'dine-in' ? 'active' : '' }}"
-        type="button" [disabled]="currentOrderData?.order_details?.order_type !== 'dine-in'">
-        <figure class="mb-0">
-          <img src="assets/images/in.png" alt />
-        </figure>
-        <span>في المطعم</span>
-      </button>
-    </li>
-
-    <!-- takeaway -->
-    <li class="nav-item mb-2">
-      <button class="nav-link sub {{ currentOrderData?.order_details?.order_type === 'Takeaway' ? 'active' : '' }}"
-        type="button" [disabled]="currentOrderData?.order_details?.order_type !== 'Takeaway'">
-        <figure class="mb-0">
-          <img src="assets/images/out.png" alt />
-        </figure>
-        <span>إستلام</span>
-      </button>
-    </li>
-
-    <!-- delivery -->
-    <li class="nav-item mb-2">
-      <button class="nav-link sub {{ currentOrderData?.order_details?.order_type === 'Delivery' ? 'active' : '' }}"
-        type="button" [disabled]="currentOrderData?.order_details?.order_type !== 'Delivery'">
-        <figure class="mb-0">
-          <img src="assets/images/delivery.png" alt />
-        </figure>
-        <span>توصيل</span>
-      </button>
-    </li>
-
-    <!-- talabat -->
-    <li class="nav-item mb-2">
-      <button class="nav-link sub {{ currentOrderData?.order_details?.order_type === 'talabat' ? 'active' : '' }}"
-        type="button" [disabled]="currentOrderData?.order_details?.order_type !== 'talabat'">
+    <li class="nav-item mb-2" [attr.role]="!currentOrderData ? 'presentation' : null">
+      <button class="nav-link sub"
+        [class.active]="(!currentOrderData && selectedOrderType === 'talabat') || (currentOrderData && currentOrderData?.order_details?.order_type === 'talabat')"
+        [attr.id]="!currentOrderData ? 'pills-side-out-tab' : null"
+        [attr.data-bs-toggle]="!currentOrderData ? 'pill' : null"
+        [attr.data-bs-target]="!currentOrderData ? '#pills-side-out' : null" type="button"
+        [attr.role]="!currentOrderData ? 'tab' : null"
+        [attr.aria-controls]="!currentOrderData ? 'pills-side-out' : null"
+        [attr.aria-selected]="!currentOrderData ? 'false' : null"
+        [disabled]="currentOrderData && currentOrderData?.order_details?.order_type !== 'talabat'"
+        (click)="!currentOrderData && selectOrderType('talabat')">
         <figure class="mb-0">
           <img src="assets/images/out.png" alt />
         </figure>
@@ -248,34 +137,116 @@ selectedOrderType === 'talabat') {
     </li>
   </ul>
 
-  <div class="tab-content py-2">
-    @if (currentOrderData?.order_details?.order_type === 'dine-in') {
-    <div class="text-muted fw-bold">
-      الطاولة المختارة :
-      <small class="fw-medium">{{ currentOrderData?.order_details?.table_number
-        }}</small>
+  <div class="tab-content py-2" [attr.id]="!currentOrderData ? 'pills-tabContent' : null">
+    <!-- Dine-in Tab Pane -->
+    @if ((!currentOrderData && selectedOrderType === 'dine-in') || (currentOrderData &&
+    currentOrderData?.order_details?.order_type === 'dine-in')) {
+    <div class="tab-pane fade"
+      [class.active]="(!currentOrderData && selectedOrderType === 'dine-in') || (currentOrderData && currentOrderData?.order_details?.order_type === 'dine-in')"
+      [class.show]="(!currentOrderData && selectedOrderType === 'dine-in') || (currentOrderData && currentOrderData?.order_details?.order_type === 'dine-in')"
+      [attr.id]="!currentOrderData ? 'pills-side-in' : null" [attr.role]="!currentOrderData ? 'tabpanel' : null"
+      [attr.aria-labelledby]="!currentOrderData ? 'pills-side-in-tab' : null">
+      @if (!currentOrderData) {
+      <a class="d-flex align-items-center mb-2 justify-content-between" routerLink="/tables"
+        routerLinkActive="active_link" [routerLinkActiveOptions]="{ exact: true }" (click)="setCameFromSideDetails()">
+        <div>
+          <div class="d-flex">
+            <img src="assets/images/red-table.png" alt />
+            <div class="h5">أختر طاولة</div>
+          </div>
+          @if (tableNumber || table_number) {
+          <div class="text-muted fw-bold">
+            الطاولة المختارة :
+            <small class="fw-medium">{{ tableNumber || table_number}}</small>
+          </div>
+          }
+        </div>
+        <i class="fas fa-chevron-left"></i>
+      </a>
+      } @else if (currentOrderData) {
+      <div class="text-muted fw-bold">
+        الطاولة المختارة :
+        <small class="fw-medium">{{ currentOrderData?.order_details?.table_number }}</small>
+      </div>
+      }
     </div>
     }
-    @if (currentOrderData?.order_type === 'Delivery') {
-    <div>
-      <small class="fw-bold text-muted">الاسم : </small>
-      <small class="text-muted">{{ currentOrderData?.order_details?.client_name
-        }}</small>
+
+    <!-- Takeaway Tab Pane -->
+    @if ((!currentOrderData && selectedOrderType === 'Takeaway') || (currentOrderData &&
+    currentOrderData?.order_details?.order_type === 'Takeaway')) {
+    <div class="tab-pane fade"
+      [class.active]="(!currentOrderData && selectedOrderType === 'Takeaway') || (currentOrderData && currentOrderData?.order_details?.order_type === 'Takeaway')"
+      [class.show]="(!currentOrderData && selectedOrderType === 'Takeaway') || (currentOrderData && currentOrderData?.order_details?.order_type === 'Takeaway')"
+      [attr.id]="!currentOrderData ? 'pills-side-out' : null" [attr.role]="!currentOrderData ? 'tabpanel' : null"
+      [attr.aria-labelledby]="!currentOrderData ? 'pills-side-out-tab' : null">
+      <!-- Takeaway content (if any) -->
     </div>
-    <div>
-      <small class="fw-bold text-muted">العنوان : </small>
-      <small class="text-muted">{{ currentOrderData?.order_details?.address
-        }}</small>
+    }
+
+    <!-- Delivery Tab Pane -->
+    @if ((!currentOrderData && selectedOrderType === 'Delivery') || (currentOrderData &&
+    currentOrderData?.order_details?.order_type === 'Delivery')) {
+    <div class="tab-pane fade"
+      [class.active]="(!currentOrderData && selectedOrderType === 'Delivery') || (currentOrderData && currentOrderData?.order_details?.order_type === 'Delivery')"
+      [class.show]="(!currentOrderData && selectedOrderType === 'Delivery') || (currentOrderData && currentOrderData?.order_details?.order_type === 'Delivery')"
+      [attr.id]="!currentOrderData ? 'pills-side-delivery' : null" [attr.role]="!currentOrderData ? 'tabpanel' : null"
+      [attr.aria-labelledby]="!currentOrderData ? 'pills-side-delivery-tab' : null">
+      @if (!currentOrderData) {
+      <a class="d-flex align-items-center mb-2 justify-content-between" routerLink="/delivery-details"
+        routerLinkActive="active_link" [routerLinkActiveOptions]="{ exact: true }">
+        <div>
+          <img src="assets/images/location.png" alt />
+          <span class="h5">اضف معلومات التوصيل</span>
+        </div>
+        <i class="fas fa-chevron-left"></i>
+      </a>
+      @if (clientName) {
+      <div>
+        <small class="fw-bold text-muted">الاسم : </small>
+        <small class="text-muted">{{clientName}}</small>
+      </div>
+      }
+      <div *ngIf="address">
+        <small class="fw-bold text-muted">العنوان : </small>
+        <small class="text-muted">{{ address || "لم يتم تحديد العنوان" }}</small>
+      </div>
+      @if (addressPhone) {
+      <div>
+        <small class="fw-bold text-muted">رقم الهاتف : </small>
+        <small class="text-muted">{{addressPhone}}</small>
+      </div>
+      }
+      } @else if (currentOrderData) {
+      <div>
+        <small class="fw-bold text-muted">الاسم : </small>
+        <small class="text-muted">{{ currentOrderData?.order_details?.client_name }}</small>
+      </div>
+      <div>
+        <small class="fw-bold text-muted">العنوان : </small>
+        <small class="text-muted">{{ currentOrderData?.order_details?.address }}</small>
+      </div>
+      <div>
+        <small class="fw-bold text-muted">رقم الهاتف : </small>
+        <small class="text-muted">{{ currentOrderData?.order_details?.client_phone }}</small>
+      </div>
+      }
     </div>
-    <div>
-      <small class="fw-bold text-muted">رقم الهاتف : </small>
-      <small class="text-muted">{{ currentOrderData?.order_details?.client_phone
-        }}</small>
+    }
+
+    <!-- talabat Tab Pane -->
+    @if ((!currentOrderData && selectedOrderType === 'talabat') || (currentOrderData &&
+    currentOrderData?.order_details?.order_type === 'talabat')) {
+    <div class="tab-pane fade"
+      [class.active]="(!currentOrderData && selectedOrderType === 'talabat') || (currentOrderData && currentOrderData?.order_details?.order_type === 'talabat')"
+      [class.show]="(!currentOrderData && selectedOrderType === 'talabat') || (currentOrderData && currentOrderData?.order_details?.order_type === 'talabat')"
+      [attr.id]="!currentOrderData ? 'pills-side-out' : null" [attr.role]="!currentOrderData ? 'tabpanel' : null"
+      [attr.aria-labelledby]="!currentOrderData ? 'pills-side-out-tab' : null">
+      <!-- talabat content (if any) -->
     </div>
     }
   </div>
 </div>
-}
 
 <!-- <button (click)="getAddressId()">tst</button> -->
 <div class="card p-3 mt-3">
@@ -410,10 +381,8 @@ selectedOrderType === 'talabat') {
             {{ discountAmount.toFixed(2) || this.appliedCoupon.total_discount }}
             {{ currencySymbol }}
           </span>
-          <i class="fa-solid fa-trash text-danger cursor-pointer" 
-            (click)="removeCoupon()" 
-            style="cursor: pointer; font-size: 16px;"
-            title="حذف الكوبون"></i>
+          <i class="fa-solid fa-trash text-danger cursor-pointer" (click)="removeCoupon()"
+            style="cursor: pointer; font-size: 16px;" title="حذف الكوبون"></i>
         </p>
         }
       </li>
@@ -649,38 +618,47 @@ selectedOrderType === 'talabat') {
             <div class="card p-3 mt-3">
 
               <ng-container *ngIf="getCartTotal() as billAmount">
-                <!-- اقتراحات المبالغ -->
-                <!-- <div class="d-flex justify-content-between flex-wrap gap-2 payment-suggestions-container">
+                <!-- عرض المبلغ المستحق -->
+                <div class="card p-3 mb-3">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="fw-bold mb-0">المبلغ المستحق:</h6>
+                    <h5 class="fw-bolder mb-0 main-color">{{ billAmount | number:'1.2-2' }} {{ currencySymbol }}</h5>
+                  </div>
+                </div>
 
+                <!-- اقتراحات المبالغ -->
+                <div class="d-flex justify-content-between flex-wrap gap-2 payment-suggestions-container mb-3">
                   <label class="payment-suggestion-label"
-                    [class.active-payment-suggestion]="selectedSuggestionType === 'billAmount'"
+                    [class.active-payment-suggestion]="selectedSuggestionType === 'billAmount' && finalTipSummary?.paymentAmount === billAmount"
                     (click)="selectPaymentSuggestionAndOpenModal('billAmount', billAmount, billAmount, tipModalContent)">
-                    <strong>{{ billAmount | number:'1.0-0' }} ج.م</strong>
+                    <strong>{{ billAmount | number:'1.2-2' }} {{ currencySymbol }}</strong>
+                    <small class="d-block text-muted">المبلغ المستحق</small>
                   </label>
 
                   <ng-container *ngIf="getNearestAmount(billAmount, 50) as amount50">
                     <label class="payment-suggestion-label" [class.disabled-suggestion]="amount50 < billAmount"
-                      [class.active-payment-suggestion]="selectedSuggestionType === 'amount50'"
+                      [class.active-payment-suggestion]="selectedSuggestionType === 'amount50' && finalTipSummary?.paymentAmount === amount50"
                       (click)="selectPaymentSuggestionAndOpenModal('amount50', billAmount, amount50, tipModalContent)">
-                      <strong>{{ amount50 | number:'1.0-0' }} ج.م</strong>
+                      <strong>{{ amount50 | number:'1.0-0' }} {{ currencySymbol }}</strong>
+                      <small class="d-block text-muted">أقرب 50</small>
                     </label>
                   </ng-container>
 
                   <ng-container *ngIf="getNearestAmount(billAmount, 100) as amount100">
                     <label class="payment-suggestion-label" [class.disabled-suggestion]="amount100 < billAmount"
-                      [class.active-payment-suggestion]="selectedSuggestionType === 'amount100'"
+                      [class.active-payment-suggestion]="selectedSuggestionType === 'amount100' && finalTipSummary?.paymentAmount === amount100"
                       (click)="selectPaymentSuggestionAndOpenModal('amount100', billAmount, amount100, tipModalContent)">
-                      <strong>{{ amount100 | number:'1.0-0' }} ج.م</strong>
+                      <strong>{{ amount100 | number:'1.0-0' }} {{ currencySymbol }}</strong>
+                      <small class="d-block text-muted">أقرب 100</small>
                     </label>
                   </ng-container>
-                </div> -->
+                </div>
 
                 <!-- إدخال مبلغ يدوي -->
                 <div class="card p-3 mb-3">
-                  <label for="cashPaymentInput" class="form-label fw-bold">حدد
-                    الدفع</label>
-                  <input type="number" class="form-control" [(ngModel)]="cashPaymentInput"
-                    [ngModelOptions]="{standalone: true}" placeholder="المبلغ المدفوع" (input)="roundCashPayment()"
+                  <label for="cashPaymentInput" class="form-label fw-bold">مبلغ مخصص</label>
+                  <input type="number" class="form-control" id="cashPaymentInput" [(ngModel)]="cashPaymentInput"
+                    [ngModelOptions]="{standalone: true}" placeholder="أدخل المبلغ المدفوع" (input)="roundCashPayment()"
                     (change)="handleManualPaymentBlur(billAmount, tipModalContent)" [class.is-invalid]="paymentError">
 
                   <!-- عرض رسالة الخطأ -->
@@ -795,46 +773,29 @@ selectedOrderType === 'talabat') {
 
       <!-- الملخص النهائي -->
       <div *ngIf="finalTipSummary" class="card p-3 my-3 final-summary-box">
-
-        <!-- <div class="summary-line">
-          <span>المجموع:</span>
-          <span class="fw-bold">{{ finalTipSummary.total | number:'1.0-0' }}
-            ج.م</span>
-        </div>
-
-        <div class="summary-line">
-          <span>رسوم الخدمة:</span>
-          <span class="fw-bold">{{ finalTipSummary.serviceFee | number:'1.0-0'
-            }} ج.م</span>
-        </div> -->
-
         <hr class="my-2">
-        <!-- ✅ قسم المبلغ الإضافي المطلوب -->
+        
         <div *ngIf="finalTipSummary.additionalPaymentRequired && finalTipSummary.additionalPaymentRequired > 0"
           class="alert alert-warning mb-3">
-          <!-- <div class="d-flex align-items-center">
+          <div class="d-flex align-items-center">
             <i class="fas fa-exclamation-triangle me-2"></i>
             <div>
               <strong>مبلغ إضافي مطلوب:</strong>
-              <span class="fw-bold">{{ finalTipSummary.additionalPaymentRequired
-                | number:'1.2-2' }} ج.م</span>
-              <br>
-              <small>لتحقيق الإكرامية المطلوبة</small>
+              <span class="fw-bold">{{ finalTipSummary.additionalPaymentRequired | number:'1.2-2' }} {{ currencySymbol }} لتحقيق الإكرامية المطلوبة</span>
             </div>
-          </div> -->
+          </div>
         </div>
-        <!-- <div class="summary-line sub-total">
+        
+        <div class="summary-line sub-total">
           <span>المجموع الفرعي (المستحق):</span>
-          <span class="summary-value">{{ finalTipSummary.billAmount |
-            number:'1.2-2' }} ج.م</span>
+          <span class="summary-value">{{ finalTipSummary.billAmount | number:'1.2-2' }} {{ currencySymbol }}</span>
         </div>
 
         <hr class="my-2">
 
         <div class="summary-line">
           <span>قيمة الدفع:</span>
-          <span class="fw-bold">{{ finalTipSummary.paymentAmount |
-            number:'1.2-2' }} ج.م</span>
+          <span class="fw-bold">{{ finalTipSummary.paymentAmount | number:'1.2-2' }} {{ currencySymbol }}</span>
         </div>
 
         <div class="summary-line">
@@ -844,23 +805,20 @@ selectedOrderType === 'talabat') {
 
         <div class="summary-line">
           <span>الإكرامية:</span>
-          <span class="fw-bold">{{ finalTipSummary.tipAmount | number:'1.2-2' }}
-            ج.م</span>
+          <span class="fw-bold">{{ finalTipSummary.tipAmount | number:'1.2-2' }} {{ currencySymbol }}</span>
         </div>
 
         <hr class="my-2">
 
         <div class="summary-line grand-total">
           <span>المجموع الكلي بالإكرامية:</span>
-          <span class="fw-bolder">{{ finalTipSummary.grandTotalWithTip |
-            number:'1.2-2' }} ج.م</span>
+          <span class="fw-bolder">{{ finalTipSummary.grandTotalWithTip | number:'1.2-2' }} {{ currencySymbol }}</span>
         </div>
 
         <div class="summary-line change-return">
           <span>المتبقي للرد:</span>
-          <span class="fw-bolder">{{ finalTipSummary.changeToReturn |
-            number:'1.2-2' }} ج.م</span>
-        </div> -->
+          <span class="fw-bolder">{{ finalTipSummary.changeToReturn | number:'1.2-2' }} {{ currencySymbol }}</span>
+        </div>
       </div>
       }
       <!-- في حالة غير مدفوع -->
@@ -1270,7 +1228,7 @@ selectedOrderType === 'talabat') {
         <button class="btn" (click)="applyCoupon()" [disabled]="isLoading || !couponCode || !couponCode.trim()">
           {{ isLoading ? "جاري التحقق...." : "تطبيق الكوبون" }}
         </button>
-        <button class="btn reversed main-color" (click)="removeCoupon()" 
+        <button class="btn reversed main-color" (click)="removeCoupon()"
           [disabled]="!discountAmount || discountAmount === 0">
           حذف الكوبون
         </button>
@@ -1425,97 +1383,116 @@ selectedOrderType === 'talabat') {
 
 <ng-template #tipModalContent let-modal>
   <div class="modal-header tip-modal-header border-0 pb-0">
-    <h5 class="modal-title fw-bold text-center w-100">حدد قيمة الاكرامية</h5>
+    <h5 class="modal-title fw-bold text-center w-100">خيارات الإكرامية</h5>
     <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
   </div>
 
   <div class="modal-body pt-0">
-    <div class="tip-summary-initial mb-4">
-      <div class="d-flex justify-content-between summary-line">
-        <span class="text-muted">المبلغ المُستحق:</span>
-        <span class="fw-bold">{{ tempBillAmount | number:'1.2-2' }} ج.م</span>
+    <!-- ✅ System Timeout Warning -->
+    @if (tipModalTimeRemaining <= tipModalWarningTime && tipModalTimeRemaining> 0 && tipModalWarningShown) {
+      <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+        <i class="fas fa-clock me-2"></i>
+        <strong>تنبيه:</strong> سيتم اختيار "بدون إكرامية" تلقائياً خلال {{ tipModalTimeRemaining }} ثانية
+        <button type="button" class="btn-close" aria-label="Close" (click)="tipModalWarningShown = false"></button>
       </div>
-      <div class="d-flex justify-content-between summary-line">
-        <span class="text-muted">المبلغ المدفوع:</span>
-        <span class="fw-bold text-success">{{ tempPaymentAmount | number:'1.2-2'
-          }} ج.م</span>
-      </div>
-      <div class="d-flex justify-content-between summary-line pt-2 border-top">
-        <span class="fw-bold">الباقي المُحتمل (قبل الإكرامية):</span>
-        <span class="fw-bolder text-danger">{{ tempChangeAmount | number:'1.2-2'
-          }} ج.م</span>
-      </div>
-    </div>
+      }
 
-    <!-- خيارات الإكرامية جنب بعض مثل ال radio buttons -->
-    <div class="tip-options-horizontal mb-4">
-      <div class="row g-2">
-        <!-- بدون اكرامية -->
-        <div class="col-4">
-          <div class="tip-option-horizontal text-center" [class.active-tip-horizontal]="selectedTipType === 'no_tip'"
-            (click)="selectTipOption('no_tip')">
-            <div class="option-radio">
-              <div class="radio-dot" [class.radio-dot-active]="selectedTipType === 'no_tip'"></div>
-            </div>
-            <div class="option-title fw-bold">بدون اكرامية</div>
-          </div>
+      <div class="tip-summary-initial mb-4">
+        <div class="d-flex justify-content-between summary-line">
+          <span class="text-muted">المبلغ المُستحق:</span>
+          <span class="fw-bold">{{ tempBillAmount | number:'1.2-2' }} ج.م</span>
         </div>
-
-        <!-- صبلغ محدد -->
-        <div class="col-4">
-          <div class="tip-option-horizontal text-center"
-            [class.active-tip-horizontal]="selectedTipType === 'tip_specific_amount'"
-            [class.disabled-tip-horizontal]="tempChangeAmount <= 0" (click)="selectTipOption('tip_specific_amount')">
-            <div class="option-radio">
-              <div class="radio-dot" [class.radio-dot-active]="selectedTipType === 'tip_specific_amount'"
-                [class.radio-dot-disabled]="tempChangeAmount <= 0"></div>
-            </div>
-            <div class="option-title fw-bold">مبلغ محدد</div>
-          </div>
+        <div class="d-flex justify-content-between summary-line">
+          <span class="text-muted">المبلغ المدفوع:</span>
+          <span class="fw-bold text-success">{{ tempPaymentAmount | number:'1.2-2'
+            }} ج.م</span>
         </div>
-
-        <!-- الصبلغ كله -->
-        <div class="col-4">
-          <div class="tip-option-horizontal text-center"
-            [class.active-tip-horizontal]="selectedTipType === 'tip_the_change'"
-            [class.disabled-tip-horizontal]="tempChangeAmount <= 0"
-            (click)="tempChangeAmount > 0 ? selectTipOption('tip_the_change') : null">
-            <div class="option-radio">
-              <div class="radio-dot"
-                [class.radio-dot-active]="selectedTipType === 'tip_the_change' && tempChangeAmount > 0"
-                [class.radio-dot-disabled]="tempChangeAmount <= 0"></div>
-            </div>
-            <div class="option-title fw-bold">المبلغ كله</div>
-          </div>
+        <div class="d-flex justify-content-between summary-line pt-2 border-top">
+          <span class="fw-bold">الباقي المُحتمل (قبل الإكرامية):</span>
+          <span class="fw-bolder text-danger">{{ tempChangeAmount | number:'1.2-2'
+            }} ج.م</span>
         </div>
       </div>
-    </div>
 
-    <!-- حقل إدخال المبلغ المحدد -->
-    @if(selectedTipType === 'tip_specific_amount') {
-    <div class="tip-input-section mb-4 text-center">
-      <div class="tip-input-large">
-        <input type="number" class="form-control form-control-lg text-center" [(ngModel)]="specificTipAmount"
-          placeholder="0" min="0" step="0.01">
-      </div>
-    </div>
-    }
+      <!-- خيارات الإكرامية جنب بعض مثل ال radio buttons -->
+      <div class="tip-options-horizontal mb-4">
+        <div class="row g-2">
+          <!-- بدون اكرامية -->
+          <div class="col-4">
+            <div class="tip-option-horizontal text-center" [class.active-tip-horizontal]="selectedTipType === 'no_tip'"
+              (click)="selectTipOption('no_tip')">
+              <div class="option-radio">
+                <div class="radio-dot" [class.radio-dot-active]="selectedTipType === 'no_tip'"></div>
+              </div>
+              <div class="option-title fw-bold">بدون إكرامية</div>
+              <div class="option-description text-muted small mt-1">
+                رد {{ tempChangeAmount | number:'1.2-2' }} {{ currencySymbol }}
+              </div>
+            </div>
+          </div>
 
-    <!-- ملخص الإكرامية المختارة -->
-    <div class="tip-summary-final mb-3 p-3 rounded">
-      <div class="d-flex justify-content-between align-items-center">
-        <span class="fw-bold">الإكرامية المعتمدة:</span>
-        <span class="fw-bolder text-success fs-5">
-          {{
-          (
-          selectedTipType === 'no_tip' ? 0 :
-          selectedTipType === 'tip_the_change' ? tempChangeAmount :
-          specificTipAmount
-          ) | number:'1.2-2'
-          }} ج.م
-        </span>
+          <!-- مبلغ محدد -->
+          <div class="col-4">
+            <div class="tip-option-horizontal text-center"
+              [class.active-tip-horizontal]="selectedTipType === 'tip_specific_amount'"
+              [class.disabled-tip-horizontal]="tempChangeAmount <= 0"
+              (click)="tempChangeAmount > 0 ? selectTipOption('tip_specific_amount') : null">
+              <div class="option-radio">
+                <div class="radio-dot" [class.radio-dot-active]="selectedTipType === 'tip_specific_amount'"
+                  [class.radio-dot-disabled]="tempChangeAmount <= 0"></div>
+              </div>
+              <div class="option-title fw-bold">مبلغ محدد</div>
+              <div class="option-description text-muted small mt-1">
+                أدخل المبلغ
+              </div>
+            </div>
+          </div>
+
+          <!-- الباقي كله -->
+          <div class="col-4">
+            <div class="tip-option-horizontal text-center"
+              [class.active-tip-horizontal]="selectedTipType === 'tip_the_change'"
+              [class.disabled-tip-horizontal]="tempChangeAmount <= 0"
+              (click)="tempChangeAmount > 0 ? selectTipOption('tip_the_change') : null">
+              <div class="option-radio">
+                <div class="radio-dot"
+                  [class.radio-dot-active]="selectedTipType === 'tip_the_change' && tempChangeAmount > 0"
+                  [class.radio-dot-disabled]="tempChangeAmount <= 0"></div>
+              </div>
+              <div class="option-title fw-bold">الباقي كله</div>
+              <div class="option-description text-muted small mt-1">
+                ({{ tempChangeAmount | number:'1.2-2' }} {{ currencySymbol }})
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
-    </div>
+
+      <!-- حقل إدخال المبلغ المحدد -->
+      @if(selectedTipType === 'tip_specific_amount') {
+      <div class="tip-input-section mb-4 text-center">
+        <div class="tip-input-large">
+          <input type="number" class="form-control form-control-lg text-center" [(ngModel)]="specificTipAmount"
+            placeholder="0" min="0" step="0.01">
+        </div>
+      </div>
+      }
+
+      <!-- ملخص الإكرامية المختارة -->
+      <div class="tip-summary-final mb-3 p-3 rounded">
+        <div class="d-flex justify-content-between align-items-center">
+          <span class="fw-bold">الإكرامية المعتمدة:</span>
+          <span class="fw-bolder text-success fs-5">
+            {{
+            (
+            selectedTipType === 'no_tip' ? 0 :
+            selectedTipType === 'tip_the_change' ? tempChangeAmount :
+            specificTipAmount
+            ) | number:'1.2-2'
+            }} ج.م
+          </span>
+        </div>
+      </div>
   </div>
 
   <div class="modal-footer d-flex justify-content-center tip-modal-footer border-0">
@@ -1528,7 +1505,7 @@ selectedOrderType === 'talabat') {
         (المتبقي للرد: {{
         selectedTipType === 'no_tip' ? tempChangeAmount :
         selectedTipType === 'tip_the_change' ? 0 :
-        tempChangeAmount - specificTipAmount | number:'1.2-2'
+        (tempChangeAmount - specificTipAmount > 0 ? tempChangeAmount - specificTipAmount : 0) | number:'1.2-2'
         }} ج.م)
       </small>
     </button>
