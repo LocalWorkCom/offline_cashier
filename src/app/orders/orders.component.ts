@@ -1299,27 +1299,27 @@ export class OrdersComponent implements OnDestroy {
         .pipe(takeUntil(this.destroy$))
         .subscribe((dishChanged) => {
           console.log(' Incoming dish update:', dishChanged);
-  
+
           const targetOrderId = Number(dishChanged?.order_id);
           // const targetDishId = Number(dishChanged.data?.dish_ids?.[0]);
-  
+
           const orderIndex = this.orders.findIndex(
             (order) => Number(order.order_details?.order_id) === targetOrderId
           );
-  
+
           if (orderIndex !== -1) {
             console.warn(' Order found :', targetOrderId);
        /*      const currentOrder = this.orders[orderIndex];
-  
+
             const updatedOrder = {
               ...currentOrder,
               ...dishChanged,
             };
-  
+
             this.orders.splice(orderIndex, 1, updatedOrder);
             this.orders = [...this.orders];
             this.filterOrders();
-  
+
             this.cdr.detectChanges();
             console.log(' Order status updated:', updatedOrder);
           } else {
