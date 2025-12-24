@@ -97,7 +97,7 @@ export class NewOrderService {
                 }
               }
 
-
+              await new Promise(resolve => setTimeout(resolve, 500));
               // Print grills to different printer (can run in parallel)
               if(response.status && response.grills && response.grills.length > 0){
                 console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
