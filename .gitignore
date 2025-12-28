@@ -7,7 +7,7 @@
 /bazel-out
 /release
 /erp2
-/erp
+/erp_main
 # Node
 /node_modules
 npm-debug.log

@@ -12,6 +12,7 @@ import {
   ɵsetAllowDuplicateNgModuleIdsForTest,
   inject,
   OnDestroy,
+  Inject,
 } from '@angular/core';
 import html2canvas from 'html2canvas';
 import { ProductsService } from '../services/products.service';
@@ -27,6 +28,7 @@ import { CartItemsModalComponent } from '../cart-items-modal/cart-items-modal.co
 import { v4 as uuidv4 } from 'uuid';
 import { PrintedInvoiceService } from '../services/printed-invoice.service';
 import { PillDetailsService } from '../services/pill-details.service';
+import { OrderListDetailsService } from '../services/order-list-details.service';
 import { ActivatedRoute } from '@angular/router';
 import { DatePipe } from '@angular/common';
 import { Router } from '@angular/router';
@@ -209,6 +211,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   tipModalWarningShown: boolean = false;
   tipModalRef: any = null;
 
+  // Additional Payment Modal variables
+  additionalPaymentRequiredAmount: number = 0;
+  requiredTipAmount: number = 0;
+  currentPaymentAmount: number = 0;
+  additionalPaymentModalRef: any = null;
+  pendingTipModal: any = null; // لحفظ الـ modal الأصلي للإكرامية
+
   constructor(
     private productsService: ProductsService,
     private http: HttpClient,
@@ -216,9 +225,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     private modalService: NgbModal,
     private printedInvoiceService: PrintedInvoiceService,
     private pillDetailsService: PillDetailsService,
+    private orderListDetailsService: OrderListDetailsService,
     private route: ActivatedRoute,
     private orderService: PillDetailsService,
-    private cdr: ChangeDetectorRef,
+    @Inject(ChangeDetectorRef) private cdr: ChangeDetectorRef,
     private datePipe: DatePipe,
     private router: Router,
     private formDataService: AddAddressService,
@@ -2863,6 +2873,26 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         // ✅ النظام الجديد مع الإكرامية
         if (this.finalTipSummary && this.finalTipSummary.paymentAmount > 0) {
           totalEntered = Number(this.finalTipSummary.paymentAmount);
+          
+          // 🔒 التحقق من أن المبلغ المدفوع >= الإجمالي عند استخدام finalTipSummary
+          if (totalEntered < cartTotal) {
+            this.amountError = true;
+            this.loading = false;
+            const remainingBalance = cartTotal - totalEntered;
+            this.falseMessage = `المبلغ المدفوع غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}`;
+            console.error('❌ خطأ في التحقق من مبلغ finalTipSummary:', {
+              totalEntered,
+              cartTotal,
+              remainingBalance,
+              paymentMethod: this.selectedPaymentMethod
+            });
+            this.isLoading = false;
+            setTimeout(() => {
+              this.amountError = false;
+              this.falseMessage = '';
+            }, 3500);
+            return; // ❌ منع المتابعة إذا كان المبلغ غير كافي
+          }
         }
         // ✅ النظام الجديد - كاش فقط
         else if (this.selectedPaymentMethod === 'cash' && this.cashPaymentInput > 0) {
@@ -2872,11 +2902,27 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         else if (this.selectedPaymentMethod === 'cash + credit') {
           if (this.selectedPaymentStatus === 'paid' && this.credit_amountt > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
             this.referenceNumberTouched = true;
+            this.isLoading = false;
+            this.loading = false;
             this.showError('❌ رقم المرجع مطلوب عند الدفع بالفيزا.');
             return;
           }
 
           totalEntered = Number(((this.cashAmountMixed || 0) + (this.creditAmountMixed || 0)));
+          
+          // 🔒 التحقق من أن المبلغ المختلط >= الإجمالي
+          if (totalEntered < cartTotal) {
+            this.amountError = true;
+            this.loading = false;
+            const remainingBalance = cartTotal - totalEntered;
+            this.falseMessage = `المبلغ المدفوع غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}`;
+            this.isLoading = false;
+            setTimeout(() => {
+              this.amountError = false;
+              this.falseMessage = '';
+            }, 3500);
+            return; // 🔒 منع المتابعة إذا كان المبلغ غير كافي
+          }
         }
         // ✅ حالة الفيزا - التحقق من المبلغ المدخل
         else if (this.selectedPaymentMethod === 'credit') {
@@ -2916,10 +2962,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
         if (totalEntered < cartTotal) {
           this.amountError = true;
+          this.loading = false;
           const remainingBalance = cartTotal - totalEntered;
           this.falseMessage = `المبلغ غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}`;
           console.log('❌ Entered amount less than total:', totalEntered, cartTotal, 'Remaining:', remainingBalance);
           this.isLoading = false;
+          return; // 🔒 منع المتابعة إذا كان المبلغ غير كافي
 
           setTimeout(() => {
             this.amountError = false;
@@ -3017,9 +3065,29 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         } else if (this.selectedPaymentMethod === 'cash + credit') {
           // ✅ استخدام finalTipSummary إذا كان موجوداً (يحتوي على الإكرامية)
           if (this.finalTipSummary && this.finalTipSummary.cashAmountMixed !== undefined && this.finalTipSummary.creditAmountMixed !== undefined) {
+            // 🔒 التحقق من أن المبلغ المدفوع >= الإجمالي
+            const cashAmount = this.finalTipSummary.cashAmountMixed || 0;
+            const creditAmount = this.finalTipSummary.creditAmountMixed || 0;
+            const totalPaid = Number((cashAmount + creditAmount).toFixed(2));
+            const billAmountNum = Number(billAmount) || 0;
+            
+            if (totalPaid < billAmountNum) {
+              this.amountError = true;
+              this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountNum.toFixed(2)} ${this.currencySymbol}`;
+              this.isLoading = false;
+              this.loading = false;
+              console.error('❌ خطأ في التحقق من المبلغ المختلط مع finalTipSummary:', {
+                cashAmount,
+                creditAmount,
+                totalPaid,
+                billAmount: billAmountNum
+              });
+              return; // ❌ منع المتابعة إذا كان المبلغ غير كافي
+            }
+            
             // استخدام المبالغ النهائية مع الإكرامية
-            orderData.cash_amount = this.finalTipSummary.cashAmountMixed;
-            orderData.credit_amount = this.finalTipSummary.creditAmountMixed;
+            orderData.cash_amount = cashAmount;
+            orderData.credit_amount = creditAmount;
             
             console.log('💰 الدفع المختلط مع الإكرامية:', {
               cashAmount: orderData.cash_amount,
@@ -3061,8 +3129,25 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         else if (this.selectedPaymentMethod === 'credit') {
           // ✅ استخدام finalTipSummary إذا كان موجوداً (يحتوي على الإكرامية)
           if (this.finalTipSummary && this.finalTipSummary.grandTotalWithTip > 0) {
+            // 🔒 التحقق من أن المبلغ المدفوع >= الإجمالي
+            const creditAmount = this.finalTipSummary.grandTotalWithTip;
+            const billAmountNum = Number(billAmount) || 0;
+            
+            if (creditAmount < billAmountNum) {
+              this.amountError = true;
+              this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountNum.toFixed(2)} ${this.currencySymbol}`;
+              this.isLoading = false;
+              this.loading = false;
+              console.error('❌ خطأ في التحقق من مبلغ الفيزا مع finalTipSummary:', {
+                creditAmount,
+                billAmount: billAmountNum,
+                grandTotalWithTip: this.finalTipSummary.grandTotalWithTip
+              });
+              return; // ❌ منع المتابعة إذا كان المبلغ غير كافي
+            }
+            
             // استخدام المبلغ الكلي مع الإكرامية
-            orderData.credit_amount = this.finalTipSummary.grandTotalWithTip;
+            orderData.credit_amount = creditAmount;
             orderData.cash_amount = 0;
             
             console.log('💳 تم تعيين مبالغ الدفع بالفيزا مع الإكرامية:', {
@@ -3293,7 +3378,17 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       const orderId = (response as any).data?.order_id;
       if (!orderId) {
+        this.isLoading = false;
+        this.loading = false;
         this.showError('لم يتم استلام رقم الطلب من الخادم.');
+        return;
+      }
+
+      // 🔒 التحقق النهائي: التأكد من أن الطلب تم حفظه فعلياً
+      if (!(response as any).status || !(response as any).data) {
+        this.isLoading = false;
+        this.loading = false;
+        this.showError('فشل حفظ الطلب. يرجى المحاولة مرة أخرى.');
         return;
       }
 
@@ -5689,7 +5784,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   openTipModal(content: any, billAmount: number, paymentAmount: number, paymentMethod?: string): void {
     this.tempBillAmount = billAmount;
     this.tempPaymentAmount = paymentAmount;
-    this.tempChangeAmount = paymentAmount - billAmount;
+    this.tempChangeAmount = Math.max(0, paymentAmount - billAmount);
 
     // تعيين طريقة الدفع إذا تم تمريرها
     if (paymentMethod) {
@@ -5911,18 +6006,71 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.stopTipModalTimeout();
   }
   showAdditionalPaymentConfirmation(additionalAmount: number, modal: any) {
-    const confirmed = confirm(
-      `لتحقيق الإكرامية المطلوبة (${this.specificTipAmount} ج.م)، تحتاج لدفع ${additionalAmount} ج.م إضافية.\n\nهل تريد المتابعة؟`
-    );
+    // حفظ البيانات للعرض في الـ modal
+    this.additionalPaymentRequiredAmount = additionalAmount;
+    this.requiredTipAmount = this.specificTipAmount;
+    this.currentPaymentAmount = this.finalTipSummary!.originalPaymentAmount!;
+    this.pendingTipModal = modal; // حفظ الـ modal الأصلي
 
-    if (confirmed) {
-      modal.close(this.finalTipSummary);
-    } else {
-      // إلغاء وتراجع عن الحسابات
-      this.tempPaymentAmount = this.finalTipSummary!.originalPaymentAmount!;
-      this.finalTipSummary = null;
-      this.specificTipAmount = 0;
+    // إغلاق modal الإكرامية أولاً
+    modal.dismiss('Opening additional payment modal');
+    
+    // فتح الـ modal المخصص بعد تأخير بسيط لضمان إغلاق الأول
+    setTimeout(() => {
+      const modalElement = document.getElementById('additionalPaymentModal');
+      if (modalElement) {
+        const bsModal = new bootstrap.Modal(modalElement, {
+          backdrop: 'static',
+          keyboard: false
+        });
+        this.additionalPaymentModalRef = bsModal;
+        bsModal.show();
+        // تحديث العرض
+        this.cdr.detectChanges();
+      } else {
+        console.error('Additional payment modal element not found');
+      }
+    }, 300);
+  }
+
+  confirmAdditionalPayment() {
+    // إغلاق الـ modal
+    if (this.additionalPaymentModalRef) {
+      this.additionalPaymentModalRef.hide();
+      this.additionalPaymentModalRef = null;
     }
+
+    // إغلاق الـ modal الأصلي للإكرامية والمتابعة
+    if (this.pendingTipModal) {
+      this.pendingTipModal.close(this.finalTipSummary);
+      this.pendingTipModal = null;
+    }
+
+    // إعادة تعيين المتغيرات
+    this.additionalPaymentRequiredAmount = 0;
+    this.requiredTipAmount = 0;
+    this.currentPaymentAmount = 0;
+  }
+
+  closeAdditionalPaymentModal() {
+    // إغلاق الـ modal
+    if (this.additionalPaymentModalRef) {
+      this.additionalPaymentModalRef.hide();
+      this.additionalPaymentModalRef = null;
+    }
+
+    // إلغاء وتراجع عن الحسابات
+    if (this.finalTipSummary) {
+      this.tempPaymentAmount = this.finalTipSummary.originalPaymentAmount!;
+      this.finalTipSummary = null;
+    }
+    this.specificTipAmount = 0;
+
+    // إعادة تعيين المتغيرات
+    this.additionalPaymentRequiredAmount = 0;
+    this.requiredTipAmount = 0;
+    this.currentPaymentAmount = 0;
+    this.pendingTipModal = null;
   }
 
   getChangeToReturn(changeAmount: number, tipAmount: number): number {
@@ -6026,7 +6174,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     if (totalPaid >= billAmount) {
       this.tempBillAmount = billAmount;
       this.tempPaymentAmount = totalPaid;
-      this.tempChangeAmount = totalPaid - billAmount;
+      this.tempChangeAmount = Math.max(0, totalPaid - billAmount);
 
       // ✅ فتح المودال تلقائياً عند المبلغ الكافي
       this.openTipModal(modalContent, billAmount, totalPaid, 'cash + credit');
@@ -6181,5 +6329,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     };
 
     return map[type] || type;
+  }
+
+  // Helper method to ensure values are never negative (same as cart)
+  getMaxZero(value: number): number {
+    return Math.max(0, value);
   }
 }

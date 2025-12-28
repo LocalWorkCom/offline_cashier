@@ -80,6 +80,7 @@ input[type=number]::-webkit-outer-spin-button {
 /* Firefox */
 input[type=number] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .final {
@@ -233,6 +234,12 @@ input[type=number] {
   box-shadow: 0 0 5px rgba(254, 0, 0, 0.2);
 }
 
+.payment-option-label.active-payment:hover {
+  background-color: #FE0000;
+  border-color: #FE0000;
+  color: #fff;
+}
+
 .payment-suggestion-label {
   flex-grow: 1;
   text-align: center;
@@ -283,12 +290,7 @@ input[type=number] {
 }
 
 
-/* تأثير التمرير (Hover) */
-.payment-suggestion-label:hover:not(.disabled-suggestion) {
-  background-color: #FFF2F2;
-  border-color: #FE0000;
-  color: #FE0000;
-}
+/* تأثير التمرير (Hover) - تم تحديثه لعكس الألوان */
 
 /* حالة عدم التفعيل (Disabled State) */
 .payment-suggestion-label.disabled-suggestion {
@@ -344,13 +346,16 @@ input[type=number] {
 }
 
 .payment-option-label:hover {
-  border-color: #dc3545;
-  color: #dc3545;
+  background-color: #FE0000;
+  border-color: #FE0000;
+  color: #fff;
 }
 
-.active-payment {
-  background-color: #dc3545;
-  border-color: #dc3545;
+/* General active-payment rule - overridden by more specific selectors */
+.active-payment:hover {
+  background-color: #fff;
+  border-color: #FE0000;
+  color: #FE0000;
 }
 
 /* ====== اقتراحات الدفع (50 / 100 / المبلغ نفسه) ====== */
@@ -371,9 +376,16 @@ input[type=number] {
   border: 1px solid #ddd;
 }
 
-.payment-suggestion-label:hover {
-  background: #e9ecef;
-  border-color: #bbb;
+.payment-suggestion-label:hover:not(.disabled-suggestion) {
+  background-color: #FE0000;
+  border-color: #FE0000;
+  color: #fff;
+}
+
+.payment-suggestion-label.active-payment-suggestion:hover {
+  background-color: #fff;
+  border-color: #FE0000;
+  color: #FE0000;
 }
 
 .disabled-suggestion {
@@ -448,15 +460,39 @@ input[type=number] {
   min-height: 80px;
 }
 
-.tip-option-horizontal:hover {
-  border-color: #adb5bd;
-  background-color: #e9ecef;
+.tip-option-horizontal:hover:not(.disabled-tip-horizontal) {
+  background-color: #FE0000;
+  border-color: #FE0000;
+  color: #fff;
+}
+
+.tip-option-horizontal:hover:not(.disabled-tip-horizontal) .option-title {
+  color: #fff;
+}
+
+.tip-option-horizontal:hover:not(.disabled-tip-horizontal) .option-radio {
+  border-color: #fff;
+}
+
+.tip-option-horizontal:hover:not(.disabled-tip-horizontal) .radio-dot {
+  background-color: #fff;
+}
+
+.tip-option-horizontal.active-tip-horizontal:hover {
+  background-color: #fff;
+  border-color: #FE0000;
+  color: #FE0000;
+}
+
+.tip-option-horizontal.active-tip-horizontal:hover .option-title {
+  color: #FE0000;
 }
 
 .active-tip-horizontal {
-  border-color: #dc3545;
-  background-color: #fff5f5;
-  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.1);
+  border-color: #FE0000;
+  background-color: #FFF2F2;
+  color: #FE0000;
+  box-shadow: 0 0 0 2px rgba(254, 0, 0, 0.1);
 }
 
 .disabled-tip-horizontal {
@@ -484,7 +520,7 @@ input[type=number] {
 }
 
 .active-tip-horizontal .option-radio {
-  border-color: #dc3545;
+  border-color: #FE0000;
 }
 
 .radio-dot {
@@ -496,7 +532,7 @@ input[type=number] {
 }
 
 .radio-dot-active {
-  background-color: #dc3545;
+  background-color: #FE0000;
 }
 
 .radio-dot-disabled {
@@ -509,7 +545,7 @@ input[type=number] {
 }
 
 .active-tip-horizontal .option-title {
-  color: #dc3545;
+  color: #FE0000;
 }
 
 /* حقل الإدخال */
@@ -547,9 +583,10 @@ input[type=number] {
 }
 
 .confirm-tip-btn:not(:disabled):hover {
-  /* transform: translateY(-2px); */
-  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
-  color: #f8f9fa !important;
+  background-color: #fff !important;
+  border-color: #FE0000 !important;
+  color: #FE0000 !important;
+  box-shadow: 0 4px 12px rgba(254, 0, 0, 0.3);
 }
 
 /* الخطوط الفاصلة */
@@ -621,4 +658,18 @@ small,
   border-top: 2px solid black !important;
   opacity: 1 !important;
 
+}
+
+/* زر متابعة المبلغ الإضافي */
+.confirm-additional-payment-btn {
+  background-color: #FE0000 !important;
+  border-color: #FE0000 !important;
+  color: #fff !important;
+  transition: all 0.3s ease;
+}
+
+.confirm-additional-payment-btn:hover {
+  background-color: #fff !important;
+  border-color: #FE0000 !important;
+  color: #FE0000 !important;
 }
