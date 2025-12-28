@@ -514,6 +514,26 @@ private processPillDetails(data: any): void {
     return 0; // Default to 0 if no valid coupon type
   }
 
+  // Calculate total paid amount from transactions
+  getTotalPaid(): number {
+    if (!this.invoices || !this.invoices[0]?.transactions) {
+      return 0;
+    }
+    return this.invoices[0].transactions.reduce((sum: number, trans: any) => {
+      return sum + (parseFloat(trans.paid) || 0);
+    }, 0);
+  }
+
+  // Calculate remaining amount (paid - total)
+  getRemainingAmount(): number {
+    if (!this.invoiceSummary || !this.invoiceSummary[0]) {
+      return 0;
+    }
+    const totalPrice = parseFloat(this.invoiceSummary[0].total_price) || 0;
+    const totalPaid = this.getTotalPaid();
+    return totalPaid - totalPrice;
+  }
+
   // To get final price after discount
   getFinalPrice(): number {
     return (

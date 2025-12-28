@@ -507,6 +507,12 @@ input[type=number]::-webkit-outer-spin-button {
   box-shadow: 0 0 5px rgba(254, 0, 0, 0.2);
 }
 
+.payment-option-label.active-payment:hover {
+  background-color: #FE0000;
+  border-color: #FE0000;
+  color: #fff;
+}
+
 .payment-suggestion-label {
   flex-grow: 1;
   text-align: center;
@@ -514,29 +520,19 @@ input[type=number]::-webkit-outer-spin-button {
   border-radius: 0.5rem;
   cursor: pointer;
   border: 1px solid #FE0000;
-  /* حدود باللون الأخضر (للدلالة على الدفع/الإنجاز) */
   color: #FE0000;
-  /* نص باللون الأخضر */
   background-color: #FFF2F2;
-  /* خلفية خضراء فاتحة */
   transition: all 0.2s ease-in-out;
   font-size: 0.9rem;
-  /* تصغير الخط قليلاً ليناسب المساحة */
   font-weight: 600;
   line-height: 1.3;
   min-height: 60px;
-  /* لضمان حجم موحد */
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
 
-/* تأثير التمرير (Hover) */
-.payment-suggestion-label:hover:not(.disabled-suggestion) {
-  background-color: #FFF2F2;
-  border-color: #FE0000;
-  color: #FE0000;
-}
+/* تأثير التمرير (Hover) - تم تحديثه لعكس الألوان */
 
 /* حالة عدم التفعيل (Disabled State) */
 .payment-suggestion-label.disabled-suggestion {
@@ -592,13 +588,22 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .payment-option-label:hover {
-  border-color: #dc3545;
-  color: #dc3545;
+  background-color: #FE0000;
+  border-color: #FE0000;
+  color: #fff;
 }
 
-.active-payment {
-  background-color: #dc3545;
-  border-color: #dc3545;
+.payment-option-label.active-payment:hover {
+  background-color: #FE0000;
+  border-color: #FE0000;
+  color: #fff;
+}
+
+/* General active-payment rule - overridden by more specific selectors */
+.active-payment:hover {
+  background-color: #fff;
+  border-color: #FE0000;
+  color: #FE0000;
 }
 
 /* ====== اقتراحات الدفع (50 / 100 / المبلغ نفسه) ====== */
@@ -619,9 +624,16 @@ input[type=number]::-webkit-outer-spin-button {
   border: 1px solid #ddd;
 }
 
-.payment-suggestion-label:hover {
-  background: #e9ecef;
-  border-color: #bbb;
+.payment-suggestion-label:hover:not(.disabled-suggestion) {
+  background-color: #FE0000;
+  border-color: #FE0000;
+  color: #fff;
+}
+
+.payment-suggestion-label.active-payment-suggestion:hover {
+  background-color: #fff;
+  border-color: #FE0000;
+  color: #FE0000;
 }
 
 /* **تنسيق حالة الاقتراح المختار (Active State) الجديد** */
@@ -665,8 +677,8 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 #cashPaymentInput.form-control:focus {
-  border-color: #dc3545;
-  box-shadow: 0 0 0 0.15rem rgba(220, 53, 69, 0.25);
+  border-color: #FE0000;
+  box-shadow: 0 0 0 0.15rem rgba(254, 0, 0, 0.25);
 }
 
 /* ====== الملخص النهائي ====== */
@@ -721,15 +733,39 @@ input[type=number]::-webkit-outer-spin-button {
   min-height: 80px;
 }
 
-.tip-option-horizontal:hover {
-  border-color: #adb5bd;
-  background-color: #e9ecef;
+.tip-option-horizontal:hover:not(.disabled-tip-horizontal) {
+  background-color: #FE0000;
+  border-color: #FE0000;
+  color: #fff;
+}
+
+.tip-option-horizontal:hover:not(.disabled-tip-horizontal) .option-title {
+  color: #fff;
+}
+
+.tip-option-horizontal:hover:not(.disabled-tip-horizontal) .option-radio {
+  border-color: #fff;
+}
+
+.tip-option-horizontal:hover:not(.disabled-tip-horizontal) .radio-dot {
+  background-color: #fff;
+}
+
+.tip-option-horizontal.active-tip-horizontal:hover {
+  background-color: #fff;
+  border-color: #FE0000;
+  color: #FE0000;
+}
+
+.tip-option-horizontal.active-tip-horizontal:hover .option-title {
+  color: #FE0000;
 }
 
 .active-tip-horizontal {
-  border-color: #dc3545;
-  background-color: #fff5f5;
-  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.1);
+  border-color: #FE0000;
+  background-color: #FFF2F2;
+  color: #FE0000;
+  box-shadow: 0 0 0 2px rgba(254, 0, 0, 0.1);
 }
 
 .disabled-tip-horizontal {
@@ -757,7 +793,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .active-tip-horizontal .option-radio {
-  border-color: #dc3545;
+  border-color: #FE0000;
 }
 
 .radio-dot {
@@ -769,7 +805,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .radio-dot-active {
-  background-color: #dc3545;
+  background-color: #FE0000;
 }
 
 .radio-dot-disabled {
@@ -782,7 +818,7 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .active-tip-horizontal .option-title {
-  color: #dc3545;
+  color: #FE0000;
 }
 
 /* حقل الإدخال */
@@ -820,9 +856,10 @@ input[type=number]::-webkit-outer-spin-button {
 }
 
 .confirm-tip-btn:not(:disabled):hover {
-  /* transform: translateY(-2px); */
-  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
-  color: #f8f9fa !important;
+  background-color: #fff !important;
+  border-color: #FE0000 !important;
+  color: #FE0000 !important;
+  box-shadow: 0 4px 12px rgba(254, 0, 0, 0.3);
 }
 
 /* الخطوط الفاصلة */
@@ -893,6 +930,20 @@ font-weight: bold;
   ;
   opacity: 1 !important;
 
+}
+
+/* زر متابعة المبلغ الإضافي */
+.confirm-additional-payment-btn {
+  background-color: #FE0000 !important;
+  border-color: #FE0000 !important;
+  color: #fff !important;
+  transition: all 0.3s ease;
+}
+
+.confirm-additional-payment-btn:hover {
+  background-color: #fff !important;
+  border-color: #FE0000 !important;
+  color: #FE0000 !important;
 }
 /* Kitchen Print Section Styles */
 .printkitchen-wrapper {

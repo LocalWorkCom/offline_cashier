@@ -239,7 +239,7 @@
             الدفع :
             {{
             invoices[0]?.transactions[0].payment_method === "credit"
-            ? "أونلاين"
+            ? "فيزا"
             : "كاش"
             }}
           </span>
@@ -556,7 +556,7 @@
               <span class="mb-0">
                 {{
                 invoices[0]?.transactions[0].payment_method === "credit"
-                ? "أونلاين"
+                ? "فيزا"
                 : "كاش"
                 }}
               </span>
@@ -569,6 +569,33 @@
                 </span>
               </div>
             </ng-container>
+          </div>
+        </ng-container>
+
+        <!-- Payment Summary: المبلغ المستحق، المبلغ المدفوع، الباقي -->
+        <ng-container *ngIf="test && (!showPrices || showPrices) && invoices[0]?.transactions">
+          <div class="bg_black" style="font-size: 13px; margin-top: 10px;">
+            <!-- المبلغ المستحق -->
+            <div class="d-flex justify-content-between fw-bold mb-2">
+              <span>المبلغ المستحق:</span>
+              <span>{{ item.total_price }} {{ item.currency_symbol }}</span>
+            </div>
+            
+            <!-- المبلغ المدفوع -->
+            <div class="d-flex justify-content-between fw-bold mb-2">
+              <span>المبلغ المدفوع:</span>
+              <span>
+                {{ getTotalPaid() | number:'1.2-2' }} {{ item.currency_symbol }}
+              </span>
+            </div>
+            
+            <!-- الباقي -->
+            <div class="d-flex justify-content-between fw-bold">
+              <span>الباقي:</span>
+              <span>
+                {{ getRemainingAmount() | number:'1.2-2' }} {{ item.currency_symbol }}
+              </span>
+            </div>
           </div>
         </ng-container>
 
