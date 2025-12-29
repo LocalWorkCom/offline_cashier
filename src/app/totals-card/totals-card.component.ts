@@ -26,26 +26,30 @@ this.totalBalance.listenToBalance();
 this.totalBalance.totalChange$.subscribe((balance)=>{
   console.log('balance',balance,'must change format ');
   this.paymentSummary=[...balance.data]
-  
+
 })
-} 
+}
 getTotalMoney() {
   const shiftData = JSON.parse(localStorage.getItem('shiftData')!);
 
 const body = {
   cashier_machine_id: localStorage.getItem('cashier_machine_id'),
   employee_schedule_id: localStorage.getItem('employee_schedule_id'),
-  shift_start: shiftData?.shift_start || null,  
-  shift_end: shiftData?.shift_end || null,     
+  shift_start: shiftData?.shift_start || null,
+  shift_end: shiftData?.shift_end || null,
 };
 
   this.http.post<any>(`${baseUrl}api/cashier/get-current-balance`, body).subscribe({
     next: (res) => {
-      this.paymentSummary = res.data; 
+      this.paymentSummary = res.data;
+           // localStorage.setItem('paymentSummary', JSON.stringify(this.paymentSummary));
+          localStorage.setItem('totalcash', res.data[0].value);
+          localStorage.setItem('totalvisa', res.data[1].value);
+           // localStorage.setItem('total', res.data[2].value);
       if(res.status==false){
           this.errorMsg=res.message;
           alert(this.errorMsg)
-          
+
       }
     },
     error: (err) => {
