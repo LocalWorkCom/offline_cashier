@@ -1439,6 +1439,7 @@ export class OrdersComponent implements OnDestroy {
   cancelErrorMessage: string = '';
   cancelSuccessMessage: string = '';
   cancelMessage: any;
+  selectedReturnPaymentMethod: string = 'cash'; // Default payment method for return invoice
   /*   submitCancelRequest(order: any): void {
     const selectedItems = order.order_items
       .filter((item: any) => item.isChecked)
@@ -1648,6 +1649,7 @@ export class OrdersComponent implements OnDestroy {
         const selectedQuantity = item.selectedQuantity ?? item.quantity;
         const returnedQuantity = originalQuantity - selectedQuantity;
 
+
         return {
           item_name: item.dish_name,
           item_id: item.order_detail_id,
@@ -1705,9 +1707,11 @@ export class OrdersComponent implements OnDestroy {
         item_id: item.item_id,
         quantity: item.quantity,
         item_name: item.item_name,
+
       })),
       type: isFullReturn ? 'full' : 'partial',
       reason: this.cancelReason || '',
+      payment_method: this.selectedReturnPaymentMethod,
     };
 
     console.log('Sending:', body, selectedItems, order);
@@ -2157,5 +2161,26 @@ export class OrdersComponent implements OnDestroy {
       localStorage.removeItem(key);
       console.log(`🗑️ Removed ${key} from localStorage`);
     });
+  }
+
+  canShowReturnInvoice(order: any): boolean {
+    const totalCash = localStorage.getItem('totalcash');
+    const totalCredit = localStorage.getItem('totalvisa');
+    if (!totalCash && !totalCredit) {
+      return false;
+    }
+    const cashValue = Number(totalCash);
+    const creditValue = Number(totalCredit);
+    const orderPrice = Number(order.total_price);
+    if(order.details_order?.transactions?.[0]?.payment_method === 'credit') {
+      return !isNaN(creditValue) && !isNaN(orderPrice) && (creditValue > orderPrice || cashValue > orderPrice);
+    }
+    return !isNaN(cashValue) && !isNaN(orderPrice) && cashValue > orderPrice ;
+  }
+
+  shouldShowReturnInvoiceSection(order: any): boolean {
+    return order.order_details.status !== 'cancelled' &&
+           !(order.order_details.payment_status == 'unpaid' && order.order_details.status === 'pending') &&
+           order.order_details.order_type != "talabat";
   }
 }
