@@ -249,6 +249,18 @@ a {
     /* Higher than other elements */
 }
 
+/* Welcome Modal Full Width Styles */
+#welcomeModal.modal  , #balanceoutModal.modal {
+    opacity: 1 !important;
+    background-color: black !important;
+    width: 100% !important;
+}
+
+#welcomeModal.modal.show , #balanceoutModal.modal.show {
+    opacity:1  !important;
+    width: 100% !important;
+}
+
 .bg-grey {
     background-color: #DFDFDF33;
 }
