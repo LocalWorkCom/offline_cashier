@@ -215,7 +215,7 @@
             الدفع :
             {{
             invoices[0]?.transactions[0].payment_method === "credit"
-            ? "أونلاين"
+            ? "الفيزا"
             : "كاش"
             }}
           </span>
@@ -511,7 +511,7 @@
             <p class="mb-0">
               {{
               invoices[0]?.transactions[0].payment_method === "credit"
-              ? "أونلاين"
+              ? "الفيزا"
               : "كاش"
               }}
             </p>
@@ -525,7 +525,7 @@
             " -->
             <h6 class="mb-0 fw-bold">حالة الدفع:</h6>
             <p class="mb-0 fw-bold">
-              {{ paymentStatus === "paid" ? "مدفوعة" : "غير مدفوعة" }}
+              {{ (invoices[0]?.transactions[0]?.payment_status === "paid" || paymentStatus === "paid") ? "مدفوعة" : "غير مدفوعة" }}
             </p>
           </div>
         </ng-container>

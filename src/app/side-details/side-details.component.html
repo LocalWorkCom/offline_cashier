@@ -657,8 +657,8 @@
                 <!-- إدخال مبلغ يدوي -->
                 <div class="card p-3 mb-3">
                   <label for="cashPaymentInput" class="form-label fw-bold">مبلغ مخصص</label>
-                  <input type="number" class="form-control" id="cashPaymentInput" [(ngModel)]="cashPaymentInput"
-                    [ngModelOptions]="{standalone: true}" placeholder="أدخل المبلغ المدفوع" (input)="roundCashPayment()"
+                  <input type="number" class="form-control" id="cashPaymentInput" name="cashPaymentInput" [(ngModel)]="cashPaymentInput"
+                    placeholder="أدخل المبلغ المدفوع" (input)="roundCashPayment()"
                     (change)="handleManualPaymentBlur(billAmount, tipModalContent)" [class.is-invalid]="paymentError">
 
                   <!-- عرض رسالة الخطأ -->
@@ -699,8 +699,8 @@
             <div class="card p-3 mb-3">
               <label for="cashAmountInput" class="form-label fw-bold">المبلغ
                 المدفوع كاش</label>
-              <input type="number" class="form-control" id="cashAmountInput" [(ngModel)]="cashAmountMixed"
-                [ngModelOptions]="{standalone: true}" placeholder="المبلغ المدفوع كاش" min="0"
+              <input type="number" class="form-control" id="cashAmountInput" name="cashAmountInput" [(ngModel)]="cashAmountMixed"
+                placeholder="المبلغ المدفوع كاش" min="0"
                 (change)="openMixedPaymentTipModal(billAmount, tipModalContent)">
 
               <!-- رسالة خطأ للكاش -->
@@ -714,8 +714,8 @@
             <div class="card p-3 mb-3">
               <label for="creditAmountInput" class="form-label fw-bold">المبلغ
                 المدفوع فيزا</label>
-              <input type="number" class="form-control" id="creditAmountInput" [(ngModel)]="creditAmountMixed"
-                [ngModelOptions]="{standalone: true}" placeholder="المبلغ المدفوع فيزا" min="0"
+              <input type="number" class="form-control" id="creditAmountInput" name="creditAmountInput" [(ngModel)]="creditAmountMixed"
+                placeholder="المبلغ المدفوع فيزا" min="0"
                 (change)="openMixedPaymentTipModal(billAmount, tipModalContent)">
 
               <!-- رسالة خطأ للفيزا -->
@@ -1078,13 +1078,14 @@
             </h6>
             <span>-{{ item.coupon_value }} {{ item.currency_symbol }}</span>
           </div>
-          <div class="d-flex justify-content-between fw-bold bg_black" *ngIf="item.service_percentage"
+          <div class="d-flex justify-content-between fw-bold bg_black" *ngIf="item.service_fees && item.service_fees > 0"
             style="font-size: 13px;">
             <h6 style="font-size: 13px;">
               الخدمة
-              <span class=" bg_black " style="font-size: 13px;">
+              <span class=" bg_black " style="font-size: 13px;" *ngIf="item.service_percentage">
                 ( {{ item.service_percentage }} % ) :
               </span>
+              <span class=" bg_black " style="font-size: 13px;" *ngIf="!item.service_percentage">:</span>
             </h6>
             <span class="bg_black" style="font-size: 13px;">{{ item.service_fees }} {{ item.currency_symbol }}</span>
           </div>
@@ -1123,7 +1124,7 @@
               <span class="mb-0">
                 {{
                 invoices[0]?.transactions[0].payment_method === "credit"
-                ? "أونلاين"
+                ? "الفيزا"
                 : "كاش"
                 }}
               </span>
@@ -1132,7 +1133,7 @@
               <div style="font-size: 12px;">
                 <span class="mb-0 fw-bold">حالة الدفع:</span>
                 <span class="mb-0 fw-bold">
-                  {{ paymentStatus === "paid" ? "مدفوعة" : "غير مدفوعة" }}
+                  {{ (invoices[0]?.transactions[0]?.payment_status === "paid" || paymentStatus === "paid") ? "مدفوعة" : "غير مدفوعة" }}
                 </span>
               </div>
             </ng-container>
@@ -1336,7 +1337,7 @@
                 <ul *ngIf="dropdownOpen" class="dropdown-list dropdown-menu show">
                   <!-- Search Input -->
                   <li class="p-2">
-                    <input type="text" [(ngModel)]="searchTerm" (input)="filterCountries()" class="form-control"
+                    <input type="text" name="searchTerm" [(ngModel)]="searchTerm" (input)="filterCountries()" class="form-control"
                       placeholder="{{ 'login.searchPlaceholder' | translate }}" />
                   </li>
 
@@ -1503,14 +1504,63 @@
       <br>
       <small class="fw-normal">
         (المتبقي للرد: {{
-        selectedTipType === 'no_tip' ? tempChangeAmount :
+        selectedTipType === 'no_tip' ? getMaxZero(tempChangeAmount) :
         selectedTipType === 'tip_the_change' ? 0 :
-        (tempChangeAmount - specificTipAmount > 0 ? tempChangeAmount - specificTipAmount : 0) | number:'1.2-2'
+        getMaxZero(tempChangeAmount - specificTipAmount) | number:'1.2-2'
         }} ج.م)
       </small>
     </button>
   </div>
 </ng-template>
+
+<!-- Additional Payment Required Modal -->
+<div class="modal fade" id="additionalPaymentModal" tabindex="-1" aria-labelledby="additionalPaymentModalLabel" aria-hidden="true" style="z-index: 1060;">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0 pb-2 px-4 pt-4">
+        <h5 class="modal-title fw-bold text-center w-100 mb-0" id="additionalPaymentModalLabel">تنبيه</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" (click)="closeAdditionalPaymentModal()"></button>
+      </div>
+      <div class="modal-body pt-3 px-4">
+        <div class="text-center mb-4">
+          <i class="fas fa-exclamation-triangle text-warning" style="font-size: 3rem;"></i>
+        </div>
+        <div class="alert-message text-center mb-4">
+          <p class="fw-bold mb-3">لتحقيق الإكرامية المطلوبة</p>
+          <p class="h5 fw-bolder text-danger mb-2">
+            {{ additionalPaymentRequiredAmount | number:'1.2-2' }} {{ currencySymbol }}
+          </p>
+          <p class="text-muted mb-0">تحتاج لدفع مبلغ إضافي</p>
+        </div>
+        <div class="payment-details p-3 bg-light rounded mb-4">
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">الإكرامية المطلوبة:</span>
+            <span class="fw-bold">{{ requiredTipAmount | number:'1.2-2' }} {{ currencySymbol }}</span>
+          </div>
+          <div class="d-flex justify-content-between mb-2">
+            <span class="text-muted">المبلغ المدفوع حالياً:</span>
+            <span class="fw-bold">{{ currentPaymentAmount | number:'1.2-2' }} {{ currencySymbol }}</span>
+          </div>
+          <hr class="my-2">
+          <div class="d-flex justify-content-between">
+            <span class="fw-bold">المبلغ الإضافي المطلوب:</span>
+            <span class="fw-bolder text-danger">{{ additionalPaymentRequiredAmount | number:'1.2-2' }} {{ currencySymbol }}</span>
+          </div>
+        </div>
+        <p class="text-center text-muted mb-0">هل تريد المتابعة؟</p>
+      </div>
+      <div class="modal-footer d-flex justify-content-center border-0 px-4 pb-4 pt-0">
+        <button type="button" class="btn reversed main-color w-50 mx-2" data-bs-dismiss="modal" (click)="closeAdditionalPaymentModal()">
+          إلغاء
+        </button>
+        <button type="button" class="btn confirm-additional-payment-btn w-50 mx-2" (click)="confirmAdditionalPayment()">
+          متابعة
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- <div class="invoice-box" *ngIf="orderData">
   <div class="restaurant-header">
     <h2>مطعم المذاق الشهي</h2>

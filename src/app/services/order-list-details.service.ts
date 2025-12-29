@@ -32,4 +32,31 @@ export class OrderListDetailsService {
       headers,
     });
   }
+
+  getMergeableOrders(orderId: string): Observable<any> {
+    const headers = new HttpHeaders().set(
+      'Authorization',
+      `Bearer ${this.token}`
+    );
+
+    return this.http.get(`${this.apiUrl}/orders/cashier/mergeable-orders/${orderId}`, {
+      headers,
+    });
+  }
+
+  mergeOrders(primaryOrderId: string, secondaryOrderId: string): Observable<any> {
+    const headers = new HttpHeaders().set(
+      'Authorization',
+      `Bearer ${this.token}`
+    );
+
+    return this.http.post(
+      `${this.apiUrl}/orders/cashier/merge-orders`,
+      {
+        primary_order_id: primaryOrderId,
+        secondary_order_id: secondaryOrderId,
+      },
+      { headers }
+    );
+  }
 }
