@@ -201,7 +201,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   selectedTipType: 'tip_the_change' | 'tip_specific_amount' | 'no_tip' = 'no_tip';
   specificTipAmount: number = 0; // المبلغ الذي يتم إدخاله يدوياً كإكرامية
   selectedSuggestionType: 'billAmount' | 'amount50' | 'amount100' | null = null; // متغير جديد لتخزين نوع الاقتراح
-  
+
   // System Timeout variables
   tipModalTimeoutRef: any = null;
   tipModalCountdownRef: any = null;
@@ -2873,7 +2873,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         // ✅ النظام الجديد مع الإكرامية
         if (this.finalTipSummary && this.finalTipSummary.paymentAmount > 0) {
           totalEntered = Number(this.finalTipSummary.paymentAmount);
-          
+
           // 🔒 التحقق من أن المبلغ المدفوع >= الإجمالي عند استخدام finalTipSummary
           if (totalEntered < cartTotal) {
             this.amountError = true;
@@ -2909,7 +2909,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           }
 
           totalEntered = Number(((this.cashAmountMixed || 0) + (this.creditAmountMixed || 0)));
-          
+
           // 🔒 التحقق من أن المبلغ المختلط >= الإجمالي
           if (totalEntered < cartTotal) {
             this.amountError = true;
@@ -3070,7 +3070,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             const creditAmount = this.finalTipSummary.creditAmountMixed || 0;
             const totalPaid = Number((cashAmount + creditAmount).toFixed(2));
             const billAmountNum = Number(billAmount) || 0;
-            
+
             if (totalPaid < billAmountNum) {
               this.amountError = true;
               this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountNum.toFixed(2)} ${this.currencySymbol}`;
@@ -3084,11 +3084,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               });
               return; // ❌ منع المتابعة إذا كان المبلغ غير كافي
             }
-            
+
             // استخدام المبالغ النهائية مع الإكرامية
             orderData.cash_amount = cashAmount;
             orderData.credit_amount = creditAmount;
-            
+
             console.log('💰 الدفع المختلط مع الإكرامية:', {
               cashAmount: orderData.cash_amount,
               creditAmount: orderData.credit_amount,
@@ -3132,7 +3132,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             // 🔒 التحقق من أن المبلغ المدفوع >= الإجمالي
             const creditAmount = this.finalTipSummary.grandTotalWithTip;
             const billAmountNum = Number(billAmount) || 0;
-            
+
             if (creditAmount < billAmountNum) {
               this.amountError = true;
               this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountNum.toFixed(2)} ${this.currencySymbol}`;
@@ -3145,11 +3145,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               });
               return; // ❌ منع المتابعة إذا كان المبلغ غير كافي
             }
-            
+
             // استخدام المبلغ الكلي مع الإكرامية
             orderData.credit_amount = creditAmount;
             orderData.cash_amount = 0;
-            
+
             console.log('💳 تم تعيين مبالغ الدفع بالفيزا مع الإكرامية:', {
               method: this.selectedPaymentMethod,
               credit_amount: orderData.credit_amount,
@@ -3411,70 +3411,70 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       if (this.successModal) {
 
-        // this.printedInvoiceService
-        //       .printkitchen(orderData, this.orderedId)
-        //       .subscribe({
-        //         next: async (response) => {
-        //           console.log('🖨️ [Kitchen Print] Response received:', response);
+        this.printedInvoiceService
+              .printkitchen(orderData, this.orderedId)
+              .subscribe({
+                next: async (response) => {
+                  console.log('🖨️ [Kitchen Print] Response received:', response);
 
-        //           if(response.status && response.allDish && response.allDish.length > 0){
-        //             console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
-        //             try {
-        //               await this.printInvoiceImage(response.allDish ,response.order, response.Ipall);
-        //               console.log('✅ [Kitchen Print] Drinks printed successfully');
-        //             } catch (err) {
-        //               console.error('❌ [Kitchen Print] Error printing drinks:', err);
-        //             }
-        //           }
-
-
-        //           await new Promise(resolve => setTimeout(resolve, 500));
-
-        //           // Print drinks first
-        //           if(response.status && response.drinks && response.drinks.length > 0){
-        //             console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
-        //             try {
-        //               await this.printInvoiceImage(response.drinks ,response.order, response.IPdrinks);
-        //               console.log('✅ [Kitchen Print] Drinks printed successfully');
-        //             } catch (err) {
-        //               console.error('❌ [Kitchen Print] Error printing drinks:', err);
-        //             }
-        //           }
-
-        //           // Wait a bit before printing fish to the same printer
-        //           await new Promise(resolve => setTimeout(resolve, 500));
-
-        //           // Print fish
-        //           if(response.status && response.fish && response.fish.length > 0){
-        //             console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
-        //             try {
-        //               await this.printInvoiceImage(response.fish ,response.order, response.IPfish);
-        //               console.log('✅ [Kitchen Print] Fish printed successfully');
-        //             } catch (err) {
-        //               console.error('❌ [Kitchen Print] Error printing fish:', err);
-        //             }
-        //           }
+                  if(response.status && response.allDish && response.allDish.length > 0){
+                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
+                    try {
+                      await this.printInvoiceImage(response.allDish ,response.order, response.Ipall);
+                      console.log('✅ [Kitchen Print] Drinks printed successfully');
+                    } catch (err) {
+                      console.error('❌ [Kitchen Print] Error printing drinks:', err);
+                    }
+                  }
 
 
-        //           // Print grills to different printer (can run in parallel)
-        //           if(response.status && response.grills && response.grills.length > 0){
-        //             console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
-        //             this.printInvoiceImage(response.grills ,response.order, response.IPgrills).catch(err => {
-        //               console.error('❌ [Kitchen Print] Error printing grills:', err);
-        //             });
-        //           }
+                  await new Promise(resolve => setTimeout(resolve, 500));
 
-        //           // await new Promise(resolve => setTimeout(resolve, 60000));
+                  // Print drinks first
+                  if(response.status && response.drinks && response.drinks.length > 0){
+                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
+                    try {
+                      await this.printInvoiceImage(response.drinks ,response.order, response.IPdrinks);
+                      console.log('✅ [Kitchen Print] Drinks printed successfully');
+                    } catch (err) {
+                      console.error('❌ [Kitchen Print] Error printing drinks:', err);
+                    }
+                  }
+
+                  // Wait a bit before printing fish to the same printer
+                  await new Promise(resolve => setTimeout(resolve, 500));
+
+                  // Print fish
+                  if(response.status && response.fish && response.fish.length > 0){
+                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
+                    try {
+                      await this.printInvoiceImage(response.fish ,response.order, response.IPfish);
+                      console.log('✅ [Kitchen Print] Fish printed successfully');
+                    } catch (err) {
+                      console.error('❌ [Kitchen Print] Error printing fish:', err);
+                    }
+                  }
 
 
-        //         },
-        //         error: (error) => {
-        //           console.error('Kitchen print error:', error);
-        //           location.reload();
-        //         }
-        //       });
+                  // Print grills to different printer (can run in parallel)
+                  if(response.status && response.grills && response.grills.length > 0){
+                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
+                    this.printInvoiceImage(response.grills ,response.order, response.IPgrills).catch(err => {
+                      console.error('❌ [Kitchen Print] Error printing grills:', err);
+                    });
+                  }
 
-        //       await new Promise(resolve => setTimeout(resolve, 10000));
+                  // await new Promise(resolve => setTimeout(resolve, 60000));
+
+
+                },
+                error: (error) => {
+                  console.error('Kitchen print error:', error);
+                  location.reload();
+                }
+              });
+
+              await new Promise(resolve => setTimeout(resolve, 2000));
               this.successModal.show();
               // location.reload();
 
@@ -5798,11 +5798,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       centered: true,
       size: 'md'
     });
-    
+
     this.tipModalRef = modalRef;
     this.tipModalWarningShown = false;
     this.tipModalTimeRemaining = this.tipModalTimeoutDuration;
-    
+
     // ✅ بدء System Timeout
     this.startTipModalTimeout(modalRef, billAmount, paymentAmount);
 
@@ -5819,20 +5819,20 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   startTipModalTimeout(modalRef: any, billAmount: number, paymentAmount: number): void {
     // إيقاف أي timeout سابق
     this.stopTipModalTimeout();
-    
+
     this.tipModalTimeRemaining = this.tipModalTimeoutDuration;
     this.tipModalWarningShown = false;
 
     // ✅ العد التنازلي (countdown)
     this.tipModalCountdownRef = setInterval(() => {
       this.tipModalTimeRemaining--;
-      
+
       // ✅ عرض إشعار التحذير قبل 10 ثواني
       if (this.tipModalTimeRemaining <= this.tipModalWarningTime && !this.tipModalWarningShown) {
         this.tipModalWarningShown = true;
         console.warn(`⏰ Warning: ${this.tipModalWarningTime} seconds remaining before auto-selecting "No Tip"`);
       }
-      
+
       // ✅ إذا وصل الوقت إلى الصفر، اختيار "No Tip" تلقائياً
       if (this.tipModalTimeRemaining <= 0) {
         this.autoSelectNoTip(modalRef, billAmount, paymentAmount);
@@ -5862,14 +5862,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   // ✅ System Timeout: الاختيار التلقائي لـ "No Tip"
   autoSelectNoTip(modalRef: any, billAmount: number, paymentAmount: number): void {
     console.log('⏰ Auto-selecting "No Tip" due to timeout');
-    
+
     // إيقاف الـ timeout
     this.stopTipModalTimeout();
-    
+
     // اختيار "No Tip"
     this.selectedTipType = 'no_tip';
     this.specificTipAmount = 0;
-    
+
     // تأكيد وإغلاق المودال
     this.confirmTipAndClose(modalRef);
   }
@@ -5882,7 +5882,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.selectedTipType = type;
 
     this.tip_aption = type; // حفظ الخيار المحدد
-    
+
     // ✅ إيقاف System Timeout عند اختيار خيار (المستخدم اختار خياراً)
     this.stopTipModalTimeout();
 
@@ -5953,19 +5953,19 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       if (totalPaid > 0) {
         const totalWithTip = this.tempBillAmount + finalTipAmount;
-        
+
         // ✅ حساب الباقي: يُرد من الكاش فقط (الفيزا لا يُرد منها باقي)
         // الباقي = المبلغ المدفوع الإجمالي - المبلغ الكلي مع الإكرامية
         const changeToReturnFromCash = Math.max(0, this.tempPaymentAmount - totalWithTip);
-        
+
         // توزيع المبلغ الكلي مع الإكرامية على الكاش والفيزا
         // الفيزا = المبلغ المدفوع بالفيزا (لا يتغير، لا يُرد منها باقي)
         creditFinal = Number(this.creditAmountMixed || 0);
-        
+
         // الكاش = المبلغ الكلي مع الإكرامية - الفيزا
         // الباقي يُخصم من الكاش فقط
         cashFinal = totalWithTip - creditFinal;
-        
+
         // ✅ التأكد من أن الكاش لا يكون سالباً
         if (cashFinal < 0) {
           cashFinal = 0;
@@ -6001,7 +6001,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // إعادة تعيين المتغيرات
     this.selectedTipType = 'no_tip';
     this.specificTipAmount = 0;
-    
+
     // ✅ إيقاف System Timeout عند التأكيد
     this.stopTipModalTimeout();
   }
@@ -6014,7 +6014,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     // إغلاق modal الإكرامية أولاً
     modal.dismiss('Opening additional payment modal');
-    
+
     // فتح الـ modal المخصص بعد تأخير بسيط لضمان إغلاق الأول
     setTimeout(() => {
       const modalElement = document.getElementById('additionalPaymentModal');
