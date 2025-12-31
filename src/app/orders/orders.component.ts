@@ -260,12 +260,23 @@ export class OrdersComponent implements OnDestroy {
       .filter(
         (order: any) =>
           this.allowedOrderTypes.includes(order.order_details?.order_type) &&
-          this.allowedStatuses.includes(order.order_details?.status)
+          (this.allowedStatuses.includes(order.order_details?.status) || 
+           order.order_details?.status === 'packing') // Allow packing status
       )
-      .map((order: any) => ({
-        ...order,
-        currency_symbol: this.currencySymbol,
-      }));
+      .map((order: any) => {
+        // Convert 'packing' status to 'pending' for frontend compatibility
+        const processedOrder = {
+          ...order,
+          currency_symbol: this.currencySymbol,
+        };
+        
+        // Map packing to pending for frontend
+        if (processedOrder.order_details?.status === 'packing') {
+          processedOrder.order_details.status = 'pending';
+        }
+        
+        return processedOrder;
+      });
 
     this.ordersStatus = Array.from(
       new Set(this.orders.map((order) => order.order_details?.status || ''))
@@ -2195,6 +2206,8 @@ export class OrdersComponent implements OnDestroy {
   splitErrorMessage: string = '';
   splitSuccessMessage: string = '';
   availableTables: any[] = [];
+  filteredTablesForSplit: any[] = [];
+  selectedLocationFilter: string = 'all';
 
   // Merge Order Properties
   currentMergeOrder: any = null;
@@ -2224,12 +2237,12 @@ export class OrdersComponent implements OnDestroy {
       return false;
     }
 
-    const allItemsCompleted = order.order_items.every(
-      (item: any) => item.dish_status === 'completed' || item.dish_status === 'cancel'
-    );
+    // const allItemsCompleted = order.order_items.every(
+    //   (item: any) => item.dish_status === 'completed' || item.dish_status === 'cancel'
+    // );
 
     // Must have at least 2 items to split (one must remain)
-    return allItemsCompleted && order.order_items.length >= 2;
+    return  order.order_items.length >= 2;
   }
 
   // Check if order can be merged
@@ -2594,13 +2607,36 @@ export class OrdersComponent implements OnDestroy {
             number: table.number,
             status: table.status || 1, // 1 = available, 2 = occupied
             seats: table.seats || table.seat_count,
+            location: table.floor_partition_id || table.floor_id || 'main', // Default to main if no location
           }));
+          // Initialize filtered tables
+          this.filterTablesByLocation('all');
         }
       },
       error: (err) => {
         console.error('Error fetching tables:', err);
       },
     });
+  }
+
+  // Filter tables by location
+  filterTablesByLocation(location: string): void {
+    this.selectedLocationFilter = location;
+    if (location === 'all') {
+      this.filteredTablesForSplit = [...this.availableTables];
+    } else {
+      // Filter by location (you may need to adjust this based on your actual data structure)
+      this.filteredTablesForSplit = this.availableTables.filter((table: any) => {
+        // This is a placeholder - adjust based on your actual location mapping
+        const locationMap: any = {
+          'main': [1, 2, 3], // Example: floor_partition_ids for main hall
+          'terrace': [4, 5, 6], // Example: floor_partition_ids for terrace
+          'upper': [7, 8, 9], // Example: floor_partition_ids for upper floor
+          'family': [10, 11, 12], // Example: floor_partition_ids for family section
+        };
+        return locationMap[location]?.includes(table.location) || false;
+      });
+    }
   }
 
   // Get merge order items (from both orders)
@@ -2683,27 +2719,20 @@ export class OrdersComponent implements OnDestroy {
       lang: 'ar',
     });
 
-    // For split, we need to send all order_detail_ids that will be moved
-    // Since we're splitting quantities, we might need to create new order details
-    // For now, we'll send the items that have selectedQuantity > 0
-    const orderDetailIds: number[] = [];
-    selectedItems.forEach(item => {
-      // If full quantity is selected, send the order_detail_id
-      if (item.selectedQuantity === item.quantity) {
-        orderDetailIds.push(item.order_detail_id);
-      }
-      // If partial, we might need backend to handle this
-      // For now, we'll send the full item and let backend handle partial splits
-    });
+    // Prepare items array with order_detail_id and quantity
+    const items = selectedItems.map((item: any) => ({
+      order_detail_id: item.order_detail_id,
+      quantity: item.selectedQuantity
+    }));
 
     const body = {
-      order_id: [this.currentSplitOrder.order_details.order_id],
-      order_detail_ids: orderDetailIds.length > 0 ? orderDetailIds : selectedItems.map((item: any) => item.order_detail_id),
-      selected_table_id_split: parseInt(this.selectedTableIdForSplit),
+      order_id: this.currentSplitOrder.order_details.order_id,
+      new_table_id: parseInt(this.selectedTableIdForSplit),
+      items: items,
     };
 
     this.http
-      .post(`${baseUrl}api/waiter/request/split/order`, body, { headers })
+      .post(`${baseUrl}api/orders/split`, body, { headers })
       .subscribe({
         next: (response: any) => {
           this.isSplitSubmitting = false;
@@ -2784,14 +2813,6 @@ export class OrdersComponent implements OnDestroy {
       return;
     }
 
-    // Use cached items or get them if not cached
-    if (this.mergeOrderItems.length === 0) {
-      this.getMergeOrderItems();
-    }
-    
-    // Auto-select all items for merge
-    const allItems = this.mergeOrderItems.map((item: any) => item.order_detail_id);
-
     this.isMergeSubmitting = true;
     this.mergeErrorMessage = '';
     this.mergeSuccessMessage = '';
@@ -2805,18 +2826,13 @@ export class OrdersComponent implements OnDestroy {
     }
 
     const body = {
-      order_ids: [
-        this.currentMergeOrder.order_details.order_id,
-        this.selectedOrderIdForMerge,
-      ],
-      order_detail_ids: allItems,
-      selected_table_id: parseInt(this.selectedTableIdForMerge || this.currentMergeOrder.order_details.table_id),
-      reason: this.mergeReason || null,
+      primary_order_id: this.currentMergeOrder.order_details.order_id,
+      secondary_order_id: this.selectedOrderIdForMerge,
     };
 
     // Let the interceptor handle the Authorization header
     this.http
-      .post(`${baseUrl}api/waiter/request/merge/order`, body)
+      .post(`${baseUrl}api/orders/merge`, body)
       .subscribe({
         next: (response: any) => {
           this.isMergeSubmitting = false;

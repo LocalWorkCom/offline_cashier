@@ -338,7 +338,8 @@
               <div class="card p-3 mb-3">
                 <label for="cashPaymentInput" class="form-label fw-bold mb-2">مبلغ مخصص</label>
                 <input type="number" class="form-control"
-                  [(ngModel)]="cashPaymentInput"
+                  [ngModel]="selectedPaymentMethod === 'credit' ? creditPaymentInput : cashPaymentInput"
+                  (ngModelChange)="selectedPaymentMethod === 'credit' ? creditPaymentInput = $event : cashPaymentInput = $event"
                   [ngModelOptions]="{standalone: true}"
                   placeholder="أدخل المبلغ المدفوع"
                   (change)="handleManualPaymentBlur(billAmount, tipModalContent)"
@@ -522,10 +523,9 @@
 
     <div class="card px-4 py-2 my-2" *ngFor="let item of invoiceSummary">
       <h5><i class="fas fa-file-alt main-color fs-4 ps-2"></i> الفاتورة</h5>
-      <div class="d-flex justify-content-between px-2 mb-1">
-        <h6>مجموع الطلب</h6>
-
-        <h6>
+      <div class="d-flex justify-content-between px-2 mb-1 align-items-center">
+        <h6 class="mb-0">مجموع الطلب</h6>
+        <h6 class="mb-0 text-end">
           <span>{{ (invoices[0].invoice_summary.subtotal_price_before_coupon || invoices[0].invoice_summary.total_price
             || 0).toFixed(2) }}
             {{ item.currency_symbol }}</span>
@@ -533,56 +533,54 @@
       </div>
 
       <!-- عرض الكوبون إذا كان موجوداً -->
-      <div class="d-flex justify-content-between px-2 mb-1 main-color" *ngIf="
+      <div class="d-flex justify-content-between px-2 mb-1 main-color align-items-center" *ngIf="
           (item.coupon_value && item.coupon_value !== '0.00' && item.coupon_value !== 0) ||
           (discountAmount > 0) ||
           (invoices[0]?.invoice_summary?.coupon_value && invoices[0].invoice_summary.coupon_value !== 0)
         ">
-        <h6>
+        <h6 class="mb-0">
           كوبون خصم
           <span class="btn-static-secondary p-1 rounded ms-2" *ngIf="invoices[0]?.invoice_summary?.coupon_title || couponTitle">
             {{ invoices[0]?.invoice_summary?.coupon_title || couponTitle }}
           </span>
         </h6>
-
-        <h6 class="text-danger fw-bold">
+        <h6 class="text-danger fw-bold mb-0 text-end">
           -
           <span>{{ (item.coupon_value || discountAmount || invoices[0]?.invoice_summary?.coupon_value || 0) | number:'1.2-2' }} 
             {{ item.currency_symbol }}
           </span>
         </h6>
       </div>
-      <div class="d-flex justify-content-between px-2 mb-1" *ngIf="item.service_percentage">
-        <h6>الخدمة <span class="main-color">{{item.service_percentage}}%</span></h6>
-        <h6>
+      <div class="d-flex justify-content-between px-2 mb-1 align-items-center" *ngIf="item.service_percentage">
+        <h6 class="mb-0">الخدمة <span class="main-color">{{item.service_percentage}}%</span></h6>
+        <h6 class="mb-0 text-end">
           <span>{{ item.service_fees }} {{ item.currency_symbol }}</span>
         </h6>
       </div>
-      <div class="d-flex justify-content-between px-2 mb-1" *ngIf="item.delivery_fees">
-        <h6>رسوم التوصيل</h6>
-        <h6>
+      <div class="d-flex justify-content-between px-2 mb-1 align-items-center" *ngIf="item.delivery_fees">
+        <h6 class="mb-0">رسوم التوصيل</h6>
+        <h6 class="mb-0 text-end">
           <span>{{ item.delivery_fees }} {{ item.currency_symbol }}</span>
         </h6>
       </div>
       <div class="px-2 mb-1" *ngIf="item.tax_application">
-        <h6>سعر الوجبات يشتمل على ضريبة القيمة المضافة</h6>
+        <h6 class="mb-0">سعر الوجبات يشتمل على ضريبة القيمة المضافة</h6>
       </div>
 
-      <div class="d-flex justify-content-between px-2 mb-1" *ngIf="!item.tax_application">
-        <h6>ضريبة القيمة المضافة <span class="main-color">{{ item.tax_percentage }}%</span></h6>
-        <h6>
+      <div class="d-flex justify-content-between px-2 mb-1 align-items-center" *ngIf="!item.tax_application">
+        <h6 class="mb-0">ضريبة القيمة المضافة <span class="main-color">{{ item.tax_percentage }}%</span></h6>
+        <h6 class="mb-0 text-end">
           <span>{{ item.tax_value }} {{ item.currency_symbol }}</span>
         </h6>
       </div>
       <div class="d-flex flex-column">
         <hr />
 
-        <div class="d-flex justify-content-between px-2 mb-1">
+        <div class="d-flex justify-content-between px-2 mb-1 align-items-center">
           <h4 class="mb-0" style="font-weight: bold !important">
             المجموع الكلى
           </h4>
-
-          <h6 class="fw-bold mb-0 fs-4">
+          <h6 class="fw-bold mb-0 fs-4 text-end">
             <!-- استخدام totalll إذا كان محدثاً (بعد تطبيق الكوبون)، وإلا استخدام invoice_summary.total_price -->
             <span>{{ (totalll && totalll > 0 ? totalll : invoices[0].invoice_summary.total_price) | number:'1.2-2' }} {{ invoices[0].currency_symbol }}</span>
           </h6>
@@ -769,6 +767,16 @@
               -{{ (item.coupon_value || discountAmount || invoices[0]?.invoice_summary?.coupon_value || 0) | number:'1.2-2' }} 
               {{ item.currency_symbol }}
             </span>
+          </div>
+          <div class="d-flex justify-content-between fw-bold bg_black" *ngIf="item.service_percentage"
+            style="font-size: 13px;">
+            <h6 style="font-size: 13px;">
+              الخدمة
+              <span class="bg_black" style="font-size: 13px;">
+                ( {{ item.service_percentage }} % ) :
+              </span>
+            </h6>
+            <span class="bg_black" style="font-size: 13px;">{{ item.service_fees }} {{ item.currency_symbol }}</span>
           </div>
           <div class="bg_black d-flex justify-content-between fw-bold mb-0" *ngIf="!item.tax_application"
             style="font-size: 13px;">
@@ -965,11 +973,11 @@
           <div class="tip-option-horizontal text-center"
             [class.active-tip-horizontal]="selectedTipType === 'no_tip'"
             (click)="selectTipOption('no_tip')">
-            <div class="option-radio">
+            <div class="option-radio mb-2">
               <div class="radio-dot"
                 [class.radio-dot-active]="selectedTipType === 'no_tip'"></div>
             </div>
-            <div class="option-title fw-bold">بدون إكرامية</div>
+            <div class="option-title fw-bold mb-1">بدون إكرامية</div>
             <div class="option-subtitle text-muted small" *ngIf="tempChangeAmount > 0">
               رد {{ tempChangeAmount | number:'1.2-2' }} {{ currencySymbol }}
             </div>
@@ -982,12 +990,12 @@
             [class.active-tip-horizontal]="selectedTipType === 'tip_specific_amount'"
             [class.disabled-tip-horizontal]="tempChangeAmount <= 0"
             (click)="selectTipOption('tip_specific_amount')">
-            <div class="option-radio">
+            <div class="option-radio mb-2">
               <div class="radio-dot"
                 [class.radio-dot-active]="selectedTipType === 'tip_specific_amount'"
                 [class.radio-dot-disabled]="tempChangeAmount <= 0"></div>
             </div>
-            <div class="option-title fw-bold">مبلغ محدد</div>
+            <div class="option-title fw-bold mb-1">مبلغ محدد</div>
             <div class="option-subtitle text-muted small" *ngIf="tempChangeAmount > 0">
               إكرامية جزئية
             </div>
@@ -1000,12 +1008,12 @@
             [class.active-tip-horizontal]="selectedTipType === 'tip_the_change'"
             [class.disabled-tip-horizontal]="tempChangeAmount <= 0"
             (click)="tempChangeAmount > 0 ? selectTipOption('tip_the_change') : null">
-            <div class="option-radio">
+            <div class="option-radio mb-2">
               <div class="radio-dot"
                 [class.radio-dot-active]="selectedTipType === 'tip_the_change' && tempChangeAmount > 0"
                 [class.radio-dot-disabled]="tempChangeAmount <= 0"></div>
             </div>
-            <div class="option-title fw-bold">الباقي كله</div>
+            <div class="option-title fw-bold mb-1">الباقي كله</div>
             <div class="option-subtitle text-muted small" *ngIf="tempChangeAmount > 0">
               إكرامية {{ tempChangeAmount | number:'1.2-2' }} {{ currencySymbol }}
             </div>
@@ -1048,13 +1056,13 @@
       (click)="confirmTipAndClose(modal)">
       <span class="fw-bold">تكملة الدفع</span>
       <br>
-      <small class="fw-normal mt-1 d-block" style="color: #fff;">
+      <small class="fw-normal mt-1 d-block" style="color: #ffffff !important;">
         @if(selectedTipType === 'no_tip') {
-          (المتبقي للرد: {{ getMaxZero(tempChangeAmount) | number:'1.2-2' }} {{ currencySymbol }})
+          (المتبقي للرد: {{ roundUpToTwoDecimals(getMaxZero(tempChangeAmount)) | number:'1.2-2' }} {{ currencySymbol }})
         } @else if(selectedTipType === 'tip_the_change') {
           (لا يوجد باقي - الإكرامية كل الباقي)
         } @else {
-          (المتبقي للرد: {{ getMaxZero(tempChangeAmount - parseTipAmount(specificTipAmount)) | number:'1.2-2' }} {{ currencySymbol }})
+          (المتبقي للرد: {{ roundUpToTwoDecimals(getMaxZero(tempChangeAmount - parseTipAmount(specificTipAmount))) | number:'1.2-2' }} {{ currencySymbol }})
         }
       </small>
     </button>
