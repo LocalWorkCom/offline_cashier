@@ -30,6 +30,11 @@ export class IndexeddbService {
           this.db.createObjectStore('categories', { keyPath: 'id' });
         }
 
+        // Create order_id store
+        if (!this.db.objectStoreNames.contains('printkitchen')) {
+          this.db.createObjectStore('printkitchen', { keyPath: 'id' });
+        }
+
         if (!this.db.objectStoreNames.contains('getCurrentBalance')) {
           this.db.createObjectStore('getCurrentBalance', { keyPath: 'id' });
         }
@@ -804,6 +809,214 @@ export class IndexeddbService {
 
         const request = store.put(orderWithMetadata);
 
+        request.onsuccess = () => resolve();
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+  // search order by order_id and save single order to printkitchen
+  saveOrderToPrintkitchen(orderId: string | number ,type: string): Promise<void> {
+    return this.ensureInit().then<void>(() => {
+      return new Promise<void>((resolve, reject) => {
+        if (!orderId) {
+          reject(new Error('orderId is required'));
+          return;
+        }
+
+        if (!this.db) {
+          reject(new Error('Database not initialized'));
+          return;
+        }
+
+        console.log('Searching for order with orderId:', orderId, typeof orderId);
+
+        // First, search for the order in the orders store
+        const readTx = this.db.transaction('orders', 'readonly');
+        const ordersStore = readTx.objectStore('orders');
+
+        // Try to get the order by order_id (the keyPath is order_details.order_id)
+        // Try both string and number formats
+        let getRequest = ordersStore.get(orderId);
+
+        // Also try numeric version if it's a string
+        const numericOrderId = typeof orderId === 'string' ? parseInt(orderId, 10) : orderId;
+        if (!isNaN(numericOrderId as number) && numericOrderId !== orderId) {
+          getRequest = ordersStore.get(numericOrderId);
+        }
+
+        getRequest.onsuccess = () => {
+          const order = getRequest.result;
+          console.log('Direct get result:', order ? 'Found' : 'Not found');
+
+          if (!order) {
+            // If not found by direct key, search through all orders
+            const getAllRequest = ordersStore.getAll();
+            getAllRequest.onsuccess = () => {
+              console.log('Searching through all orders, total:', getAllRequest.result.length);
+
+              const foundOrder = getAllRequest.result.find((o: any) => {
+                const storedOrderId = o.order_details?.order_id;
+                const storedOrderNumber = o.order_details?.order_number;
+
+                return storedOrderId == orderId ||
+                       storedOrderId == numericOrderId ||
+                       storedOrderNumber == orderId ||
+                       storedOrderNumber == numericOrderId ||
+                       String(storedOrderId) === String(orderId) ||
+                       String(storedOrderNumber) === String(orderId);
+              });
+
+              if (!foundOrder) {
+                console.error('Order not found with order_id:', orderId);
+                console.error('Available order_ids:', getAllRequest.result.map((o: any) => ({
+                  order_id: o.order_details?.order_id,
+                  order_number: o.order_details?.order_number
+                })));
+                reject(new Error(`Order with order_id ${orderId} not found`));
+                return;
+              }
+
+              console.log('Order found via search:', foundOrder.order_details?.order_id);
+              // Save the found order to printkitchen
+              this.saveOrderToPrintkitchenStore(foundOrder, String(orderId) ,type)
+                .then(() => resolve(undefined))
+                .catch((err) => reject(err));
+            };
+
+            getAllRequest.onerror = (e) => {
+              console.error('Error searching for order:', e);
+              reject(e);
+            };
+          } else {
+            console.log('Order found via direct get:', order.order_details?.order_id);
+            // Order found, save it to printkitchen
+            this.saveOrderToPrintkitchenStore(order, String(orderId) ,type)
+              .then(() => resolve(undefined))
+              .catch((err) => reject(err));
+          }
+        };
+
+        getRequest.onerror = (e) => {
+          console.error('Error getting order:', e);
+          console.error('Request error details:', getRequest.error);
+          // If direct get fails, try searching through all orders
+          const getAllRequest = ordersStore.getAll();
+          getAllRequest.onsuccess = () => {
+            console.log('Searching through all orders after get error, total:', getAllRequest.result.length);
+
+            const foundOrder = getAllRequest.result.find((o: any) => {
+              const storedOrderId = o.order_details?.order_id;
+              const storedOrderNumber = o.order_details?.order_number;
+
+              return storedOrderId == orderId ||
+                     storedOrderId == numericOrderId ||
+                     storedOrderNumber == orderId ||
+                     storedOrderNumber == numericOrderId ||
+                     String(storedOrderId) === String(orderId) ||
+                     String(storedOrderNumber) === String(orderId);
+            });
+
+            if (!foundOrder) {
+              console.error('Order not found with order_id:', orderId);
+              console.error('Available order_ids:', getAllRequest.result.map((o: any) => ({
+                order_id: o.order_details?.order_id,
+                order_number: o.order_details?.order_number
+              })));
+              reject(new Error(`Order with order_id ${orderId} not found`));
+              return;
+            }
+
+            console.log('Order found via search after error:', foundOrder.order_details?.order_id);
+            // Save the found order to printkitchen
+            this.saveOrderToPrintkitchenStore(foundOrder, String(orderId) ,type)
+              .then(() => resolve(undefined))
+              .catch((err) => reject(err));
+          };
+
+          getAllRequest.onerror = (err) => {
+            console.error('Error in getAllRequest:', err);
+            reject(err);
+          };
+        };
+      });
+    }).catch((err) => {
+      console.error('Error in ensureInit or saveOrderToPrintkitchen:', err);
+      throw err;
+    });
+  }
+
+  // Helper method to save order to printkitchen store
+  private saveOrderToPrintkitchenStore(order: any, orderId: string ,type: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const tx = this.db.transaction('printkitchen', 'readwrite');
+      const store = tx.objectStore('printkitchen');
+
+      // Use the actual order_id from the order if available, otherwise use the passed orderId
+      const actualOrderId = order?.order_details?.order_id || order?.order_details?.order_number || orderId;
+      const idValue = String(actualOrderId); // Ensure id is a string for the keyPath
+
+      const orderWithMetadata = {
+        id: idValue, // Required for printkitchen store keyPath
+        order_id: actualOrderId,
+        order_data: order, // Save the full order data
+        print_status: "pending",
+        type:type,
+        savedAt: new Date().toISOString()
+      };
+
+      console.log('Saving to printkitchen:', orderWithMetadata);
+
+      const request = store.put(orderWithMetadata);
+      request.onsuccess = () => {
+        console.log('Order saved to printkitchen successfully:', idValue);
+        resolve();
+      };
+      request.onerror = (e) => {
+        console.error('Error saving order to printkitchen:', e);
+        console.error('Request error:', request.error);
+        reject(request.error || e);
+      };
+    });
+  }
+
+  // get order from printkitchen indexeddb by order_id
+  getOrderFromPrintkitchenById(orderId: string): Promise<any> {
+    return this.ensureInit().then(() => {
+      return new Promise<any>((resolve, reject) => {
+        const tx = this.db.transaction('printkitchen', 'readonly');
+        const store = tx.objectStore('printkitchen');
+        // The key is stored as a string (idValue = String(actualOrderId))
+        // So we use the orderId parameter directly as string
+        const request = store.get(String(orderId));
+        request.onsuccess = () => {
+          const result = request.result;
+          // Return the order_data field which contains the actual order
+          // If result exists, return order_data, otherwise return null
+          if (result && result.order_data) {
+            resolve(result);
+          } else if (result) {
+            // If result exists but no order_data, return the result itself (backward compatibility)
+            resolve(result);
+          } else {
+            resolve(null);
+          }
+        };
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  // Alias for getOrderFromPrintkitchenById (for backward compatibility)
+  getOrderFromPrintkitchen(orderId: string | number): Promise<any> {
+    return this.getOrderFromPrintkitchenById(String(orderId));
+  }
+  // delete order from printkitchen indexeddb by order_id
+  deleteOrderFromPrintkitchenById(orderId: string): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise<void>((resolve, reject) => {
+        const tx = this.db.transaction('printkitchen', 'readwrite');
+        const store = tx.objectStore('printkitchen');
+        const request = store.delete(String(orderId));
         request.onsuccess = () => resolve();
         request.onerror = (e) => reject(e);
       });

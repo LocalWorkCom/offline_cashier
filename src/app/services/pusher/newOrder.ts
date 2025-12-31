@@ -62,7 +62,7 @@ export class NewOrderService {
               if(response.status && response.allDish && response.allDish.length > 0){
                 console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
                 try {
-                  await this.printInvoiceImage(response.allDish ,response.order, response.Ipall);
+                  await this.printInvoiceImage(response.allDish ,response.order, response.Ipall , response.portall);
                   console.log('✅ [Kitchen Print] Drinks printed successfully');
                 } catch (err) {
                   console.error('❌ [Kitchen Print] Error printing drinks:', err);
@@ -76,7 +76,7 @@ export class NewOrderService {
               if(response.status && response.drinks && response.drinks.length > 0){
                 console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
                 try {
-                  await this.printInvoiceImage(response.drinks ,response.order, response.IPdrinks);
+                  await this.printInvoiceImage(response.drinks ,response.order, response.IPdrinks , response.portdrinks);
                   console.log('✅ [Kitchen Print] Drinks printed successfully');
                 } catch (err) {
                   console.error('❌ [Kitchen Print] Error printing drinks:', err);
@@ -90,7 +90,7 @@ export class NewOrderService {
               if(response.status && response.fish && response.fish.length > 0){
                 console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
                 try {
-                  await this.printInvoiceImage(response.fish ,response.order, response.IPfish);
+                  await this.printInvoiceImage(response.fish ,response.order, response.IPfish , response.portfish);
                   console.log('✅ [Kitchen Print] Fish printed successfully');
                 } catch (err) {
                   console.error('❌ [Kitchen Print] Error printing fish:', err);
@@ -101,7 +101,7 @@ export class NewOrderService {
               // Print grills to different printer (can run in parallel)
               if(response.status && response.grills && response.grills.length > 0){
                 console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
-                this.printInvoiceImage(response.grills ,response.order, response.IPgrills).catch(err => {
+                this.printInvoiceImage(response.grills ,response.order, response.IPgrills , response.portgrills).catch(err => {
                   console.error('❌ [Kitchen Print] Error printing grills:', err);
                 });
               }
@@ -153,7 +153,7 @@ export class NewOrderService {
     }
   }
 
-  async printInvoiceImage(data?: any[], order?: any, printerIP: string = "192.168.100.102") {
+  async printInvoiceImage(data?: any[], order?: any, printerIP: string = "192.168.100.102" , port: number = 9100, type: string |null = null) {
     console.log('🖨️ [printInvoiceImage] Function called', { dataLength: data?.length, order, printerIP });
     let iframe: HTMLIFrameElement | null = null;
 
@@ -174,7 +174,7 @@ export class NewOrderService {
       }
 
       console.log('🖨️ [printInvoiceImage] Calling formatTable...');
-      const completeHTML = this.formatTable(itemsToPrint, order);
+      const completeHTML = this.formatTable(itemsToPrint, order, type);
       console.log('🖨️ [printInvoiceImage] HTML generated, length:', completeHTML.length);
 
       // ========== Create Hidden Iframe ==========
@@ -306,7 +306,7 @@ export class NewOrderService {
       console.log("🖨️ [printInvoiceImage] PNG Ready for Printer", `Base64 length: ${base64Image.length}`);
 
       // ========== PRINTING ==========
-      const printerPort = 9100;
+      const printerPort = port;
 
       console.log('🖨️ [printInvoiceImage] Checking deviceAPI...');
       if (!window.deviceAPI) {
@@ -351,7 +351,7 @@ export class NewOrderService {
     }
   }
 
-  formatTable(items: any[], order?: any): string {
+  formatTable(items: any[], order?: any, type: string |null = null): string {
     console.log('formatTable');
     if (!items || items.length === 0) {
       return '<!DOCTYPE html><html><body>No items to print</body></html>';
@@ -386,114 +386,188 @@ export class NewOrderService {
       return text ? text.replace(/[&<>"']/g, (m) => map[m]) : '';
     };
 
-    // Start HTML document
+
     let html = `<!DOCTYPE html>
-        <html dir="rtl" lang="ar">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-                * {
-                    margin: 0;
-                    padding: 0;
-                    box-sizing: border-box;
-                }
-                html, body {
-                    font-family: 'Cairo', sans-serif;
-                    padding: 10px;
-                    background: white;
-                    width: ${printerWidth}px;
-                    font-size: 30px;
-                    height: auto;
-                    min-height: auto;
-                    overflow: visible;
-                    margin: 0;
-                }
-                .content-wrapper {
-                    width: ${printerWidth}px;
-                    height: auto;
-                    min-height: auto;
-                    background: white;
-                    overflow: visible;
-                }
-                table {
-                    width: 90%;
-                    height: auto;
-                    border-collapse: collapse;
-                    margin: 10px auto;
-                    background: white;
-                    padding: 20px;
-                }
-                th {
-                    background-color: white;
-                    color: black;
-                    padding: 10px 8px;
-                    text-align: center;
-                    border: 3px solid #000;
-                    font-weight: bold;
-                    font-size: 30px;
-                }
-                td {
-                    padding: 10px 8px;
-                    border: 3px solid #000;
-                    text-align: center;
-                    font-size: 30px;
-                }
-                .item-number {
-                    width: 40px;
-                    font-weight: bold;
-                    font-size: 30px;
-                }
-                .item-name {
-                    width: 100px;
-                    text-align: right;
-                    font-weight: bold;
-                    font-size: 30px;
-                }
-                .item-quantity {
-                    width: 40px;
-                    font-weight: bold;
-                    font-size: 30px;
-                }
-                .item-details {
-                    font-size: 30px;
-                    color: #333;
-                    margin-top: 3px;
-                    display: block;
-                }
-                .size, .addons {
-                    display: block;
-                    margin-top: 3px;
-                    font-size: 30px;
-                }
-                .logo-container {
-                    text-align: center;
-                    margin-bottom: 15px;
-                    padding: 8px 0;
-                }
-                .logo-container img {
-                    max-width: 250px;
-                    height: auto;
-                    display: block;
-                    margin: 0 auto;
-                }
-                .order-details {
-                    margin-bottom: 15px;
-                }
-                .order-details p {
-                    margin: 4px 0;
-                    font-size: 30px;
-                }
-            </style>
-        </head>
-        <body style="height: auto; min-height: auto;">
-            <div class="content-wrapper" style="height: auto; min-height: auto;">
-            <div class="logo-container">`;
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
 
-    // Add logo (using asset path - in browser this will work)
-    html += '<img src="assets/images/logo-with-white-bg.png" alt="Logo" style="max-width: 100%; height: auto; display: block;" />';
+        html, body {
+            font-family: 'Cairo', sans-serif;
+            padding: 0;
+            background: white;
+            width: ${printerWidth}px;
+            font-size: 28px; /* حجم خط أصغر قليلاً */
+            height: auto;
+            min-height: auto;
+            overflow: visible;
+            margin: 0;
+        }
 
-    html += `</div>
+        .content-wrapper {
+            width: 100%;
+            max-width: ${printerWidth}px;
+            height: auto;
+            min-height: auto;
+            background: white;
+            overflow: visible;
+            padding: 5px;
+            margin: 0 auto;
+        }
+
+        table {
+            width: 100%;
+            max-width: 100%;
+            border-collapse: collapse;
+            margin: 10px 0;
+            background: white;
+            table-layout: fixed; /* لجعل الجدول ثابت العرض */
+        }
+
+        th {
+            background-color: white;
+            color: black;
+            padding: 15px; /* تقليل padding */
+            text-align: center;
+            border: 3px solid #000;
+            font-weight: bold;
+            font-size: 28px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        td {
+            padding: 12px; /* تقليل padding */
+            border: 3px solid #000;
+            text-align: center;
+            font-size: 28px;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+            vertical-align: top;
+        }
+
+        /* تعديل أعمدة الجدول */
+        .item-number {
+            width: 15%; /* جعل العمود أضيق */
+            font-weight: bold;
+            font-size: 28px;
+        }
+
+        .item-name {
+            width: 65%; /* زيادة عرض عمود الاسم */
+            margin-left: 10px;
+            text-align: right;
+            font-weight: bold;
+            font-size: 28px;
+            padding: 12px 15px;
+            word-spacing:10px;
+        }
+
+        .item-quantity {
+            width: 20%; /* تقليل عرض عمود الكمية */
+            font-weight: bold;
+            font-size: 28px;
+        }
+
+        .item-details {
+            font-size: 28px; /* حجم أصغر للتفاصيل */
+            color: #333;
+            margin-top: 8px;
+            display: block;
+            text-align: right;
+            font-weight: bold;
+            line-height: 1.6;
+        }
+
+        .size, .addons, .notes {
+            display: block;
+            margin-top: 6px;
+            font-size: 24px;
+            color: #666;
+            line-height: 1.5;
+        }
+
+        .logo-container {
+            text-align: center;
+            margin-bottom: 10px;
+            padding: 5px 0;
+        }
+
+        .logo-container img {
+            max-width: 250px;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+
+        .order-details {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-bottom: 2px solid #000;
+        }
+
+        .order-details p {
+            margin: 8px 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        /* تصميم علامة X للطلبات الملغية */
+        .cancelled {
+            position: relative;
+        }
+
+        .cancelled::before,
+        .cancelled::after {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+        }
+
+        .cancelled::before {
+            background: linear-gradient(
+                to top left,
+                transparent 48%,
+                red 48%,
+                red 52%,
+                transparent 52%
+            );
+        }
+
+        .cancelled::after {
+            background: linear-gradient(
+                to top right,
+                transparent 48%,
+                red 48%,
+                red 52%,
+                transparent 52%
+            );
+        }
+
+
+
+
+    </style>
+</head>
+<body>
+    <div class="content-wrapper">
+        <div class="logo-container">`;
+
+// Add logo
+html += '<img src="assets/images/logo-with-white-bg.png" alt="Logo" />';
+
+html += `</div>
         <div class="order-details">
             <p>رقم الطلب: ${escapeHtml(String(orderNumber))}</p>
             <p>رقم الطاولة: ${escapeHtml(String(tableNumber))}</p>
@@ -501,63 +575,81 @@ export class NewOrderService {
             <p>حالة الطلب: ${escapeHtml(String(orderStatus))}</p>
             <p>تاريخ الطلب: ${escapeHtml(String(orderCreatedAt))}</p>
         </div>
-            <table>
-                <thead>
-                    <tr>
-                        <th class="item-number">ت</th>
-                        <th class="item-name">اسم الطبق</th>
-                        <th class="item-quantity">الكمية</th>
-                    </tr>
-                </thead>
-                <tbody>`;
 
-    let itemNumber = 1;
-    items.forEach((item: any) => {
-      const name = escapeHtml(item.name || '-');
-      const name_en = escapeHtml(item.name_en || '-');
-      const note = escapeHtml(item.note || '-');
-      const quantity = escapeHtml(String(item.quantity || '-'));
-      const size = item.size ? escapeHtml(String(item.size)) : null;
+        <table>
+            <thead>
+                <tr>
+                    <th class="item-number">ت</th>
+                    <th class="item-name">اسم الطبق</th>
+                    <th class="item-quantity">الكمية</th>
+                </tr>
+            </thead>
+            <tbody>`;
 
-      let addonNames = '';
-      if (item.addons && item.addons.length > 0) {
+let itemNumber = 1;
+items.forEach((item: any) => {
+    const name = escapeHtml(item.name || '-');
+    const name_en = escapeHtml(item.name_en || '-');
+    const note = escapeHtml(item.note || '-');
+    const quantity = escapeHtml(String(item.quantity || '-'));
+    const size = item.size ? escapeHtml(String(item.size)) : null;
+
+    let addonNames = '';
+    if (item.addons && item.addons.length > 0) {
         const addons = item.addons;
         addonNames = addons
-          .map((a: any) => escapeHtml(a.name || ''))
-          .filter((name: string) => name)
-          .join(', ');
-      }
+            .map((a: any) => escapeHtml(a.name || ''))
+            .filter((name: string) => name)
+            .join(', ');
+    }
 
-      html += '<tr>';
-      html += `<td class="item-number">${itemNumber}</td>`;
-      html += `<td class="item-name">${name}`;
-      html += `<span class="size item-details">${name_en}</span>`;
+    // تحديد إذا كان الصف ملغياً
+    if (type != null && item.x == true) {
+        html += '<tr class="cancelled">';
+        html += `<td class="item-name">${name}`;
+    } else {
+        html += '<tr>';
+        html += `<td class="item-number">${itemNumber}</td>`;
+        html += `<td class="item-name">${name}`;
+    }
 
-      if (size) {
+
+
+
+    // إضافة الاسم بالإنجليزية إذا موجود
+    if (name_en && name_en !== '-') {
+        html += `<span class="item-details">${name_en}</span>`;
+    }
+
+    // إضافة الحجم إذا موجود
+    if (size && size !== '-') {
         html += `<span class="size item-details">الحجم: ${size}</span>`;
-      }
+    }
 
-      if (addonNames) {
+    // إضافة الإضافات إذا موجودة
+    if (addonNames) {
         html += `<span class="addons item-details">الإضافات: ${addonNames}</span>`;
-      }
-      if (note && note !== '-') {
-        html += `<span class="size item-details">الملاحظات: ${note}</span>`;
-      }
+    }
 
-      html += '</td>';
-      html += `<td class="item-quantity">${quantity}</td>`;
-      html += '</tr>';
+    // إضافة الملاحظات إذا موجودة
+    if (note && note !== '-') {
+        html += `<span class="notes item-details">ملاحظات: ${note}</span>`;
+    }
 
-      itemNumber++;
-    });
+    html += '</td>';
+    html += `<td class="item-quantity">${quantity}</td>`;
+    html += '</tr>';
 
-    html += `</tbody>
-                    </table>
-            </div>
-                </body>
-                </html>`;
+    itemNumber++;
+});
 
-    return html;
+html += `</tbody>
+        </table>
+    </div>
+</body>
+</html>`;
+
+return html;
   }
 
 

@@ -3420,7 +3420,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                   if(response.status && response.allDish && response.allDish.length > 0){
                     console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
                     try {
-                      await this.printInvoiceImage(response.allDish ,response.order, response.Ipall);
+                      await this.printInvoiceImage(response.allDish ,response.order, response.Ipall , response.portall);
                       console.log('✅ [Kitchen Print] Drinks printed successfully');
                     } catch (err) {
                       console.error('❌ [Kitchen Print] Error printing drinks:', err);
@@ -3434,7 +3434,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                   if(response.status && response.drinks && response.drinks.length > 0){
                     console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
                     try {
-                      await this.printInvoiceImage(response.drinks ,response.order, response.IPdrinks);
+                      await this.printInvoiceImage(response.drinks ,response.order, response.IPdrinks , response.portdrinks);
                       console.log('✅ [Kitchen Print] Drinks printed successfully');
                     } catch (err) {
                       console.error('❌ [Kitchen Print] Error printing drinks:', err);
@@ -3448,7 +3448,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                   if(response.status && response.fish && response.fish.length > 0){
                     console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
                     try {
-                      await this.printInvoiceImage(response.fish ,response.order, response.IPfish);
+                      await this.printInvoiceImage(response.fish ,response.order, response.IPfish , response.portfish);
                       console.log('✅ [Kitchen Print] Fish printed successfully');
                     } catch (err) {
                       console.error('❌ [Kitchen Print] Error printing fish:', err);
@@ -3459,7 +3459,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                   // Print grills to different printer (can run in parallel)
                   if(response.status && response.grills && response.grills.length > 0){
                     console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
-                    this.printInvoiceImage(response.grills ,response.order, response.IPgrills).catch(err => {
+                    this.printInvoiceImage(response.grills ,response.order, response.IPgrills , response.portgrills).catch(err => {
                       console.error('❌ [Kitchen Print] Error printing grills:', err);
                     });
                   }
@@ -4079,7 +4079,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   //   }
   // }
 
-  async printInvoiceImage(data?: any[], order?: any, printerIP: string = "192.168.100.102") {
+  async printInvoiceImage(data?: any[], order?: any, printerIP: string = "192.168.100.102" , port: number = 9100) {
     console.log('🖨️ [printInvoiceImage] Function called', { dataLength: data?.length, order, printerIP });
     let iframe: HTMLIFrameElement | null = null;
 
@@ -4232,7 +4232,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       console.log("🖨️ [printInvoiceImage] PNG Ready for Printer", `Base64 length: ${base64Image.length}`);
 
       // ========== PRINTING ==========
-      const printerPort = 9100;
+      const printerPort = port;
 
       console.log('🖨️ [printInvoiceImage] Checking deviceAPI...');
       if (!window.deviceAPI) {
@@ -4388,6 +4388,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                     text-align: right;
                     font-weight: bold;
                     font-size: 30px;
+                    word-spacing:10px;
+                    margin-left: 10px;
                 }
                 .item-quantity {
                     width: 40px;
