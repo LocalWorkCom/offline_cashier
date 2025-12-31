@@ -33,7 +33,7 @@ import { EditOrderModalComponent } from '../edit-order-modal/edit-order-modal.co
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { ProductsService } from '../services/products.service';
 import { OrderListDetailsService } from '../services/order-list-details.service';
-// import { IndexeddbService } from '../services/indexeddb.service';
+import { IndexeddbService } from '../services/indexeddb.service';
 import { timer } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 @Component({
@@ -107,7 +107,8 @@ export class OrdersComponent implements OnDestroy {
     private http: HttpClient,
     private NgbModal: NgbModal,
     private productsService: ProductsService,
-    private _OrderListDetailsService: OrderListDetailsService // private dbService: IndexeddbService
+    private _OrderListDetailsService: OrderListDetailsService ,
+     private dbService: IndexeddbService
   ) {
     // const navigation = this.router.getCurrentNavigation();
     // this.orderDetails = navigation?.extras.state?.['orderData'];
@@ -1905,7 +1906,7 @@ export class OrdersComponent implements OnDestroy {
     if (status === 'onhold') return 'onhold'; // hide badge
     return status; // show for pending, completed, etc.
   }
-  openEditModal(item: any) {
+  openEditModal(item: any, orderId: any) {
     const hasExtraData = item.size || item.dish_addons[0];
 
     const modalSize = hasExtraData ? 'lg' : 'md';
@@ -1915,15 +1916,117 @@ export class OrdersComponent implements OnDestroy {
       centered: true,
     });
     editModal.componentInstance.itemId = item.order_detail_id;
-    // editModal.componentInstance.selectedItem = item;
 
-    console.log(item, modalSize);
+    console.log('order_id', orderId);
+    // dalia
+    // save order_id to indexeddb
+    this.dbService.saveOrderToPrintkitchen(orderId, "edit").then(() => {
+      console.log('order_id saved to indexeddb', orderId);
+    }).catch((err) => {
+      console.error('error saving order_id to indexeddb', err);
+    });
 
     editModal.result.then(
       (result) => {
         if (result) {
           this.successMessage = 'تم تحديث الطلب بنجاح';
           this.successMessageModal.show();
+
+          // get order from printkitchen indexeddb
+          this.dbService.getOrderFromPrintkitchenById(orderId).then((orderMetadata: any) => {
+            console.log('order from printkitchen indexeddb', orderMetadata);
+            // Check if order exists before making the request
+            if (!orderMetadata || !orderMetadata.order_data) {
+              console.error('Order not found in printkitchen indexeddb or order_data is missing');
+              return;
+            }
+
+            // Extract the actual order data from the metadata object
+            const order = orderMetadata;
+
+            // send to api to update the order with auth token
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+              console.error('Auth token not found');
+              return;
+            }
+            const headers = new HttpHeaders({
+              Authorization: `Bearer ${token}`
+            });
+
+            console.log('Sending request to print-editor-cancel API...');
+            this.http.post(`${baseUrl}api/print-editor-cancel`, {order: order}, { headers: { Authorization: `Bearer ${token}` } }).subscribe({
+                   // print
+                next: async (response: any) => {
+                  console.log('order updated successfully', response );
+                  console.log('🖨️ [Kitchen Print] Response received:', response);
+
+                  if(response.status && response.allDish && response.allDish.length > 0){
+                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
+                    try {
+                        await this.newOrder.printInvoiceImage(response.allDish ,response.order, response.Ipall, response.portall ,response.type);
+                      console.log('✅ [Kitchen Print] All dishes printed successfully');
+                    } catch (err) {
+                      console.error('❌ [Kitchen Print] Error printing all dishes:', err);
+                    }
+                  }
+
+
+                  await new Promise(resolve => setTimeout(resolve, 500));
+
+                  // Print drinks first
+                  if(response.status && response.drinks && response.drinks.length > 0){
+                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
+                    try {
+                      await this.newOrder.printInvoiceImage(response.drinks ,response.order, response.IPdrinks, response.portdrinks ,response.type);
+                      console.log('✅ [Kitchen Print] Drinks printed successfully');
+                    } catch (err) {
+                      console.error('❌ [Kitchen Print] Error printing drinks:', err);
+                    }
+                  }
+
+                  // Wait a bit before printing fish to the same printer
+                  await new Promise(resolve => setTimeout(resolve, 500));
+
+                  // Print fish
+                  if(response.status && response.fish && response.fish.length > 0){
+                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
+                    try {
+                      await this.newOrder.printInvoiceImage(response.fish ,response.order, response.IPfish , response.portfish ,response.type);
+                      console.log('✅ [Kitchen Print] Fish printed successfully');
+                    } catch (err) {
+                      console.error('❌ [Kitchen Print] Error printing fish:', err);
+                    }
+                  }
+
+
+                  // Print grills to different printer (can run in parallel)
+                  if(response.status && response.grills && response.grills.length > 0){
+                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
+                    this.newOrder.printInvoiceImage(response.grills ,response.order, response.IPgrills , response.portgrills ,response.type).catch((err: any) => {
+                      console.error('❌ [Kitchen Print] Error printing grills:', err);
+                    });
+                  }
+
+                  // await new Promise(resolve => setTimeout(resolve, 60000));
+
+
+
+                this.dbService.deleteOrderFromPrintkitchenById(orderId).then(() => {
+                  console.log('order deleted from printkitchen indexeddb', orderId);
+                }).catch((err) => {
+                  console.error('error deleting order from printkitchen indexeddb', err);
+                });
+                // print
+              },
+              error: (err) => {
+                console.error('error updating order', err);
+              }
+            });
+          }).catch((err) => {
+            console.error('error getting order from printkitchen indexeddb', err);
+          });
+
           setTimeout(() => {
             this.successMessageModal.dismiss();
             document
@@ -1947,6 +2050,13 @@ export class OrdersComponent implements OnDestroy {
     this.removeLoading = true;
     const url = `${this.apiUrl}api/orders/cashier/request-cancel`;
     console.log(orderDetailId, order, 'id to delete');
+
+    // print cancel order to printkitchen indexeddb
+    this.dbService.saveOrderToPrintkitchen(order.order_details.order_id, "cancel").then(() => {
+      console.log('order cancelled and saved to printkitchen indexeddb', order.order_details.order_id);
+    }).catch((err) => {
+      console.error('error saving order to printkitchen indexeddb', err);
+    });
 
     // 1️⃣ Find dish inside this order by order_detail_id
     const dish = order.order_items.find(
@@ -1999,6 +2109,105 @@ export class OrdersComponent implements OnDestroy {
               res.message || 'تم حذف الطلب بنجاح',
               'success'
             );
+
+
+
+             // get order from printkitchen indexeddb
+          this.dbService.getOrderFromPrintkitchenById(order.order_details.order_id).then((orderMetadata: any) => {
+            console.log('order from printkitchen indexeddb', orderMetadata);
+            // Check if order exists before making the request
+            if (!orderMetadata || !orderMetadata.order_data) {
+              console.error('Order not found in printkitchen indexeddb or order_data is missing');
+              return;
+            }
+
+            // Extract the actual order data from the metadata object
+            const order = orderMetadata;
+
+            // send to api to update the order with auth token
+            const token = localStorage.getItem('authToken');
+            if (!token) {
+              console.error('Auth token not found');
+              return;
+            }
+            const headers = new HttpHeaders({
+              Authorization: `Bearer ${token}`
+            });
+
+            console.log('Sending request to print-editor-cancel API...');
+            this.http.post(`${baseUrl}api/print-editor-cancel`, {order: order}, { headers: { Authorization: `Bearer ${token}` } }).subscribe({
+                   // print
+                next: async (response: any) => {
+                  console.log('order updated successfully', response );
+                  console.log('🖨️ [Kitchen Print] Response received:', response);
+
+                  if(response.status && response.allDish && response.allDish.length > 0){
+                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
+                    try {
+                        await this.newOrder.printInvoiceImage(response.allDish ,response.order, response.Ipall, response.portall ,response.type);
+                      console.log('✅ [Kitchen Print] All dishes printed successfully');
+                    } catch (err) {
+                      console.error('❌ [Kitchen Print] Error printing all dishes:', err);
+                    }
+                  }
+
+
+                  await new Promise(resolve => setTimeout(resolve, 500));
+
+                  // Print drinks first
+                  if(response.status && response.drinks && response.drinks.length > 0){
+                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
+                    try {
+                      await this.newOrder.printInvoiceImage(response.drinks ,response.order, response.IPdrinks, response.portdrinks ,response.type);
+                      console.log('✅ [Kitchen Print] Drinks printed successfully');
+                    } catch (err) {
+                      console.error('❌ [Kitchen Print] Error printing drinks:', err);
+                    }
+                  }
+
+                  // Wait a bit before printing fish to the same printer
+                  await new Promise(resolve => setTimeout(resolve, 500));
+
+                  // Print fish
+                  if(response.status && response.fish && response.fish.length > 0){
+                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
+                    try {
+                      await this.newOrder.printInvoiceImage(response.fish ,response.order, response.IPfish , response.portfish ,response.type);
+                      console.log('✅ [Kitchen Print] Fish printed successfully');
+                    } catch (err) {
+                      console.error('❌ [Kitchen Print] Error printing fish:', err);
+                    }
+                  }
+
+
+                  // Print grills to different printer (can run in parallel)
+                  if(response.status && response.grills && response.grills.length > 0){
+                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
+                    this.newOrder.printInvoiceImage(response.grills ,response.order, response.IPgrills , response.portgrills ,response.type).catch((err: any) => {
+                      console.error('❌ [Kitchen Print] Error printing grills:', err);
+                    });
+                  }
+
+                  // await new Promise(resolve => setTimeout(resolve, 60000));
+
+
+
+                this.dbService.deleteOrderFromPrintkitchenById(order.order_details.order_id).then(() => {
+                  console.log('order deleted from printkitchen indexeddb', order.order_details.order_id);
+                }).catch((err) => {
+                  console.error('error deleting order from printkitchen indexeddb', err);
+                });
+                // print
+              },
+              error: (err) => {
+                console.error('error updating order', err);
+              }
+            });
+          }).catch((err) => {
+            console.error('error getting order from printkitchen indexeddb', err);
+          });
+
+
           } else {
             // ✅ ناخد كل الرسائل من errorData (بغض النظر عن المفتاح)
             const errors = res.errorData
