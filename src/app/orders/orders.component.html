@@ -525,6 +525,20 @@
                         </span>
                     </button>
 
+                  @if (canSplitOrder(order)) {
+                    <button type="button" class="btn btn-transparent w-100 py-2" (click)="openSplitModal(order)">
+                      <i class="fa-solid fa-code-branch me-2"></i>
+                      <span>تجزئة الطلب</span>
+                    </button>
+                  }
+
+                  @if (canMergeOrder(order)) {
+                    <button type="button" class="btn btn-transparent w-100 py-2" (click)="openMergeModal(order)">
+                      <i class="fa-solid fa-code-merge me-2"></i>
+                      <span>دمج الطلب</span>
+                    </button>
+                  }
+
                   <button type="button" class="btn btn-transparent w-100 py-2" data-bs-toggle="modal"
                   [attr.data-bs-target]="'#modal-' + order.order_details.order_id">
                   <span>
@@ -736,6 +750,568 @@
       <div class="modal-body text-center">
         <img class="success-icon" src="assets/images/donee.png" />
         <h1 class="modal-title fs-5 text-center my-3">{{successMessage}}</h1>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Split Order Modal - Step 1: Select Table -->
+<div class="modal fade" id="splitOrderModal" tabindex="-1" aria-labelledby="splitOrderModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content p-3">
+      <div class="modal-header border-0 d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-solid fa-code-branch text-danger fs-4"></i>
+          <h5 class="modal-title fw-bold mb-0" id="splitOrderModalLabel">تجزئة الطلب: اختيار الطاولة</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-3">اختر طاولة فارغة لنقل العناصر المحددة إليها</p>
+        
+        <!-- Status Indicators -->
+        <div class="d-flex gap-3 mb-3">
+          <div class="d-flex align-items-center gap-1">
+            <span class="badge bg-danger rounded-circle" style="width: 12px; height: 12px;"></span>
+            <small>محدد</small>
+          </div>
+          <div class="d-flex align-items-center gap-1">
+            <span class="badge bg-warning rounded-circle" style="width: 12px; height: 12px;"></span>
+            <small>مشغول</small>
+          </div>
+          <div class="d-flex align-items-center gap-1">
+            <span class="badge bg-secondary rounded-circle" style="width: 12px; height: 12px;"></span>
+            <small>متاح</small>
+          </div>
+        </div>
+
+        <!-- Table Grid -->
+        <div class="row g-3 mb-3" style="max-height: 400px; overflow-y: auto;">
+          <div class="col-6 col-md-4 col-lg-3" *ngFor="let table of availableTables">
+            <div class="card p-2 text-center position-relative" 
+                 [class.border-danger]="selectedTableIdForSplit == table.id"
+                 [class.bg-light]="table.status === 2"
+                 [class.bg-white]="table.status === 1"
+                 (click)="selectTableForSplit(table.id)"
+                 style="cursor: pointer;">
+              <div *ngIf="selectedTableIdForSplit == table.id" class="position-absolute top-0 start-0 m-1">
+                <i class="fa-solid fa-check-circle text-danger"></i>
+              </div>
+              <div *ngIf="table.status === 2" class="position-absolute top-0 start-0 m-1">
+                <i class="fa-solid fa-lock text-warning"></i>
+              </div>
+              <div class="d-flex flex-column align-items-center">
+                <i class="fa-solid fa-chair fs-4 mb-2"></i>
+                <strong>طاولة {{ table.number }}</strong>
+                <small *ngIf="table.seats" class="text-muted">({{ table.seats }} مقعد)</small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Selected Table Info -->
+        <div *ngIf="selectedTableIdForSplit" class="alert alert-light border d-flex justify-content-between align-items-center">
+          <div class="d-flex align-items-center gap-2">
+            <i class="fa-solid fa-chair"></i>
+            <span>الطاولة المحددة: <strong>{{ getSelectedTableName() }}</strong></span>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <button type="button" class="btn btn-danger" (click)="goToSplitStep2()" [disabled]="!selectedTableIdForSplit">
+          تأكيد الاختيار
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Split Order Modal - Step 2: Select Items -->
+<div class="modal fade" id="splitOrderItemsModal" tabindex="-1" aria-labelledby="splitOrderItemsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-xl">
+    <div class="modal-content p-3">
+      <div class="modal-header border-0 d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-solid fa-code-branch text-danger fs-4"></i>
+          <h5 class="modal-title fw-bold mb-0" id="splitOrderItemsModalLabel">تجزئة الطلب: تحديد الأصناف</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        <div class="alert alert-info mb-3">
+          <i class="fa-solid fa-info-circle me-2"></i>
+          حدد الكمية المراد نقلها لطلب جديد
+        </div>
+
+        <div class="row">
+          <!-- Left: Original Order Items -->
+          <div class="col-md-6 mb-3">
+            <h6 class="fw-bold mb-3">قائمة الأصناف</h6>
+            <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
+              <div *ngFor="let item of splitOrderItems" class="mb-3 pb-3 border-bottom">
+                <div class="d-flex align-items-center gap-2 mb-2">
+                  <i class="fa-solid fa-utensils text-warning"></i>
+                  <div class="flex-grow-1">
+                    <strong>{{ item.dish_name }}</strong>
+                    <div class="text-muted small">
+                      {{ item.total_dish_price }} {{ splitOrderCurrency }} - الكمية الأصلية: {{ item.quantity }}
+                    </div>
+                  </div>
+                </div>
+                <button class="btn btn-sm btn-outline-secondary" disabled>
+                  نقل
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: New Order Items -->
+          <div class="col-md-6 mb-3">
+            <h6 class="fw-bold mb-3">الطلب الجديد</h6>
+            <div class="border rounded p-3">
+              <div class="mb-3">
+                <label class="form-label small fw-bold">نقل إلى</label>
+                <div class="d-flex align-items-center gap-2 p-2 bg-light rounded">
+                  <i class="fa-solid fa-chair"></i>
+                  <span>{{ getSelectedTableName() }}</span>
+                </div>
+              </div>
+
+              <div class="mb-3" style="max-height: 300px; overflow-y: auto;">
+                <div *ngFor="let item of splitOrderItems" class="mb-3 pb-3 border-bottom">
+                  <div class="d-flex justify-content-between align-items-center mb-2">
+                    <strong>{{ item.dish_name }}</strong>
+                    <span *ngIf="item.selectedQuantity > 0" class="fw-bold">{{ (item.total_dish_price / item.quantity * item.selectedQuantity).toFixed(2) }}</span>
+                  </div>
+                  <div class="d-flex align-items-center gap-2">
+                    <button class="btn btn-sm" 
+                            [class.btn-danger]="item.selectedQuantity > 0"
+                            [class.btn-outline-secondary]="item.selectedQuantity === 0"
+                            (click)="decreaseSplitQuantity(item)"
+                            [disabled]="item.selectedQuantity === 0">
+                      <i class="fa-solid fa-minus"></i>
+                    </button>
+                    <input type="number" class="form-control form-control-sm text-center" 
+                           [(ngModel)]="item.selectedQuantity" 
+                           [min]="0" 
+                           [max]="item.quantity"
+                           style="width: 60px;">
+                    <button class="btn btn-sm" 
+                            [class.btn-danger]="item.selectedQuantity > 0"
+                            [class.btn-outline-secondary]="item.selectedQuantity === 0"
+                            (click)="increaseSplitQuantity(item)"
+                            [disabled]="item.selectedQuantity >= item.quantity">
+                      <i class="fa-solid fa-plus"></i>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="border-top pt-3">
+                <div class="d-flex justify-content-between align-items-center">
+                  <strong>المجموع</strong>
+                  <strong class="text-danger">{{ getSplitNewOrderTotal() }} {{ splitOrderCurrency }}</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" (click)="goBackToSplitStep1()">رجوع</button>
+        <button type="button" class="btn btn-danger" (click)="showSplitConfirmation()" [disabled]="getSplitNewOrderTotal() === 0">
+          <i class="fa-solid fa-check me-2"></i>
+          تأكيد التجزئة
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Split Order Confirmation Modal -->
+<div class="modal fade" id="splitOrderConfirmationModal" tabindex="-1" aria-labelledby="splitOrderConfirmationModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content p-3">
+      <div class="modal-header border-0">
+        <h5 class="modal-title fw-bold" id="splitOrderConfirmationModalLabel">تأكيد تجزئة الطلب</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-4">يرجى مراجعة تفاصيل التجزئة قبل التأكيد</p>
+        
+        <div class="row">
+          <div class="col-md-6">
+            <div class="border rounded p-3">
+              <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold mb-0">الطلب الجديد</h6>
+                <span class="badge bg-success">جديد</span>
+              </div>
+              <div class="mb-2">
+                <strong>{{ getNewSplitOrderNumber() }}</strong>
+              </div>
+              <div class="mb-2">
+                <i class="fa-solid fa-chair me-1"></i>
+                {{ getSelectedTableName() }}
+              </div>
+              <div class="mb-3">
+                <div *ngFor="let item of getSelectedSplitItems()" class="small mb-1">
+                  {{ item.selectedQuantity }}x {{ item.dish_name }}
+                  <span class="text-muted">({{ (item.total_dish_price / item.quantity * item.selectedQuantity).toFixed(2) }})</span>
+                </div>
+              </div>
+              <div class="border-top pt-2">
+                <strong>إجمالي الطلب الجديد: {{ getSplitNewOrderTotal() }} {{ splitOrderCurrency }}</strong>
+              </div>
+            </div>
+          </div>
+          <div class="col-md-6">
+            <div class="border rounded p-3">
+              <h6 class="fw-bold mb-3">الطلب الأصلي</h6>
+              <div class="mb-2">
+                <strong>{{ currentSplitOrder?.order_details?.order_number }}</strong>
+              </div>
+              <div class="mb-2">
+                <i class="fa-solid fa-chair me-1"></i>
+                طاولة {{ currentSplitOrder?.order_details?.table_number }}
+              </div>
+              <div class="mb-3">
+                <div *ngFor="let item of getRemainingSplitItems()" class="small mb-1">
+                  {{ item.remainingQuantity }}x {{ item.dish_name }}
+                  <span class="text-muted">({{ (item.total_dish_price / item.quantity * item.remainingQuantity).toFixed(2) }})</span>
+                </div>
+                <div *ngFor="let item of getSelectedSplitItems()" class="small mb-1 text-muted">
+                  {{ item.dish_name }} <span class="badge bg-secondary">منقول</span>
+                </div>
+              </div>
+              <div class="border-top pt-2">
+                <strong>المجموع الجديد: {{ getSplitRemainingTotal() }} {{ splitOrderCurrency }}</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="alert alert-warning mt-3">
+          <strong>ملاحظة هامة:</strong> سيتم إنشاء فاتورة جديدة للعناصر المحددة. العناصر الغير مدفوعة فقط قابلة للنقل.
+        </div>
+      </div>
+      <div class="modal-footer border-0 d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" (click)="goBackToSplitItems()">إلغاء</button>
+        <button type="button" class="btn btn-danger" (click)="submitSplitRequest()" [disabled]="isSplitSubmitting">
+          <span *ngIf="isSplitSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!isSplitSubmitting" class="fa-solid fa-check me-2"></i>
+          {{ isSplitSubmitting ? 'جاري الإرسال...' : 'تأكيد التجزئة' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Merge Order Modal - Step 1: Select Order -->
+<div class="modal fade" id="mergeOrderModal" tabindex="-1" aria-labelledby="mergeOrderModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content p-3">
+      <div class="modal-header border-0 d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-solid fa-code-merge text-danger fs-4"></i>
+          <h5 class="modal-title fw-bold mb-0" id="mergeOrderModalLabel">دمج الطلبات</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-4">
+          اختر الطلب المراد دمجه مع الطلب الحالي (<strong>{{ currentMergeOrder?.order_details?.order_number }}</strong>)
+        </p>
+
+        <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
+          <div *ngIf="eligibleOrdersForMerge.length === 0" class="text-muted text-center py-4">
+            لا توجد طلبات متاحة للدمج
+          </div>
+          <div *ngFor="let order of eligibleOrdersForMerge" 
+               class="border rounded p-3 mb-3 cursor-pointer"
+               [class.border-danger]="selectedOrderIdForMerge === order.order_details.order_id"
+               [class.bg-light]="selectedOrderIdForMerge === order.order_details.order_id"
+               (click)="selectOrderForMerge(order.order_details.order_id)">
+            <div class="form-check">
+              <input class="form-check-input" type="radio" name="mergeOrderSelect" 
+                     [id]="'merge-order-' + order.order_details.order_id"
+                     [value]="order.order_details.order_id" 
+                     [(ngModel)]="selectedOrderIdForMerge" 
+                     (ngModelChange)="onMergeOrderSelectionChange()">
+              <label class="form-check-label w-100" [for]="'merge-order-' + order.order_details.order_id">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <strong class="d-block">{{ order.order_details.order_number }}</strong>
+                    <small class="text-muted">داخلي</small>
+                  </div>
+                  <div class="text-end">
+                    <div class="badge bg-warning text-dark mb-1">
+                      <i class="fa-solid fa-chair me-1"></i>
+                      طاولة {{ order.order_details.table_number }}
+                    </div>
+                    <div class="small text-muted">{{ order.order_details.order_items_count }} عناصر</div>
+                    <div class="small text-muted">{{ order.order_details.created_at | date : "hh:mm a" }}</div>
+                    <div class="fw-bold">{{ order.total_price }} {{ mergeOrderCurrency }}</div>
+                  </div>
+                </div>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء الأمر</button>
+        <button type="button" class="btn btn-danger" (click)="goToMergeConfirmation()" [disabled]="!selectedOrderIdForMerge">
+          <i class="fa-solid fa-code-merge me-2"></i>
+          تأكيد الدمج
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Merge Order Confirmation Modal -->
+<div class="modal fade" id="mergeOrderConfirmationModal" tabindex="-1" aria-labelledby="mergeOrderConfirmationModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content p-3">
+      <div class="modal-header border-0 d-flex justify-content-between align-items-center">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-solid fa-code-merge text-danger fs-4"></i>
+          <h5 class="modal-title fw-bold mb-0" id="mergeOrderConfirmationModalLabel">تأكيد دمج الطلبات</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted mb-4">
+          هل أنت متأكد من رغبتك في دمج الطلبات التالية؟ سيتم نقل جميع العناصر من الطلب الثانوي إلى الطلب الأساسي.
+        </p>
+
+        <div class="row mb-4">
+          <!-- Secondary Order -->
+          <div class="col-md-5">
+            <div class="border rounded p-3 h-100">
+              <h6 class="fw-bold mb-3 text-danger">الطلب الثانوي (المرسل)</h6>
+              <div class="mb-2">
+                <strong>{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong>
+              </div>
+              <div class="mb-2">
+                <i class="fa-solid fa-house text-primary me-1"></i>
+                {{ getSecondaryMergeOrder()?.order_details?.order_type === 'dine-in' ? 'طاولة ' + getSecondaryMergeOrder()?.order_details?.table_number : 'إستلام' }}
+              </div>
+              <div class="mb-2">
+                <span class="badge bg-lightgray text-dark">{{ getSecondaryMergeOrder()?.order_details?.order_items_count }}</span>
+              </div>
+              <div class="fw-bold">
+                {{ getSecondaryMergeOrder()?.total_price }} {{ mergeOrderCurrency }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Arrow -->
+          <div class="col-md-2 d-flex align-items-center justify-content-center">
+            <i class="fa-solid fa-arrow-right text-danger fs-1"></i>
+          </div>
+
+          <!-- Primary Order -->
+          <div class="col-md-5">
+            <div class="border rounded p-3 h-100">
+              <h6 class="fw-bold mb-3 text-success">الطلب الأساسي (المستلم)</h6>
+              <div class="mb-2">
+                <strong>{{ currentMergeOrder?.order_details?.order_number }}</strong>
+              </div>
+              <div class="mb-2">
+                <i class="fa-solid fa-chair text-success me-1"></i>
+                طاولة {{ currentMergeOrder?.order_details?.table_number }}
+              </div>
+              <div class="mb-2">
+                <span class="badge bg-lightgray text-dark">{{ currentMergeOrder?.order_details?.order_items_count }}</span>
+              </div>
+              <div class="fw-bold">
+                {{ currentMergeOrder?.total_price }} {{ mergeOrderCurrency }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Merge Summary -->
+        <div class="alert alert-warning">
+          <h6 class="fw-bold mb-2">ملخص الدمج</h6>
+          <div class="d-flex justify-content-between align-items-center">
+            <span>الإجمالي الجديد للطلب الأساسي:</span>
+            <strong class="fs-5">{{ getMergeNewTotal() }} {{ mergeOrderCurrency }}</strong>
+          </div>
+          <div class="mt-2 small text-muted">
+            سيتم إغلاق الطلب الثانوي <strong>{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong> نهائياً.
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" (click)="goBackToMergeStep1()">إلغاء</button>
+        <button type="button" class="btn btn-danger" (click)="submitMergeRequest()" [disabled]="isMergeSubmitting">
+          <span *ngIf="isMergeSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!isMergeSubmitting" class="fa-solid fa-check me-2"></i>
+          {{ isMergeSubmitting ? 'جاري الإرسال...' : 'تأكيد الدمج' }}
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Split Success Modal -->
+<div class="modal fade" id="splitSuccessModal" tabindex="-1" aria-labelledby="splitSuccessModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content p-4">
+      <div class="modal-body text-center">
+        <div class="mb-3">
+          <i class="fa-solid fa-check-circle text-success" style="font-size: 4rem;"></i>
+        </div>
+        <h4 class="fw-bold mb-3">تم تجزئة الطلب بنجاح!</h4>
+        <p class="text-muted mb-4">
+          تم إنشاء طلب جديد ونقل العناصر المختارة إليه. يمكنك الآن متابعة العمل على أي من الطلبين.
+        </p>
+        
+        <div class="row mb-4">
+          <div class="col-6">
+            <div class="border rounded p-2">
+              <small class="text-muted d-block">الطلب الجديد</small>
+              <strong>{{ getNewSplitOrderNumber() }}</strong>
+              <div class="small mt-1">
+                <i class="fa-solid fa-chair me-1"></i>
+                {{ getSelectedTableName() }}
+              </div>
+              <div class="small text-muted mt-1">
+                تم نقل {{ getSelectedSplitItemsCount() }} عنصر({{ getSelectedSplitItemsCount() }}) إلى الطلب الجديد
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="border rounded p-2">
+              <small class="text-muted d-block">الطلب الأصلي</small>
+              <strong>{{ currentSplitOrder?.order_details?.order_number }}</strong>
+              <div class="small mt-1">
+                <i class="fa-solid fa-chair me-1"></i>
+                طاولة {{ currentSplitOrder?.order_details?.table_number }}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex flex-column gap-2">
+          <button type="button" class="btn btn-danger" (click)="viewNewSplitOrder()">
+            <i class="fa-solid fa-external-link me-2"></i>
+            عرض الطلب الجديد
+          </button>
+          <button type="button" class="btn btn-outline-secondary" (click)="closeSplitSuccessModal()">
+            العودة للطلب الأصلي
+          </button>
+          <a class="text-muted small" (click)="closeSplitSuccessModal()" style="cursor: pointer;">
+            العودة للرئيسية
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Merge Success Modal -->
+<div class="modal fade" id="mergeSuccessModal" tabindex="-1" aria-labelledby="mergeSuccessModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content p-4">
+      <div class="modal-body text-center">
+        <div class="mb-3">
+          <i class="fa-solid fa-check-circle text-success" style="font-size: 4rem;"></i>
+        </div>
+        <h4 class="fw-bold mb-3">تم دمج الطلبات بنجاح</h4>
+        <p class="text-muted mb-4">
+          تم دمج الطلب الثانوي وإغلاقه. تم تحديث الطلب الرئيسي بالعناصر الجديدة بنجاح.
+        </p>
+        
+        <div class="row mb-4">
+          <div class="col-6">
+            <div class="border rounded p-2">
+              <small class="text-muted d-block">الطلب الرئيسي المحدث</small>
+              <strong>{{ currentMergeOrder?.order_details?.order_number }}</strong>
+              <div class="mt-1">
+                <i class="fa-solid fa-check-circle text-success"></i>
+              </div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="border rounded p-2">
+              <small class="text-muted d-block">الطلب الثانوي (مغلق)</small>
+              <strong>{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong>
+              <div class="mt-1">
+                <i class="fa-solid fa-circle text-muted"></i>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-flex flex-column gap-2">
+          <button type="button" class="btn btn-danger" (click)="viewMergedOrder()">
+            <i class="fa-solid fa-arrow-left me-2"></i>
+            عرض الطلب المدمج
+          </button>
+          <a class="text-muted small" (click)="closeMergeSuccessModal()" style="cursor: pointer;">
+            العودة للوحة التحكم
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Merge Error Modal -->
+<div class="modal fade" id="mergeErrorModal" tabindex="-1" aria-labelledby="mergeErrorModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content p-4">
+      <div class="modal-body text-center">
+        <div class="mb-3">
+          <i class="fa-solid fa-shield-halved text-danger" style="font-size: 4rem;"></i>
+        </div>
+        <h4 class="fw-bold mb-3">خطأ في دمج الطلبات</h4>
+        <p class="text-muted mb-4">
+          {{ mergeErrorMessage || 'لا يمكن إتمام عملية الدمج لوجود تعارض في نوع الطلبات. لا يمكن دمج طلبات مدفوعة مع طلبات غير مدفوعة.' }}
+        </p>
+        
+        <div class="border rounded p-3 mb-4">
+          <h6 class="fw-bold mb-3">الطلبات المتعارضة</h6>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <div>
+              <strong>{{ currentMergeOrder?.order_details?.order_number }}</strong>
+              <div class="small text-muted">
+                {{ currentMergeOrder?.order_details?.order_type === 'dine-in' ? 'طاولة ' + currentMergeOrder?.order_details?.table_number : 'بدون طاولة' }}
+              </div>
+            </div>
+            <span class="badge" [class.bg-success]="currentMergeOrder?.order_details?.payment_status === 'paid'" 
+                  [class.bg-danger]="currentMergeOrder?.order_details?.payment_status === 'unpaid'">
+              {{ currentMergeOrder?.order_details?.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع' }}
+            </span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <div>
+              <strong>{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong>
+              <div class="small text-muted">
+                {{ getSecondaryMergeOrder()?.order_details?.order_type === 'dine-in' ? 'طاولة ' + getSecondaryMergeOrder()?.order_details?.table_number : 'بدون طاولة' }}
+              </div>
+            </div>
+            <span class="badge" [class.bg-success]="getSecondaryMergeOrder()?.order_details?.payment_status === 'paid'" 
+                  [class.bg-danger]="getSecondaryMergeOrder()?.order_details?.payment_status === 'unpaid'">
+              {{ getSecondaryMergeOrder()?.order_details?.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع' }}
+            </span>
+          </div>
+        </div>
+
+        <div class="d-flex flex-column gap-2">
+          <button type="button" class="btn btn-danger" (click)="closeMergeErrorModal()">
+            <i class="fa-solid fa-arrow-left me-2"></i>
+            العودة للرئيسية
+          </button>
+          <button type="button" class="btn btn-outline-secondary" (click)="goBackToMergeStep1()">
+            <i class="fa-solid fa-pencil me-2"></i>
+            تعديل الاختيار
+          </button>
+        </div>
       </div>
     </div>
   </div>

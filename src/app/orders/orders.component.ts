@@ -36,6 +36,7 @@ import { OrderListDetailsService } from '../services/order-list-details.service'
 // import { IndexeddbService } from '../services/indexeddb.service';
 import { timer } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
+import { TablesService } from '../services/tables.service';
 @Component({
   selector: 'app-orders',
   standalone: true,
@@ -107,7 +108,8 @@ export class OrdersComponent implements OnDestroy {
     private http: HttpClient,
     private NgbModal: NgbModal,
     private productsService: ProductsService,
-    private _OrderListDetailsService: OrderListDetailsService // private dbService: IndexeddbService
+    private _OrderListDetailsService: OrderListDetailsService,
+    private tablesService: TablesService // private dbService: IndexeddbService
   ) {
     // const navigation = this.router.getCurrentNavigation();
     // this.orderDetails = navigation?.extras.state?.['orderData'];
@@ -2182,5 +2184,698 @@ export class OrdersComponent implements OnDestroy {
     return order.order_details.status !== 'cancelled' &&
            !(order.order_details.payment_status == 'unpaid' && order.order_details.status === 'pending') &&
            order.order_details.order_type != "talabat";
+  }
+
+  // Split Order Properties
+  splitOrderItems: any[] = [];
+  selectedTableIdForSplit: string = '';
+  splitOrderCurrency: string = '';
+  currentSplitOrder: any = null;
+  isSplitSubmitting: boolean = false;
+  splitErrorMessage: string = '';
+  splitSuccessMessage: string = '';
+  availableTables: any[] = [];
+
+  // Merge Order Properties
+  currentMergeOrder: any = null;
+  eligibleOrdersForMerge: any[] = [];
+  selectedOrderIdForMerge: number | null = null;
+  selectedTableIdForMerge: string = '';
+  mergeOrderCurrency: string = '';
+  isMergeSubmitting: boolean = false;
+  mergeErrorMessage: string = '';
+  mergeSuccessMessage: string = '';
+  mergeReason: string = '';
+  mergeOrderItems: any[] = [];
+
+  // Check if order can be split
+  canSplitOrder(order: any): boolean {
+    // Must be dine-in, unpaid, and status 'pending' (which is 'packing' in backend)
+    if (
+      order.order_details.order_type !== 'dine-in' ||
+      order.order_details.payment_status !== 'unpaid' ||
+      order.order_details.status !== 'pending'
+    ) {
+      return false;
+    }
+
+    // Check if all order items are completed or cancelled
+    if (!order.order_items || order.order_items.length === 0) {
+      return false;
+    }
+
+    const allItemsCompleted = order.order_items.every(
+      (item: any) => item.dish_status === 'completed' || item.dish_status === 'cancel'
+    );
+
+    // Must have at least 2 items to split (one must remain)
+    return allItemsCompleted && order.order_items.length >= 2;
+  }
+
+  // Check if order can be merged
+  canMergeOrder(order: any): boolean {
+    // Must be dine-in, unpaid, and status 'pending'
+    if (
+      order.order_details.order_type !== 'dine-in' ||
+      order.order_details.payment_status !== 'unpaid' ||
+      order.order_details.status !== 'pending'
+    ) {
+      return false;
+    }
+
+    // Check if there are other eligible orders to merge with
+    const eligibleOrders = this.getEligibleOrdersForMerge(order);
+    return eligibleOrders.length > 0;
+  }
+
+  // Get eligible orders for merge (excluding current order)
+  getEligibleOrdersForMerge(currentOrder: any): any[] {
+    return this.orders.filter((order: any) => {
+      // Must be different order
+      if (order.order_details.order_id === currentOrder.order_details.order_id) {
+        return false;
+      }
+
+      // Must be dine-in, unpaid, and status 'pending'
+      if (
+        order.order_details.order_type !== 'dine-in' ||
+        order.order_details.payment_status !== 'unpaid' ||
+        order.order_details.status !== 'pending'
+      ) {
+        return false;
+      }
+
+      // Check if all order items are completed or cancelled
+      if (!order.order_items || order.order_items.length === 0) {
+        return false;
+      }
+
+      const allItemsCompleted = order.order_items.every(
+        (item: any) => item.dish_status === 'completed' || item.dish_status === 'cancel'
+      );
+
+      return allItemsCompleted;
+    });
+  }
+
+  // Open split modal
+  openSplitModal(order: any): void {
+    this.currentSplitOrder = order;
+    this.splitOrderItems = order.order_items.map((item: any) => ({
+      ...item,
+      isSelected: false,
+      selectedQuantity: 0,
+    }));
+    this.splitOrderCurrency = order.currency_symbol || this.currencySymbol;
+    this.selectedTableIdForSplit = '';
+    this.splitErrorMessage = '';
+    this.splitSuccessMessage = '';
+
+    // Fetch available tables
+    this.fetchAvailableTables();
+
+    // Show modal
+    const modalElement = document.getElementById('splitOrderModal');
+    if (modalElement) {
+      const modal = new bootstrap.Modal(modalElement);
+      modal.show();
+    }
+  }
+
+  // Select table for split
+  selectTableForSplit(tableId: string): void {
+    const table = this.availableTables.find(t => t.id == tableId);
+    if (table && table.status === 1) { // Only allow available tables
+      this.selectedTableIdForSplit = tableId;
+    }
+  }
+
+  // Get selected table name
+  getSelectedTableName(): string {
+    const table = this.availableTables.find(t => t.id == this.selectedTableIdForSplit);
+    return table ? (table.name || `طاولة ${table.number}`) : '';
+  }
+
+  // Go to split step 2 (select items)
+  goToSplitStep2(): void {
+    const modalElement = document.getElementById('splitOrderModal');
+    if (modalElement) {
+      const modalInstance = bootstrap.Modal.getInstance(modalElement);
+      modalInstance?.hide();
+    }
+    
+    setTimeout(() => {
+      const itemsModal = document.getElementById('splitOrderItemsModal');
+      if (itemsModal) {
+        const modal = new bootstrap.Modal(itemsModal);
+        modal.show();
+      }
+    }, 300);
+  }
+
+  // Go back to split step 1
+  goBackToSplitStep1(): void {
+    const modalElement = document.getElementById('splitOrderItemsModal');
+    if (modalElement) {
+      const modalInstance = bootstrap.Modal.getInstance(modalElement);
+      modalInstance?.hide();
+    }
+    
+    setTimeout(() => {
+      const tableModal = document.getElementById('splitOrderModal');
+      if (tableModal) {
+        const modal = new bootstrap.Modal(tableModal);
+        modal.show();
+      }
+    }, 300);
+  }
+
+  // Increase split quantity
+  increaseSplitQuantity(item: any): void {
+    if (item.selectedQuantity < item.quantity) {
+      item.selectedQuantity = (item.selectedQuantity || 0) + 1;
+    }
+  }
+
+  // Decrease split quantity
+  decreaseSplitQuantity(item: any): void {
+    if (item.selectedQuantity > 0) {
+      item.selectedQuantity = (item.selectedQuantity || 0) - 1;
+    }
+  }
+
+  // Get split new order total
+  getSplitNewOrderTotal(): number {
+    const total = this.splitOrderItems.reduce((total, item) => {
+      const quantity = item.selectedQuantity || 0;
+      const unitPrice = item.total_dish_price / item.quantity;
+      return total + (unitPrice * quantity);
+    }, 0);
+    return parseFloat(total.toFixed(2));
+  }
+
+  // Get selected split items
+  getSelectedSplitItems(): any[] {
+    return this.splitOrderItems.filter(item => (item.selectedQuantity || 0) > 0);
+  }
+
+  // Get remaining split items
+  getRemainingSplitItems(): any[] {
+    return this.splitOrderItems.map(item => ({
+      ...item,
+      remainingQuantity: item.quantity - (item.selectedQuantity || 0)
+    })).filter(item => item.remainingQuantity > 0);
+  }
+
+  // Get split remaining total
+  getSplitRemainingTotal(): number {
+    const total = this.splitOrderItems.reduce((total, item) => {
+      const remaining = item.quantity - (item.selectedQuantity || 0);
+      const unitPrice = item.total_dish_price / item.quantity;
+      return total + (unitPrice * remaining);
+    }, 0);
+    return parseFloat(total.toFixed(2));
+  }
+
+  // Get new split order number (placeholder)
+  getNewSplitOrderNumber(): string {
+    return 'CS-' + Math.floor(Math.random() * 100000);
+  }
+
+  // Get selected split items count
+  getSelectedSplitItemsCount(): number {
+    return this.getSelectedSplitItems().reduce((count, item) => count + (item.selectedQuantity || 0), 0);
+  }
+
+  // Show split confirmation
+  showSplitConfirmation(): void {
+    if (this.getSplitNewOrderTotal() === 0) {
+      this.splitErrorMessage = 'يرجى اختيار كمية واحدة على الأقل';
+      return;
+    }
+
+    const modalElement = document.getElementById('splitOrderItemsModal');
+    if (modalElement) {
+      const modalInstance = bootstrap.Modal.getInstance(modalElement);
+      modalInstance?.hide();
+    }
+    
+    setTimeout(() => {
+      const confirmModal = document.getElementById('splitOrderConfirmationModal');
+      if (confirmModal) {
+        const modal = new bootstrap.Modal(confirmModal);
+        modal.show();
+      }
+    }, 300);
+  }
+
+  // Go back to split items
+  goBackToSplitItems(): void {
+    const modalElement = document.getElementById('splitOrderConfirmationModal');
+    if (modalElement) {
+      const modalInstance = bootstrap.Modal.getInstance(modalElement);
+      modalInstance?.hide();
+    }
+    
+    setTimeout(() => {
+      const itemsModal = document.getElementById('splitOrderItemsModal');
+      if (itemsModal) {
+        const modal = new bootstrap.Modal(itemsModal);
+        modal.show();
+      }
+    }, 300);
+  }
+
+  // View new split order
+  viewNewSplitOrder(): void {
+    this.closeSplitSuccessModal();
+    // Navigate to order details
+    // this.router.navigate(['/order-details', newOrderId]);
+  }
+
+  // Close split success modal
+  closeSplitSuccessModal(): void {
+    const modalElement = document.getElementById('splitSuccessModal');
+    if (modalElement) {
+      const modalInstance = bootstrap.Modal.getInstance(modalElement);
+      modalInstance?.hide();
+    }
+    this.fetchOrdersData();
+  }
+
+  // Open merge modal
+  openMergeModal(order: any): void {
+    this.currentMergeOrder = order;
+    this.eligibleOrdersForMerge = this.getEligibleOrdersForMerge(order);
+    this.selectedOrderIdForMerge = null;
+    this.selectedTableIdForMerge = order.order_details.table_id?.toString() || '';
+    this.mergeOrderCurrency = order.currency_symbol || this.currencySymbol;
+    this.mergeReason = '';
+    this.mergeErrorMessage = '';
+    this.mergeSuccessMessage = '';
+    this.mergeOrderItems = [];
+
+    // Fetch available tables
+    this.fetchAvailableTables();
+
+    // Show modal
+    const modalElement = document.getElementById('mergeOrderModal');
+    if (modalElement) {
+      const modal = new bootstrap.Modal(modalElement);
+      modal.show();
+    }
+  }
+
+  // Select order for merge
+  selectOrderForMerge(orderId: number): void {
+    this.selectedOrderIdForMerge = orderId;
+    this.onMergeOrderSelectionChange();
+  }
+
+  // Go to merge confirmation
+  goToMergeConfirmation(): void {
+    if (!this.selectedOrderIdForMerge) {
+      return;
+    }
+
+    // Auto-select all items from both orders for merge
+    this.getMergeOrderItems().forEach(item => {
+      item.isSelected = true;
+    });
+
+    const modalElement = document.getElementById('mergeOrderModal');
+    if (modalElement) {
+      const modalInstance = bootstrap.Modal.getInstance(modalElement);
+      modalInstance?.hide();
+    }
+    
+    setTimeout(() => {
+      const confirmModal = document.getElementById('mergeOrderConfirmationModal');
+      if (confirmModal) {
+        const modal = new bootstrap.Modal(confirmModal);
+        modal.show();
+      }
+    }, 300);
+  }
+
+  // Go back to merge step 1
+  goBackToMergeStep1(): void {
+    const modalElement = document.getElementById('mergeOrderConfirmationModal');
+    if (modalElement) {
+      const modalInstance = bootstrap.Modal.getInstance(modalElement);
+      modalInstance?.hide();
+    }
+
+    const errorModal = document.getElementById('mergeErrorModal');
+    if (errorModal) {
+      const errorModalInstance = bootstrap.Modal.getInstance(errorModal);
+      errorModalInstance?.hide();
+    }
+    
+    setTimeout(() => {
+      const selectModal = document.getElementById('mergeOrderModal');
+      if (selectModal) {
+        const modal = new bootstrap.Modal(selectModal);
+        modal.show();
+      }
+    }, 300);
+  }
+
+  // Get secondary merge order
+  getSecondaryMergeOrder(): any {
+    return this.eligibleOrdersForMerge.find(
+      (order: any) => order.order_details.order_id === this.selectedOrderIdForMerge
+    );
+  }
+
+  // Get merge new total
+  getMergeNewTotal(): number {
+    const primaryTotal = this.currentMergeOrder?.total_price || 0;
+    const secondaryOrder = this.getSecondaryMergeOrder();
+    const secondaryTotal = secondaryOrder?.total_price || 0;
+    const total = primaryTotal + secondaryTotal;
+    return parseFloat(total.toFixed(2));
+  }
+
+  // View merged order
+  viewMergedOrder(): void {
+    this.closeMergeSuccessModal();
+    // Navigate to order details
+    // this.router.navigate(['/order-details', this.currentMergeOrder.order_details.order_id]);
+  }
+
+  // Close merge success modal
+  closeMergeSuccessModal(): void {
+    const modalElement = document.getElementById('mergeSuccessModal');
+    if (modalElement) {
+      const modalInstance = bootstrap.Modal.getInstance(modalElement);
+      modalInstance?.hide();
+    }
+    this.fetchOrdersData();
+  }
+
+  // Close merge error modal
+  closeMergeErrorModal(): void {
+    const modalElement = document.getElementById('mergeErrorModal');
+    if (modalElement) {
+      const modalInstance = bootstrap.Modal.getInstance(modalElement);
+      modalInstance?.hide();
+    }
+  }
+
+  // Fetch available tables
+  fetchAvailableTables(): void {
+    this.tablesService.getTables().subscribe({
+      next: (response: any) => {
+        if (response.status && response.data) {
+          this.availableTables = response.data.map((table: any) => ({
+            id: table.id,
+            name: table.name_ar || table.name || `طاولة ${table.number}`,
+            number: table.number,
+            status: table.status || 1, // 1 = available, 2 = occupied
+            seats: table.seats || table.seat_count,
+          }));
+        }
+      },
+      error: (err) => {
+        console.error('Error fetching tables:', err);
+      },
+    });
+  }
+
+  // Get merge order items (from both orders)
+  getMergeOrderItems(): any[] {
+    if (!this.selectedOrderIdForMerge || !this.currentMergeOrder) {
+      return [];
+    }
+
+    // If items are already loaded and order hasn't changed, return cached items
+    if (this.mergeOrderItems.length > 0) {
+      const firstItem = this.mergeOrderItems[0];
+      const isFromCurrentOrder = firstItem.sourceOrder === 'current';
+      const isFromSelectedOrder = firstItem.sourceOrder === 'selected';
+      
+      // Check if items match current selection
+      if (isFromCurrentOrder || isFromSelectedOrder) {
+        return this.mergeOrderItems;
+      }
+    }
+
+    const selectedOrder = this.eligibleOrdersForMerge.find(
+      (order: any) => order.order_details.order_id === this.selectedOrderIdForMerge
+    );
+
+    if (!selectedOrder) {
+      return [];
+    }
+
+    // Get items from both orders
+    const currentOrderItems = (this.currentMergeOrder.order_items || []).map((item: any) => ({
+      ...item,
+      isSelected: false,
+      sourceOrder: 'current',
+    }));
+
+    const selectedOrderItems = (selectedOrder.order_items || []).map((item: any) => ({
+      ...item,
+      isSelected: false,
+      sourceOrder: 'selected',
+    }));
+
+    this.mergeOrderItems = [...currentOrderItems, ...selectedOrderItems];
+    return this.mergeOrderItems;
+  }
+
+  // Update merge items when order selection changes
+  onMergeOrderSelectionChange(): void {
+    this.mergeOrderItems = [];
+    this.getMergeOrderItems();
+  }
+
+  // Submit split request
+  submitSplitRequest(): void {
+    if (!this.currentSplitOrder || !this.selectedTableIdForSplit) {
+      this.splitErrorMessage = 'يرجى اختيار الطاولة';
+      return;
+    }
+
+    const selectedItems = this.getSelectedSplitItems();
+    if (selectedItems.length === 0) {
+      this.splitErrorMessage = 'يرجى اختيار كمية واحدة على الأقل';
+      return;
+    }
+
+    // Check if at least one item remains
+    const remainingItems = this.getRemainingSplitItems();
+    if (remainingItems.length === 0) {
+      this.splitErrorMessage = 'يجب أن يبقى على الأقل صنف واحد في الطلب الأصلي';
+      return;
+    }
+
+    this.isSplitSubmitting = true;
+    this.splitErrorMessage = '';
+    this.splitSuccessMessage = '';
+
+    const token = localStorage.getItem('authToken');
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      lang: 'ar',
+    });
+
+    // For split, we need to send all order_detail_ids that will be moved
+    // Since we're splitting quantities, we might need to create new order details
+    // For now, we'll send the items that have selectedQuantity > 0
+    const orderDetailIds: number[] = [];
+    selectedItems.forEach(item => {
+      // If full quantity is selected, send the order_detail_id
+      if (item.selectedQuantity === item.quantity) {
+        orderDetailIds.push(item.order_detail_id);
+      }
+      // If partial, we might need backend to handle this
+      // For now, we'll send the full item and let backend handle partial splits
+    });
+
+    const body = {
+      order_id: [this.currentSplitOrder.order_details.order_id],
+      order_detail_ids: orderDetailIds.length > 0 ? orderDetailIds : selectedItems.map((item: any) => item.order_detail_id),
+      selected_table_id_split: parseInt(this.selectedTableIdForSplit),
+    };
+
+    this.http
+      .post(`${baseUrl}api/waiter/request/split/order`, body, { headers })
+      .subscribe({
+        next: (response: any) => {
+          this.isSplitSubmitting = false;
+          if (response.status) {
+            // Close confirmation modal
+            const confirmModal = document.getElementById('splitOrderConfirmationModal');
+            if (confirmModal) {
+              const modalInstance = bootstrap.Modal.getInstance(confirmModal);
+              modalInstance?.hide();
+            }
+            
+            // Show success modal
+            setTimeout(() => {
+              const successModal = document.getElementById('splitSuccessModal');
+              if (successModal) {
+                const modal = new bootstrap.Modal(successModal);
+                modal.show();
+              }
+            }, 300);
+          } else {
+            this.splitErrorMessage =
+              response.message || response.errorData?.error || 'حدث خطأ أثناء الإرسال';
+          }
+        },
+        error: (err: any) => {
+          this.isSplitSubmitting = false;
+          
+          // Handle 401 Unauthorized
+          if (err.status === 401) {
+            this.splitErrorMessage = 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى';
+            // Optionally redirect to login
+            // this.router.navigate(['/login']);
+            return;
+          }
+          
+          const errorMsg =
+            err.error?.message ||
+            err.error?.errorData?.error ||
+            err.message ||
+            'حدث خطأ أثناء الإرسال';
+          this.splitErrorMessage = Array.isArray(errorMsg) ? errorMsg[0] : errorMsg;
+        },
+      });
+  }
+
+  // Submit merge request
+  submitMergeRequest(): void {
+    if (!this.currentMergeOrder || !this.selectedOrderIdForMerge) {
+      this.mergeErrorMessage = 'يرجى اختيار الطلب';
+      return;
+    }
+
+    const selectedOrder = this.eligibleOrdersForMerge.find(
+      (order: any) => order.order_details.order_id === this.selectedOrderIdForMerge
+    );
+
+    if (!selectedOrder) {
+      this.mergeErrorMessage = 'الطلب المحدد غير موجود';
+      return;
+    }
+
+    // Check payment status compatibility
+    if (this.currentMergeOrder.order_details.payment_status !== selectedOrder.order_details.payment_status) {
+      // Show error modal
+      const confirmModal = document.getElementById('mergeOrderConfirmationModal');
+      if (confirmModal) {
+        const modalInstance = bootstrap.Modal.getInstance(confirmModal);
+        modalInstance?.hide();
+      }
+      
+      setTimeout(() => {
+        const errorModal = document.getElementById('mergeErrorModal');
+        if (errorModal) {
+          const modal = new bootstrap.Modal(errorModal);
+          modal.show();
+        }
+      }, 300);
+      return;
+    }
+
+    // Use cached items or get them if not cached
+    if (this.mergeOrderItems.length === 0) {
+      this.getMergeOrderItems();
+    }
+    
+    // Auto-select all items for merge
+    const allItems = this.mergeOrderItems.map((item: any) => item.order_detail_id);
+
+    this.isMergeSubmitting = true;
+    this.mergeErrorMessage = '';
+    this.mergeSuccessMessage = '';
+
+    // Check if token exists
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      this.isMergeSubmitting = false;
+      this.mergeErrorMessage = 'يرجى تسجيل الدخول مرة أخرى';
+      return;
+    }
+
+    const body = {
+      order_ids: [
+        this.currentMergeOrder.order_details.order_id,
+        this.selectedOrderIdForMerge,
+      ],
+      order_detail_ids: allItems,
+      selected_table_id: parseInt(this.selectedTableIdForMerge || this.currentMergeOrder.order_details.table_id),
+      reason: this.mergeReason || null,
+    };
+
+    // Let the interceptor handle the Authorization header
+    this.http
+      .post(`${baseUrl}api/waiter/request/merge/order`, body)
+      .subscribe({
+        next: (response: any) => {
+          this.isMergeSubmitting = false;
+          if (response.status) {
+            // Close confirmation modal
+            const confirmModal = document.getElementById('mergeOrderConfirmationModal');
+            if (confirmModal) {
+              const modalInstance = bootstrap.Modal.getInstance(confirmModal);
+              modalInstance?.hide();
+            }
+            
+            // Show success modal
+            setTimeout(() => {
+              const successModal = document.getElementById('mergeSuccessModal');
+              if (successModal) {
+                const modal = new bootstrap.Modal(successModal);
+                modal.show();
+              }
+            }, 300);
+          } else {
+            this.mergeErrorMessage =
+              response.message || response.errorData?.error || 'حدث خطأ أثناء الإرسال';
+          }
+        },
+        error: (err: any) => {
+          this.isMergeSubmitting = false;
+          
+          // Handle 401 Unauthorized
+          if (err.status === 401) {
+            this.mergeErrorMessage = 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى';
+            // Optionally redirect to login
+            // this.router.navigate(['/login']);
+            return;
+          }
+          
+          const errorMsg =
+            err.error?.message ||
+            err.error?.errorData?.error ||
+            err.message ||
+            'حدث خطأ أثناء الإرسال';
+          this.mergeErrorMessage = Array.isArray(errorMsg) ? errorMsg[0] : errorMsg;
+          
+          // Show error modal if payment status conflict
+          if (errorMsg.includes('مدفوع') || errorMsg.includes('unpaid') || errorMsg.includes('paid')) {
+            const confirmModal = document.getElementById('mergeOrderConfirmationModal');
+            if (confirmModal) {
+              const modalInstance = bootstrap.Modal.getInstance(confirmModal);
+              modalInstance?.hide();
+            }
+            
+            setTimeout(() => {
+              const errorModal = document.getElementById('mergeErrorModal');
+              if (errorModal) {
+                const modal = new bootstrap.Modal(errorModal);
+                modal.show();
+              }
+            }, 300);
+          }
+        },
+      });
   }
 }
