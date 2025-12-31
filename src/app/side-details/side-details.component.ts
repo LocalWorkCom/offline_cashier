@@ -6280,4 +6280,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   getMaxZero(value: number): number {
     return Math.max(0, value);
   }
+
+  roundUpToTwoDecimals(value: number): number {
+    return Math.ceil(value * 100) / 100;
+  }
 }

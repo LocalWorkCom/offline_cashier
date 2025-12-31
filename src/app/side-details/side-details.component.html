@@ -1383,15 +1383,15 @@
 </div>
 
 <ng-template #tipModalContent let-modal>
-  <div class="modal-header tip-modal-header border-0 pb-0">
-    <h5 class="modal-title fw-bold text-center w-100">خيارات الإكرامية</h5>
+  <div class="modal-header tip-modal-header border-0 pb-2 px-4 pt-4">
+    <h5 class="modal-title fw-bold text-center w-100 mb-0">خيارات الإكرامية</h5>
     <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
   </div>
 
-  <div class="modal-body pt-0">
+  <div class="modal-body pt-3 px-4">
     <!-- ✅ System Timeout Warning -->
     @if (tipModalTimeRemaining <= tipModalWarningTime && tipModalTimeRemaining> 0 && tipModalWarningShown) {
-      <div class="alert alert-warning alert-dismissible fade show mb-3" role="alert">
+      <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
         <i class="fas fa-clock me-2"></i>
         <strong>تنبيه:</strong> سيتم اختيار "بدون إكرامية" تلقائياً خلال {{ tipModalTimeRemaining }} ثانية
         <button type="button" class="btn-close" aria-label="Close" (click)="tipModalWarningShown = false"></button>
@@ -1399,16 +1399,16 @@
       }
 
       <div class="tip-summary-initial mb-4">
-        <div class="d-flex justify-content-between summary-line">
+        <div class="d-flex justify-content-between summary-line mb-2">
           <span class="text-muted">المبلغ المُستحق:</span>
           <span class="fw-bold">{{ tempBillAmount | number:'1.2-2' }} ج.م</span>
         </div>
-        <div class="d-flex justify-content-between summary-line">
+        <div class="d-flex justify-content-between summary-line mb-2">
           <span class="text-muted">المبلغ المدفوع:</span>
           <span class="fw-bold text-success">{{ tempPaymentAmount | number:'1.2-2'
             }} ج.م</span>
         </div>
-        <div class="d-flex justify-content-between summary-line pt-2 border-top">
+        <div class="d-flex justify-content-between summary-line pt-3 mt-2 border-top">
           <span class="fw-bold">الباقي المُحتمل (قبل الإكرامية):</span>
           <span class="fw-bolder text-danger">{{ tempChangeAmount | number:'1.2-2'
             }} ج.م</span>
@@ -1422,11 +1422,11 @@
           <div class="col-4">
             <div class="tip-option-horizontal text-center" [class.active-tip-horizontal]="selectedTipType === 'no_tip'"
               (click)="selectTipOption('no_tip')">
-              <div class="option-radio">
+              <div class="option-radio mb-2">
                 <div class="radio-dot" [class.radio-dot-active]="selectedTipType === 'no_tip'"></div>
               </div>
-              <div class="option-title fw-bold">بدون إكرامية</div>
-              <div class="option-description text-muted small mt-1">
+              <div class="option-title fw-bold mb-1">بدون إكرامية</div>
+              <div class="option-description text-muted small">
                 رد {{ tempChangeAmount | number:'1.2-2' }} {{ currencySymbol }}
               </div>
             </div>
@@ -1438,12 +1438,12 @@
               [class.active-tip-horizontal]="selectedTipType === 'tip_specific_amount'"
               [class.disabled-tip-horizontal]="tempChangeAmount <= 0"
               (click)="tempChangeAmount > 0 ? selectTipOption('tip_specific_amount') : null">
-              <div class="option-radio">
+              <div class="option-radio mb-2">
                 <div class="radio-dot" [class.radio-dot-active]="selectedTipType === 'tip_specific_amount'"
                   [class.radio-dot-disabled]="tempChangeAmount <= 0"></div>
               </div>
-              <div class="option-title fw-bold">مبلغ محدد</div>
-              <div class="option-description text-muted small mt-1">
+              <div class="option-title fw-bold mb-1">مبلغ محدد</div>
+              <div class="option-description text-muted small">
                 أدخل المبلغ
               </div>
             </div>
@@ -1455,13 +1455,13 @@
               [class.active-tip-horizontal]="selectedTipType === 'tip_the_change'"
               [class.disabled-tip-horizontal]="tempChangeAmount <= 0"
               (click)="tempChangeAmount > 0 ? selectTipOption('tip_the_change') : null">
-              <div class="option-radio">
+              <div class="option-radio mb-2">
                 <div class="radio-dot"
                   [class.radio-dot-active]="selectedTipType === 'tip_the_change' && tempChangeAmount > 0"
                   [class.radio-dot-disabled]="tempChangeAmount <= 0"></div>
               </div>
-              <div class="option-title fw-bold">الباقي كله</div>
-              <div class="option-description text-muted small mt-1">
+              <div class="option-title fw-bold mb-1">الباقي كله</div>
+              <div class="option-description text-muted small">
                 ({{ tempChangeAmount | number:'1.2-2' }} {{ currencySymbol }})
               </div>
             </div>
@@ -1480,7 +1480,7 @@
       }
 
       <!-- ملخص الإكرامية المختارة -->
-      <div class="tip-summary-final mb-3 p-3 rounded">
+      <div class="tip-summary-final mb-4 p-3 rounded">
         <div class="d-flex justify-content-between align-items-center">
           <span class="fw-bold">الإكرامية المعتمدة:</span>
           <span class="fw-bolder text-success fs-5">
@@ -1496,17 +1496,17 @@
       </div>
   </div>
 
-  <div class="modal-footer d-flex justify-content-center tip-modal-footer border-0">
+  <div class="modal-footer d-flex justify-content-center tip-modal-footer border-0 px-4 pb-4 pt-0">
     <button type="button" class="btn btn-danger confirm-tip-btn w-100 py-3"
       [disabled]="selectedTipType === 'tip_specific_amount' && specificTipAmount < 0"
       (click)="confirmTipAndClose(modal)">
       <span class="fw-bold">تكملة الدفع</span>
       <br>
-      <small class="fw-normal">
+      <small class="fw-normal mt-1 d-block" style="color: #ffffff !important;">
         (المتبقي للرد: {{
-        selectedTipType === 'no_tip' ? getMaxZero(tempChangeAmount) :
+        selectedTipType === 'no_tip' ? roundUpToTwoDecimals(getMaxZero(tempChangeAmount)) :
         selectedTipType === 'tip_the_change' ? 0 :
-        getMaxZero(tempChangeAmount - specificTipAmount) | number:'1.2-2'
+        roundUpToTwoDecimals(getMaxZero(tempChangeAmount - specificTipAmount)) | number:'1.2-2'
         }} ج.م)
       </small>
     </button>

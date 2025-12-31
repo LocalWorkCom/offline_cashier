@@ -1518,7 +1518,10 @@ export class PillEditComponent {
     this.selectedSuggestionType = null;
     this.paymentError = '';
 
-    const currentPaymentInput = parseFloat(this.cashPaymentInput) || 0;
+    // قراءة القيمة الصحيحة بناءً على طريقة الدفع
+    const currentPaymentInput = this.selectedPaymentMethod === 'credit' 
+      ? parseFloat(this.creditPaymentInput) || 0
+      : parseFloat(this.cashPaymentInput) || 0;
 
     if (currentPaymentInput <= 0) {
       this.paymentError = 'يرجى إدخال مبلغ صحيح';
@@ -1648,6 +1651,10 @@ export class PillEditComponent {
   // Helper method to ensure values are never negative (same as cart)
   getMaxZero(value: number): number {
     return Math.max(0, value);
+  }
+
+  roundUpToTwoDecimals(value: number): number {
+    return Math.ceil(value * 100) / 100;
   }
 
   // Get the actual payment amount to display in "المبلغ المستحق"
