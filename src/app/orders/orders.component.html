@@ -525,19 +525,19 @@
                         </span>
                     </button>
 
-                  @if (canSplitOrder(order)) {
+                  <!-- @if (canSplitOrder(order)) {
                     <button type="button" class="btn btn-transparent w-100 py-2" (click)="openSplitModal(order)">
                       <i class="fa-solid fa-code-branch me-2"></i>
                       <span>تجزئة الطلب</span>
                     </button>
-                  }
+                  } -->
 
-                  @if (canMergeOrder(order)) {
+                  <!-- @if (canMergeOrder(order)) {
                     <button type="button" class="btn btn-transparent w-100 py-2" (click)="openMergeModal(order)">
                       <i class="fa-solid fa-code-merge me-2"></i>
                       <span>دمج الطلب</span>
                     </button>
-                  }
+                  } -->
 
                   <button type="button" class="btn btn-transparent w-100 py-2" data-bs-toggle="modal"
                   [attr.data-bs-target]="'#modal-' + order.order_details.order_id">
