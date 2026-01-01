@@ -219,12 +219,12 @@ export class OrdersComponent implements OnDestroy {
             this.processOrders(response.data.orders);
 
             // Save to IndexedDB
-            // this.dbService.saveOrders(response.data.orders).then(() => {
-            //   console.log('Orders saved to IndexedDB');
-            //   return this.dbService.setOrdersLastSync(Date.now());
-            // }).catch(err => {
-            //   console.error('Error saving orders to IndexedDB:', err);
-            // });
+            this.dbService.saveOrders(response.data.orders).then(() => {
+              console.log('Orders saved to IndexedDB');
+              return this.dbService.setOrdersLastSync(Date.now());
+            }).catch(err => {
+              console.error('Error saving orders to IndexedDB:', err);
+            });
           } else {
             console.warn('No orders found in API response.');
             this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';

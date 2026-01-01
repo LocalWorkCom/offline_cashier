@@ -35,7 +35,7 @@
 
 // export const baseUrl='https://productowner.testdomain100.online/'
 // export const baseUrl='https://erpsystem.testdomain100.online/'
-export const baseUrl='https://erp-cashier.testdomain100.online/'
+export const baseUrl='https://erpsystem.testdomain100.online/'
 
 
  export const environment = {
