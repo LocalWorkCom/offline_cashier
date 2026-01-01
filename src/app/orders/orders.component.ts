@@ -108,7 +108,7 @@ export class OrdersComponent implements OnDestroy {
     private http: HttpClient,
     private NgbModal: NgbModal,
     private productsService: ProductsService,
-    private tablesService: TablesService // private dbService: IndexeddbService
+    private tablesService: TablesService, // private dbService: IndexeddbService
     private _OrderListDetailsService: OrderListDetailsService ,
      private dbService: IndexeddbService
   ) {
