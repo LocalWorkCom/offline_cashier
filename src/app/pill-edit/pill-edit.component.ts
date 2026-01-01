@@ -1590,13 +1590,17 @@ export class PillEditComponent {
       return;
     }
 
-    // تحديث القيم بناءً على طريقة الدفع المختارة
+    // ✅ تحديث القيم بناءً على طريقة الدفع المختارة - تحويل إلى رقم صريح
+    const paymentAmountNum = Number(paymentAmount);
     if (this.selectedPaymentMethod === 'cash') {
-      this.cash_value = paymentAmount;
-      this.cashPaymentInput = paymentAmount;
+      this.cash_value = paymentAmountNum;
+      this.cashPaymentInput = paymentAmountNum;
     } else if (this.selectedPaymentMethod === 'credit') {
-      this.credit_value = paymentAmount;
-      this.creditPaymentInput = paymentAmount;
+      this.credit_value = paymentAmountNum;
+      // ✅ التأكد من تحديث الحقل بشكل صريح وتحويل القيمة إلى رقم
+      this.creditPaymentInput = paymentAmountNum;
+      // ✅ إجبار Angular على تحديث العرض
+      this.cdr.detectChanges();
     }
 
     // ✅ مسح جميع الأخطاء عند اختيار مبلغ صحيح
@@ -1741,6 +1745,22 @@ export class PillEditComponent {
 
   roundUpToTwoDecimals(value: number): number {
     return Math.ceil(value * 100) / 100;
+  }
+
+  // ✅ Getter and Setter for payment input value
+  getPaymentInputValue(): any {
+    if (this.selectedPaymentMethod === 'credit') {
+      return this.creditPaymentInput;
+    }
+    return this.cashPaymentInput;
+  }
+
+  setPaymentInputValue(value: any): void {
+    if (this.selectedPaymentMethod === 'credit') {
+      this.creditPaymentInput = value;
+    } else {
+      this.cashPaymentInput = value;
+    }
   }
 
   // Get the actual payment amount to display in "المبلغ المستحق"

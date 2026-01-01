@@ -338,8 +338,8 @@
               <div class="card p-3 mb-3">
                 <label for="cashPaymentInput" class="form-label fw-bold mb-2">مبلغ مخصص</label>
                 <input type="number" class="form-control"
-                  [ngModel]="selectedPaymentMethod === 'credit' ? creditPaymentInput : cashPaymentInput"
-                  (ngModelChange)="selectedPaymentMethod === 'credit' ? creditPaymentInput = $event : cashPaymentInput = $event"
+                  [ngModel]="getPaymentInputValue()"
+                  (ngModelChange)="setPaymentInputValue($event)"
                   [ngModelOptions]="{standalone: true}"
                   placeholder="أدخل المبلغ المدفوع"
                   (change)="handleManualPaymentBlur(billAmount, tipModalContent)"
