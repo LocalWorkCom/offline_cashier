@@ -35,6 +35,6 @@ export class AppComponent implements OnInit {
     document.body.dir = this.dir;
 
     this.pusher.connect();
-    // this.newOrderService.listenToNewOrder();
+    this.newOrderService.listenToNewOrder();
   }
 }
