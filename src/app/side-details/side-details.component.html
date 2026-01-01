@@ -874,7 +874,7 @@
       <!-- <button class="btn w-100 my-3" (click)="submitOrder()">
       <h5 class="mb-0">تنفيذ الطلب</h5>
     </button> -->
-      <button class="btn w-100 my-3 bg-success" (click)="submitOrder()" [disabled]="isLoading">
+      <button class="btn w-100 my-3 bg-success" (click)="submitOrder()" [disabled]="isLoading || (paymentError && paymentError.trim() !== '') || amountError">
         <h5 class="mb-0">
           {{ isLoading ? 'جاري التنفيذ...' : 'تنفيذ الطلب' }}
         </h5>
@@ -1123,9 +1123,11 @@
               <span class="mb-0">طريقة الدفع:</span>
               <span class="mb-0">
                 {{
-                invoices[0]?.transactions[0].payment_method === "credit"
+                invoices[0]?.transactions?.length > 1
+                ? "كاش"
+                : (invoices[0]?.transactions[0]?.payment_method === "credit"
                 ? "الفيزا"
-                : "كاش"
+                : "كاش")
                 }}
               </span>
             </div>
