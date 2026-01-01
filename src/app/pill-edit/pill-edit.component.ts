@@ -386,6 +386,32 @@ export class PillEditComponent {
       return;
     }
 
+    // ✅ التحقق من رقم المرجع أولاً (قبل التحقق من المبلغ) للدفع المختلط
+    if (this.paymentStatus === 'paid' && this.selectedPaymentMethod === 'cash + credit') {
+      const enteredCredit = parseFloat(this.creditAmountMixed) || 0;
+      if (enteredCredit > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
+        this.referenceNumberTouched = true;
+        this.referenceNumberError = 'رقم المرجع مفقود';
+        this.amountError = false;
+        this.paymentAmountError = '';
+        this.loading = false;
+        return;
+      }
+    }
+
+    // ✅ التحقق من رقم المرجع للفيزا فقط
+    if (this.paymentStatus === 'paid' && this.selectedPaymentMethod === 'credit') {
+      const enteredCredit = parseFloat(this.creditPaymentInput) || parseFloat(this.creditAmountMixed) || 0;
+      if (enteredCredit > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
+        this.referenceNumberTouched = true;
+        this.referenceNumberError = 'رقم المرجع مفقود';
+        this.amountError = false;
+        this.paymentAmountError = '';
+        this.loading = false;
+        return;
+      }
+    }
+
     if (this.paymentStatus === 'paid' && !this.isPaymentAmountValid()) {
       this.amountError = true;
       return; // 🔒 منع المتابعة إذا كان المبلغ غير صحيح
@@ -474,28 +500,74 @@ export class PillEditComponent {
         }
       // حالة الدفع المختلط أو الكاش فقط
       else {
-        // التحقق من رقم المرجع للفيزا أولاً قبل تعديل المبالغ
-        const currentCreditAmount = this.creditAmountMixed ? parseFloat(this.creditAmountMixed) || 0 : creditAmount;
-        if (currentCreditAmount > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
-          this.referenceNumberTouched = true;
-          this.referenceNumberError = 'رقم المرجع مفقود';
+        // ✅ للدفع المختلط: قراءة المبالغ من الحقول المختلطة
+        if (this.selectedPaymentMethod === 'cash + credit') {
+          const enteredCash = parseFloat(this.cashAmountMixed) || 0;
+          const enteredCredit = parseFloat(this.creditAmountMixed) || 0;
+          const totalEntered = Number((enteredCash + enteredCredit).toFixed(2));
+          
+          // التحقق من رقم المرجع للفيزا أولاً
+          if (enteredCredit > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
+            this.referenceNumberTouched = true;
+            this.referenceNumberError = 'رقم المرجع مفقود';
+            this.amountError = false;
+            this.paymentAmountError = '';
+            this.loading = false;
+            return;
+          } else {
+            this.referenceNumberError = '';
+          }
+          
+          // التحقق من أن المبلغ المدخل >= الإجمالي (مع مراعاة دقة الأرقام العشرية)
+          const tolerance = 0.01; // تسامح 0.01 للتعامل مع أخطاء التقريب
+          if (totalEntered < (total - tolerance)) {
+            this.amountError = true;
+            this.paymentAmountError = `المبلغ المدفوع غير كافي. المطلوب: ${total.toFixed(2)} ${this.invoices[0]?.invoice_summary?.currency_symbol || ''}`;
+            this.loading = false;
+            return;
+          }
+          
+          // ✅ مسح الأخطاء إذا كان المبلغ كافياً
           this.amountError = false;
           this.paymentAmountError = '';
-          this.loading = false;
-          return;
+          
+          // ✅ استخدام المبالغ المدخلة كما هي (لا إعادة حساب)
+          cashAmount = enteredCash;
+          creditAmount = enteredCredit;
+          
+          // مزامنة القيم المعروضة
+          this.cash_value = cashAmount;
+          this.credit_value = creditAmount;
         } else {
-          this.referenceNumberError = '';
+          // حالة الكاش فقط: التحقق من رقم المرجع للفيزا أولاً قبل تعديل المبالغ
+          const currentCreditAmount = this.creditAmountMixed ? parseFloat(this.creditAmountMixed) || 0 : creditAmount;
+          if (currentCreditAmount > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
+            this.referenceNumberTouched = true;
+            this.referenceNumberError = 'رقم المرجع مفقود';
+            this.amountError = false;
+            this.paymentAmountError = '';
+            this.loading = false;
+            return;
+          } else {
+            this.referenceNumberError = '';
+          }
+          
+          // للكاش فقط: استخدام المبلغ المدخل
+          if (this.selectedPaymentMethod === 'cash') {
+            const enteredCashAmount = parseFloat(this.cashPaymentInput) || 0;
+            if (enteredCashAmount >= total) {
+              cashAmount = enteredCashAmount;
+              creditAmount = 0;
+              this.cash_value = cashAmount;
+              this.credit_value = creditAmount;
+            } else {
+              this.amountError = true;
+              this.paymentAmountError = `المبلغ المدفوع غير كافي. المطلوب: ${total.toFixed(2)} ${this.invoices[0]?.invoice_summary?.currency_symbol || ''}`;
+              this.loading = false;
+              return;
+            }
+          }
         }
-        
-        // نجعل المبلغ المسجل دائماً يساوي الإجمالي: نستخدم الكاش أولاً ثم نكمل بالفيزا
-        const usedCash = Math.min(Number(cashAmount || 0), total);
-        const remaining = Number((total - usedCash).toFixed(2));
-        cashAmount = usedCash;
-        creditAmount = remaining > 0 ? remaining : 0;
-
-        // مزامنة القيم المعروضة بعد التصحيح
-        this.cash_value = cashAmount;
-        this.credit_value = creditAmount;
       }
 
         // التحقق من رقم المرجع للفيزا بعد التأكد من المبلغ (للحالة credit فقط)
@@ -1070,10 +1142,31 @@ export class PillEditComponent {
   isPaymentAmountValid(): boolean {
     if (this.paymentStatus !== 'paid') return true;
 
-    const cash = Number(this.cash_value ?? 0);
-    const credit = Number(this.credit_value ?? 0);
     const total = this.getInvoiceTotal();
-    return Number(((Number(cash) || 0) + (Number(credit) || 0)).toFixed(2)) >= total;
+    let cash = 0;
+    let credit = 0;
+    
+    // ✅ للدفع المختلط: قراءة من الحقول المختلطة
+    if (this.selectedPaymentMethod === 'cash + credit') {
+      cash = parseFloat(this.cashAmountMixed) || 0;
+      credit = parseFloat(this.creditAmountMixed) || 0;
+    } else {
+      // للكاش أو الفيزا: قراءة من القيم العادية
+      cash = Number(this.cash_value ?? 0);
+      credit = Number(this.credit_value ?? 0);
+      
+      // إذا كانت القيم 0، جرب قراءة من الحقول المدخلة
+      if (cash === 0 && credit === 0) {
+        if (this.selectedPaymentMethod === 'cash') {
+          cash = parseFloat(this.cashPaymentInput) || 0;
+        } else if (this.selectedPaymentMethod === 'credit') {
+          credit = parseFloat(this.creditPaymentInput) || 0;
+        }
+      }
+    }
+    
+    const totalPaid = Number((Number(cash || 0) + Number(credit || 0)).toFixed(2));
+    return totalPaid >= total;
   }
   show_delivered_only(aa: any) {
     if (aa == 'delivered') {
@@ -1136,9 +1229,12 @@ export class PillEditComponent {
     // تحديث قيمة الحقل
     event.target.value = numericValue;
     
-    // مسح رسالة الخطأ عند إدخال رقم المرجع
+    // ✅ مسح رسالة الخطأ عند إدخال رقم المرجع (حتى لو كان فارغاً مؤقتاً)
     if (numericValue && numericValue.trim() !== '') {
       this.referenceNumberError = '';
+      // مسح الأخطاء الأخرى المرتبطة أيضاً
+      this.amountError = false;
+      this.paymentAmountError = '';
     }
   }
 
@@ -1276,8 +1372,19 @@ export class PillEditComponent {
       this.credit_value = finalTipSummary.creditFinal || 0;
     }
 
+    // ✅ مسح جميع الأخطاء عند تأكيد الإكرامية
+    this.clearAllPaymentErrors();
+
     localStorage.setItem('finalTipSummary', JSON.stringify(this.finalTipSummary));
     console.log('✅ تم تطبيق الإكرامية على المتغيرات الرئيسية:', this.finalTipSummary);
+  }
+
+  // ✅ دالة مساعدة لمسح جميع أخطاء الدفع
+  private clearAllPaymentErrors(): void {
+    this.paymentError = '';
+    this.paymentAmountError = '';
+    this.amountError = false;
+    // لا نمسح referenceNumberError هنا لأنه قد يكون مطلوباً
   }
 
   private resetTempVariables(): void {
@@ -1478,6 +1585,8 @@ export class PillEditComponent {
     if (paymentAmount < billAmount) {
       const remaining = billAmount - paymentAmount;
       this.paymentError = `المبلغ غير كافي. المتبقي: ${remaining.toFixed(2)} ${this.currencySymbol}`;
+      this.paymentAmountError = this.paymentError;
+      this.amountError = true;
       return;
     }
 
@@ -1490,27 +1599,14 @@ export class PillEditComponent {
       this.creditPaymentInput = paymentAmount;
     }
 
-    if (paymentAmount > billAmount) {
-      // مسح الأخطاء عند اختيار مبلغ صحيح
-      this.paymentError = '';
-      this.paymentAmountError = '';
-      this.amountError = false;
+    // ✅ مسح جميع الأخطاء عند اختيار مبلغ صحيح
+    this.paymentError = '';
+    this.paymentAmountError = '';
+    this.amountError = false;
+
+    // ✅ فتح مودال الإكرامية تلقائياً إذا كان المبلغ كافياً (>=)
+    if (paymentAmount >= billAmount) {
       this.openTipModal(modalContent, billAmount, paymentAmount, this.selectedPaymentMethod);
-    } else {
-      // إذا كان المبلغ يساوي الفاتورة بالضبط، تحديث القيم مباشرة
-      if (this.selectedPaymentMethod === 'cash') {
-        this.cash_value = paymentAmount;
-        this.cashPaymentInput = paymentAmount;
-      } else if (this.selectedPaymentMethod === 'credit') {
-        this.credit_value = paymentAmount;
-        this.creditPaymentInput = paymentAmount;
-      }
-      // مسح الأخطاء عند اختيار مبلغ صحيح
-      this.paymentError = '';
-      this.paymentAmountError = '';
-      this.amountError = false;
-      // تحديث العرض
-      this.cdr.detectChanges();
     }
   }
 
@@ -1525,12 +1621,16 @@ export class PillEditComponent {
 
     if (currentPaymentInput <= 0) {
       this.paymentError = 'يرجى إدخال مبلغ صحيح';
+      this.paymentAmountError = this.paymentError;
+      this.amountError = true;
       return;
     }
 
     if (currentPaymentInput < billAmount) {
       const remaining = billAmount - currentPaymentInput;
       this.paymentError = `المبلغ غير كافي. المتبقي: ${remaining.toFixed(2)} ${this.currencySymbol}`;
+      this.paymentAmountError = this.paymentError;
+      this.amountError = true;
       return;
     }
 
@@ -1543,27 +1643,14 @@ export class PillEditComponent {
       this.creditPaymentInput = currentPaymentInput;
     }
 
-    if (currentPaymentInput > billAmount) {
-      // مسح الأخطاء عند إدخال مبلغ صحيح
-      this.paymentError = '';
-      this.paymentAmountError = '';
-      this.amountError = false;
+    // ✅ مسح جميع الأخطاء عند إدخال مبلغ صحيح
+    this.paymentError = '';
+    this.paymentAmountError = '';
+    this.amountError = false;
+
+    // ✅ فتح مودال الإكرامية تلقائياً إذا كان المبلغ كافياً (>=)
+    if (currentPaymentInput >= billAmount) {
       this.openTipModal(modalContent, billAmount, currentPaymentInput, this.selectedPaymentMethod);
-    } else {
-      // إذا كان المبلغ يساوي الفاتورة بالضبط، تحديث القيم مباشرة
-      if (this.selectedPaymentMethod === 'cash') {
-        this.cash_value = currentPaymentInput;
-        this.cashPaymentInput = currentPaymentInput;
-      } else if (this.selectedPaymentMethod === 'credit') {
-        this.credit_value = currentPaymentInput;
-        this.creditPaymentInput = currentPaymentInput;
-      }
-      // مسح الأخطاء عند إدخال مبلغ صحيح
-      this.paymentError = '';
-      this.paymentAmountError = '';
-      this.amountError = false;
-      // تحديث العرض
-      this.cdr.detectChanges();
     }
   }
 
@@ -1586,14 +1673,9 @@ export class PillEditComponent {
     this.paymentAmountError = '';
     this.amountError = false;
 
-    if (totalPaid > billAmount) {
+    // ✅ فتح مودال الإكرامية تلقائياً إذا كان المبلغ كافياً (>=)
+    if (totalPaid >= billAmount) {
       this.openTipModal(modalContent, billAmount, totalPaid, 'cash + credit');
-    } else if (totalPaid === billAmount) {
-      // إذا كان المبلغ يساوي الفاتورة بالضبط، مسح الأخطاء فقط
-      this.paymentError = '';
-      this.paymentAmountError = '';
-      this.amountError = false;
-      this.cdr.detectChanges();
     }
   }
 
@@ -1642,10 +1724,14 @@ export class PillEditComponent {
       this.credit_value = null;
     }
     this.finalTipSummary = null;
-    // مسح جميع الأخطاء عند تغيير طريقة الدفع
+    // ✅ مسح جميع الأخطاء عند تغيير طريقة الدفع
     this.paymentError = '';
     this.paymentAmountError = '';
     this.amountError = false;
+    // مسح خطأ رقم المرجع عند التبديل من فيزا إلى طريقة أخرى
+    if (method !== 'credit' && method !== 'cash + credit') {
+      this.referenceNumberError = '';
+    }
   }
 
   // Helper method to ensure values are never negative (same as cart)
