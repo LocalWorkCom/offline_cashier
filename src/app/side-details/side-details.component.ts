@@ -2624,6 +2624,74 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     localStorage.removeItem('selectedOrderType');
   }
 
+  // ✅ دالة التحقق الشاملة من المبالغ المدفوعة
+  validatePaymentAmounts(): { isValid: boolean; errorMessage: string } {
+    if (this.selectedPaymentStatus !== 'paid') {
+      return { isValid: true, errorMessage: '' };
+    }
+
+    const cartTotal = Number(this.getCartTotal().toFixed(2));
+    const tolerance = 0.01; // تسامح 0.01 للتعامل مع أخطاء التقريب
+
+    // ✅ التحقق من paymentError
+    if (this.paymentError && this.paymentError.trim() !== '') {
+      return { isValid: false, errorMessage: this.paymentError };
+    }
+
+    // ✅ التحقق من finalTipSummary
+    if (this.finalTipSummary && this.finalTipSummary.paymentAmount > 0) {
+      const totalEntered = Number(this.finalTipSummary.paymentAmount);
+      if (totalEntered < (cartTotal - tolerance)) {
+        const remainingBalance = cartTotal - totalEntered;
+        return { 
+          isValid: false, 
+          errorMessage: `المبلغ المدفوع غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}` 
+        };
+      }
+    }
+
+    // ✅ التحقق من الدفع بالكاش فقط
+    if (this.selectedPaymentMethod === 'cash' && this.cashPaymentInput > 0) {
+      const cashAmount = Number(this.cashPaymentInput);
+      if (cashAmount < (cartTotal - tolerance)) {
+        const remainingBalance = cartTotal - cashAmount;
+        return { 
+          isValid: false, 
+          errorMessage: `المبلغ المدفوع غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}` 
+        };
+      }
+    }
+
+    // ✅ التحقق من الدفع بالفيزا فقط
+    if (this.selectedPaymentMethod === 'credit') {
+      const creditAmount = Number(this.credit_amountt) || Number(this.cashPaymentInput) || 0;
+      if (creditAmount > 0 && creditAmount < (cartTotal - tolerance)) {
+        const remainingBalance = cartTotal - creditAmount;
+        return { 
+          isValid: false, 
+          errorMessage: `المبلغ المدفوع غير كافي. المطلوب: ${cartTotal.toFixed(2)} ${this.currencySymbol}` 
+        };
+      }
+    }
+
+    // ✅ التحقق من الدفع المختلط
+    if (this.selectedPaymentMethod === 'cash + credit') {
+      const cashAmount = Number(this.cashAmountMixed) || 0;
+      const creditAmount = Number(this.creditAmountMixed) || 0;
+      const totalPaid = Number((cashAmount + creditAmount).toFixed(2));
+      
+      if (totalPaid < (cartTotal - tolerance)) {
+        const remainingBalance = cartTotal - totalPaid;
+        return { 
+          isValid: false, 
+          errorMessage: `المبلغ المدفوع غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}` 
+        };
+      }
+    }
+
+    return { isValid: true, errorMessage: '' };
+  }
+
   async submitOrder() {
     console.log('🔍 قبل تعيين credit_amount:', {
       credit_amountt: this.credit_amountt,
@@ -2649,40 +2717,21 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.isLoading = true;
     this.loading = true;
 
-    // 🔒 التحقق من paymentError قبل المتابعة
-    if (this.paymentError && this.paymentError.trim() !== '') {
+    // ✅ التحقق الشامل من المبالغ المدفوعة قبل المتابعة
+    const paymentValidation = this.validatePaymentAmounts();
+    if (!paymentValidation.isValid) {
       this.isLoading = false;
       this.loading = false;
-      this.falseMessage = this.paymentError;
-      console.error('❌ خطأ في المبلغ المدخل:', this.paymentError);
+      this.amountError = true;
+      this.paymentError = paymentValidation.errorMessage;
+      this.falseMessage = paymentValidation.errorMessage;
+      console.error('❌ خطأ في التحقق من المبالغ المدفوعة:', paymentValidation.errorMessage);
       setTimeout(() => {
+        this.amountError = false;
         this.falseMessage = '';
         this.paymentError = '';
       }, 3500);
       return;
-    }
-
-    // 🔒 التحقق من مبلغ الفيزا إذا كانت طريقة الدفع فيزا
-    if (this.selectedPaymentStatus === 'paid' && this.selectedPaymentMethod === 'credit') {
-      const cartTotal = this.finalTipSummary?.billAmount ?? this.getCartTotal();
-      const creditAmount = Number(this.credit_amountt) || 0;
-
-      if (creditAmount > 0 && creditAmount < cartTotal) {
-        this.isLoading = false;
-        this.loading = false;
-        this.amountError = true;
-        this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${cartTotal.toFixed(2)} ${this.currencySymbol}`;
-        console.error('❌ خطأ في التحقق من مبلغ الفيزا في بداية submitOrder:', {
-          creditAmount,
-          cartTotal,
-          credit_amountt: this.credit_amountt
-        });
-        setTimeout(() => {
-          this.amountError = false;
-          this.falseMessage = '';
-        }, 3500);
-        return;
-      }
     }
 
     // التحقق الأساسي
@@ -3000,7 +3049,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           // 🔒 التحقق من أن مبلغ الكاش لا يقل عن الإجمالي
           if (cashAmount < billAmount) {
             this.amountError = true;
+            this.isLoading = false;
+            this.loading = false;
             this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmount} ${this.currencySymbol}`;
+            this.paymentError = this.falseMessage;
+            setTimeout(() => {
+              this.amountError = false;
+              this.falseMessage = '';
+              this.paymentError = '';
+            }, 3500);
             return;
           }
 
@@ -3061,7 +3118,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
             if (totalPaid < billAmount) {
               this.amountError = true;
+              this.isLoading = false;
+              this.loading = false;
               this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmount} ${this.currencySymbol}`;
+              this.paymentError = this.falseMessage;
+              setTimeout(() => {
+                this.amountError = false;
+                this.falseMessage = '';
+                this.paymentError = '';
+              }, 3500);
               return;
             }
           }
@@ -3080,14 +3145,20 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
             if (creditAmount < billAmountNum) {
               this.amountError = true;
-              this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountNum.toFixed(2)} ${this.currencySymbol}`;
               this.isLoading = false;
               this.loading = false;
+              this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountNum.toFixed(2)} ${this.currencySymbol}`;
+              this.paymentError = this.falseMessage;
               console.error('❌ خطأ في التحقق من مبلغ الفيزا مع finalTipSummary:', {
                 creditAmount,
                 billAmount: billAmountNum,
                 grandTotalWithTip: this.finalTipSummary.grandTotalWithTip
               });
+              setTimeout(() => {
+                this.amountError = false;
+                this.falseMessage = '';
+                this.paymentError = '';
+              }, 3500);
               return; // ❌ منع المتابعة إذا كان المبلغ غير كافي
             }
 
@@ -3110,12 +3181,20 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             // إذا تم إدخال مبلغ وكان أقل من الإجمالي، منع التنفيذ
             if (enteredCreditAmount > 0 && enteredCreditAmount < billAmountNum) {
               this.amountError = true;
+              this.isLoading = false;
+              this.loading = false;
               this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountNum.toFixed(2)} ${this.currencySymbol}`;
+              this.paymentError = this.falseMessage;
               console.error('❌ خطأ في التحقق من مبلغ الفيزا:', {
                 enteredCreditAmount,
                 billAmountNum,
                 credit_amountt: this.credit_amountt
               });
+              setTimeout(() => {
+                this.amountError = false;
+                this.falseMessage = '';
+                this.paymentError = '';
+              }, 3500);
               return;
             }
 
@@ -3143,7 +3222,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           const billAmountFinal = Number((billAmount || 0).toFixed(2));
           if (totalPaidFinal < billAmountFinal) {
             this.amountError = true;
+            this.isLoading = false;
+            this.loading = false;
             this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountFinal} ${this.currencySymbol}`;
+            this.paymentError = this.falseMessage;
+            setTimeout(() => {
+              this.amountError = false;
+              this.falseMessage = '';
+              this.paymentError = '';
+            }, 3500);
             return;
           }
         }
@@ -5471,39 +5558,24 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       clientPhone: this.clientPhone,
       selectedCountryCode: this.selectedCountry.code
     };
+    
     // Save to localStorage
     localStorage.setItem('client', this.client);
     localStorage.setItem('clientPhone', this.clientPhone);
     localStorage.setItem('selectedCountryCode', this.selectedCountry.code);
 
-    // Save to IndexedDB
-    // this.dbService.saveClientInfo(clientInfo).then(id => {
-    //   console.log('✅ Client info saved to IndexedDB with ID:', id);
+    // ✅ Update stored values to display immediately
+    this.clientStoredInLocal = this.client;
+    this.clientPhoneStoredInLocal = this.clientPhone;
 
-    //   this.clientStoredInLocal = this.client;
-    //   this.clientPhoneStoredInLocal = this.clientPhone;
-
-    //   // Simulate async saving
-    //   setTimeout(() => {
-    //     this.isLoading = false;
-    //     this.clientInfoApplied = true; // ✅ show info now
-
-    //     // Optionally close modal here
-    //     this.closeModal();
-    //   }, 500);
-    // }).catch(err => {
-    //   console.error('❌ Error saving client info to IndexedDB:', err);
-
-    //   // Fallback: Continue even if IndexedDB fails
-    //   this.clientStoredInLocal = this.client;
-    //   this.clientPhoneStoredInLocal = this.clientPhone;
-
-    //   setTimeout(() => {
-    //     this.isLoading = false;
-    //     this.clientInfoApplied = true;
-    //     this.closeModal();
-    //   }, 500);
-    // });
+    // ✅ Simulate async saving (for better UX)
+    setTimeout(() => {
+      this.isLoading = false;
+      this.clientInfoApplied = true;
+      
+      // ✅ Close the modal after saving
+      this.closeModal();
+    }, 300);
   }
 
   clearClientInfo() {

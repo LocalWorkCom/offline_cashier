@@ -354,7 +354,7 @@
                 </div>
                 }
 
-                @if(selectedPaymentMethod === 'credit' && this.credit_value && this.credit_value > 0){
+                @if(selectedPaymentMethod === 'credit'){
                 <hr class="my-3">
                 <div class="mb-0 row mx-0 justify-content-center align-items-center">
                   <div class="col-12 text-center mb-2">
@@ -493,7 +493,7 @@
         <h5 class="mb-0" *ngIf="invoices[0]?.transactions?.length == 1">
           <span class="badge bg-success text-white">
             الدفع :
-            {{ invoices[0]?.transactions[0].payment_method === "credit" ? "فيزا" : "كاش" }}
+            {{ invoices[0]?.transactions?.length > 1 ? "كاش" : (invoices[0]?.transactions[0]?.payment_method === "credit" ? "فيزا" : "كاش") }}
           </span>
         </h5>
 
@@ -809,9 +809,11 @@
               <span class="mb-0">طريقة الدفع:</span>
               <span class="mb-0">
                 {{
-                invoices[0]?.transactions[0].payment_method === "credit"
+                invoices[0]?.transactions?.length > 1
+                ? "كاش"
+                : (invoices[0]?.transactions[0]?.payment_method === "credit"
                 ? "الفيزا"
-                : "كاش"
+                : "كاش")
                 }}
               </span>
             </div>
