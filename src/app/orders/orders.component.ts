@@ -261,7 +261,7 @@ export class OrdersComponent implements OnDestroy {
       .filter(
         (order: any) =>
           this.allowedOrderTypes.includes(order.order_details?.order_type) &&
-          (this.allowedStatuses.includes(order.order_details?.status) || 
+          (this.allowedStatuses.includes(order.order_details?.status) ||
            order.order_details?.status === 'packing') // Allow packing status
       )
       .map((order: any) => {
@@ -270,12 +270,12 @@ export class OrdersComponent implements OnDestroy {
           ...order,
           currency_symbol: this.currencySymbol,
         };
-        
+
         // Map packing to pending for frontend
         if (processedOrder.order_details?.status === 'packing') {
           processedOrder.order_details.status = 'pending';
         }
-        
+
         return processedOrder;
       });
 
@@ -2394,9 +2394,12 @@ export class OrdersComponent implements OnDestroy {
     const cashValue = Number(totalCash);
     const creditValue = Number(totalCredit);
     const orderPrice = Number(order.total_price);
-    if(order.details_order?.transactions?.[0]?.payment_method === 'credit') {
+    if(order.details_order?.transactions?.[0]?.payment_method == 'credit') {
+      console.log('creditdalia');
       return !isNaN(creditValue) && !isNaN(orderPrice) && (creditValue > orderPrice || cashValue > orderPrice);
     }
+        console.log('cashdalia');
+
     return !isNaN(cashValue) && !isNaN(orderPrice) && cashValue > orderPrice ;
   }
 
@@ -2545,7 +2548,7 @@ export class OrdersComponent implements OnDestroy {
       const modalInstance = bootstrap.Modal.getInstance(modalElement);
       modalInstance?.hide();
     }
-    
+
     setTimeout(() => {
       const itemsModal = document.getElementById('splitOrderItemsModal');
       if (itemsModal) {
@@ -2562,7 +2565,7 @@ export class OrdersComponent implements OnDestroy {
       const modalInstance = bootstrap.Modal.getInstance(modalElement);
       modalInstance?.hide();
     }
-    
+
     setTimeout(() => {
       const tableModal = document.getElementById('splitOrderModal');
       if (tableModal) {
@@ -2641,7 +2644,7 @@ export class OrdersComponent implements OnDestroy {
       const modalInstance = bootstrap.Modal.getInstance(modalElement);
       modalInstance?.hide();
     }
-    
+
     setTimeout(() => {
       const confirmModal = document.getElementById('splitOrderConfirmationModal');
       if (confirmModal) {
@@ -2658,7 +2661,7 @@ export class OrdersComponent implements OnDestroy {
       const modalInstance = bootstrap.Modal.getInstance(modalElement);
       modalInstance?.hide();
     }
-    
+
     setTimeout(() => {
       const itemsModal = document.getElementById('splitOrderItemsModal');
       if (itemsModal) {
@@ -2730,7 +2733,7 @@ export class OrdersComponent implements OnDestroy {
       const modalInstance = bootstrap.Modal.getInstance(modalElement);
       modalInstance?.hide();
     }
-    
+
     setTimeout(() => {
       const confirmModal = document.getElementById('mergeOrderConfirmationModal');
       if (confirmModal) {
@@ -2753,7 +2756,7 @@ export class OrdersComponent implements OnDestroy {
       const errorModalInstance = bootstrap.Modal.getInstance(errorModal);
       errorModalInstance?.hide();
     }
-    
+
     setTimeout(() => {
       const selectModal = document.getElementById('mergeOrderModal');
       if (selectModal) {
@@ -2859,7 +2862,7 @@ export class OrdersComponent implements OnDestroy {
       const firstItem = this.mergeOrderItems[0];
       const isFromCurrentOrder = firstItem.sourceOrder === 'current';
       const isFromSelectedOrder = firstItem.sourceOrder === 'selected';
-      
+
       // Check if items match current selection
       if (isFromCurrentOrder || isFromSelectedOrder) {
         return this.mergeOrderItems;
@@ -2952,7 +2955,7 @@ export class OrdersComponent implements OnDestroy {
               const modalInstance = bootstrap.Modal.getInstance(confirmModal);
               modalInstance?.hide();
             }
-            
+
             // Show success modal
             setTimeout(() => {
               const successModal = document.getElementById('splitSuccessModal');
@@ -2968,7 +2971,7 @@ export class OrdersComponent implements OnDestroy {
         },
         error: (err: any) => {
           this.isSplitSubmitting = false;
-          
+
           // Handle 401 Unauthorized
           if (err.status === 401) {
             this.splitErrorMessage = 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى';
@@ -2976,7 +2979,7 @@ export class OrdersComponent implements OnDestroy {
             // this.router.navigate(['/login']);
             return;
           }
-          
+
           const errorMsg =
             err.error?.message ||
             err.error?.errorData?.error ||
@@ -3011,7 +3014,7 @@ export class OrdersComponent implements OnDestroy {
         const modalInstance = bootstrap.Modal.getInstance(confirmModal);
         modalInstance?.hide();
       }
-      
+
       setTimeout(() => {
         const errorModal = document.getElementById('mergeErrorModal');
         if (errorModal) {
@@ -3052,7 +3055,7 @@ export class OrdersComponent implements OnDestroy {
               const modalInstance = bootstrap.Modal.getInstance(confirmModal);
               modalInstance?.hide();
             }
-            
+
             // Show success modal
             setTimeout(() => {
               const successModal = document.getElementById('mergeSuccessModal');
@@ -3068,7 +3071,7 @@ export class OrdersComponent implements OnDestroy {
         },
         error: (err: any) => {
           this.isMergeSubmitting = false;
-          
+
           // Handle 401 Unauthorized
           if (err.status === 401) {
             this.mergeErrorMessage = 'انتهت صلاحية الجلسة. يرجى تسجيل الدخول مرة أخرى';
@@ -3076,14 +3079,14 @@ export class OrdersComponent implements OnDestroy {
             // this.router.navigate(['/login']);
             return;
           }
-          
+
           const errorMsg =
             err.error?.message ||
             err.error?.errorData?.error ||
             err.message ||
             'حدث خطأ أثناء الإرسال';
           this.mergeErrorMessage = Array.isArray(errorMsg) ? errorMsg[0] : errorMsg;
-          
+
           // Show error modal if payment status conflict
           if (errorMsg.includes('مدفوع') || errorMsg.includes('unpaid') || errorMsg.includes('paid')) {
             const confirmModal = document.getElementById('mergeOrderConfirmationModal');
@@ -3091,7 +3094,7 @@ export class OrdersComponent implements OnDestroy {
               const modalInstance = bootstrap.Modal.getInstance(confirmModal);
               modalInstance?.hide();
             }
-            
+
             setTimeout(() => {
               const errorModal = document.getElementById('mergeErrorModal');
               if (errorModal) {

@@ -636,7 +636,7 @@
                         </div>
                         }
                         <!-- choose payment method if order.order_details.transactions[0].payment_method is credit-->
-                        @if (order.details_order?.transactions?.[0]?.payment_method === 'cash')
+                        @if (order.details_order?.transactions?.[0]?.payment_method === 'credit')
                         {
                           <div class="mt-3">
                             <label for="paymentMethod" class="form-label fw-bold"> اختر طريقة الدفع </label>
@@ -768,7 +768,7 @@
       </div>
       <div class="modal-body">
         <p class="text-muted mb-4">اختر طاولة فارغة لنقل العناصر المحددة إليها</p>
-        
+
         <!-- Filter and Legend Row -->
         <div class="d-flex justify-content-between align-items-start mb-4">
           <!-- Status Indicators (Legend) - Left Side -->
@@ -789,8 +789,8 @@
 
           <!-- Location Filter Tabs - Right Side -->
           <div class="d-flex gap-2 flex-wrap">
-            <button 
-              type="button" 
+            <button
+              type="button"
               class="btn rounded-pill px-3 py-2"
               [class.btn-danger]="selectedLocationFilter === 'all'"
               [class.text-white]="selectedLocationFilter === 'all'"
@@ -799,8 +799,8 @@
               (click)="filterTablesByLocation('all')">
               الكل
             </button>
-            <button 
-              type="button" 
+            <button
+              type="button"
               class="btn rounded-pill px-3 py-2"
               [class.btn-danger]="selectedLocationFilter === 'main'"
               [class.text-white]="selectedLocationFilter === 'main'"
@@ -809,8 +809,8 @@
               (click)="filterTablesByLocation('main')">
               الصالة الرئيسية
             </button>
-            <button 
-              type="button" 
+            <button
+              type="button"
               class="btn rounded-pill px-3 py-2"
               [class.btn-danger]="selectedLocationFilter === 'terrace'"
               [class.text-white]="selectedLocationFilter === 'terrace'"
@@ -819,8 +819,8 @@
               (click)="filterTablesByLocation('terrace')">
               التراس الخارجي
             </button>
-            <button 
-              type="button" 
+            <button
+              type="button"
               class="btn rounded-pill px-3 py-2"
               [class.btn-danger]="selectedLocationFilter === 'upper'"
               [class.text-white]="selectedLocationFilter === 'upper'"
@@ -829,8 +829,8 @@
               (click)="filterTablesByLocation('upper')">
               الطابق العلوي
             </button>
-            <button 
-              type="button" 
+            <button
+              type="button"
               class="btn rounded-pill px-3 py-2"
               [class.btn-danger]="selectedLocationFilter === 'family'"
               [class.text-white]="selectedLocationFilter === 'family'"
@@ -845,7 +845,7 @@
         <!-- Table Grid -->
         <div class="row g-3 mb-4" style="max-height: 450px; overflow-y: auto;">
           <div class="col-6 col-md-4 col-lg-3" *ngFor="let table of filteredTablesForSplit">
-            <div class="card p-3 text-center position-relative" 
+            <div class="card p-3 text-center position-relative"
                  [class.border-danger]="selectedTableIdForSplit == table.id"
                  [class.border-3]="selectedTableIdForSplit == table.id"
                  [class.border]="selectedTableIdForSplit != table.id"
@@ -871,7 +871,7 @@
               </div>
               <!-- Main Table Icon -->
               <div class="d-flex flex-column align-items-center justify-content-center flex-grow-1 pt-3">
-                <i class="fa-solid fa-chair mb-2" 
+                <i class="fa-solid fa-chair mb-2"
                    [class.text-danger]="selectedTableIdForSplit == table.id"
                    [class.text-warning]="table.status === 2 && selectedTableIdForSplit != table.id"
                    [class.text-secondary]="table.status === 1 && selectedTableIdForSplit != table.id"
@@ -964,19 +964,19 @@
                     <span *ngIf="item.selectedQuantity > 0" class="fw-bold">{{ (item.total_dish_price / item.quantity * item.selectedQuantity).toFixed(2) }}</span>
                   </div>
                   <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-sm" 
+                    <button class="btn btn-sm"
                             [class.btn-danger]="item.selectedQuantity > 0"
                             [class.btn-outline-secondary]="item.selectedQuantity === 0"
                             (click)="decreaseSplitQuantity(item)"
                             [disabled]="item.selectedQuantity === 0">
                       <i class="fa-solid fa-minus"></i>
                     </button>
-                    <input type="number" class="form-control form-control-sm text-center" 
-                           [(ngModel)]="item.selectedQuantity" 
-                           [min]="0" 
+                    <input type="number" class="form-control form-control-sm text-center"
+                           [(ngModel)]="item.selectedQuantity"
+                           [min]="0"
                            [max]="item.quantity"
                            style="width: 60px;">
-                    <button class="btn btn-sm" 
+                    <button class="btn btn-sm"
                             [class.btn-danger]="item.selectedQuantity > 0"
                             [class.btn-outline-secondary]="item.selectedQuantity === 0"
                             (click)="increaseSplitQuantity(item)"
@@ -1018,7 +1018,7 @@
       </div>
       <div class="modal-body">
         <p class="text-muted mb-4">يرجى مراجعة تفاصيل التجزئة قبل التأكيد</p>
-        
+
         <div class="row">
           <div class="col-md-6">
             <div class="border rounded p-3">
@@ -1106,16 +1106,16 @@
           <div *ngIf="eligibleOrdersForMerge.length === 0" class="text-muted text-center py-4">
             لا توجد طلبات متاحة للدمج
           </div>
-          <div *ngFor="let order of eligibleOrdersForMerge" 
+          <div *ngFor="let order of eligibleOrdersForMerge"
                class="border rounded p-3 mb-3 cursor-pointer"
                [class.border-danger]="selectedOrderIdForMerge === order.order_details.order_id"
                [class.bg-light]="selectedOrderIdForMerge === order.order_details.order_id"
                (click)="selectOrderForMerge(order.order_details.order_id)">
             <div class="form-check">
-              <input class="form-check-input" type="radio" name="mergeOrderSelect" 
+              <input class="form-check-input" type="radio" name="mergeOrderSelect"
                      [id]="'merge-order-' + order.order_details.order_id"
-                     [value]="order.order_details.order_id" 
-                     [(ngModel)]="selectedOrderIdForMerge" 
+                     [value]="order.order_details.order_id"
+                     [(ngModel)]="selectedOrderIdForMerge"
                      (ngModelChange)="onMergeOrderSelectionChange()">
               <label class="form-check-label w-100" [for]="'merge-order-' + order.order_details.order_id">
                 <div class="d-flex justify-content-between align-items-center">
@@ -1248,7 +1248,7 @@
         <p class="text-muted mb-4">
           تم إنشاء طلب جديد ونقل العناصر المختارة إليه. يمكنك الآن متابعة العمل على أي من الطلبين.
         </p>
-        
+
         <div class="row mb-4">
           <div class="col-6">
             <div class="border rounded p-2">
@@ -1304,7 +1304,7 @@
         <p class="text-muted mb-4">
           تم دمج الطلب الثانوي وإغلاقه. تم تحديث الطلب الرئيسي بالعناصر الجديدة بنجاح.
         </p>
-        
+
         <div class="row mb-4">
           <div class="col-6">
             <div class="border rounded p-2">
@@ -1352,7 +1352,7 @@
         <p class="text-muted mb-4">
           {{ mergeErrorMessage || 'لا يمكن إتمام عملية الدمج لوجود تعارض في نوع الطلبات. لا يمكن دمج طلبات مدفوعة مع طلبات غير مدفوعة.' }}
         </p>
-        
+
         <div class="border rounded p-3 mb-4">
           <h6 class="fw-bold mb-3">الطلبات المتعارضة</h6>
           <div class="d-flex justify-content-between align-items-center mb-2">
@@ -1362,7 +1362,7 @@
                 {{ currentMergeOrder?.order_details?.order_type === 'dine-in' ? 'طاولة ' + currentMergeOrder?.order_details?.table_number : 'بدون طاولة' }}
               </div>
             </div>
-            <span class="badge" [class.bg-success]="currentMergeOrder?.order_details?.payment_status === 'paid'" 
+            <span class="badge" [class.bg-success]="currentMergeOrder?.order_details?.payment_status === 'paid'"
                   [class.bg-danger]="currentMergeOrder?.order_details?.payment_status === 'unpaid'">
               {{ currentMergeOrder?.order_details?.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع' }}
             </span>
@@ -1374,7 +1374,7 @@
                 {{ getSecondaryMergeOrder()?.order_details?.order_type === 'dine-in' ? 'طاولة ' + getSecondaryMergeOrder()?.order_details?.table_number : 'بدون طاولة' }}
               </div>
             </div>
-            <span class="badge" [class.bg-success]="getSecondaryMergeOrder()?.order_details?.payment_status === 'paid'" 
+            <span class="badge" [class.bg-success]="getSecondaryMergeOrder()?.order_details?.payment_status === 'paid'"
                   [class.bg-danger]="getSecondaryMergeOrder()?.order_details?.payment_status === 'unpaid'">
               {{ getSecondaryMergeOrder()?.order_details?.payment_status === 'paid' ? 'مدفوع' : 'غير مدفوع' }}
             </span>
