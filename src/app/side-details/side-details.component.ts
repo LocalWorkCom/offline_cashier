@@ -1440,62 +1440,31 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     if (!this.branchData) return 0;
 
     const taxEnabled = this.branchData.tax_application;
-    const couponEnabled = this.branchData.coupon_application;
-    const couponPercentage = this.appliedCoupon?.value_type;
-
-    // Step 1: Calculate subtotal from cart items
-    const rawSubtotal = this.getTotal();
-
-    let subtotal;
-    if (!couponEnabled && !taxEnabled && this.appliedCoupon) {
-      subtotal = this.appliedCoupon?.amount_after_coupon;
-    } else {
-      subtotal = rawSubtotal;
-    }
-
-    let taxAmount = 0;
-
-    // Step 2: Calculate tax if tax is disabled (weird condition?)
-    if (!taxEnabled) {
-      // taxAmount = this.getTotalAfterServices() * (this.branchData.tax_percentage / 100);
-      taxAmount = this.getTax();
-      /*       console.log('Subtotal before tax:', subtotal);
-            console.log('Calculated taxAmount:', taxAmount); */
-    }
-    // if (this.discountAmount) {
-    //   if (taxEnabled && !couponEnabled) {
-    //     subtotal = this.getTotal() - this.discountAmount; // getTax already includes tax
-    //   } else {
-    //     subtotal = this.getTotal() + this.discountAmount;
-    //     console.log('Subtotal after coupon:', subtotal);
-    //   }
-    // }
-    // Step 3: Apply coupon
-    if (this.appliedCoupon && this.validCoupon && localStorage.getItem('selectedOrderType') !== 'talabat') {
-      if (taxEnabled && !couponEnabled && couponPercentage === 'percentage') {
-        subtotal = this.appliedCoupon.amount_after_coupon + this.getTax(); // getTax already includes tax
-      } else {
-        subtotal = this.appliedCoupon.amount_after_coupon;
-        // console.log('Subtotal after coupon:', subtotal);
-      }
-
-    } else {
-      this.getTax();
-      subtotal = this.getTotal();
-      // console.log(subtotal, "tttttttttttt");
-
-    }
-    // Step 4: Ensure subtotal is not negative
-    // subtotal = Math.max(subtotal, 0);
-    subtotal = parseFloat(subtotal.toFixed(2));
-    // Step 5: Calculate service fee (based on raw subtotal only)
-    let serviceFee = 0;
-    if (
+    const isDineIn =
       this.selectedOrderType === 'في المطعم' ||
       this.selectedOrderType === 'dine-in' ||
-      this.currentOrderData?.order_details?.order_type === 'dine-in'
-    ) {
-      if (!couponEnabled && !taxEnabled && this.appliedCoupon) {
+      this.currentOrderData?.order_details?.order_type === 'dine-in';
+    const isDelivery =
+      this.selectedOrderType === 'توصيل' ||
+      this.selectedOrderType === 'Delivery' ||
+      this.currentOrderData?.order_details?.order_type === 'Delivery';
+    const isTalabat =
+      this.selectedOrderType === 'talabat' || this.selectedOrderType === 'طلبات';
+
+    // According to User Story 17: Fixed calculation order
+    // Step 1: Get Product Value (BEFORE discount)
+    const productValueBeforeDiscount = this.getTotal();
+
+    // Step 2: Apply Discount/Coupon (if any)
+    let productValueAfterDiscount = productValueBeforeDiscount;
+    if (this.appliedCoupon && this.validCoupon && !isTalabat) {
+      productValueAfterDiscount = this.appliedCoupon.amount_after_coupon || productValueBeforeDiscount;
+    }
+
+    // Step 3: Calculate Service Charge (12% on product value AFTER discount)
+    let serviceFee = 0;
+    if (isDineIn) {
+      if (this.appliedCoupon && this.validCoupon) {
         serviceFee = this.getServiceOnAmountAfterCoupon();
       } else {
         serviceFee = this.getServiceFeeAmount();
@@ -1503,106 +1472,85 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
     serviceFee = parseFloat(serviceFee.toFixed(2));
 
-    // Step 6: Delivery fee
-    let deliveryFee = 0;
-    if (
-      this.selectedOrderType === 'توصيل' ||
-      this.selectedOrderType === 'Delivery' ||
-      this.currentOrderData?.order_details?.order_type === 'Delivery'
-    ) {
+    // Step 4: Calculate VAT (14% on Product Value BEFORE Discount + Service Charge)
+    let taxAmount = 0;
+    if (!isTalabat) {
+      taxAmount = this.getTax();
+    }
+    taxAmount = parseFloat(taxAmount.toFixed(3));
 
-      console.log("rfdewrewrwe");
+    // Step 5: Calculate Delivery Fee (if applicable)
+    let deliveryFee = 0;
+    if (isDelivery) {
       deliveryFee = this.delivery_fees;
+      
+      // Special case: 100% coupon on order removes delivery fee
+      if (this.appliedCoupon &&
+          this.appliedCoupon.coupon_value == '100.00' &&
+          this.appliedCoupon.value_type == 'percentage' &&
+          this.appliedCoupon.coupon_apply_type == 'order') {
+        deliveryFee = 0;
+      }
     }
     deliveryFee = parseFloat(deliveryFee.toFixed(2));
 
-    if ((this.selectedOrderType === 'توصيل' || this.selectedOrderType === 'Delivery') && (this.appliedCoupon) && (this.appliedCoupon.coupon_value == '100.00' && this.appliedCoupon.value_type == 'percentage') && (this.appliedCoupon.coupon_apply_type == 'order')
-    ) {
-      deliveryFee = 0
-      console.log(this.appliedCoupon, "ffff");
-
-    }
-    // Step 7: Final total calculation
-    let total = 0;
-
-    if (!taxEnabled && !this.appliedCoupon) {
-      total =
-        subtotal +
-        taxAmount +
-        serviceFee +
-        deliveryFee; /*  console.log(subtotal, taxAmount, serviceFee, deliveryFee); */
-      /*       console.log(total, 'first');
-       */
-    } else if (!taxEnabled && couponEnabled) {
-      total = subtotal + serviceFee + deliveryFee;
-      // console.log(total, 'second');
+    // Step 6: Calculate Final Total
+    // Final Total = Product Value After Discount + Service Charge + VAT + Delivery Fee
+    let finalTotal = 0;
+    if (isTalabat) {
+      finalTotal = productValueAfterDiscount;
     } else {
-      total = subtotal + taxAmount + serviceFee + deliveryFee;
-      // console.log(total, 'third', subtotal, taxAmount, serviceFee, deliveryFee);
+      finalTotal = productValueAfterDiscount + serviceFee + taxAmount + deliveryFee;
     }
-    if ((this.selectedOrderType === 'talabat' || this.selectedOrderType === 'طلبات')) {
-      console.log(this.selectedOrderType, "talabat");
-      console.log(subtotal, "subtotal");
-      total = subtotal;
-    }
-    const finalTotal = total > 0 ? parseFloat(total.toFixed(2)) : 0;
 
-    // ✅ تحديث مبلغ الدفع تلقائياً عند أي تغيير في المجموع الكلي
-    // setTimeout(() => {
-    //   this.cashPaymentInput = finalTotal;
-    //   this.cdr.detectChanges();
-    // }, 0);
-    return finalTotal;
-
+    return parseFloat(finalTotal.toFixed(2));
   }
 
   getServiceOnAmountAfterCoupon(): number {
+    if (!this.branchData) return 0;
+    
     const serviceType = this.branchData.service_fees_type;
     const serviceValue = this.branchData.service_fees;
-    const subTotal = this.appliedCoupon?.amount_after_coupon;
+    
+    // Get product value after discount (from coupon)
+    const productValueAfterDiscount = this.appliedCoupon?.amount_after_coupon || this.getTotal();
+    
+    // Calculate service fee on product value after discount
     let serviceFee = 0;
     if (serviceType === 'percentage') {
-      serviceFee = (subTotal * serviceValue) / 100;
+      serviceFee = (productValueAfterDiscount * serviceValue) / 100;
     } else {
       serviceFee = serviceValue;
     }
-    // ✅ إضافة الـ Round هنا أيضاً
+    
+    // Round to 2 decimal places
     serviceFee = Math.round(serviceFee * 100) / 100;
-
     return serviceFee;
   }
   getServiceFeeAmount(): number {
     if (!this.branchData) return 0;
 
-    const taxEnabled = this.branchData.tax_application;
     const serviceType = this.branchData.service_fees_type;
     const serviceValue = this.branchData.service_fees;
-    const taxPercentage: number =
-      parseFloat(this.branchData?.tax_percentage) || 0;
 
-    // Step 1: Get total of cart items (before any discount or tax)
-    let cartSubtotal = this.getTotal();
-    /*     console.log(cartSubtotal);
-     */ // Step 2: Determine base amount for service fee
-    let baseAmount = cartSubtotal;
-
-    if (taxEnabled && serviceType === 'percentage') {
-      // When tax is enabled and service fee is percentage → apply on subtotal before tax
-      baseAmount = this.cartItems.reduce((total, item) => {
-        const priceBeforeTax =
-          this.getItemTotal(item) / (1 + taxPercentage / 100);
-        return total + priceBeforeTax;
-      }, 0);
-      // console.log(baseAmount);
+    // According to requirements: Service Charge = Product Value After Discount × 12%
+    // Step 1: Get product value AFTER discount
+    let productValueAfterDiscount = this.getTotal();
+    
+    // If coupon is applied, use the discounted amount
+    if (this.appliedCoupon && this.validCoupon) {
+      productValueAfterDiscount = this.appliedCoupon.amount_after_coupon || this.getTotal();
     }
 
-    // Step 3: Calculate service fee
+    // Step 2: Calculate service fee on product value after discount
     let serviceFee = 0;
     if (serviceType === 'percentage') {
-      serviceFee = (baseAmount * serviceValue) / 100;
+      serviceFee = (productValueAfterDiscount * serviceValue) / 100;
     } else {
       serviceFee = serviceValue;
     }
+    
+    // Round to 2 decimal places
     serviceFee = Math.round(serviceFee * 100) / 100;
     return serviceFee;
   }
@@ -1640,46 +1588,43 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   getTax(): number {
     if (!this.branchData) return 0;
     const taxEnabled = this.branchData.tax_application;
-    const couponEnabled = this.branchData.coupon_application;
-    const taxPercentage = this.branchData.tax_percentage ?? 10;
+    const taxPercentage = parseFloat(this.branchData.tax_percentage) || 14;
     const isDineIn =
       this.selectedOrderType === 'في المطعم' ||
       this.selectedOrderType === 'dine-in' ||
       this.currentOrderData?.order_details?.order_type === 'dine-in';
-    const isDeliveryOrder =
-      this.selectedOrderType === 'توصيل' ||
-      this.selectedOrderType === 'Delivery' ||
-      this.currentOrderData?.order_details?.order_type === 'Delivery';
 
-    let subtotal;
+    // According to Egyptian VAT law: VAT = (Product Value AFTER Discount + Service Charge) × 14%
+    // Step 1: Get product value AFTER discount
+    let productValueAfterDiscount = this.getTotal();
     if (this.appliedCoupon && this.validCoupon) {
-      subtotal = this.appliedCoupon?.amount_after_coupon;
-      // console.log(subtotal, 'hhhh');
-    } else if ((subtotal = isDineIn)) {
-      subtotal = isDineIn ? this.getTotalAfterServices() : this.getTotal();
-    } else {
-      subtotal = this.getTotal();
+      productValueAfterDiscount = this.appliedCoupon.amount_after_coupon || this.getTotal();
     }
+    
+    // Step 2: Get service charge (calculated on product value AFTER discount)
+    let serviceCharge = 0;
+    if (isDineIn) {
+      if (this.appliedCoupon && this.validCoupon) {
+        serviceCharge = this.getServiceOnAmountAfterCoupon();
+      } else {
+        serviceCharge = this.getServiceFeeAmount();
+      }
+    }
+
+    // Step 3: Calculate VAT base = Product Value AFTER Discount + Service Charge
+    const vatBase = productValueAfterDiscount + serviceCharge;
+
+    // Step 4: Calculate VAT amount
     let taxAmount = 0;
-
-    if (this.branchData.tax_application === true) {
-      taxAmount = subtotal - subtotal / (1 + taxPercentage / 100);
+    if (taxEnabled) {
+      // Tax included in price: extract tax from total
+      taxAmount = vatBase - vatBase / (1 + taxPercentage / 100);
     } else {
-      if (isDineIn && this.appliedCoupon && this.validCoupon) {
-        subtotal =
-          this.appliedCoupon?.amount_after_coupon +
-          this.getServiceOnAmountAfterCoupon();
-      }
-      if (isDeliveryOrder && this.appliedCoupon && this.validCoupon) {
-        const deliveryFees = this.delivery_fees;
-        subtotal = this.appliedCoupon?.amount_after_coupon;
-      }
-
-      taxAmount = (subtotal * taxPercentage) / 100;
-      /*       console.log(taxAmount, 'here');
-       */
+      // Tax added to price: calculate tax on base
+      taxAmount = (vatBase * taxPercentage) / 100;
     }
-    return parseFloat(taxAmount.toFixed(2));
+
+    return parseFloat(taxAmount.toFixed(3));
   }
 
   getTotalItemCount(): number {
@@ -6336,5 +6281,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   // Helper method to ensure values are never negative (same as cart)
   getMaxZero(value: number): number {
     return Math.max(0, value);
+  }
+
+  roundUpToTwoDecimals(value: number): number {
+    return Math.ceil(value * 100) / 100;
   }
 }
