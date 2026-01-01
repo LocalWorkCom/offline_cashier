@@ -2395,10 +2395,10 @@ export class OrdersComponent implements OnDestroy {
     const creditValue = Number(totalCredit);
     const orderPrice = Number(order.total_price);
     if(order.details_order?.transactions?.[0]?.payment_method == 'credit') {
-      console.log('creditdalia');
+      // console.log('creditdalia');
       return !isNaN(creditValue) && !isNaN(orderPrice) && (creditValue > orderPrice || cashValue > orderPrice);
     }
-        console.log('cashdalia');
+        // console.log('cashdalia');
 
     return !isNaN(cashValue) && !isNaN(orderPrice) && cashValue > orderPrice ;
   }
