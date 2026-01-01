@@ -628,50 +628,64 @@ export class PillEditComponent {
     const summary = this.invoices?.[0]?.invoice_summary;
     if (!summary) return;
   
-    // حفظ القيم الأصلية
-    const subtotalBefore = Number(summary.subtotal_price_before_coupon ?? summary.total_price ?? 0);
+    // According to User Story 17: Fixed calculation order
+    // Step 1: Get Product Value (BEFORE discount)
+    const productValueBeforeDiscount = Number(summary.subtotal_price_before_coupon ?? summary.total_price ?? 0);
     const servicePerc = Number(summary.service_percentage || 0);
     const serviceFixed = Number(summary.service_fees || 0);
     const taxPerc = Number(summary.tax_percentage || 0);
+    const taxApplication = summary.tax_application ?? false;
     const deliveryFees = Number(summary.delivery_fees || 0);
     
-    // حساب المبلغ بعد الخصم
-    const discountValue = Math.min(discount, subtotalBefore);
-    let subtotalAfterDiscount = subtotalBefore - discountValue;
+    // Step 2: Apply Discount/Coupon
+    const discountValue = Math.min(discount, productValueBeforeDiscount);
+    const productValueAfterDiscount = productValueBeforeDiscount - discountValue;
     
-    // إضافة رسوم الخدمة (نسبة أو مبلغ ثابت)
+    // Step 3: Calculate Service Charge (on product value AFTER discount)
     let serviceAmount = 0;
     if (servicePerc > 0) {
-      serviceAmount = (subtotalAfterDiscount * servicePerc) / 100;
+      serviceAmount = (productValueAfterDiscount * servicePerc) / 100;
     } else {
       serviceAmount = serviceFixed;
     }
+    serviceAmount = Number(serviceAmount.toFixed(2));
     
-    // إضافة رسوم الخدمة إلى المبلغ
-    let amountAfterService = subtotalAfterDiscount + serviceAmount;
+    // Step 4: Calculate VAT (14% on Product Value AFTER Discount + Service Charge)
+    // VAT Base = Product Value After Discount + Service Charge
+    const vatBase = productValueAfterDiscount + serviceAmount;
     
-    // حساب الضريبة
     let taxAmount = 0;
     if (taxPerc > 0) {
-      taxAmount = (amountAfterService * taxPerc) / 100;
+      if (taxApplication) {
+        // Tax included in price: extract tax from total
+        taxAmount = vatBase - vatBase / (1 + taxPerc / 100);
+      } else {
+        // Tax added to price: calculate tax on base
+        taxAmount = (vatBase * taxPerc) / 100;
+      }
     }
+    taxAmount = Number(taxAmount.toFixed(3));
     
-    // الحساب النهائي (يشمل delivery_fees)
-    const finalTotal = amountAfterService + taxAmount + deliveryFees;
+    // Step 5: Calculate Final Total
+    // Final Total = Product Value After Discount + Service Charge + VAT + Delivery Fee
+    const finalTotal = productValueAfterDiscount + serviceAmount + taxAmount + deliveryFees;
   
     // تحديث بيانات الفاتورة
     summary.coupon_value = discountValue;
     summary.coupon_title = title;
     summary.coupon_type = type;
     summary.coupon_code = this.couponCode || title;
-    summary.subtotal_price_before_coupon = subtotalBefore;
+    summary.subtotal_price_before_coupon = productValueBeforeDiscount;
     summary.total_price = Number(finalTotal.toFixed(2));
     summary.total_after_tax = Number(finalTotal.toFixed(2));
-    summary.tax = Number(taxAmount.toFixed(2));
+    summary.tax_value = Number(taxAmount.toFixed(3));
+    summary.tax = Number(taxAmount.toFixed(3));
     
-    // تحديث بيانات رسوم الخدمة إذا كانت نسبة
+    // تحديث بيانات رسوم الخدمة
     if (servicePerc > 0) {
-      summary.service_fees = Number(serviceAmount.toFixed(2));
+      summary.service_fees = serviceAmount;
+    } else {
+      summary.service_fees = serviceAmount;
     }
   
     this.discountAmount = discountValue;
@@ -680,12 +694,12 @@ export class PillEditComponent {
     this.totalll = summary.total_price;
     this.cdr.detectChanges();
     
-    console.log('✅ Manual discount applied - Updated totals:', {
-      subtotalBefore,
+    console.log('✅ Discount applied - Updated totals (User Story 17):', {
+      productValueBeforeDiscount,
       discountValue,
-      subtotalAfterDiscount,
+      productValueAfterDiscount,
       serviceAmount,
-      amountAfterService,
+      vatBase,
       taxAmount,
       deliveryFees,
       finalTotal,
@@ -1504,7 +1518,10 @@ export class PillEditComponent {
     this.selectedSuggestionType = null;
     this.paymentError = '';
 
-    const currentPaymentInput = parseFloat(this.cashPaymentInput) || 0;
+    // قراءة القيمة الصحيحة بناءً على طريقة الدفع
+    const currentPaymentInput = this.selectedPaymentMethod === 'credit' 
+      ? parseFloat(this.creditPaymentInput) || 0
+      : parseFloat(this.cashPaymentInput) || 0;
 
     if (currentPaymentInput <= 0) {
       this.paymentError = 'يرجى إدخال مبلغ صحيح';
@@ -1634,6 +1651,10 @@ export class PillEditComponent {
   // Helper method to ensure values are never negative (same as cart)
   getMaxZero(value: number): number {
     return Math.max(0, value);
+  }
+
+  roundUpToTwoDecimals(value: number): number {
+    return Math.ceil(value * 100) / 100;
   }
 
   // Get the actual payment amount to display in "المبلغ المستحق"
