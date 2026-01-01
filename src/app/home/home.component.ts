@@ -398,6 +398,7 @@ this.enteredVisa= this.currentBalance?.visa
           // No deficit, close modal immediately
           localStorage.setItem(this.BALANCE_OPENED_KEY, 'true');
           this.hideModal(true);
+          location.reload();
         }
       } else {
         this.errorMessage = response?.message || "فشل في فتح الرصيد. يرجى المحاولة مرة أخرى.";
@@ -438,6 +439,7 @@ this.enteredVisa= this.currentBalance?.visa
   startShift(): void {
     localStorage.setItem(this.BALANCE_OPENED_KEY, 'true');
     this.hideModal(true);
+    location.reload();
   }
 
 }
