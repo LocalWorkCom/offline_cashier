@@ -57,6 +57,8 @@ export class NewOrderService {
           .printWaiter(order_id)
           .subscribe({
             next: async (response) => {
+
+              if(response.order.make_type != 'cashier'){
               console.log('🖨️ [Kitchen Print] Response received:', response);
 
               if(response.status && response.allDish && response.allDish.length > 0){
@@ -107,7 +109,7 @@ export class NewOrderService {
               }
 
               // await new Promise(resolve => setTimeout(resolve, 60000));
-
+            }
 
             },
             error: (error) => {
