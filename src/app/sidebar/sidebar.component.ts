@@ -1,5 +1,5 @@
 import { finalize, switchMap, take, tap } from 'rxjs/operators';
-import { Component, OnInit, Inject, PLATFORM_ID, Input } from '@angular/core';
+import { Component, OnInit, Inject, PLATFORM_ID, Input, ChangeDetectorRef } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
 import { AuthService } from '../services/auth.service';
@@ -12,7 +12,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import * as bootstrap from 'bootstrap';
 import { HttpClientModule } from '@angular/common/http';
 import { from, lastValueFrom, Observable } from 'rxjs';
-import { baseUrl } from '../environment'; 
+import { baseUrl } from '../environment';
 
 @Component({
   selector: 'app-sidebar',
@@ -56,6 +56,14 @@ export class SidebarComponent implements OnInit {
   alertError: any;
   reasonError: any;
   printingData: any;
+  reportData: {
+    cashTotal: number;
+    cashTotalLogout: number;
+    cashDifference: number;
+    visaTotal: number;
+    visaTotalLogout: number;
+    visaDifference: number;
+  } | null = null;
   currentBalance: {
     cash: number;
     visa: number;
@@ -69,10 +77,11 @@ export class SidebarComponent implements OnInit {
     private http: HttpClient,
     private balanceService: BalanceService,
     private closeBalanceService: CloseBalanceService,
-    @Inject(PLATFORM_ID) private platformId: Object
+    @Inject(PLATFORM_ID) private platformId: Object,
+    private cdr: ChangeDetectorRef
   ) {}
 
-  ngOnInit() { 
+  ngOnInit() {
 /*      this.printt(2)
  */      if (isPlatformBrowser(this.platformId)) {
       this.branch = localStorage.getItem('branch') || null;
@@ -242,6 +251,7 @@ export class SidebarComponent implements OnInit {
   onCashInput(event: any): void {
     const value = event.target.value;
     this.enteredCash = value;
+
   }
   //  onVisaInput(event: any): void {
   //     const value = event.target.value;
@@ -352,12 +362,12 @@ export class SidebarComponent implements OnInit {
         // Update current balance with new deficit values
         // Note: Adjust this based on actual API response structure
         const deficitCash =
-          response.data.deficit_cash_close ; 
+          response.data.deficit_cash_close ;
         const deficitVisa =
           response.data.deficit_visa_close ;
 
           console.log( response.data.deficit_cash_close,"alaaaaaa");
-          
+
         if (this.currentBalance) {
           this.currentBalance.deficitCash = deficitCash;
           this.currentBalance.deficitVisa = deficitVisa;
@@ -382,14 +392,62 @@ export class SidebarComponent implements OnInit {
     }
   }
 proceedToLogout(): void {
+    // Store visaTotal and enteredCash in localStorage before logout
+    if (isPlatformBrowser(this.platformId)) {
+      if (this.visaTotal !== null && this.visaTotal !== undefined) {
+        localStorage.setItem('visaTotallogout', JSON.stringify(this.visaTotal));
+      }
+      if (this.enteredCash !== null && this.enteredCash !== undefined && this.enteredCash !== '') {
+        localStorage.setItem('cashTotallogout', JSON.stringify(this.enteredCash));
+      }
+
+      // Calculate report data
+      const cashTotalStr = localStorage.getItem('totalcash');
+      const visaTotalStr = localStorage.getItem('totalvisa');
+      const cashTotalLogoutStr = localStorage.getItem('cashTotallogout');
+      const visaTotalLogoutStr = localStorage.getItem('visaTotallogout');
+
+      // Helper function to parse value (handles both JSON and plain string)
+      const parseValue = (value: string | null): number => {
+        if (!value) return 0;
+        try {
+          const parsed = JSON.parse(value);
+          return parseFloat(parsed) || 0;
+        } catch {
+          return parseFloat(value) || 0;
+        }
+      };
+
+      const cashTotal = parseValue(cashTotalStr);
+      const visaTotal = parseValue(visaTotalStr);
+      const cashTotalLogout = parseValue(cashTotalLogoutStr);
+      const visaTotalLogout = parseValue(visaTotalLogoutStr);
+
+      const cashDifference = cashTotalLogout - cashTotal;
+      const visaDifference =  visaTotalLogout - visaTotal;
+
+      // Store report data for printing
+      this.reportData = {
+        cashTotal,
+        cashTotalLogout,
+        cashDifference,
+        visaTotal,
+        visaTotalLogout,
+        visaDifference
+      };
+
+      // Print the report
+      this.printLogoutReport();
+    }
+
     // Clear balance data and modal state
     this.balanceService.clearBalanceData();
     sessionStorage.removeItem('balanceoutModalOpen');
     this.hideBalanceoutModal();
-    
+
     // Clear the open balance status
     this.authService.setOpenBalanceStatus(false);
-    
+
     // Perform logout
     this.authService.logout().subscribe({
       next: () => {
@@ -541,10 +599,10 @@ proceedToLogout(): void {
         this.alertError = response?.data?.alert[0];
         if(this.alertError == undefined){
           setTimeout(()=>{
-          this.CloseTheModalAndClear();  
+          this.CloseTheModalAndClear();
 
           },1000)
-         
+
         }
        this.print(response.data.newBranchSafe.id);
       } else {
@@ -592,15 +650,15 @@ proceedToLogout(): void {
 // (   finalize(() => {
 //     })).subscribe({
 //   next:(res)=>{console.log(res.data , "balanceprint");
-//     this.printingData=res.data 
+//     this.printingData=res.data
 //     if(this.printingData)
-//       this.ss() 
-  
-     
+//       this.ss()
+
+
 //   },
 //   error:(err)=>{console.log(err);
 //   },
-  
+
 //   })
 
 //   }
@@ -654,16 +712,16 @@ print(id: number): void {
 //   this.balanceService.PrintBalance(id).pipe(
 //     tap((res) => {
 //       console.log('fatema',res);
-      
+
 //       if (!res?.data) {
 //         throw new Error('No data received for printing');
 //       }
-//       this.printingData = res.data;      
-//     }), 
-//     switchMap(() => { 
+//       this.printingData = res.data;
+//     }),
+//     switchMap(() => {
 //       return this.waitForRender('#print-section') && this.waitForRender('#print-section img');;
 //     }),
-//     take(1)  
+//     take(1)
 //   ).subscribe({
 //     next: () => this.executePrint(),
 //     error: (err) => console.error('Print error:', err)
@@ -672,7 +730,7 @@ print(id: number): void {
 private waitForRender(selector: string): Observable<Element> {
   return new Observable<Element>(observer => {
     const element = document.querySelector(selector);
-    
+
     if (element) {
       observer.next(element);
       observer.complete();
@@ -700,7 +758,7 @@ private waitForRender(selector: string): Observable<Element> {
       this.CloseTheModalAndClear()
       this.closeModal()
 
-  const printContents = document.getElementById('print-section')?.innerHTML;     
+  const printContents = document.getElementById('print-section')?.innerHTML;
   if (!printContents) return;
 
   const originalContents = document.body.innerHTML;
@@ -711,23 +769,23 @@ private waitForRender(selector: string): Observable<Element> {
 
   document.body.innerHTML = originalContents;
 
- location.reload(); 
+ location.reload();
   }
   printt(id: number): void {
   this.balanceService.PrintBalance(id).subscribe({
-    next: (res) => {console.log(res,"aaaaaaaaaaaaaaaaaaaa") 
+    next: (res) => {console.log(res,"aaaaaaaaaaaaaaaaaaaa")
       this.printingData=res.data
       this.printingData.categories.forEach((element:any) => {
         console.log(element.price);
         this.TotalPriceOFPrint += element.price
-        
+
       });
       console.log(this.TotalPriceOFPrint); this.printTime = new Date().toLocaleString();
-      
+
     },
     error: (err) => console.error('Print error:', err)
   });
-} 
+}
   closeModal(): void {
     const modal = document.getElementById('transferMoneyModal');
     if (modal) {
@@ -739,6 +797,40 @@ private waitForRender(selector: string): Observable<Element> {
       modal.style.display = 'none';
       document.body.classList.remove('modal-open');
     }
+  }
+
+  printLogoutReport(): void {
+    if (!isPlatformBrowser(this.platformId) || !this.reportData) return;
+
+    this.printTime = new Date().toLocaleString();
+
+    // Trigger change detection to render the template
+    this.cdr.detectChanges();
+
+    // Wait for the element to be rendered, then print
+    this.waitForRender('#logout-report-section').pipe(
+      switchMap(() => from(this.waitForImagesInSection('#logout-report-section'))),
+      take(1)
+    ).subscribe({
+      next: () => {
+        const printContents = document.getElementById('logout-report-section')?.innerHTML;
+        if (!printContents) {
+          console.error('Logout report section not found');
+          return;
+        }
+
+        const originalContents = document.body.innerHTML;
+
+        document.body.innerHTML = printContents;
+
+        window.print();
+
+        document.body.innerHTML = originalContents;
+      },
+      error: (err) => {
+        console.error('Error printing logout report:', err);
+      }
+    });
   }
 
 }

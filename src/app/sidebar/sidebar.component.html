@@ -251,7 +251,7 @@
             </div>
           </div>
 
-          <!-- Visa Input -->  
+          <!-- Visa Input -->
           <h6><small><i class="fa-solid fa-credit-card main-color ms-1"></i>إجمالي مدفوعات البطاقة</small></h6>
           <div *ngIf="visaTotal !== null" class="input-group position-relative mb-3">
             <h3 class="bg-grey p-3">{{ visaTotal }} {{ currency_Symbol }}</h3>
@@ -559,7 +559,7 @@
 
 
   </div>
-  
+
   <p class="text-center fw-bold my-2 total"> المبيعات</p>
   <div class="border border-1 border-black">
     <div class="table-content">
@@ -651,6 +651,100 @@
     </div>
   </footer>
 
+</div>
+}
+
+<!-- Logout Report Section -->
+@if(reportData){
+<div id="logout-report-section" class="fw-bold d-none text-center">
+  <div id="body-logo" class="mb-2">
+    <img src="../assets/images/logo-with-white-bg.png" id="logo" alt="" srcset="" class="w-100">
+  </div>
+  <div class="m-2" style="border-bottom: 1px dotted black;">
+    <div class="text-center justify-content-center">
+      <h6>
+        العنوان :
+        <span>{{branchData?.address }}</span>
+      </h6>
+      <h6>
+        الهاتف :
+        <span>{{branchData?.phone }}</span>
+      </h6>
+      <h6>
+        المطعم :
+        <span>{{branchData?.name }}</span>
+      </h6>
+    </div>
+  </div>
+
+  <div class="total text-right border-bottom border-1 border-black mb-2">
+    <p class="fw-bold">اسم الكاشير :
+      <span>{{fullName}}</span>
+    </p>
+    <p class="fw-bold">
+      وقت انتهاء الوردية :
+      <span>{{ printTime | date:'dd/MM/yyyy HH:mm' }}</span>
+    </p>
+     <p class="fw-bold">
+      رقم نقطة البيع :
+      <span class="fw-bold">POS 1</span>
+    </p>
+  </div>
+
+  <div class="text-center">
+    <p class="fw-bold"> الرصيد الافتتاحى :
+      <span class="fw-bold">{{reportData.cashTotal | number:'1.2-2'}} {{currency_Symbol}}</span>
+    </p>
+    <p class="fw-bold"> رصيد الاغلاق :
+      <span class="fw-bold">{{reportData.cashTotalLogout | number:'1.2-2'}} {{currency_Symbol}}</span>
+    </p>
+  </div>
+
+  <table class="text-right fw-bold border border-1 border-black w-100">
+    <tr>
+      <td class="border border-1 border-black">مبيعات كاش</td>
+      <td class="border border-1 border-black">مبيعات فيزا</td>
+      <td class="border border-1 border-black">إجمالي </td>
+    </tr>
+    <tr>
+      <td  class="border border-1 border-black" >{{reportData.cashDifference | number:'1.2-2'}} </td>
+      <td  class="border border-1 border-black" >{{reportData.visaDifference | number:'1.2-2'}} </td>
+      <td  class="border border-1 border-black" >{{reportData.cashDifference + reportData.visaDifference | number:'1.2-2'}}</td>
+    </tr>
+  </table>
+
+
+    <div class="text-center mt-3">
+      <p class="fw-bold"> النقدية المتوقعة :
+        <span>{{reportData.cashTotal + reportData.cashDifference | number:'1.2-2'}} {{currency_Symbol}}</span>
+      </p>
+      <p class="fw-bold"> النقدية الموجودة :
+        <span>{{reportData.cashTotalLogout | number:'1.2-2'}} {{currency_Symbol}}</span>
+      </p>
+      <p class="fw-bold">الفرق :
+        <span [class.text-danger]="reportData.cashDifference < 0" [class.text-success]="reportData.cashDifference >= 0">
+          {{reportData.cashDifference | number:'1.2-2'}} {{currency_Symbol}}
+        </span>
+      </p>
+    </div>
+  <footer class="m-3 text-center">
+    <div class="border border-1 border-black p-2 w-100 m-2">
+      <h6>
+        يشير هذا التقرير لوجود عجز بمقدار
+        <br>
+        {{reportData.cashDifference | number:'1.2-2'}} {{currency_Symbol}}
+        <br>
+        في وردية الكاشير
+      </h6>
+    </div>
+
+    <div class="text-center fw-bold">
+      <p>شكرا لثقتكم بخدمتنا</p>
+      <p>
+        <img src="assets/images/vaadin_qrcode.png" class="img-fluid w-100" />
+      </p>
+    </div>
+  </footer>
 </div>
 }
 <!-- </ng-template> -->
