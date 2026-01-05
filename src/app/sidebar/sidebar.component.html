@@ -707,16 +707,16 @@
       <td class="border border-1 border-black">إجمالي </td>
     </tr>
     <tr>
-      <td  class="border border-1 border-black" >{{reportData.cashDifference | number:'1.2-2'}} </td>
-      <td  class="border border-1 border-black" >{{reportData.visaDifference | number:'1.2-2'}} </td>
-      <td  class="border border-1 border-black" >{{reportData.cashDifference + reportData.visaDifference | number:'1.2-2'}}</td>
+      <td  class="border border-1 border-black" >{{reportData.cash_sales | number:'1.2-2'}} </td>
+      <td  class="border border-1 border-black" >{{reportData.visa_sales | number:'1.2-2'}} </td>
+      <td  class="border border-1 border-black" >{{reportData.cash_sales + reportData.visa_sales | number:'1.2-2'}}</td>
     </tr>
   </table>
 
 
     <div class="text-center mt-3">
       <p class="fw-bold"> النقدية المتوقعة :
-        <span>{{reportData.cashTotal + reportData.cashDifference | number:'1.2-2'}} {{currency_Symbol}}</span>
+        <span>{{reportData.cashTotal + reportData.cash_sales | number:'1.2-2'}} {{currency_Symbol}}</span>
       </p>
       <p class="fw-bold"> النقدية الموجودة :
         <span>{{reportData.cashTotalLogout | number:'1.2-2'}} {{currency_Symbol}}</span>

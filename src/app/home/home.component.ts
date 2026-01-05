@@ -371,6 +371,14 @@ this.enteredVisa= this.currentBalance?.visa
     const cashAmount = Number(this.enteredCash);
     const visaAmount = Number(this.enteredVisa);
 
+    // تسجيل القيم فقط إذا لم تكن موجودة مسبقاً (عند أول login فقط)
+    if (!localStorage.getItem('start_total_cash')) {
+      localStorage.setItem('start_total_cash', JSON.stringify(cashAmount));
+    }
+    if (!localStorage.getItem('start_total_credit')) {
+      localStorage.setItem('start_total_credit', JSON.stringify(visaAmount));
+    }
+
     if (isNaN(cashAmount) || cashAmount < 0 || isNaN(visaAmount) || visaAmount < 0) {
       this.errorMessage = "المبالغ المدخلة لا تتوافق مع سجلات النظام او الإجماليات المتوقعة.";
       return;

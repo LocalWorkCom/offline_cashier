@@ -63,6 +63,8 @@ export class SidebarComponent implements OnInit {
     visaTotal: number;
     visaTotalLogout: number;
     visaDifference: number;
+    cash_sales: number;
+    visa_sales: number;
   } | null = null;
   currentBalance: {
     cash: number;
@@ -402,10 +404,12 @@ proceedToLogout(): void {
       }
 
       // Calculate report data
-      const cashTotalStr = localStorage.getItem('totalcash');
-      const visaTotalStr = localStorage.getItem('totalvisa');
+      const cashTotalStr = localStorage.getItem('start_total_cash');
+      const visaTotalStr = localStorage.getItem('start_total_credit');
       const cashTotalLogoutStr = localStorage.getItem('cashTotallogout');
       const visaTotalLogoutStr = localStorage.getItem('visaTotallogout');
+      const cash_salesStr = localStorage.getItem('paid_order_cash');
+      const visa_salesStr = localStorage.getItem('paid_order_credit');
 
       // Helper function to parse value (handles both JSON and plain string)
       const parseValue = (value: string | null): number => {
@@ -422,9 +426,10 @@ proceedToLogout(): void {
       const visaTotal = parseValue(visaTotalStr);
       const cashTotalLogout = parseValue(cashTotalLogoutStr);
       const visaTotalLogout = parseValue(visaTotalLogoutStr);
-
-      const cashDifference = cashTotalLogout - cashTotal;
-      const visaDifference =  visaTotalLogout - visaTotal;
+      const cash_sales = parseValue(cash_salesStr);
+      const visa_sales = parseValue(visa_salesStr);
+      const cashDifference = cashTotalLogout - (cashTotal + cash_sales);
+      const visaDifference =  visaTotalLogout - (visaTotal + visa_sales);
 
       // Store report data for printing
       this.reportData = {
@@ -433,7 +438,9 @@ proceedToLogout(): void {
         cashDifference,
         visaTotal,
         visaTotalLogout,
-        visaDifference
+        visaDifference,
+        cash_sales,
+        visa_sales
       };
 
       // Print the report
