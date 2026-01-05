@@ -833,6 +833,9 @@ private waitForRender(selector: string): Observable<Element> {
         window.print();
 
         document.body.innerHTML = originalContents;
+
+        //  remove all session storage
+        sessionStorage.clear();
       },
       error: (err) => {
         console.error('Error printing logout report:', err);
