@@ -252,8 +252,25 @@ export class SidebarComponent implements OnInit {
 
   onCashInput(event: any): void {
     const value = event.target.value;
-    this.enteredCash = value;
+    const numValue = value === '' ? null : Number(value);
 
+    // منع القيم السالبة
+    if (numValue !== null && numValue < 0) {
+      event.target.value = '';
+      this.enteredCash = null;
+      this.errorMessage = "المبلغ النقدي يجب أن يكون أكبر من أو يساوي صفر";
+      return;
+    }
+
+    this.enteredCash = value;
+    this.errorMessage = null;
+  }
+
+  onCashKeyDown(event: KeyboardEvent): void {
+    // منع كتابة علامة السالب (-) و e و E و +
+    if (event.key === '-' || event.key === 'e' || event.key === 'E' || event.key === '+') {
+      event.preventDefault();
+    }
   }
   //  onVisaInput(event: any): void {
   //     const value = event.target.value;
@@ -648,8 +665,32 @@ proceedToLogout(): void {
     this.alertError = null;
     this.reasonError = null;
   }
-  setLog(){
-    this.proceedToLogout();
+  setLog(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      // إخفاء المودال أولاً
+      const modalElement = document.getElementById('balanceoutModal');
+      if (modalElement) {
+        const backdrop = document.querySelector('.modal-backdrop');
+        if (backdrop) {
+          backdrop.remove();
+        }
+        modalElement.classList.remove('show');
+        modalElement.style.display = 'none';
+        document.body.classList.remove('modal-open');
+        document.body.style.overflow = '';
+        document.body.style.paddingRight = '';
+      }
+
+      // مسح localStorage
+      localStorage.clear();
+
+      // مسح sessionStorage
+      sessionStorage.clear();
+
+      // الانتقال مباشرة إلى صفحة login
+      // window.location.href = '/login';
+      this.router.navigate(['/login']);
+    }
   }
 //   print(id:number){
 // console.log(id);
@@ -829,13 +870,9 @@ private waitForRender(selector: string): Observable<Element> {
         const originalContents = document.body.innerHTML;
 
         document.body.innerHTML = printContents;
-
         window.print();
-
         document.body.innerHTML = originalContents;
 
-        //  remove all session storage
-        sessionStorage.clear();
       },
       error: (err) => {
         console.error('Error printing logout report:', err);

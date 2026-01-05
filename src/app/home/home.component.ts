@@ -335,9 +335,26 @@ fetchCurrentBalance(): void {
 
   onCashInput(event: any): void {
     const value = event.target.value;
-    this.enteredCash = value === '' ? null : Number(value);
+    const numValue = value === '' ? null : Number(value);
+
+    // منع القيم السالبة
+    if (numValue !== null && numValue < 0) {
+      event.target.value = '';
+      this.enteredCash = null;
+      this.errorMessage = "المبلغ النقدي يجب أن يكون أكبر من أو يساوي صفر";
+      return;
+    }
+
+    this.enteredCash = numValue;
     this.errorMessage = null;
     this.apiFieldErrors = null;
+  }
+
+  onCashKeyDown(event: KeyboardEvent): void {
+    // منع كتابة علامة السالب (-) و e و E و +
+    if (event.key === '-' || event.key === 'e' || event.key === 'E' || event.key === '+') {
+      event.preventDefault();
+    }
   }
 
  /*  onCashInput(event: any): void {
@@ -384,51 +401,60 @@ this.enteredVisa= this.currentBalance?.visa
       return;
     }
 
-   try {
-      const response = await this.balanceService.submitOpeningBalance(cashAmount, visaAmount).toPromise();
-      console.log('API Response:', response);
-/*       this.currentBalance={
-        cash:response.data.open_cash,
-        visa:response.data.open_visa,
-        total:response.data.total_opening,
-      } */
+    if(cashAmount < 0){
+      this.errorMessage = "المبلغ المدخل يجب ان يكون ااكبر من صفر";
+      return;
+    }
+    else
+    {
+      try {
+        const response = await this.balanceService.submitOpeningBalance(cashAmount, visaAmount).toPromise();
+        console.log('API Response:', response);
+  /*       this.currentBalance={
+          cash:response.data.open_cash,
+          visa:response.data.open_visa,
+          total:response.data.total_opening,
+        } */
 
-      if (response?.status && response.data) {
-        // Check for deficit amounts
-        this.deficitCash = response.data.deficit_cash || 0;
-        this.deficitVisa = response.data.deficit_visa || 0;
+        if (response?.status && response.data) {
+          // Check for deficit amounts
+          this.deficitCash = response.data.deficit_cash || 0;
+          this.deficitVisa = response.data.deficit_visa || 0;
 
-        if (this.deficitCash !== 0 || this.deficitVisa !== 0) {
-          // Show deficit message
-          this.showDeficitMessage = true;
-          this.buildDeficitMessage();
+          if (this.deficitCash !== 0 || this.deficitVisa !== 0) {
+            // Show deficit message
+            this.showDeficitMessage = true;
+            this.buildDeficitMessage();
+          } else {
+            // No deficit, close modal immediately
+            localStorage.setItem(this.BALANCE_OPENED_KEY, 'true');
+            this.hideModal(true);
+            location.reload();
+          }
         } else {
-          // No deficit, close modal immediately
+          this.errorMessage = response?.message || "فشل في فتح الرصيد. يرجى المحاولة مرة أخرى.";
+          this.modalStateService.setModalOpen(true);
+        }
+      } catch (error: any) {
+        console.error('API Error:', error); // Log the error
+        if (Array.isArray(error?.error?.errorData?.error)) {
+          this.errorMessage = error.error.errorData.error[0];
+        } else if (error.error?.message) {
+          this.errorMessage = error.error.message;
+        } else {
+          this.errorMessage = "حدث خطأ في الاتصال بالخادم.";
+        }
+
+        if (this.errorMessage?.includes('تم فتح الوردية مسبقاً')) {
           localStorage.setItem(this.BALANCE_OPENED_KEY, 'true');
           this.hideModal(true);
-          location.reload();
+        } else {
+          this.modalStateService.setModalOpen(true);
         }
-      } else {
-        this.errorMessage = response?.message || "فشل في فتح الرصيد. يرجى المحاولة مرة أخرى.";
-        this.modalStateService.setModalOpen(true);
-      }
-    } catch (error: any) {
-      console.error('API Error:', error); // Log the error
-      if (Array.isArray(error?.error?.errorData?.error)) {
-        this.errorMessage = error.error.errorData.error[0];
-      } else if (error.error?.message) {
-        this.errorMessage = error.error.message;
-      } else {
-        this.errorMessage = "حدث خطأ في الاتصال بالخادم.";
-      }
-
-      if (this.errorMessage?.includes('تم فتح الوردية مسبقاً')) {
-        localStorage.setItem(this.BALANCE_OPENED_KEY, 'true');
-        this.hideModal(true);
-      } else {
-        this.modalStateService.setModalOpen(true);
       }
     }
+
+
   }
     private buildDeficitMessage(): void {
     let messages = [];
