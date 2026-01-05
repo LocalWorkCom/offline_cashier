@@ -1483,12 +1483,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     let deliveryFee = 0;
     if (isDelivery) {
       deliveryFee = this.delivery_fees;
-      
+
       // Special case: 100% coupon on order removes delivery fee
       if (this.appliedCoupon &&
-          this.appliedCoupon.coupon_value == '100.00' &&
-          this.appliedCoupon.value_type == 'percentage' &&
-          this.appliedCoupon.coupon_apply_type == 'order') {
+        this.appliedCoupon.coupon_value == '100.00' &&
+        this.appliedCoupon.value_type == 'percentage' &&
+        this.appliedCoupon.coupon_apply_type == 'order') {
         deliveryFee = 0;
       }
     }
@@ -1508,13 +1508,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
   getServiceOnAmountAfterCoupon(): number {
     if (!this.branchData) return 0;
-    
+
     const serviceType = this.branchData.service_fees_type;
     const serviceValue = this.branchData.service_fees;
-    
+
     // Get product value after discount (from coupon)
     const productValueAfterDiscount = this.appliedCoupon?.amount_after_coupon || this.getTotal();
-    
+
     // Calculate service fee on product value after discount
     let serviceFee = 0;
     if (serviceType === 'percentage') {
@@ -1522,7 +1522,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     } else {
       serviceFee = serviceValue;
     }
-    
+
     // Round to 2 decimal places
     serviceFee = Math.round(serviceFee * 100) / 100;
     return serviceFee;
@@ -1536,7 +1536,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // According to requirements: Service Charge = Product Value After Discount × 12%
     // Step 1: Get product value AFTER discount
     let productValueAfterDiscount = this.getTotal();
-    
+
     // If coupon is applied, use the discounted amount
     if (this.appliedCoupon && this.validCoupon) {
       productValueAfterDiscount = this.appliedCoupon.amount_after_coupon || this.getTotal();
@@ -1549,7 +1549,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     } else {
       serviceFee = serviceValue;
     }
-    
+
     // Round to 2 decimal places
     serviceFee = Math.round(serviceFee * 100) / 100;
     return serviceFee;
@@ -1600,7 +1600,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     if (this.appliedCoupon && this.validCoupon) {
       productValueAfterDiscount = this.appliedCoupon.amount_after_coupon || this.getTotal();
     }
-    
+
     // Step 2: Get service charge (calculated on product value AFTER discount)
     let serviceCharge = 0;
     if (isDineIn) {
@@ -2446,7 +2446,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     //   this.selectedPaymentMethod = "cash"
     //   console.log(this.selectedPaymentMethod, "2");
     // }
-  // تحضير العناصر مع category_id
+    // تحضير العناصر مع category_id
     const itemsWithCategory = [];
 
     for (const cartItem of this.cartItems) {
@@ -2643,9 +2643,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const totalEntered = Number(this.finalTipSummary.paymentAmount);
       if (totalEntered < (cartTotal - tolerance)) {
         const remainingBalance = cartTotal - totalEntered;
-        return { 
-          isValid: false, 
-          errorMessage: `المبلغ المدفوع غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}` 
+        return {
+          isValid: false,
+          errorMessage: `المبلغ المدفوع غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}`
         };
       }
     }
@@ -2655,9 +2655,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const cashAmount = Number(this.cashPaymentInput);
       if (cashAmount < (cartTotal - tolerance)) {
         const remainingBalance = cartTotal - cashAmount;
-        return { 
-          isValid: false, 
-          errorMessage: `المبلغ المدفوع غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}` 
+        return {
+          isValid: false,
+          errorMessage: `المبلغ المدفوع غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}`
         };
       }
     }
@@ -2667,9 +2667,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const creditAmount = Number(this.credit_amountt) || Number(this.cashPaymentInput) || 0;
       if (creditAmount > 0 && creditAmount < (cartTotal - tolerance)) {
         const remainingBalance = cartTotal - creditAmount;
-        return { 
-          isValid: false, 
-          errorMessage: `المبلغ المدفوع غير كافي. المطلوب: ${cartTotal.toFixed(2)} ${this.currencySymbol}` 
+        return {
+          isValid: false,
+          errorMessage: `المبلغ المدفوع غير كافي. المطلوب: ${cartTotal.toFixed(2)} ${this.currencySymbol}`
         };
       }
     }
@@ -2679,12 +2679,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const cashAmount = Number(this.cashAmountMixed) || 0;
       const creditAmount = Number(this.creditAmountMixed) || 0;
       const totalPaid = Number((cashAmount + creditAmount).toFixed(2));
-      
+
       if (totalPaid < (cartTotal - tolerance)) {
         const remainingBalance = cartTotal - totalPaid;
-        return { 
-          isValid: false, 
-          errorMessage: `المبلغ المدفوع غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}` 
+        return {
+          isValid: false,
+          errorMessage: `المبلغ المدفوع غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}`
         };
       }
     }
@@ -3317,6 +3317,52 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // إرسال الطلب إلى API
     console.log('Submitting order online:', orderData);
 
+    if (orderData.payment_status == 'paid') {
+      if (orderData.cash_amount > 0) {
+        // Get existing paid_order value from localStorage
+        const existingPaidOrderStrCash = localStorage.getItem('paid_order_cash');
+        // Helper function to parse value (handles both JSON and plain string)
+        const parseValueCash = (value: string | null): number => {
+          if (!value) return 0;
+          try {
+            const parsedCash = JSON.parse(value);
+            return parseFloat(parsedCash) || 0;
+          } catch {
+            return parseFloat(value) || 0;
+          }
+        };
+
+        // Get existing value and add new bill_amount
+        const existingPaidOrderCash = parseValueCash(existingPaidOrderStrCash);
+        const newTotalCash = existingPaidOrderCash + (parseFloat(orderData.cash_amount) || 0);
+
+        // Store the accumulated total
+        localStorage.setItem('paid_order_cash', JSON.stringify(newTotalCash));
+      }
+      if (orderData.credit_amount > 0) {
+        // Get existing paid_order value from localStorage
+        const existingPaidOrderStrCredit = localStorage.getItem('paid_order_credit');
+
+        // Helper function to parse value (handles both JSON and plain string)
+        const parseValueCredit = (value: string | null): number => {
+          if (!value) return 0;
+          try {
+            const parsedCredit = JSON.parse(value);
+            return parseFloat(parsedCredit) || 0;
+          } catch {
+            return parseFloat(value) || 0;
+          }
+        };
+
+        // Get existing value and add new bill_amount
+        const existingPaidOrderCredit = parseValueCredit(existingPaidOrderStrCredit);
+        const newTotalCredit = existingPaidOrderCredit + (parseFloat(orderData.credit_amount) || 0);
+
+        // Store the accumulated total
+        localStorage.setItem('paid_order_credit', JSON.stringify(newTotalCredit));
+      }
+    }
+
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Request timeout')), 30000);
     });
@@ -3444,71 +3490,71 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       if (this.successModal) {
 
         this.printedInvoiceService
-              .printkitchen(orderData, this.orderedId)
-              .subscribe({
-                next: async (response) => {
-                  console.log('🖨️ [Kitchen Print] Response received:', response);
+          .printkitchen(orderData, this.orderedId)
+          .subscribe({
+            next: async (response) => {
+              console.log('🖨️ [Kitchen Print] Response received:', response);
 
-                  if(response.status && response.allDish && response.allDish.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
-                    try {
-                      await this.printInvoiceImage(response.allDish ,response.order, response.Ipall , response.portall);
-                      console.log('✅ [Kitchen Print] Drinks printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing drinks:', err);
-                    }
-                  }
-
-
-                  await new Promise(resolve => setTimeout(resolve, 500));
-
-                  // Print drinks first
-                  if(response.status && response.drinks && response.drinks.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
-                    try {
-                      await this.printInvoiceImage(response.drinks ,response.order, response.IPdrinks , response.portdrinks);
-                      console.log('✅ [Kitchen Print] Drinks printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing drinks:', err);
-                    }
-                  }
-
-                  // Wait a bit before printing fish to the same printer
-                  await new Promise(resolve => setTimeout(resolve, 500));
-
-                  // Print fish
-                  if(response.status && response.fish && response.fish.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
-                    try {
-                      await this.printInvoiceImage(response.fish ,response.order, response.IPfish , response.portfish);
-                      console.log('✅ [Kitchen Print] Fish printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing fish:', err);
-                    }
-                  }
-
-
-                  // Print grills to different printer (can run in parallel)
-                  if(response.status && response.grills && response.grills.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
-                    this.printInvoiceImage(response.grills ,response.order, response.IPgrills , response.portgrills).catch(err => {
-                      console.error('❌ [Kitchen Print] Error printing grills:', err);
-                    });
-                  }
-
-                  // await new Promise(resolve => setTimeout(resolve, 60000));
-
-
-                },
-                error: (error) => {
-                  console.error('Kitchen print error:', error);
-                  location.reload();
+              if (response.status && response.allDish && response.allDish.length > 0) {
+                console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
+                try {
+                  await this.printInvoiceImage(response.allDish, response.order, response.Ipall, response.portall);
+                  console.log('✅ [Kitchen Print] Drinks printed successfully');
+                } catch (err) {
+                  console.error('❌ [Kitchen Print] Error printing drinks:', err);
                 }
-              });
+              }
 
-              await new Promise(resolve => setTimeout(resolve, 2000));
-              this.successModal.show();
-              // location.reload();
+
+              await new Promise(resolve => setTimeout(resolve, 500));
+
+              // Print drinks first
+              if (response.status && response.drinks && response.drinks.length > 0) {
+                console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
+                try {
+                  await this.printInvoiceImage(response.drinks, response.order, response.IPdrinks, response.portdrinks);
+                  console.log('✅ [Kitchen Print] Drinks printed successfully');
+                } catch (err) {
+                  console.error('❌ [Kitchen Print] Error printing drinks:', err);
+                }
+              }
+
+              // Wait a bit before printing fish to the same printer
+              await new Promise(resolve => setTimeout(resolve, 500));
+
+              // Print fish
+              if (response.status && response.fish && response.fish.length > 0) {
+                console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
+                try {
+                  await this.printInvoiceImage(response.fish, response.order, response.IPfish, response.portfish);
+                  console.log('✅ [Kitchen Print] Fish printed successfully');
+                } catch (err) {
+                  console.error('❌ [Kitchen Print] Error printing fish:', err);
+                }
+              }
+
+
+              // Print grills to different printer (can run in parallel)
+              if (response.status && response.grills && response.grills.length > 0) {
+                console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
+                this.printInvoiceImage(response.grills, response.order, response.IPgrills, response.portgrills).catch(err => {
+                  console.error('❌ [Kitchen Print] Error printing grills:', err);
+                });
+              }
+
+              // await new Promise(resolve => setTimeout(resolve, 60000));
+
+
+            },
+            error: (error) => {
+              console.error('Kitchen print error:', error);
+              location.reload();
+            }
+          });
+
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        this.successModal.show();
+        // location.reload();
 
         // Print invoice items without prices to network printer
         // this.printInvoiceImage();
@@ -4111,7 +4157,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   //   }
   // }
 
-  async printInvoiceImage(data?: any[], order?: any, printerIP: string = "192.168.100.102" , port: number = 9100) {
+  async printInvoiceImage(data?: any[], order?: any, printerIP: string = "192.168.100.102", port: number = 9100) {
     console.log('🖨️ [printInvoiceImage] Function called', { dataLength: data?.length, order, printerIP });
     let iframe: HTMLIFrameElement | null = null;
 
@@ -5558,7 +5604,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       clientPhone: this.clientPhone,
       selectedCountryCode: this.selectedCountry.code
     };
-    
+
     // Save to localStorage
     localStorage.setItem('client', this.client);
     localStorage.setItem('clientPhone', this.clientPhone);
@@ -5572,7 +5618,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     setTimeout(() => {
       this.isLoading = false;
       this.clientInfoApplied = true;
-      
+
       // ✅ Close the modal after saving
       this.closeModal();
     }, 300);

@@ -76,7 +76,7 @@ export class PillEditComponent {
   manualDiscountType: 'percentage' | 'fixed' | null = null;
   manualDiscountValue: number | null = null;
   isApplyingCoupon: boolean = false;
-  
+
   // متغيرات الإكرامية
   selectedTipType: 'tip_the_change' | 'tip_specific_amount' | 'no_tip' = 'no_tip';
   specificTipAmount: any = " ";
@@ -91,7 +91,7 @@ export class PillEditComponent {
   cashAmountMixed: any = " ";
   creditAmountMixed: any = " ";
   currencySymbol: string = '';
-  
+
   // متغيرات timeout المودال
   tipModalTimeoutRef: any = null;
   tipModalCountdownRef: any = null;
@@ -117,7 +117,7 @@ export class PillEditComponent {
     private router: Router,
     private http: HttpClient,
     private modalService: NgbModal
-  ) { 
+  ) {
     this.currencySymbol = localStorage.getItem('currency_symbol') || 'ج.م';
   }
 
@@ -219,12 +219,12 @@ export class PillEditComponent {
           this.couponTitle = summary.coupon_title || '';
           this.discountAmount = Number(summary.coupon_value) || 0;
           this.couponCode = summary.coupon_code || '';
-          
+
           // التأكد من وجود subtotal_price_before_coupon، وإلا استخدام subtotal_price أو total_price
           if (!summary.subtotal_price_before_coupon) {
             summary.subtotal_price_before_coupon = summary.subtotal_price || summary.total_price || 0;
           }
-          
+
           // تحديث totalll من invoice_summary.total_price (يجب أن يكون محدثاً من الـ backend)
           // إذا كان هناك كوبون مطبق، يجب أن يكون total_price محدثاً بالفعل
           this.totalll = Number(summary.total_price) || 0;
@@ -335,7 +335,7 @@ export class PillEditComponent {
 
   saveOrder() {
     console.log('pa', this.paymentStatus);
-    
+
     // مسح رسائل الخطأ السابقة
     this.referenceNumberError = '';
     this.paymentAmountError = '';
@@ -424,7 +424,7 @@ export class PillEditComponent {
     // ✅ استخدام بيانات الإكرامية إذا كانت موجودة
     if (this.finalTipSummary && this.paymentStatus === 'paid') {
       const total = Number(this.getInvoiceTotal().toFixed(2));
-      
+
       if (this.finalTipSummary.cashFinal !== undefined) {
         cashAmount = this.finalTipSummary.cashFinal;
         this.cash_value = cashAmount;
@@ -433,7 +433,7 @@ export class PillEditComponent {
         creditAmount = this.finalTipSummary.creditFinal;
         this.credit_value = creditAmount;
       }
-      
+
       // 🔒 التحقق من رقم المرجع للفيزا أولاً (قبل التحقق من المبلغ)
       if (creditAmount > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
         this.referenceNumberTouched = true;
@@ -445,10 +445,10 @@ export class PillEditComponent {
       } else {
         this.referenceNumberError = '';
       }
-      
+
       // 🔒 التحقق من أن المبلغ المدفوع >= الإجمالي عند استخدام finalTipSummary
       const totalPaid = Number((Number(cashAmount || 0) + Number(creditAmount || 0)).toFixed(2));
-      
+
       // حالة الدفع بالفيزا فقط: التحقق من أن creditFinal >= الإجمالي
       if (this.selectedPaymentMethod === 'credit' && creditAmount > 0 && cashAmount === 0) {
         if (Number(creditAmount) < total) {
@@ -492,7 +492,7 @@ export class PillEditComponent {
             // ✅ استخدام المبلغ المدخل الفعلي (وليس الإجمالي فقط) إذا كان >= الإجمالي
             creditAmount = enteredCreditAmount;
             cashAmount = 0;
-            
+
             // مزامنة القيم المعروضة
             this.credit_value = creditAmount;
             this.cash_value = cashAmount;
@@ -505,7 +505,7 @@ export class PillEditComponent {
           const enteredCash = parseFloat(this.cashAmountMixed) || 0;
           const enteredCredit = parseFloat(this.creditAmountMixed) || 0;
           const totalEntered = Number((enteredCash + enteredCredit).toFixed(2));
-          
+
           // التحقق من رقم المرجع للفيزا أولاً
           if (enteredCredit > 0 && (!this.referenceNumber || !this.referenceNumber.trim())) {
             this.referenceNumberTouched = true;
@@ -517,7 +517,7 @@ export class PillEditComponent {
           } else {
             this.referenceNumberError = '';
           }
-          
+
           // التحقق من أن المبلغ المدخل >= الإجمالي (مع مراعاة دقة الأرقام العشرية)
           const tolerance = 0.01; // تسامح 0.01 للتعامل مع أخطاء التقريب
           if (totalEntered < (total - tolerance)) {
@@ -526,15 +526,15 @@ export class PillEditComponent {
             this.loading = false;
             return;
           }
-          
+
           // ✅ مسح الأخطاء إذا كان المبلغ كافياً
           this.amountError = false;
           this.paymentAmountError = '';
-          
+
           // ✅ استخدام المبالغ المدخلة كما هي (لا إعادة حساب)
           cashAmount = enteredCash;
           creditAmount = enteredCredit;
-          
+
           // مزامنة القيم المعروضة
           this.cash_value = cashAmount;
           this.credit_value = creditAmount;
@@ -551,7 +551,7 @@ export class PillEditComponent {
           } else {
             this.referenceNumberError = '';
           }
-          
+
           // للكاش فقط: استخدام المبلغ المدخل
           if (this.selectedPaymentMethod === 'cash') {
             const enteredCashAmount = parseFloat(this.cashPaymentInput) || 0;
@@ -589,7 +589,7 @@ export class PillEditComponent {
     }
     // التأكد من أن totalll محدث بشكل صحيح
     const finalTotal = this.totalll || this.getInvoiceTotal();
-    
+
     console.log('💰 Payment amounts before save:', {
       cashAmount,
       creditAmount,
@@ -599,7 +599,7 @@ export class PillEditComponent {
       paymentStatus: this.paymentStatus,
       invoiceSummary: this.invoices?.[0]?.invoice_summary
     });
-    
+
     // 🔒 التحقق النهائي من جميع الأخطاء قبل المتابعة
     if (this.amountError || this.paymentError || this.paymentAmountError || this.referenceNumberError) {
       return; // منع المتابعة إذا كان هناك أي خطأ
@@ -607,7 +607,7 @@ export class PillEditComponent {
 
     if (this.amountError == false && this.loading == false) {
       this.loading = true
-      
+
       // إعداد بيانات الكوبون إذا كان موجوداً
       const couponData = (this.discountAmount > 0 || this.couponCode) ? {
         coupon_code: this.couponCode || this.invoices?.[0]?.invoice_summary?.coupon_code || '',
@@ -615,7 +615,7 @@ export class PillEditComponent {
         coupon_type: this.couponType || this.invoices?.[0]?.invoice_summary?.coupon_type || '',
         coupon_title: this.couponTitle || this.invoices?.[0]?.invoice_summary?.coupon_title || ''
       } : undefined;
-      
+
       // ✅ إعداد بيانات الإكرامية إذا كانت موجودة
       const tipData = this.finalTipSummary ? {
         tip_amount: this.finalTipSummary.tipAmount || 0,
@@ -624,7 +624,54 @@ export class PillEditComponent {
         payment_amount: this.finalTipSummary.paymentAmount || (cashAmount + creditAmount),
         bill_amount: this.finalTipSummary.billAmount || finalTotal
       } : undefined;
-      
+
+
+      if (this.paymentStatus == 'paid') {
+        if (cashAmount > 0) {
+          // Get existing paid_order value from localStorage
+          const existingPaidOrderStrCash = localStorage.getItem('paid_order_cash');
+          // Helper function to parse value (handles both JSON and plain string)
+          const parseValueCash = (value: string | null): number => {
+            if (!value) return 0;
+            try {
+              const parsedCash = JSON.parse(value);
+              return parseFloat(parsedCash) || 0;
+            } catch {
+              return parseFloat(value) || 0;
+            }
+          };
+
+          // Get existing value and add new bill_amount
+          const existingPaidOrderCash = parseValueCash(existingPaidOrderStrCash);
+          const newTotalCash = existingPaidOrderCash + (cashAmount || 0);
+
+          // Store the accumulated total
+          localStorage.setItem('paid_order_cash', JSON.stringify(newTotalCash));
+        }
+        if (creditAmount > 0) {
+          // Get existing paid_order value from localStorage
+          const existingPaidOrderStrCredit = localStorage.getItem('paid_order_credit');
+
+          // Helper function to parse value (handles both JSON and plain string)
+          const parseValueCredit = (value: string | null): number => {
+            if (!value) return 0;
+            try {
+              const parsedCredit = JSON.parse(value);
+              return parseFloat(parsedCredit) || 0;
+            } catch {
+              return parseFloat(value) || 0;
+            }
+          };
+
+          // Get existing value and add new bill_amount
+          const existingPaidOrderCredit = parseValueCredit(existingPaidOrderStrCredit);
+          const newTotalCredit = existingPaidOrderCredit + (creditAmount || 0);
+
+          // Store the accumulated total
+          localStorage.setItem('paid_order_credit', JSON.stringify(newTotalCredit));
+        }
+      }
+
       this.orderService
         .updateInvoiceStatus(
           this.orderNumber,
@@ -646,7 +693,7 @@ export class PillEditComponent {
               this.loading = false;
               return; // ❌ منع المتابعة إذا كان هناك خطأ
             }
-            
+
             if (response.status === false || response.errorData) {
               // Handle validation or logical API errors
               this.apiErrors = Object.values(
@@ -699,7 +746,7 @@ export class PillEditComponent {
   private recalcTotalsWithDiscount(discount: number, title: string, type: 'percentage' | 'fixed' | ''): void {
     const summary = this.invoices?.[0]?.invoice_summary;
     if (!summary) return;
-  
+
     // According to User Story 17: Fixed calculation order
     // Step 1: Get Product Value (BEFORE discount)
     const productValueBeforeDiscount = Number(summary.subtotal_price_before_coupon ?? summary.total_price ?? 0);
@@ -708,11 +755,11 @@ export class PillEditComponent {
     const taxPerc = Number(summary.tax_percentage || 0);
     const taxApplication = summary.tax_application ?? false;
     const deliveryFees = Number(summary.delivery_fees || 0);
-    
+
     // Step 2: Apply Discount/Coupon
     const discountValue = Math.min(discount, productValueBeforeDiscount);
     const productValueAfterDiscount = productValueBeforeDiscount - discountValue;
-    
+
     // Step 3: Calculate Service Charge (on product value AFTER discount)
     let serviceAmount = 0;
     if (servicePerc > 0) {
@@ -721,11 +768,11 @@ export class PillEditComponent {
       serviceAmount = serviceFixed;
     }
     serviceAmount = Number(serviceAmount.toFixed(2));
-    
+
     // Step 4: Calculate VAT (14% on Product Value AFTER Discount + Service Charge)
     // VAT Base = Product Value After Discount + Service Charge
     const vatBase = productValueAfterDiscount + serviceAmount;
-    
+
     let taxAmount = 0;
     if (taxPerc > 0) {
       if (taxApplication) {
@@ -737,11 +784,11 @@ export class PillEditComponent {
       }
     }
     taxAmount = Number(taxAmount.toFixed(3));
-    
+
     // Step 5: Calculate Final Total
     // Final Total = Product Value After Discount + Service Charge + VAT + Delivery Fee
     const finalTotal = productValueAfterDiscount + serviceAmount + taxAmount + deliveryFees;
-  
+
     // تحديث بيانات الفاتورة
     summary.coupon_value = discountValue;
     summary.coupon_title = title;
@@ -752,20 +799,20 @@ export class PillEditComponent {
     summary.total_after_tax = Number(finalTotal.toFixed(2));
     summary.tax_value = Number(taxAmount.toFixed(3));
     summary.tax = Number(taxAmount.toFixed(3));
-    
+
     // تحديث بيانات رسوم الخدمة
     if (servicePerc > 0) {
       summary.service_fees = serviceAmount;
     } else {
       summary.service_fees = serviceAmount;
     }
-  
+
     this.discountAmount = discountValue;
     this.couponTitle = title;
     this.couponType = type;
     this.totalll = summary.total_price;
     this.cdr.detectChanges();
-    
+
     console.log('✅ Discount applied - Updated totals (User Story 17):', {
       productValueBeforeDiscount,
       discountValue,
@@ -791,7 +838,7 @@ export class PillEditComponent {
     this.couponError = '';
     this.couponMessage = '';
     this.isApplyingCoupon = true;
-  
+
     const token = localStorage.getItem('authToken');
     const headers = new HttpHeaders({
       Authorization: `Bearer ${token || ''}`,
@@ -806,7 +853,7 @@ export class PillEditComponent {
       branch_id: branchId,
       dishes: this.buildOrderItemsForCoupon()
     };
-  
+
     this.http.post(`${baseUrl}api/coupons/check-coupon`, requestData, { headers })
       .pipe(finalize(() => { this.isApplyingCoupon = false; }))
       .subscribe({
@@ -819,12 +866,12 @@ export class PillEditComponent {
             // لا نغلق المودال عند الخطأ
             return;
           }
-          
+
           this.appliedCoupon = res.data;
           this.discountAmount = res.data.total_discount || 0;
           this.couponTitle = res.data.coupon_title || this.couponCode;
           this.couponType = res.data.value_type || '';
-          
+
           // التأكد من أن هناك خصم فعلي قبل المتابعة
           if (this.discountAmount <= 0) {
             this.couponError = 'الكوبون لا يحتوي على خصم صالح.';
@@ -833,19 +880,19 @@ export class PillEditComponent {
             this.couponMessage = '';
             return;
           }
-          
+
           // مسح أي أخطاء سابقة
           this.couponError = '';
-          
+
           // حساب المبلغ الجديد مع الضريبة والرسوم
           this.recalcTotalsWithDiscount(
-            this.discountAmount, 
-            this.couponTitle, 
+            this.discountAmount,
+            this.couponTitle,
             this.couponType
           );
-          
+
           this.couponMessage = `تم تطبيق الكوبون: -${this.discountAmount.toFixed(2)} ${res.data.currency_symbol || ''}`;
-          
+
           console.log('✅ Coupon applied successfully:', {
             discountAmount: this.discountAmount,
             oldTotal: baseAmount,
@@ -853,7 +900,7 @@ export class PillEditComponent {
             couponTitle: this.couponTitle,
             couponType: this.couponType
           });
-          
+
           // إغلاق المودال تلقائياً بعد تطبيق الكوبون بنجاح فقط
           setTimeout(() => {
             this.closeCouponModal();
@@ -898,22 +945,22 @@ export class PillEditComponent {
   removeDiscount(): void {
     const summary = this.invoices?.[0]?.invoice_summary;
     if (!summary) return;
-    
+
     // التحقق من وجود كوبون مطبق (من البيانات الأصلية أو المطبق حديثاً)
-    const hasCoupon = (this.discountAmount > 0) || 
+    const hasCoupon = (this.discountAmount > 0) ||
                       (summary.coupon_value && summary.coupon_value > 0);
     if (!hasCoupon) return;
-    
+
     // حفظ القيم الأصلية
     const originalSubtotal = Number(summary.subtotal_price_before_coupon || summary.total_price || 0);
     const taxPerc = Number(summary.tax_percentage || 0);
     const servicePerc = Number(summary.service_percentage || 0);
     const serviceFixed = Number(summary.service_fees || 0);
     const deliveryFees = Number(summary.delivery_fees || 0);
-    
+
     // إعادة الحساب من الصفر
     let subtotalAfter = originalSubtotal;
-    
+
     // حساب رسوم الخدمة
     let serviceAmount = 0;
     if (servicePerc > 0) {
@@ -921,18 +968,18 @@ export class PillEditComponent {
     } else {
       serviceAmount = serviceFixed;
     }
-    
+
     subtotalAfter += serviceAmount;
-    
+
     // حساب الضريبة
     let taxAmount = 0;
     if (taxPerc > 0) {
       taxAmount = (subtotalAfter * taxPerc) / 100;
     }
-    
+
     // الحساب النهائي (يشمل delivery_fees)
     const finalTotal = subtotalAfter + taxAmount + deliveryFees;
-  
+
     // تحديث بيانات الفاتورة
     summary.coupon_value = 0;
     summary.coupon_title = '';
@@ -941,12 +988,12 @@ export class PillEditComponent {
     summary.total_price = Number(finalTotal.toFixed(2));
     summary.total_after_tax = Number(finalTotal.toFixed(2));
     summary.tax = Number(taxAmount.toFixed(2));
-    
+
     // تحديث بيانات رسوم الخدمة إذا كانت نسبة
     if (servicePerc > 0) {
       summary.service_fees = Number(serviceAmount.toFixed(2));
     }
-  
+
     this.discountAmount = 0;
     this.couponTitle = '';
     this.couponType = '';
@@ -956,7 +1003,7 @@ export class PillEditComponent {
     this.appliedCoupon = null;
     this.totalll = summary.total_price;
     this.cdr.detectChanges();
-    
+
     console.log('✅ Discount removed - Reset to original:', {
       originalSubtotal,
       serviceAmount,
@@ -965,7 +1012,7 @@ export class PillEditComponent {
       finalTotal,
       totalll: this.totalll
     });
-    
+
     // إغلاق المودال بعد حذف الكوبون (فقط إذا كان مفتوحاً)
     const modalElement = document.getElementById('couponModal');
     if (modalElement) {
@@ -1109,25 +1156,25 @@ export class PillEditComponent {
     if (!modal) {
       modal = new bootstrap.Modal(modalElement);
     }
-    
+
     // دالة التنظيف
     const cleanup = () => {
       // إزالة جميع الـ backdrops المتبقية
       const backdrops = document.querySelectorAll('.modal-backdrop');
       backdrops.forEach(backdrop => backdrop.remove());
-      
+
       // تنظيف body
       document.body.classList.remove('modal-open');
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
     };
-    
+
     // إزالة الـ backdrop والتنظيف بعد إغلاق المودال
     modalElement.addEventListener('hidden.bs.modal', cleanup, { once: true });
-    
+
     // إغلاق المودال
     modal.hide();
-    
+
     // تنظيف فوري أيضاً في حالة عدم تشغيل الـ event
     setTimeout(cleanup, 300);
   }
@@ -1145,7 +1192,7 @@ export class PillEditComponent {
     const total = this.getInvoiceTotal();
     let cash = 0;
     let credit = 0;
-    
+
     // ✅ للدفع المختلط: قراءة من الحقول المختلطة
     if (this.selectedPaymentMethod === 'cash + credit') {
       cash = parseFloat(this.cashAmountMixed) || 0;
@@ -1154,7 +1201,7 @@ export class PillEditComponent {
       // للكاش أو الفيزا: قراءة من القيم العادية
       cash = Number(this.cash_value ?? 0);
       credit = Number(this.credit_value ?? 0);
-      
+
       // إذا كانت القيم 0، جرب قراءة من الحقول المدخلة
       if (cash === 0 && credit === 0) {
         if (this.selectedPaymentMethod === 'cash') {
@@ -1164,7 +1211,7 @@ export class PillEditComponent {
         }
       }
     }
-    
+
     const totalPaid = Number((Number(cash || 0) + Number(credit || 0)).toFixed(2));
     return totalPaid >= total;
   }
@@ -1185,7 +1232,7 @@ export class PillEditComponent {
   setCreditAmount(value: number) {
     this.credit_value = value;
     localStorage.setItem('credit_value', String(value));
-    
+
     // مسح رسالة الخطأ عند تغيير قيمة الفيزا
     if (value === 0 || value === null) {
       this.referenceNumberError = '';
@@ -1228,7 +1275,7 @@ export class PillEditComponent {
     this.referenceNumber = numericValue;
     // تحديث قيمة الحقل
     event.target.value = numericValue;
-    
+
     // ✅ مسح رسالة الخطأ عند إدخال رقم المرجع (حتى لو كان فارغاً مؤقتاً)
     if (numericValue && numericValue.trim() !== '') {
       this.referenceNumberError = '';
@@ -1271,7 +1318,7 @@ export class PillEditComponent {
     this.tempBillAmount = billAmount;
     this.tempPaymentAmount = paymentAmount;
     this.tempChangeAmount = Math.max(0, paymentAmount - billAmount);
-    
+
     // تعيين طريقة الدفع إذا تم تمريرها
     if (paymentMethod) {
       if (paymentMethod === 'cash') {
@@ -1282,7 +1329,7 @@ export class PillEditComponent {
         this.selectedPaymentMethod = 'cash + credit';
       }
     }
-    
+
     if (!this.selectedTipType) {
       this.selectedTipType = 'no_tip';
     }
@@ -1294,9 +1341,9 @@ export class PillEditComponent {
       centered: true,
       size: 'md'
     });
-    
+
     this.startTipModalTimeout(modalRef, billAmount, paymentAmount);
-    
+
     modalRef.result.then((result) => {
       console.log('Tip Modal Closed with final result:', result);
       this.stopTipModalTimeout();
@@ -1309,31 +1356,31 @@ export class PillEditComponent {
       this.resetTempVariables();
     });
   }
-  
+
   private startTipModalTimeout(modalRef: any, billAmount: number, paymentAmount: number): void {
     this.tipModalTimeRemaining = this.tipModalTimeoutDuration;
     this.tipModalWarningShown = false;
-    
+
     this.tipModalCountdownRef = setInterval(() => {
       this.tipModalTimeRemaining--;
-      
+
       if (this.tipModalTimeRemaining <= this.tipModalWarningTime && !this.tipModalWarningShown) {
         this.tipModalWarningShown = true;
         console.warn(`⚠️ تحذير: سيتم اختيار "بدون إكرامية" تلقائياً خلال ${this.tipModalWarningTime} ثواني`);
       }
-      
+
       if (this.tipModalTimeRemaining <= 0) {
         this.stopTipModalTimeout();
         this.autoSelectNoTip(modalRef, billAmount, paymentAmount);
       }
     }, 1000);
-    
+
     this.tipModalTimeoutRef = setTimeout(() => {
       this.stopTipModalTimeout();
       this.autoSelectNoTip(modalRef, billAmount, paymentAmount);
     }, this.tipModalTimeoutDuration * 1000);
   }
-  
+
   private stopTipModalTimeout(): void {
     if (this.tipModalTimeoutRef) {
       clearTimeout(this.tipModalTimeoutRef);
@@ -1346,7 +1393,7 @@ export class PillEditComponent {
     this.tipModalTimeRemaining = 0;
     this.tipModalWarningShown = false;
   }
-  
+
   private autoSelectNoTip(modalRef: any, billAmount: number, paymentAmount: number): void {
     console.log('⏰ Timeout: اختيار "بدون إكرامية" تلقائياً');
     this.selectedTipType = 'no_tip';
@@ -1413,7 +1460,7 @@ export class PillEditComponent {
 
   confirmTipAndClose(modal: any): void {
     this.stopTipModalTimeout();
-    
+
     let finalTipAmount: number = 0;
     let additionalPaymentRequired: number = 0;
     let originalPaymentAmount: number = this.tempPaymentAmount;
@@ -1422,8 +1469,8 @@ export class PillEditComponent {
       finalTipAmount = this.tempChangeAmount;
       additionalPaymentRequired = 0;
     } else if (this.selectedTipType === 'tip_specific_amount') {
-      const tipAmountValue = typeof this.specificTipAmount === 'string' 
-        ? parseFloat(this.specificTipAmount) || 0 
+      const tipAmountValue = typeof this.specificTipAmount === 'string'
+        ? parseFloat(this.specificTipAmount) || 0
         : Number(this.specificTipAmount) || 0;
       finalTipAmount = Math.max(0, tipAmountValue);
 
@@ -1438,7 +1485,7 @@ export class PillEditComponent {
       additionalPaymentRequired = 0;
       this.tempPaymentAmount = originalPaymentAmount;
     }
-    
+
     const changeToReturn = Math.max(0, this.tempPaymentAmount - (this.tempBillAmount + finalTipAmount));
     const grandTotalWithTip = this.selectedTipType === 'no_tip'
       ? this.tempBillAmount
@@ -1450,8 +1497,8 @@ export class PillEditComponent {
     let paymentMethodText = '';
 
     if (this.selectedPaymentMethod === 'cash') {
-      cashFinal = this.selectedTipType === 'no_tip' 
-        ? this.tempBillAmount 
+      cashFinal = this.selectedTipType === 'no_tip'
+        ? this.tempBillAmount
         : (this.selectedTipType === 'tip_the_change' ? this.tempPaymentAmount : grandTotalWithTip);
       creditFinal = 0;
       paymentMethodText = 'كاش';
@@ -1470,7 +1517,7 @@ export class PillEditComponent {
     } else if (this.selectedPaymentMethod === 'cash + credit') {
       cashFinal = this.cashAmountMixed || 0;
       creditFinal = this.creditAmountMixed || 0;
-      
+
       if (additionalPaymentRequired > 0) {
         const totalOriginal = cashFinal + creditFinal;
         if (totalOriginal > 0) {
@@ -1500,7 +1547,7 @@ export class PillEditComponent {
     this.paymentError = '';
     this.paymentAmountError = '';
     this.amountError = false;
-    
+
     if (additionalPaymentRequired > 0) {
       this.showAdditionalPaymentConfirmation(additionalPaymentRequired, modal);
     } else {
@@ -1510,7 +1557,7 @@ export class PillEditComponent {
 
   showAdditionalPaymentConfirmation(additionalAmount: number, modal: any): void {
     const roundedAdditionalAmount = Math.round(additionalAmount * 1000) / 1000;
-    
+
     // حفظ البيانات للعرض في الـ modal
     this.additionalPaymentRequiredAmount = roundedAdditionalAmount;
     this.requiredTipAmount = this.specificTipAmount;
@@ -1519,7 +1566,7 @@ export class PillEditComponent {
 
     // إغلاق modal الإكرامية أولاً
     modal.dismiss('Opening additional payment modal');
-    
+
     // فتح الـ modal المخصص بعد تأخير بسيط لضمان إغلاق الأول
     setTimeout(() => {
       const modalElement = document.getElementById('additionalPaymentModal');
@@ -1619,7 +1666,7 @@ export class PillEditComponent {
     this.paymentError = '';
 
     // قراءة القيمة الصحيحة بناءً على طريقة الدفع
-    const currentPaymentInput = this.selectedPaymentMethod === 'credit' 
+    const currentPaymentInput = this.selectedPaymentMethod === 'credit'
       ? parseFloat(this.creditPaymentInput) || 0
       : parseFloat(this.cashPaymentInput) || 0;
 
@@ -1769,7 +1816,7 @@ export class PillEditComponent {
     if (this.finalTipSummary?.paymentAmount) {
       return this.finalTipSummary.paymentAmount;
     }
-    
+
     // For credit payment, check credit_value or creditPaymentInput
     if (this.selectedPaymentMethod === 'credit') {
       const creditValue = Number(this.credit_value || 0);
@@ -1781,7 +1828,7 @@ export class PillEditComponent {
         return creditInput;
       }
     }
-    
+
     // For cash payment, check cashPaymentInput
     if (this.selectedPaymentMethod === 'cash') {
       const cashInput = Number(this.cashPaymentInput || 0);
@@ -1789,7 +1836,7 @@ export class PillEditComponent {
         return cashInput;
       }
     }
-    
+
     // For mixed payment, sum both amounts
     if (this.selectedPaymentMethod === 'cash + credit') {
       const cash = Number(this.cashAmountMixed || 0);
@@ -1799,7 +1846,7 @@ export class PillEditComponent {
         return total;
       }
     }
-    
+
     // Default: return bill amount
     return billAmount;
   }
