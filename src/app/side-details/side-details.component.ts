@@ -3447,8 +3447,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               .printkitchen(orderData, this.orderedId)
               .subscribe({
                 next: async (response) => {
-                  console.log('🖨️ [Kitchen Print] Response received:', response);
 
+                  if(response.order.make_type == 'cashier'){
+                  console.log('🖨️ [Kitchen Print] Response received:', response);
                   if(response.status && response.allDish && response.allDish.length > 0){
                     console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
                     try {
@@ -3494,6 +3495,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                     this.printInvoiceImage(response.grills ,response.order, response.IPgrills , response.portgrills).catch(err => {
                       console.error('❌ [Kitchen Print] Error printing grills:', err);
                     });
+                  }
                   }
 
                   // await new Promise(resolve => setTimeout(resolve, 60000));
