@@ -14,7 +14,6 @@
     "test": "ng test",
     "serve:ssr:cashier": "node dist/cashier/server/server.mjs",
     "electron:build": "ng build --configuration production && electron-builder"
-
   },
   "private": true,
   "dependencies": {
@@ -82,28 +81,24 @@
     "typescript": "~5.7.2"
   },
   "build": {
-  "appId": "com.cashier.app",
-  "productName": "Cashier System",
-  "directories": {
-    "output": "release"
-  },
-  "files": [
-    "dist/**/*",
-    "electron/**/*",
-    "app.js",
-    "preload.js",
-    "package.json"
-  ],
-  "asarUnpack": [
-    "preload.js"
-  ],
-  "win": {
-    "target": "nsis",
-    "forceCodeSigning": false
+    "appId": "com.cashier.sprint",
+    "productName": "Cashier sprint",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "app.js",
+      "preload.js",
+      "package.json"
+    ],
+    "asarUnpack": [
+      "preload.js"
+    ],
+    "win": {
+      "target": "nsis",
+      "forceCodeSigning": false
+    }
   }
 }
-
-
-}
-
-

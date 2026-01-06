@@ -16,6 +16,7 @@ import { PillEditComponent } from './pill-edit/pill-edit.component';
 import { OnholdOrderComponent } from './onhold-order/onhold-order.component';
 import { ReturnedInvoiceComponent } from './returned-invoice/returned-invoice.component';
 import { TestComponent } from './testWebSocket/test/test.component';
+import { TableAvailableComponent } from './tableavailable/tableavailable.component';
 
 export const routes: Routes = [
   {
@@ -37,8 +38,10 @@ export const routes: Routes = [
     canActivateChild: [AuthGuard],
     children: [
       { path: 'home', component: HomeComponent },
-      { path: 'orders', component: OrdersComponent }, 
+      { path: 'orders', component: OrdersComponent },
       { path: 'tables', component: TablesComponent },
+      { path: 'tableavailable/:orderId', component: TableAvailableComponent },
+      { path: 'tableavailable', component: TableAvailableComponent },
       { path: 'pills', component: PillsComponent },
       { path: 'delivery-details', component: DeliveryDetailsComponent },
       {

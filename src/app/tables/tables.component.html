@@ -5,7 +5,7 @@
 }
 
 <!-- <div class="pills p-3" appShowLoaderUntilPageLoaded [isReady]="loading">
- Search Bar 
+ Search Bar
   <div class="input-group w-100 mx-auto my-3">
     <input [(ngModel)]="searchText" (input)="filterTables()" placeholder="ابحث برقم الطاولة"
       class="form-control rounded-start" aria-describedby="search-icon" />
@@ -14,14 +14,14 @@
     </span>
   </div>
 -->
-  <!-- Tabs Navigation 
+  <!-- Tabs Navigation
   <ul class="nav nav-pills mb-4 px-0" id="pills-tab25" role="tablist">-->
     <!-- ALL -->
 <!--     <li class="nav-item" role="presentation">
     <button class="nav-link active" id="pills-home-tab" data-bs-toggle="pill" data-bs-target="#pills-home" type="button" role="tab" aria-controls="pills-home" aria-selected="true">الكل
       <span>({{tabless.length}})</span>
     </button>
-  </li> 
+  </li>
     <li class="nav-item" role="presentation">
     <button
       class="nav-link"
@@ -62,7 +62,7 @@
               <div class="d-flex flex-nowrap align-items-center">
                 <div
                   class=" d-inline-flex align-items-center btn-static bg-success text-white fw-bold text-center mx-2 mt-2 px-2">
-                  <img src="../assets/images/table.png" alt="Table Icon" class="me-1" style="max-width: 20px;" />
+                  <img src="assets/images/table.png" alt="Table Icon" class="me-1" style="max-width: 20px;" />
 
                   <span class="fs-6 "> طاولة </span>
                   {{ table.table_number }}
@@ -101,7 +101,7 @@
               <div class="d-flex flex-nowrap align-items-center">
                 <div
                   class=" d-inline-flex align-items-center btn-static bg-success text-white fw-bold text-center mx-2 mt-2 px-2">
-                  <img src="../assets/images/table.png" alt="Table Icon" class="me-1" style="max-width: 20px;" />
+                  <img src="assets/images/table.png" alt="Table Icon" class="me-1" style="max-width: 20px;" />
 
                   <span class="fs-6 "> طاولة </span>
                   {{ table.table_number }}
@@ -185,7 +185,12 @@
       class="col-6 col-sm-6 col-lg-4 col-xl-3"
       *ngFor="let table of tables; trackBy: trackByTableId"
     >
-      <div class="card p-2 pb-3" (click)="onTableClick(table.id)" [class.disabled]="table.status === 2">
+      <div class="card p-2 pb-3"
+           [class.disabled]="table.status === 2"
+           (click)="table.status === 2 ? onTableOrderDetailsClick(table.id) : onTableClick(table.id)">
+
+      <!-- <div class="card p-2 pb-3" (click)="onTableClick(table.id)" [class.disabled]="table.status === 2"> -->
+
         <div class="floor_number">
           <div>
             <span class="fw-medium">{{ table.floors?.name }} - {{ table.floor_partitions?.name }}</span>
@@ -202,7 +207,7 @@
             <div
               class="d-inline-flex align-items-center btn-static bg-success text-white fw-bold text-center mx-2 mt-2 px-2"
             >
-              <img src="../assets/images/table.png" alt="Table Icon" class="me-1" style="max-width: 20px;" />
+              <img src="assets/images/table.png" alt="Table Icon" class="me-1" style="max-width: 20px;" />
               <span class="fs-6">طاولة</span> {{ table.table_number }}
             </div>
           </div>
@@ -215,9 +220,19 @@
           >
             {{ getStatusText(table.status) }}
           </span>
+          <!-- if table.status is 1, show the order details button -->
         </div>
       </div>
     </div>
   </div>
 </ng-template>
 </section>
+
+<ng-template #messageModal let-modal>
+  <div class="d-flex justify-content-center align-items-center h-100">
+    <p class="alert text-center fw-bold mb-0 w-100"
+      [ngClass]="messageType === 'success' ? 'alert-success' : 'alert-danger'">
+      {{ message }}
+    </p>
+  </div>
+</ng-template>

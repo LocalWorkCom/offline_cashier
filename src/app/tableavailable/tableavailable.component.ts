@@ -1,21 +1,21 @@
-import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, Inject, PLATFORM_ID } from '@angular/core';
 import { TablesService } from '../services/tables.service';
-import { CommonModule, Location } from '@angular/common';
-import { Router } from '@angular/router';
+import { CommonModule, Location, isPlatformBrowser } from '@angular/common';
+import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TableCrudOperationService } from '../services/pusher/tableCrudOperation';
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
 import { finalize } from 'rxjs';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { COLORS } from 'html2canvas/dist/types/css/types/color';
 
 @Component({
   selector: 'app-tables',
   standalone: true,
   imports: [CommonModule, FormsModule, ShowLoaderUntilPageLoadedDirective],
-  templateUrl: './tables.component.html',
-  styleUrls: ['./tables.component.css'],
+  templateUrl: './tableavailable.component.html',
+  styleUrls: ['./tableavailable.component.css'],
 })
-export class TablesComponent implements OnInit, OnDestroy {
+export class TableAvailableComponent implements OnInit, OnDestroy {
   tables: any[] = [];
   tabless: any[] = [];
   tablesByStatus: { status: number; label: string; tables: any[] }[] = [];
@@ -25,18 +25,26 @@ export class TablesComponent implements OnInit, OnDestroy {
   searchText: string = '';
   loading: boolean = true;
   errorMessage: any;
-  message: string = '';
-  messageType: 'success' | 'error' = 'error';
+  orderId: number | null = null;
 
   constructor(
     private tablesRequestService: TablesService,
     private router: Router,
     private location: Location,
     private tableOperation: TableCrudOperationService,
-    private NgbModal: NgbModal
+    private route: ActivatedRoute,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) { }
 
   ngOnInit(): void {
+    // Get order_id from route parameter if available
+    this.route.params.subscribe(params => {
+      if (params['orderId']) {
+        this.orderId = +params['orderId'];
+        console.log('Order ID from route:', this.orderId);
+      }
+    });
+
     if (navigator.onLine) {
       this.fetchTablesData();
     }
@@ -78,20 +86,18 @@ export class TablesComponent implements OnInit, OnDestroy {
               status: Number(table.status),
             }));
 
+            // Filter only available tables (status === 1)
+            const availableTables = this.tables.filter((t) => t.status === 1);
+
             this.tablesByStatus = [
               {
                 status: 1,
                 label: 'متاحة',
-                tables: this.tables.filter((t) => t.status === 1),
-              },
-              {
-                status: 2,
-                label: 'مشغولة',
-                tables: this.tables.filter((t) => t.status === 2),
+                tables: availableTables,
               },
             ];
 
-            // Initialize filtered list with all tables
+            // Initialize filtered list with only available tables
             this.filteredTablesByStatus = JSON.parse(
               JSON.stringify(this.tablesByStatus)
             );
@@ -104,16 +110,14 @@ export class TablesComponent implements OnInit, OnDestroy {
   }
 
   updateTableStatusLists() {
+    // Filter only available tables (status === 1)
+    const availableTables = this.tables.filter((t) => t.status === 1);
+
     this.tablesByStatus = [
       {
         status: 1,
         label: 'متاحة',
-        tables: this.tables.filter((t) => t.status == 1),
-      },
-      {
-        status: 2,
-        label: 'مشغولة',
-        tables: this.tables.filter((t) => t.status == 2),
+        tables: availableTables,
       },
     ];
     // Trigger UI update
@@ -200,27 +204,47 @@ export class TablesComponent implements OnInit, OnDestroy {
   onTableClick(tableId: number): void {
     const selectedTable = this.tables.find((table) => table.id === tableId);
 
+    console.log(selectedTable, 'selectedTable');
+
     if (!selectedTable) {
       console.warn('Table not found:', tableId);
       return;
     }
 
     if (selectedTable.status === 2) {
-      this.showMessageModal('هذه الطاولة مشغولة، يرجى اختيار طاولة أخرى.', 'error');
+      alert('هذه الطاولة مشغولة، يرجى اختيار طاولة أخرى.');
       return;
     }
+    // Use order_id from route if available, otherwise use table's order_id
+    const orderIdToUse = this.orderId || selectedTable.order_id;
+    this.tablesRequestService.updateTableStatus(tableId, orderIdToUse).subscribe({
+      next: (response) => {
+        console.log(response, 'response');
+        if (response.status) {
+          // Show success modal
+          if (isPlatformBrowser(this.platformId)) {
+            import('bootstrap').then(({ Modal }) => {
+              const modalElement = document.getElementById('successTableModal');
+              if (modalElement) {
+                const successModal = new Modal(modalElement);
+                successModal.show();
 
-    localStorage.setItem('selected_table', JSON.stringify(selectedTable));
-    localStorage.setItem('table_id', JSON.stringify(tableId));
-    localStorage.setItem(
-      'table_number',
-      JSON.stringify(selectedTable.table_number)
-    );
-    this.router.navigate(['/home']);
-    if (localStorage.getItem('cameFromSideDetails') === 'true') {
-      this.router.navigate(['/home']);
-      localStorage.removeItem('cameFromSideDetails');
-    }
+                // Navigate to orders page after modal is shown
+                setTimeout(() => {
+                  successModal.hide();
+                  this.router.navigate(['/orders']);
+                }, 2000);
+              }
+            });
+          }
+        }
+      },
+      error: (err) => {
+        console.error('Error updating table status:', err);
+      }
+    });
+
+
   }
   ngOnDestroy(): void {
     this.tableOperation.stopListeningForChangeTableStatus();
@@ -228,34 +252,17 @@ export class TablesComponent implements OnInit, OnDestroy {
   }
 
   get activeTables() {
-    return this.selectedStatus === -1
-      ? this.tabless
-      : this.filteredTablesByStatus[this.selectedStatus]?.tables || [];
+    // Always return only available tables (status === 1)
+    if (this.selectedStatus === -1) {
+      return this.tabless.filter((t) => t.status === 1);
+    }
+    return this.filteredTablesByStatus[this.selectedStatus]?.tables || [];
   }
 
 
 
   trackByTableId(index: number, table: any) {
     return table.id;
-  }
-
-  @ViewChild('messageModal') messageModal: any;
-
-  showMessageModal(msg: string, type: 'success' | 'error') {
-    this.message = msg;
-    this.messageType = type;
-
-    const modalRef = this.NgbModal.open(this.messageModal, {
-      centered: true,
-      size: 'sm',
-      keyboard: false,
-    });
-
-    setTimeout(() => {
-      modalRef.close();
-      const backdrops = document.querySelectorAll('.modal-backdrop');
-      backdrops.forEach((backdrop) => backdrop.remove());
-    }, 1500);
   }
 
   onTableOrderDetailsClick(tableId: number): void {

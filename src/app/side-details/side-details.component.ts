@@ -2076,6 +2076,20 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     couponKeys.forEach(key => localStorage.removeItem(key));
   }
+
+  // دالة لتطبيق الكوبون تلقائياً عند تغيير القيمة
+  onCouponCodeChange(value: string): void {
+    // تطبيق الكوبون تلقائياً إذا تم إدخال كود
+    if (value && value.trim()) {
+      // تطبيق الكوبون تلقائياً بعد تأخير بسيط لتجنب الطلبات المتكررة
+      setTimeout(() => {
+        if (this.couponCode && this.couponCode.trim() === value.trim()) {
+          this.applyCoupon();
+        }
+      }, 500);
+    }
+  }
+
   getTotal(): number {
     const itemsHash = JSON.stringify(this.cartItems);
     if (this._cachedTotal !== null && this._cachedCartItemsHash === itemsHash) {
@@ -2670,6 +2684,42 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.isLoading = true;
     this.loading = true;
 
+    // 🔒 التحقق من paymentError قبل المتابعة
+    if (this.paymentError && this.paymentError.trim() !== '') {
+      this.isLoading = false;
+      this.loading = false;
+      this.falseMessage = this.paymentError;
+      console.error('❌ خطأ في المبلغ المدخل:', this.paymentError);
+      setTimeout(() => {
+        this.falseMessage = '';
+        this.paymentError = '';
+      }, 3500);
+      return;
+    }
+
+    // 🔒 التحقق من مبلغ الفيزا إذا كانت طريقة الدفع فيزا
+    if (this.selectedPaymentStatus === 'paid' && this.selectedPaymentMethod === 'credit') {
+      const cartTotal = this.finalTipSummary?.billAmount ?? this.getCartTotal();
+      const creditAmount = Number(this.credit_amountt) || 0;
+
+      if (creditAmount > 0 && creditAmount < cartTotal) {
+        this.isLoading = false;
+        this.loading = false;
+        this.amountError = true;
+        this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${cartTotal.toFixed(2)} ${this.currencySymbol}`;
+        console.error('❌ خطأ في التحقق من مبلغ الفيزا في بداية submitOrder:', {
+          creditAmount,
+          cartTotal,
+          credit_amountt: this.credit_amountt
+        });
+        setTimeout(() => {
+          this.amountError = false;
+          this.falseMessage = '';
+        }, 3500);
+        return;
+      }
+    }
+
     // التحقق الأساسي
     if (!this.cartItems.length) {
       this.isLoading = false;
@@ -2818,6 +2868,26 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
           totalEntered = Number(((this.cashAmountMixed || 0) + (this.creditAmountMixed || 0)));
         }
+        // ✅ حالة الفيزا - التحقق من المبلغ المدخل
+        else if (this.selectedPaymentMethod === 'credit') {
+          const creditAmount = Number(this.credit_amountt) || 0;
+          if (creditAmount > 0 && creditAmount < cartTotal) {
+            this.amountError = true;
+            this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${cartTotal.toFixed(2)} ${this.currencySymbol}`;
+            console.error('❌ خطأ في التحقق من مبلغ الفيزا:', {
+              creditAmount,
+              cartTotal,
+              credit_amountt: this.credit_amountt
+            });
+            this.isLoading = false;
+            setTimeout(() => {
+              this.amountError = false;
+              this.falseMessage = '';
+            }, 3500);
+            return;
+          }
+          totalEntered = creditAmount > 0 ? creditAmount : cartTotal;
+        }
         // ✅ النظام القديم
         else {
           totalEntered = Number((((Number(this.cash_amountt) || 0) + (Number(this.credit_amountt) || 0))));
@@ -2921,7 +2991,17 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
         // ✅ التعديل المطلوب: إذا كاش يحط في cash_amount، إذا فيزا يحط في credit_amount
         if (this.selectedPaymentMethod === 'cash') {
-          orderData.cash_amount = this.cashPaymentInput > 0 ? this.cashPaymentInput : billAmount;
+          const cashAmount = this.cashPaymentInput > 0 ? this.cashPaymentInput : billAmount;
+
+          // 🔒 التحقق من أن مبلغ الكاش لا يقل عن الإجمالي
+          if (cashAmount < billAmount) {
+            this.amountError = true;
+            this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmount} ${this.currencySymbol}`;
+            return;
+          }
+
+          // تسجيل الإجمالي بالضبط في cash_amount
+          orderData.cash_amount = billAmount;
           orderData.credit_amount = 0;
         } else if (this.selectedPaymentMethod === 'cash + credit') {
 
@@ -2954,7 +3034,24 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           // const creditAmount = Number(this.creditAmountMixed) || 0;
         }
         else if (this.selectedPaymentMethod === 'credit') {
-          orderData.credit_amount = this.credit_amountt > 0 ? this.credit_amountt : billAmount;
+          // 🔒 الخطوة 1: التحقق أولاً من أن مبلغ الفيزا المدخل لا يقل عن الإجمالي
+          const enteredCreditAmount = Number(this.credit_amountt) || 0;
+          const billAmountNum = Number(billAmount) || 0;
+
+          // إذا تم إدخال مبلغ وكان أقل من الإجمالي، منع التنفيذ
+          if (enteredCreditAmount > 0 && enteredCreditAmount < billAmountNum) {
+            this.amountError = true;
+            this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountNum.toFixed(2)} ${this.currencySymbol}`;
+            console.error('❌ خطأ في التحقق من مبلغ الفيزا:', {
+              enteredCreditAmount,
+              billAmountNum,
+              credit_amountt: this.credit_amountt
+            });
+            return;
+          }
+
+          // 🔒 الخطوة 2: إذا كان المبلغ صحيحاً (>= الإجمالي)، تسجيل الإجمالي بالضبط
+          orderData.credit_amount = billAmount;
           orderData.cash_amount = 0;
 
           console.log('💳 تم تعيين مبالغ الدفع بالفيزا:', {
@@ -2968,6 +3065,17 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         } else if (this.selectedPaymentMethod === 'deferred') {
           orderData.cash_amount = 0;
           orderData.credit_amount = 0;
+        }
+
+        // 🔒 تأكيد أن المبلغ المدفوع لا يقل عن الإجمالي قبل متابعة الطلب
+        if (this.selectedPaymentMethod !== 'deferred') {
+          const totalPaidFinal = Number((Number(orderData.cash_amount || 0) + Number(orderData.credit_amount || 0)).toFixed(2));
+          const billAmountFinal = Number((billAmount || 0).toFixed(2));
+          if (totalPaidFinal < billAmountFinal) {
+            this.amountError = true;
+            this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountFinal} ${this.currencySymbol}`;
+            return;
+          }
         }
 
         console.log('💰 تم تعيين مبالغ الدفع:', {
@@ -3167,53 +3275,77 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.successMessage = 'تم تنفيذ طلبك بنجاح';
 
       if (this.successModal) {
-        this.successModal.show();
-        this.printedInvoiceService
-              .printkitchen(orderData, this.orderedId)
-              .subscribe({
-                next: async (response) => {
-                  console.log('🖨️ [Kitchen Print] Response received:', response);
 
-                  // Print drinks first
-                  if(response.status && response.drinks && response.drinks.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
-                    try {
-                      await this.printInvoiceImage(response.drinks ,response.order, response.IPdrinks);
-                      console.log('✅ [Kitchen Print] Drinks printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing drinks:', err);
-                    }
-                  }
+        // this.printedInvoiceService
+        //       .printkitchen(orderData, this.orderedId)
+        //       .subscribe({
+        //         next: async (response) => {
+        //           console.log('🖨️ [Kitchen Print] Response received:', response);
 
-                  // Wait a bit before printing fish to the same printer
-                  await new Promise(resolve => setTimeout(resolve, 500));
+        //           if(response.status && response.allDish && response.allDish.length > 0){
+        //             console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
+        //             try {
+        //               await this.printInvoiceImage(response.allDish ,response.order, response.Ipall);
+        //               console.log('✅ [Kitchen Print] Drinks printed successfully');
+        //             } catch (err) {
+        //               console.error('❌ [Kitchen Print] Error printing drinks:', err);
+        //             }
+        //           }
 
-                  // Print fish
-                  if(response.status && response.fish && response.fish.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
-                    try {
-                      await this.printInvoiceImage(response.fish ,response.order, response.IPfish);
-                      console.log('✅ [Kitchen Print] Fish printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing fish:', err);
-                    }
-                  }
-                  await new Promise(resolve => setTimeout(resolve, 500));
 
-                  // Print grills to different printer (can run in parallel)
-                  if(response.status && response.grills && response.grills.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
-                    this.printInvoiceImage(response.grills ,response.order, response.IPgrills).catch(err => {
-                      console.error('❌ [Kitchen Print] Error printing grills:', err);
-                    });
-                  }
-                },
-                error: (error) => {
-                  console.error('Kitchen print error:', error);
-                }
-              });
+        //           await new Promise(resolve => setTimeout(resolve, 500));
+
+        //           // Print drinks first
+        //           if(response.status && response.drinks && response.drinks.length > 0){
+        //             console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
+        //             try {
+        //               await this.printInvoiceImage(response.drinks ,response.order, response.IPdrinks);
+        //               console.log('✅ [Kitchen Print] Drinks printed successfully');
+        //             } catch (err) {
+        //               console.error('❌ [Kitchen Print] Error printing drinks:', err);
+        //             }
+        //           }
+
+        //           // Wait a bit before printing fish to the same printer
+        //           await new Promise(resolve => setTimeout(resolve, 500));
+
+        //           // Print fish
+        //           if(response.status && response.fish && response.fish.length > 0){
+        //             console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
+        //             try {
+        //               await this.printInvoiceImage(response.fish ,response.order, response.IPfish);
+        //               console.log('✅ [Kitchen Print] Fish printed successfully');
+        //             } catch (err) {
+        //               console.error('❌ [Kitchen Print] Error printing fish:', err);
+        //             }
+        //           }
+
+
+        //           // Print grills to different printer (can run in parallel)
+        //           if(response.status && response.grills && response.grills.length > 0){
+        //             console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
+        //             this.printInvoiceImage(response.grills ,response.order, response.IPgrills).catch(err => {
+        //               console.error('❌ [Kitchen Print] Error printing grills:', err);
+        //             });
+        //           }
+
+        //           // await new Promise(resolve => setTimeout(resolve, 60000));
+
+
+        //         },
+        //         error: (error) => {
+        //           console.error('Kitchen print error:', error);
+        //           location.reload();
+        //         }
+        //       });
+
+        //       await new Promise(resolve => setTimeout(resolve, 10000));
+              this.successModal.show();
+              // location.reload();
+
         // Print invoice items without prices to network printer
         // this.printInvoiceImage();
+
       }
 
       setTimeout(() => {
@@ -4071,7 +4203,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                     box-sizing: border-box;
                 }
                 html, body {
-                    font-family: Arial, "Segoe UI", Tahoma, sans-serif;
+                    font-family: 'Cairo', sans-serif;
                     padding: 10px;
                     background: white;
                     width: ${printerWidth}px;
@@ -4750,12 +4882,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // if (_removeCoupon == true) {
     //   this.removeCoupon()
     // }
+
     const modals = document.querySelectorAll('.modal.show');
     modals.forEach((modalEl: any) => {
       const modalInstance = bootstrap.Modal.getInstance(modalEl);
       if (modalInstance) {
         modalInstance.hide();
       }
+
     });
     // إزالة أي Backdrop يدويًا
     const backdrops = document.querySelectorAll('.modal-backdrop');
@@ -5690,6 +5824,19 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
     if (currentPaymentInput < billAmount) {
       this.paymentError = `المبلغ المدخل (${currentPaymentInput}) أقل من المبلغ المستحق (${billAmount})`;
+      // 🔒 منع حفظ القيمة الخاطئة
+      if (this.selectedPaymentMethod === 'credit') {
+        this.credit_amountt = 0;
+        this.credit_amount = 0;
+      } else if (this.selectedPaymentMethod === 'cash') {
+        this.cash_amountt = 0;
+        this.cash_amount = 0;
+      }
+      console.error('❌ منع حفظ المبلغ الخاطئ:', {
+        currentPaymentInput,
+        billAmount,
+        method: this.selectedPaymentMethod
+      });
       return;
     }
     // مسح أي أخطاء سابقة إذا كان المبلغ صحيحاً
@@ -5881,5 +6028,16 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       console.error('❌ Error printing image to network printer:', errorMessage);
       throw new Error(`خطأ في طباعة الصورة: ${errorMessage}`);
     }
+  }
+
+  getOrderTypeLabel(type: string): string {
+    const map: any = {
+      'dine-in': 'في المطعم',
+      'Takeaway': 'استلام',
+      'talabat': 'طلبات',
+      'Delivery': 'توصيل'
+    };
+
+    return map[type] || type;
   }
 }
