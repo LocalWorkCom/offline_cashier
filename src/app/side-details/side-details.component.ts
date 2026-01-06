@@ -3464,7 +3464,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                   await new Promise(resolve => setTimeout(resolve, 500));
 
                   // Print drinks first
-                  if(response.status && response.drinks && response.drinks.length > 0){
+                  if(response.status && response.adrinks && response.drinks.length > 0){
                     console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
                     try {
                       await this.printInvoiceImage(response.drinks ,response.order, response.IPdrinks , response.portdrinks);
@@ -4358,6 +4358,20 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       };
       return text ? text.replace(/[&<>"']/g, (m) => map[m]) : '';
     };
+     // Translate order type to Arabic
+     const translateOrderType = (type: string): string => {
+      const typeLower = type.toLowerCase().trim();
+      if (typeLower === 'dine-in') {
+        return 'مطعم';
+      } else if (typeLower === 'takeaway') {
+        return 'استلام';
+      } else if (typeLower === 'delivery') {
+        return 'توصيل';
+      } else if (typeLower === 'talabat') {
+        return 'طلبات';
+      }
+      return type; // Return original if no translation found
+    };
 
     // Start HTML document
     let html = `<!DOCTYPE html>
@@ -4472,7 +4486,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         <div class="order-details">
             <p>رقم الطلب: ${escapeHtml(String(orderNumber))}</p>
             <p>رقم الطاولة: ${escapeHtml(String(tableNumber))}</p>
-            <p>نوع الطلب: ${escapeHtml(String(orderType))}</p>
+            <p>نوع الطلب: ${escapeHtml(translateOrderType(String(orderType)))}</p>
             <p>حالة الطلب: ${escapeHtml(String(orderStatus))}</p>
             <p>تاريخ الطلب: ${escapeHtml(String(orderCreatedAt))}</p>
         </div>
@@ -4504,7 +4518,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       }
 
       html += '<tr>';
-      html += `<td class="item-number">${itemNumber}</td>`;
+      html += `<td class="item-number"></td>`;
       html += `<td class="item-name">${name}`;
       html += `<span class="size item-details">${name_en}</span>`;
 

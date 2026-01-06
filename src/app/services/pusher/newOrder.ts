@@ -385,6 +385,21 @@ export class NewOrderService {
       return text ? text.replace(/[&<>"']/g, (m) => map[m]) : '';
     };
 
+    // Translate order type to Arabic
+    const translateOrderType = (type: string): string => {
+      const typeLower = type.toLowerCase().trim();
+      if (typeLower === 'dine-in') {
+        return 'مطعم';
+      } else if (typeLower === 'takeaway') {
+        return 'استلام';
+      } else if (typeLower === 'delivery') {
+        return 'توصيل';
+      } else if (typeLower === 'talabat') {
+        return 'طلبات';
+      }
+      return type; // Return original if no translation found
+    };
+
 
     let html = `<!DOCTYPE html>
 <html dir="rtl" lang="ar">
@@ -570,7 +585,7 @@ html += `</div>
         <div class="order-details">
             <p>رقم الطلب: ${escapeHtml(String(orderNumber))}</p>
             <p>رقم الطاولة: ${escapeHtml(String(tableNumber))}</p>
-            <p>نوع الطلب: ${escapeHtml(String(orderType))}</p>
+            <p>نوع الطلب: ${escapeHtml(translateOrderType(String(orderType)))}</p>
             <p>حالة الطلب: ${escapeHtml(String(orderStatus))}</p>
             <p>تاريخ الطلب: ${escapeHtml(String(orderCreatedAt))}</p>
         </div>
@@ -608,7 +623,7 @@ items.forEach((item: any) => {
         html += `<td class="item-name">${name}`;
     } else {
         html += '<tr>';
-        html += `<td class="item-number">${itemNumber}</td>`;
+        html += `<td class="item-number"></td>`;
         html += `<td class="item-name">${name}`;
     }
 
