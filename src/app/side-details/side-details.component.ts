@@ -1483,7 +1483,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     let deliveryFee = 0;
     if (isDelivery) {
       deliveryFee = this.delivery_fees;
-      
+
       // Special case: 100% coupon on order removes delivery fee
       if (this.appliedCoupon &&
           this.appliedCoupon.coupon_value == '100.00' &&
@@ -1508,13 +1508,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
   getServiceOnAmountAfterCoupon(): number {
     if (!this.branchData) return 0;
-    
+
     const serviceType = this.branchData.service_fees_type;
     const serviceValue = this.branchData.service_fees;
-    
+
     // Get product value after discount (from coupon)
     const productValueAfterDiscount = this.appliedCoupon?.amount_after_coupon || this.getTotal();
-    
+
     // Calculate service fee on product value after discount
     let serviceFee = 0;
     if (serviceType === 'percentage') {
@@ -1522,7 +1522,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     } else {
       serviceFee = serviceValue;
     }
-    
+
     // Round to 2 decimal places
     serviceFee = Math.round(serviceFee * 100) / 100;
     return serviceFee;
@@ -1536,7 +1536,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // According to requirements: Service Charge = Product Value After Discount × 12%
     // Step 1: Get product value AFTER discount
     let productValueAfterDiscount = this.getTotal();
-    
+
     // If coupon is applied, use the discounted amount
     if (this.appliedCoupon && this.validCoupon) {
       productValueAfterDiscount = this.appliedCoupon.amount_after_coupon || this.getTotal();
@@ -1549,7 +1549,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     } else {
       serviceFee = serviceValue;
     }
-    
+
     // Round to 2 decimal places
     serviceFee = Math.round(serviceFee * 100) / 100;
     return serviceFee;
@@ -1600,7 +1600,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     if (this.appliedCoupon && this.validCoupon) {
       productValueAfterDiscount = this.appliedCoupon.amount_after_coupon || this.getTotal();
     }
-    
+
     // Step 2: Get service charge (calculated on product value AFTER discount)
     let serviceCharge = 0;
     if (isDineIn) {
@@ -2643,9 +2643,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const totalEntered = Number(this.finalTipSummary.paymentAmount);
       if (totalEntered < (cartTotal - tolerance)) {
         const remainingBalance = cartTotal - totalEntered;
-        return { 
-          isValid: false, 
-          errorMessage: `المبلغ المدفوع غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}` 
+        return {
+          isValid: false,
+          errorMessage: `المبلغ المدفوع غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}`
         };
       }
     }
@@ -2655,9 +2655,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const cashAmount = Number(this.cashPaymentInput);
       if (cashAmount < (cartTotal - tolerance)) {
         const remainingBalance = cartTotal - cashAmount;
-        return { 
-          isValid: false, 
-          errorMessage: `المبلغ المدفوع غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}` 
+        return {
+          isValid: false,
+          errorMessage: `المبلغ المدفوع غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}`
         };
       }
     }
@@ -2667,9 +2667,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const creditAmount = Number(this.credit_amountt) || Number(this.cashPaymentInput) || 0;
       if (creditAmount > 0 && creditAmount < (cartTotal - tolerance)) {
         const remainingBalance = cartTotal - creditAmount;
-        return { 
-          isValid: false, 
-          errorMessage: `المبلغ المدفوع غير كافي. المطلوب: ${cartTotal.toFixed(2)} ${this.currencySymbol}` 
+        return {
+          isValid: false,
+          errorMessage: `المبلغ المدفوع غير كافي. المطلوب: ${cartTotal.toFixed(2)} ${this.currencySymbol}`
         };
       }
     }
@@ -2679,12 +2679,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const cashAmount = Number(this.cashAmountMixed) || 0;
       const creditAmount = Number(this.creditAmountMixed) || 0;
       const totalPaid = Number((cashAmount + creditAmount).toFixed(2));
-      
+
       if (totalPaid < (cartTotal - tolerance)) {
         const remainingBalance = cartTotal - totalPaid;
-        return { 
-          isValid: false, 
-          errorMessage: `المبلغ المدفوع غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}` 
+        return {
+          isValid: false,
+          errorMessage: `المبلغ المدفوع غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}`
         };
       }
     }
@@ -4421,7 +4421,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                     font-weight: bold;
                     font-size: 30px;
                     word-spacing:10px;
-                    margin-left: 10px;
+                    margin-left: 15px;
                 }
                 .item-quantity {
                     width: 40px;
@@ -5558,7 +5558,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       clientPhone: this.clientPhone,
       selectedCountryCode: this.selectedCountry.code
     };
-    
+
     // Save to localStorage
     localStorage.setItem('client', this.client);
     localStorage.setItem('clientPhone', this.clientPhone);
@@ -5572,7 +5572,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     setTimeout(() => {
       this.isLoading = false;
       this.clientInfoApplied = true;
-      
+
       // ✅ Close the modal after saving
       this.closeModal();
     }, 300);
