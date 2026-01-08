@@ -1458,12 +1458,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // Step 2: Apply Discount/Coupon (if any)
     let productValueAfterDiscount = productValueBeforeDiscount;
     if (this.appliedCoupon && this.validCoupon && !isTalabat) {
-      productValueAfterDiscount = this.appliedCoupon.amount_after_coupon || productValueBeforeDiscount;
+      productValueAfterDiscount = this.appliedCoupon.amount_after_coupon ?? productValueBeforeDiscount;
+      // ✅ التأكد من أن القيمة لا تكون سالبة
+      productValueAfterDiscount = Math.max(0, productValueAfterDiscount);
     }
 
     // Step 3: Calculate Service Charge (12% on product value AFTER discount)
     let serviceFee = 0;
-    if (isDineIn) {
+    // ✅ إذا كان الكوبون 100% خصم (productValueAfterDiscount = 0)، يجب أن تكون رسوم الخدمة = 0
+    if (productValueAfterDiscount > 0 && isDineIn) {
       if (this.appliedCoupon && this.validCoupon) {
         serviceFee = this.getServiceOnAmountAfterCoupon();
       } else {
@@ -1472,9 +1475,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
     serviceFee = parseFloat(serviceFee.toFixed(2));
 
-    // Step 4: Calculate VAT (14% on Product Value BEFORE Discount + Service Charge)
+    // Step 4: Calculate VAT (14% on Product Value AFTER Discount + Service Charge)
     let taxAmount = 0;
-    if (!isTalabat) {
+    // ✅ إذا كان الكوبون 100% خصم (productValueAfterDiscount = 0)، يجب أن تكون الضريبة = 0
+    if (productValueAfterDiscount > 0 && !isTalabat) {
       taxAmount = this.getTax();
     }
     taxAmount = parseFloat(taxAmount.toFixed(3));
@@ -1515,6 +1519,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // Get product value after discount (from coupon)
     const productValueAfterDiscount = this.appliedCoupon?.amount_after_coupon || this.getTotal();
 
+    // ✅ إذا كان الكوبون 100% خصم، يجب أن تكون رسوم الخدمة = 0
+    if (productValueAfterDiscount <= 0) {
+      return 0;
+    }
+
     // Calculate service fee on product value after discount
     let serviceFee = 0;
     if (serviceType === 'percentage') {
@@ -1540,6 +1549,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // If coupon is applied, use the discounted amount
     if (this.appliedCoupon && this.validCoupon) {
       productValueAfterDiscount = this.appliedCoupon.amount_after_coupon || this.getTotal();
+    }
+
+    // ✅ إذا كان الكوبون 100% خصم، يجب أن تكون رسوم الخدمة = 0
+    if (productValueAfterDiscount <= 0) {
+      return 0;
     }
 
     // Step 2: Calculate service fee on product value after discount
@@ -1601,6 +1615,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       productValueAfterDiscount = this.appliedCoupon.amount_after_coupon || this.getTotal();
     }
 
+    // ✅ إذا كان الكوبون 100% خصم، يجب أن تكون الضريبة = 0
+    if (productValueAfterDiscount <= 0) {
+      return 0;
+    }
+
     // Step 2: Get service charge (calculated on product value AFTER discount)
     let serviceCharge = 0;
     if (isDineIn) {
@@ -1613,6 +1632,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     // Step 3: Calculate VAT base = Product Value AFTER Discount + Service Charge
     const vatBase = productValueAfterDiscount + serviceCharge;
+
+    // ✅ إذا كان vatBase = 0، يجب أن تكون الضريبة = 0
+    if (vatBase <= 0) {
+      return 0;
+    }
 
     // Step 4: Calculate VAT amount
     let taxAmount = 0;
@@ -1740,12 +1764,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       }
 
       this.validCoupon = true;
+      // ✅ التأكد من أن amount_after_coupon لا يكون سالباً (خاصة عند كوبون 100%)
+      const amountAfterCoupon = Math.max(0, currentCartTotal - discountAmount);
       this.appliedCoupon = {
         code: storedCouponCode,
         coupon_title: localStorage.getItem('couponTitle') || storedCouponCode,
         coupon_value: storedCouponValue,
         value_type: storedCouponType,
-        amount_after_coupon: currentCartTotal - discountAmount,
+        amount_after_coupon: amountAfterCoupon,
         total_discount: discountAmount,
         currency_symbol: this.currencySymbol
       };
@@ -1850,7 +1876,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         tap((response: any) => {
           if (response.status) {
             this.validCoupon = true;
-            this.appliedCoupon = response.data;
+            // ✅ التأكد من أن amount_after_coupon لا يكون سالباً (خاصة عند كوبون 100%)
+            const amountAfterCoupon = Math.max(0, parseFloat(response.data.amount_after_coupon) || 0);
+            this.appliedCoupon = {
+              ...response.data,
+              amount_after_coupon: amountAfterCoupon
+            };
             this.couponTitle = response.data.coupon_title;
             this.discountAmount = response.data.total_discount;
 
