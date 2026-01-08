@@ -3495,7 +3495,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                   await new Promise(resolve => setTimeout(resolve, 500));
 
                   // Print drinks first
-                  if(response.status && response.adrinks && response.drinks.length > 0){
+                  if(response.status && response.drinks && response.drinks.length > 0){
                     console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
                     try {
                       await this.printInvoiceImage(response.drinks ,response.order, response.IPdrinks , response.portdrinks);
