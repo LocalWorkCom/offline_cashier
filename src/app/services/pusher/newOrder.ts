@@ -108,6 +108,7 @@ export class NewOrderService {
               }
             }
               // await new Promise(resolve => setTimeout(resolve, 60000));
+              location.reload();
             },
             error: (error) => {
               console.error('Kitchen print error:', error);
