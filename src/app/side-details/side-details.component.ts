@@ -4363,7 +4363,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     // Get order information
     const orderNumber = order?.order_number || 'N/A';
-    const tableNumber = order?.table_id || 'N/A';
+    const tableNumber = order?.table_id !== null ? order?.table?.table_number : 'N/A';
     const orderType = order?.type || 'N/A';
     const orderStatus = order?.status || 'N/A';
     const orderCreatedAt = order?.date && order?.time ? `${order.date}   ${order.time}` : 'N/A';
