@@ -107,12 +107,12 @@ export class NewOrderService {
                 });
               }
             }
-              // await new Promise(resolve => setTimeout(resolve, 60000));
+              await new Promise(resolve => setTimeout(resolve, 5000));
               location.reload();
             },
             error: (error) => {
               console.error('Kitchen print error:', error);
-              // location.reload();
+              location.reload();
             }
           });
 
