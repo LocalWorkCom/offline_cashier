@@ -720,7 +720,7 @@ export class PillEditComponent {
             );
             this.showSuccessPillEditModal();
             this.fetchPillsDetails(this.pillId);
-            window.location.reload();
+            location.reload();
           },
           error: (err) => {
             console.error('خطأ في حفظ الطلب:', err);
@@ -1079,6 +1079,9 @@ export class PillEditComponent {
       }
 
       document.body.innerHTML = originalHTML;
+
+      // انتظار قليل قبل إعادة التحميل للتأكد من اكتمال الطباعة
+      await new Promise((resolve) => setTimeout(resolve, 500));
       location.reload();
     } catch (error) {
       console.error('Error printing invoice:', error);
