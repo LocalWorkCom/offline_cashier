@@ -2414,6 +2414,7 @@ export class OrdersComponent implements OnDestroy {
   selectedTableIdForSplit: string = '';
   splitOrderCurrency: string = '';
   currentSplitOrder: any = null;
+  newSplitOrderId: number | null = null;
   isSplitSubmitting: boolean = false;
   splitErrorMessage: string = '';
   splitSuccessMessage: string = '';
@@ -2490,16 +2491,17 @@ export class OrdersComponent implements OnDestroy {
         return false;
       }
 
-      // Check if all order items are completed or cancelled
+      // Check if order has any non-completed items (must have at least one item that is not completed or cancelled)
       if (!order.order_items || order.order_items.length === 0) {
         return false;
       }
 
-      const allItemsCompleted = order.order_items.every(
-        (item: any) => item.dish_status === 'completed' || item.dish_status === 'cancel'
+      // Must have at least one item that is not completed and not cancelled
+      const hasNonCompletedItems = order.order_items.some(
+        (item: any) => item.dish_status !== 'completed' && item.dish_status !== 'cancel'
       );
 
-      return allItemsCompleted;
+      return hasNonCompletedItems;
     });
   }
 
@@ -2674,8 +2676,10 @@ export class OrdersComponent implements OnDestroy {
   // View new split order
   viewNewSplitOrder(): void {
     this.closeSplitSuccessModal();
-    // Navigate to order details
-    // this.router.navigate(['/order-details', newOrderId]);
+    // Navigate to new split order details
+    if (this.newSplitOrderId) {
+      this.router.navigate(['/order-details', this.newSplitOrderId]);
+    }
   }
 
   // Close split success modal
@@ -2686,6 +2690,16 @@ export class OrdersComponent implements OnDestroy {
       modalInstance?.hide();
     }
     this.fetchOrdersData();
+  }
+
+  // View original split order
+  viewOriginalSplitOrder(): void {
+    this.closeSplitSuccessModal();
+    // Navigate to original order details
+    if (this.currentSplitOrder && this.currentSplitOrder.order_details?.order_id) {
+      const orderId = this.currentSplitOrder.order_details.order_id;
+      this.router.navigate(['/order-details', orderId]);
+    }
   }
 
   // Open merge modal
@@ -2785,8 +2799,11 @@ export class OrdersComponent implements OnDestroy {
   // View merged order
   viewMergedOrder(): void {
     this.closeMergeSuccessModal();
-    // Navigate to order details
-    // this.router.navigate(['/order-details', this.currentMergeOrder.order_details.order_id]);
+    // Navigate to order details - currentMergeOrder is the primary order that received the merged items
+    if (this.currentMergeOrder && this.currentMergeOrder.order_details?.order_id) {
+      const orderId = this.currentMergeOrder.order_details.order_id;
+      this.router.navigate(['/order-details', orderId]);
+    }
   }
 
   // Close merge success modal
@@ -2949,6 +2966,11 @@ export class OrdersComponent implements OnDestroy {
         next: (response: any) => {
           this.isSplitSubmitting = false;
           if (response.status) {
+            // Save new order ID from response
+            if (response.data?.new_order_id) {
+              this.newSplitOrderId = response.data.new_order_id;
+            }
+
             // Close confirmation modal
             const confirmModal = document.getElementById('splitOrderConfirmationModal');
             if (confirmModal) {
