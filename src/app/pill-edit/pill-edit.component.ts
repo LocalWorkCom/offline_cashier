@@ -625,6 +625,53 @@ export class PillEditComponent {
         bill_amount: this.finalTipSummary.billAmount || finalTotal
       } : undefined;
 
+
+      if (this.paymentStatus == 'paid') {
+        if (cashAmount > 0) {
+          // Get existing paid_order value from localStorage
+          const existingPaidOrderStrCash = localStorage.getItem('paid_order_cash');
+          // Helper function to parse value (handles both JSON and plain string)
+          const parseValueCash = (value: string | null): number => {
+            if (!value) return 0;
+            try {
+              const parsedCash = JSON.parse(value);
+              return parseFloat(parsedCash) || 0;
+            } catch {
+              return parseFloat(value) || 0;
+            }
+          };
+
+          // Get existing value and add new bill_amount
+          const existingPaidOrderCash = parseValueCash(existingPaidOrderStrCash);
+          const newTotalCash = existingPaidOrderCash + (cashAmount || 0);
+
+          // Store the accumulated total
+          localStorage.setItem('paid_order_cash', JSON.stringify(newTotalCash));
+        }
+        if (creditAmount > 0) {
+          // Get existing paid_order value from localStorage
+          const existingPaidOrderStrCredit = localStorage.getItem('paid_order_credit');
+
+          // Helper function to parse value (handles both JSON and plain string)
+          const parseValueCredit = (value: string | null): number => {
+            if (!value) return 0;
+            try {
+              const parsedCredit = JSON.parse(value);
+              return parseFloat(parsedCredit) || 0;
+            } catch {
+              return parseFloat(value) || 0;
+            }
+          };
+
+          // Get existing value and add new bill_amount
+          const existingPaidOrderCredit = parseValueCredit(existingPaidOrderStrCredit);
+          const newTotalCredit = existingPaidOrderCredit + (creditAmount || 0);
+
+          // Store the accumulated total
+          localStorage.setItem('paid_order_credit', JSON.stringify(newTotalCredit));
+        }
+      }
+
       this.orderService
         .updateInvoiceStatus(
           this.orderNumber,

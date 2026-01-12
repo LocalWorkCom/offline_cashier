@@ -84,8 +84,8 @@
           <h6><small><i class="fa-solid fa-money-bill main-color ms-1"></i>المبلغ النقدي الحالي</small></h6>
           <div class="input-group position-relative mb-3">
             <input type="number" class="form-control" id="cashInput" [(ngModel)]="enteredCash"
-              [readOnly]="showDeficitMessage" (input)="onCashInput($event)" [class.is-invalid]="errorMessage"
-              placeholder="أدخل المبلغ النقدي" required min="0">
+              [readOnly]="showDeficitMessage" (input)="onCashInput($event)" (keydown)="onCashKeyDown($event)"
+              [class.is-invalid]="errorMessage" placeholder="أدخل المبلغ النقدي" required min="0">
           </div>
 
           <!-- Visa Input -->

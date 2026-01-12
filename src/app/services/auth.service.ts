@@ -539,6 +539,8 @@ export class AuthService {
       'selectedPaymentStatus',
       'isBalanceOpened',
       'is_open_balance',
+      'start_total_cash',
+      'start_total_credit',
     ];
     keysToRemove.forEach((key) => {
       localStorage.removeItem(key);

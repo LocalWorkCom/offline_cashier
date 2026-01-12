@@ -1490,9 +1490,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       // Special case: 100% coupon on order removes delivery fee
       if (this.appliedCoupon &&
-          this.appliedCoupon.coupon_value == '100.00' &&
-          this.appliedCoupon.value_type == 'percentage' &&
-          this.appliedCoupon.coupon_apply_type == 'order') {
+        this.appliedCoupon.coupon_value == '100.00' &&
+        this.appliedCoupon.value_type == 'percentage' &&
+        this.appliedCoupon.coupon_apply_type == 'order') {
         deliveryFee = 0;
       }
     }
@@ -2477,7 +2477,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     //   this.selectedPaymentMethod = "cash"
     //   console.log(this.selectedPaymentMethod, "2");
     // }
-  // تحضير العناصر مع category_id
+    // تحضير العناصر مع category_id
     const itemsWithCategory = [];
 
     for (const cartItem of this.cartItems) {
@@ -3348,6 +3348,52 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // إرسال الطلب إلى API
     console.log('Submitting order online:', orderData);
 
+    if (orderData.payment_status == 'paid') {
+      if (orderData.cash_amount > 0) {
+        // Get existing paid_order value from localStorage
+        const existingPaidOrderStrCash = localStorage.getItem('paid_order_cash');
+        // Helper function to parse value (handles both JSON and plain string)
+        const parseValueCash = (value: string | null): number => {
+          if (!value) return 0;
+          try {
+            const parsedCash = JSON.parse(value);
+            return parseFloat(parsedCash) || 0;
+          } catch {
+            return parseFloat(value) || 0;
+          }
+        };
+
+        // Get existing value and add new bill_amount
+        const existingPaidOrderCash = parseValueCash(existingPaidOrderStrCash);
+        const newTotalCash = existingPaidOrderCash + (parseFloat(orderData.cash_amount) || 0);
+
+        // Store the accumulated total
+        localStorage.setItem('paid_order_cash', JSON.stringify(newTotalCash));
+      }
+      if (orderData.credit_amount > 0) {
+        // Get existing paid_order value from localStorage
+        const existingPaidOrderStrCredit = localStorage.getItem('paid_order_credit');
+
+        // Helper function to parse value (handles both JSON and plain string)
+        const parseValueCredit = (value: string | null): number => {
+          if (!value) return 0;
+          try {
+            const parsedCredit = JSON.parse(value);
+            return parseFloat(parsedCredit) || 0;
+          } catch {
+            return parseFloat(value) || 0;
+          }
+        };
+
+        // Get existing value and add new bill_amount
+        const existingPaidOrderCredit = parseValueCredit(existingPaidOrderStrCredit);
+        const newTotalCredit = existingPaidOrderCredit + (parseFloat(orderData.credit_amount) || 0);
+
+        // Store the accumulated total
+        localStorage.setItem('paid_order_credit', JSON.stringify(newTotalCredit));
+      }
+    }
+
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Request timeout')), 30000);
     });
@@ -3475,73 +3521,71 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       if (this.successModal) {
 
         this.printedInvoiceService
-              .printkitchen(orderData, this.orderedId)
-              .subscribe({
-                next: async (response) => {
+          .printkitchen(orderData, this.orderedId)
+          .subscribe({
+            next: async (response) => {
+              console.log('🖨️ [Kitchen Print] Response received:', response);
 
-                  if(response.order.make_type == 'cashier'){
-                  console.log('🖨️ [Kitchen Print] Response received:', response);
-                  if(response.status && response.allDish && response.allDish.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
-                    try {
-                      await this.printInvoiceImage(response.allDish ,response.order, response.Ipall , response.portall);
-                      console.log('✅ [Kitchen Print] Drinks printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing drinks:', err);
-                    }
-                  }
-
-
-                  await new Promise(resolve => setTimeout(resolve, 500));
-
-                  // Print drinks first
-                  if(response.status && response.drinks && response.drinks.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
-                    try {
-                      await this.printInvoiceImage(response.drinks ,response.order, response.IPdrinks , response.portdrinks);
-                      console.log('✅ [Kitchen Print] Drinks printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing drinks:', err);
-                    }
-                  }
-
-                  // Wait a bit before printing fish to the same printer
-                  await new Promise(resolve => setTimeout(resolve, 500));
-
-                  // Print fish
-                  if(response.status && response.fish && response.fish.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
-                    try {
-                      await this.printInvoiceImage(response.fish ,response.order, response.IPfish , response.portfish);
-                      console.log('✅ [Kitchen Print] Fish printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing fish:', err);
-                    }
-                  }
-
-
-                  // Print grills to different printer (can run in parallel)
-                  if(response.status && response.grills && response.grills.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
-                    this.printInvoiceImage(response.grills ,response.order, response.IPgrills , response.portgrills).catch(err => {
-                      console.error('❌ [Kitchen Print] Error printing grills:', err);
-                    });
-                  }
-                  }
-
-                  // await new Promise(resolve => setTimeout(resolve, 60000));
-
-
-                },
-                error: (error) => {
-                  console.error('Kitchen print error:', error);
-                  location.reload();
+              if (response.status && response.allDish && response.allDish.length > 0) {
+                console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
+                try {
+                  await this.printInvoiceImage(response.allDish, response.order, response.Ipall, response.portall);
+                  console.log('✅ [Kitchen Print] Drinks printed successfully');
+                } catch (err) {
+                  console.error('❌ [Kitchen Print] Error printing drinks:', err);
                 }
-              });
+              }
 
-              await new Promise(resolve => setTimeout(resolve, 2000));
-              this.successModal.show();
-              // location.reload();
+
+              await new Promise(resolve => setTimeout(resolve, 500));
+
+              // Print drinks first
+              if (response.status && response.drinks && response.drinks.length > 0) {
+                console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
+                try {
+                  await this.printInvoiceImage(response.drinks, response.order, response.IPdrinks, response.portdrinks);
+                  console.log('✅ [Kitchen Print] Drinks printed successfully');
+                } catch (err) {
+                  console.error('❌ [Kitchen Print] Error printing drinks:', err);
+                }
+              }
+
+              // Wait a bit before printing fish to the same printer
+              await new Promise(resolve => setTimeout(resolve, 500));
+
+              // Print fish
+              if (response.status && response.fish && response.fish.length > 0) {
+                console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
+                try {
+                  await this.printInvoiceImage(response.fish, response.order, response.IPfish, response.portfish);
+                  console.log('✅ [Kitchen Print] Fish printed successfully');
+                } catch (err) {
+                  console.error('❌ [Kitchen Print] Error printing fish:', err);
+                }
+              }
+
+
+              // Print grills to different printer (can run in parallel)
+              if (response.status && response.grills && response.grills.length > 0) {
+                console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
+                this.printInvoiceImage(response.grills, response.order, response.IPgrills, response.portgrills).catch(err => {
+                  console.error('❌ [Kitchen Print] Error printing grills:', err);
+                });
+              }
+
+              // await new Promise(resolve => setTimeout(resolve, 60000));
+
+
+            },
+            error: (error) => {
+              console.error('Kitchen print error:', error);
+              location.reload();
+            }
+          });
+
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        this.successModal.show();
+        // location.reload();
 
         // Print invoice items without prices to network printer
         // this.printInvoiceImage();
@@ -4144,7 +4188,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   //   }
   // }
 
-  async printInvoiceImage(data?: any[], order?: any, printerIP: string = "192.168.100.102" , port: number = 9100) {
+  async printInvoiceImage(data?: any[], order?: any, printerIP: string = "192.168.100.102", port: number = 9100) {
     console.log('🖨️ [printInvoiceImage] Function called', { dataLength: data?.length, order, printerIP });
     let iframe: HTMLIFrameElement | null = null;
 
