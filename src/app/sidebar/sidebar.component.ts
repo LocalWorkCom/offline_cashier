@@ -398,10 +398,16 @@ export class SidebarComponent implements OnInit {
         this.showDeficitMessage = true;
         this.buildDeficitMessage();
 
-        // Only auto-proceed if no deficit
-        if (deficitCash === 0 && deficitVisa === 0) {
+        // If logout is true (user clicked "تسجيل خروج" button), proceed to logout even with deficit
+        // Otherwise, only auto-proceed if no deficit
+        if (logout || (deficitCash === 0 && deficitVisa === 0)) {
           this.proceedToLogout();
         }
+
+        localStorage.removeItem('paid_order_cash');
+        localStorage.removeItem('start_total_cash');
+        localStorage.removeItem('paid_order_credit');
+        localStorage.removeItem('start_total_credit');
       } else {
         this.errorMessage = response?.message || 'فشل في إغلاق الرصيد';
       }
@@ -460,10 +466,55 @@ proceedToLogout(): void {
         visa_sales
       };
 
-      // Print the report
-      this.printLogoutReport();
+      // Print the report and wait for it to complete before logout
+      this.printLogoutReportAndLogout();
+    } else {
+      // If not browser, proceed directly to logout
+      this.performLogout();
+    }
+  }
+
+  private printLogoutReportAndLogout(): void {
+    if (!isPlatformBrowser(this.platformId) || !this.reportData) {
+      this.performLogout();
+      return;
     }
 
+    this.printTime = new Date().toLocaleString();
+    this.cdr.detectChanges();
+
+    // Wait for the element to be rendered, then print, then logout
+    this.waitForRender('#logout-report-section').pipe(
+      switchMap(() => from(this.waitForImagesInSection('#logout-report-section'))),
+      take(1)
+    ).subscribe({
+      next: () => {
+        const printContents = document.getElementById('logout-report-section')?.innerHTML;
+        if (!printContents) {
+          console.error('Logout report section not found');
+          this.performLogout();
+          return;
+        }
+
+        const originalContents = document.body.innerHTML;
+        document.body.innerHTML = printContents;
+        window.print();
+        document.body.innerHTML = originalContents;
+
+        // After printing, proceed to logout
+        setTimeout(() => {
+          this.performLogout();
+        }, 500); // Small delay to ensure print dialog is handled
+      },
+      error: (err) => {
+        console.error('Error printing logout report:', err);
+        this.performLogout();
+      }
+    });
+  }
+
+  private performLogout(): void {
+    console.log('performLogout() called - starting logout process');
     // Clear balance data and modal state
     this.balanceService.clearBalanceData();
     sessionStorage.removeItem('balanceoutModalOpen');
@@ -473,16 +524,21 @@ proceedToLogout(): void {
     this.authService.setOpenBalanceStatus(false);
 
     // Perform logout
+    console.log('Calling authService.logout()...');
     this.authService.logout().subscribe({
       next: () => {
-        this.router.navigate(['/login']);
+        console.log('Logout successful, navigating to login...');
+        // this.router.navigate(['/login']);
+        location.reload();
       },
       error: (error) => {
         console.error('Logout error:', error);
-        this.router.navigate(['/login']);
+        console.log('Logout failed, navigating to login anyway...');
+        // this.router.navigate(['/login']);
+        location.reload();
       },
     });
-}
+  }
   private hideBalanceoutModal(): void {
     const modalElement = document.getElementById('balanceoutModal');
     if (modalElement) {
@@ -666,6 +722,7 @@ proceedToLogout(): void {
     this.reasonError = null;
   }
   setLog(): void {
+    console.log('setLog() called - proceeding to logout');
     if (isPlatformBrowser(this.platformId)) {
       // إخفاء المودال أولاً
       const modalElement = document.getElementById('balanceoutModal');
@@ -674,6 +731,7 @@ proceedToLogout(): void {
         if (backdrop) {
           backdrop.remove();
         }
+
         modalElement.classList.remove('show');
         modalElement.style.display = 'none';
         document.body.classList.remove('modal-open');
@@ -681,15 +739,8 @@ proceedToLogout(): void {
         document.body.style.paddingRight = '';
       }
 
-      // مسح localStorage
-      localStorage.clear();
-
-      // مسح sessionStorage
-      sessionStorage.clear();
-
-      // الانتقال مباشرة إلى صفحة login
-      // window.location.href = '/login';
-      this.router.navigate(['/login']);
+      // بعد إخفاء المودال، قم بتسجيل الخروج
+      this.proceedToLogout();
     }
   }
 //   print(id:number){
