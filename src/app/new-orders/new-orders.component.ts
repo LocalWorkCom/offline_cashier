@@ -132,7 +132,7 @@ export class NewOrdersComponent implements OnInit, OnDestroy {
       }, 1000);
     }
     // Schedule incremental reveal in idle time without breaking offline/online/sync
-    this.scheduleIncrementalReveal();
+    // this.scheduleIncrementalReveal(); // TODO: Implement if needed
   }
 
   // 🟢 تحميل الطلبات من IndexedDB
@@ -192,7 +192,7 @@ export class NewOrdersComponent implements OnInit, OnDestroy {
     console.log(`📥 Fetching page ${this.page}...`);
     try {
       this.ordersListService.getOrdersListE(this.page, this.perPage).subscribe({
-        next: async (response) => {
+        next: async (response: any) => {
           if (response.status && response.data?.orders?.length) {
             const pagination = response.data.pagination;
             console.log('🔄 Sync complete. Updating cache...');
@@ -217,7 +217,7 @@ export class NewOrdersComponent implements OnInit, OnDestroy {
 
           this.loading = false;
         },
-        error: (err) => {
+        error: (err: any) => {
           console.error('⚠️ Server fetch failed, fallback to offline data:', err);
           this.loading = false;
           this.usingOfflineData = true;
@@ -294,12 +294,72 @@ export class NewOrdersComponent implements OnInit, OnDestroy {
   //   }
   // }
 
-  // // Load static orders from localStorage
-  // private loadStaticOrders() {
-  //   const stored = localStorage.getItem('savedOrders');
-  //   const staticOrders = stored ? JSON.parse(stored) : [];
-  //   this.staticOrders$.next(staticOrders);
-  // }
+  // Load static orders from localStorage
+  private loadStaticOrders() {
+    const stored = localStorage.getItem('savedOrders');
+    const staticOrders = stored ? JSON.parse(stored) : [];
+    this.staticOrders$.next(staticOrders);
+  }
+
+  // Recompute counts for order types and statuses
+  private recomputeCounts(orders: any[], staticOrders: any[]): void {
+    // Reset counts
+    this.dynamicOrderTypeCounts = {};
+    this.dynamicStatusTypeCounts = {};
+    this.staticOrderTypeCounts = {};
+    this.staticStatusTypeCounts = {};
+
+    // Compute dynamic order type counts
+    this.ORDER_TYPES.forEach(type => {
+      if (type === 'All') {
+        this.dynamicOrderTypeCounts[type] = orders.length;
+      } else {
+        this.dynamicOrderTypeCounts[type] = orders.filter(
+          order => order.order_details?.order_type === type
+        ).length;
+      }
+    });
+
+    // Compute dynamic status counts per order type
+    this.ORDER_TYPES.forEach(orderType => {
+      this.dynamicStatusTypeCounts[orderType] = {};
+      this.STATUSES.forEach(status => {
+        if (status === 'all') {
+          this.dynamicStatusTypeCounts[orderType][status] = orderType === 'All'
+            ? orders.length
+            : orders.filter(order => order.order_details?.order_type === orderType).length;
+        } else if (status !== 'static') {
+          this.dynamicStatusTypeCounts[orderType][status] = orders.filter(order =>
+            order.order_details?.status === status &&
+            (orderType === 'All' || order.order_details?.order_type === orderType)
+          ).length;
+        }
+      });
+    });
+
+    // Compute static order type counts
+    this.ORDER_TYPES.forEach(type => {
+      if (type === 'All') {
+        this.staticOrderTypeCounts[type] = staticOrders.length;
+      } else {
+        this.staticOrderTypeCounts[type] = staticOrders.filter(
+          order => order.type === type
+        ).length;
+      }
+    });
+
+    // Compute static status counts per order type
+    this.ORDER_TYPES.forEach(orderType => {
+      this.staticStatusTypeCounts[orderType] = {};
+      this.STATUSES.forEach(status => {
+        if (status === 'static') {
+          this.staticStatusTypeCounts[orderType][status] = orderType === 'All'
+            ? staticOrders.length
+            : staticOrders.filter(order => order.type === orderType).length;
+        }
+      });
+    });
+  }
 
   // Apply filters efficiently
   private applyFilters(orders: any[], staticOrders: any[], status: string, orderType: string, search: string): any[] {

@@ -18,14 +18,15 @@ import { finalize, debounceTime, takeUntil, take } from 'rxjs/operators';
 
 @Component({
   selector: 'app-newcategories',
-  // imports: [
-  //   CommonModule,
-  //   ProductCardComponent,
-  //   FormsModule,
-  //   ShowLoaderUntilPageLoadedDirective
-  // ],
-  // templateUrl: './newcategories.component.html',
-  // styleUrls: ['./newcategories.component.css'],
+  standalone: true,
+  imports: [
+    CommonModule,
+    ProductCardComponent,
+    FormsModule,
+    ShowLoaderUntilPageLoadedDirective
+  ],
+  templateUrl: './newcategories.component.html',
+  styleUrls: ['./newcategories.component.css'],
 })
 export class hananComponent implements OnInit, OnDestroy {
   products: any;
@@ -85,7 +86,7 @@ export class hananComponent implements OnInit, OnDestroy {
   // hanan infinite scroll
 
   // ✅ INFINITE SCROLL HANDLER
-  @HostListener('window:scroll', ['$event'])
+  @HostListener('window:scroll')
   onWindowScroll(): void {
     if (this.isLoadingMore || !this.hasMorePages) return;
 
@@ -129,7 +130,7 @@ export class hananComponent implements OnInit, OnDestroy {
               .catch(error => console.error('Error saving to IndexedDB:', error));
           }
         },
-        error: (error) => {
+        error: (error: any) => {
           console.error('Error loading more categories:', error);
           this.currentPage--; // Revert page on error
         }
@@ -166,7 +167,7 @@ export class hananComponent implements OnInit, OnDestroy {
         console.log(`📦 API response received: ${(receiveTime - startTime).toFixed(2)}ms`);
         this.handleUltraFastResponse(response);
       },
-      error: (error) => this.handleApiError(error)
+      error: (error: any) => this.handleApiError(error)
     });
 }
 
@@ -247,7 +248,7 @@ private handleUltraFastResponse(response: any): void {
       )
       .subscribe({
         next: (response: any) => this.handleApiResponse(response),
-        error: (error) => this.handleApiError(error)
+        error: (error: any) => this.handleApiError(error)
       });
   }
 
@@ -330,7 +331,7 @@ private handleUltraFastResponse(response: any): void {
           console.error("Invalid response format", response);
           this.loadFromIndexedDB();
         }
-      }, (error) => {
+      }, (error: any) => {
         console.error('API fetch failed, trying offline data:', error);
         this.loadFromIndexedDB();
       });

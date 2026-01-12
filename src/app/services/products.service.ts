@@ -68,6 +68,30 @@ export class ProductsService {
     return this.http.get<any[]>(url, { headers: authContext.headers });
   }
 
+  getMenuDishesE(page: number = 1, perPage: number = 50): Observable<any> {
+    const authContext = this.buildAuthContext();
+
+    if (!authContext) {
+      return throwError(() => new Error('Authentication context missing.'));
+    }
+
+    const url = `${this.apiUrl}/menu-dishes?branchId=${authContext.branchId}&page=${page}&per_page=${perPage}`;
+
+    return this.http.get<any>(url, { headers: authContext.headers });
+  }
+
+  getMenuUltraFast(): Observable<any> {
+    const authContext = this.buildAuthContext();
+
+    if (!authContext) {
+      return throwError(() => new Error('Authentication context missing.'));
+    }
+
+    const url = `${this.apiUrl}/menu-dishes?branchId=${authContext.branchId}&ultra_fast=true`;
+
+    return this.http.get<any>(url, { headers: authContext.headers });
+  }
+
   getMenuCategoriesLite(): Observable<any> {
     const authContext = this.buildAuthContext();
 
