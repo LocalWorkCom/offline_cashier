@@ -392,18 +392,11 @@
         <p>رسوم الخدمة</p>
         @if (branchData.service_fees) {
         <p class="fw-bold">
-          @if (!branchData?.coupon_application && !branchData?.tax_application
-          && this.appliedCoupon) {
+          @if (appliedCoupon && validCoupon) {
           {{ getServiceOnAmountAfterCoupon() }}
           } @else {
           {{ getServiceFeeAmount() }}
           }{{ currencySymbol }}
-          <!-- {{ branchData.service_fees }}
-           @if (branchData.service_fees_type === 'percentage') {
-            %
-            }@else if (branchData.service_fees_type === 'fixed'){
-            {{currencySymbol}}
-          } -->
         </p>
         }
       </li>

@@ -26,6 +26,18 @@ export class OrderListService {
 
     return this.http.get(`${this.apiUrl}/orders/list`, { headers });
   }
+
+  getOrdersListE(page: number = 1, perPage: number = 50): Observable<any> {
+    const token = localStorage.getItem('authToken');
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+
+    return this.http.get(`${this.apiUrl}/orders/list?page=${page}&per_page=${perPage}`, { headers });
+  }
 //start dalia
 fetchAndSaveOrders(): Observable<any> {
   return new Observable(observer => {
