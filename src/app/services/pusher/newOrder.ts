@@ -57,7 +57,6 @@ export class NewOrderService {
           .printWaiter(order_id)
           .subscribe({
             next: async (response) => {
-
               if(response.order.make_type != 'cashier'){
               console.log('🖨️ [Kitchen Print] Response received:', response);
 
@@ -107,14 +106,13 @@ export class NewOrderService {
                   console.error('❌ [Kitchen Print] Error printing grills:', err);
                 });
               }
-
-              // await new Promise(resolve => setTimeout(resolve, 60000));
             }
-
+              await new Promise(resolve => setTimeout(resolve, 5000));
+              location.reload();
             },
             error: (error) => {
               console.error('Kitchen print error:', error);
-              // location.reload();
+              location.reload();
             }
           });
 
@@ -361,7 +359,7 @@ export class NewOrderService {
 
     // Get order information
     const orderNumber = order?.order_number || 'N/A';
-    const tableNumber = order?.table_id || 'N/A';
+    const tableNumber =  order?.table_id !== null ? order?.table?.table_number : 'N/A';
     const orderType = order?.type || 'N/A';
     const orderStatus = order?.status || 'N/A';
     const orderCreatedAt = order?.date && order?.time ? `${order.date}   ${order.time}` : 'N/A';
@@ -386,6 +384,21 @@ export class NewOrderService {
         "'": '&#039;'
       };
       return text ? text.replace(/[&<>"']/g, (m) => map[m]) : '';
+    };
+
+    // Translate order type to Arabic
+    const translateOrderType = (type: string): string => {
+      const typeLower = type.toLowerCase().trim();
+      if (typeLower === 'dine-in') {
+        return 'مطعم';
+      } else if (typeLower === 'takeaway') {
+        return 'استلام';
+      } else if (typeLower === 'delivery') {
+        return 'توصيل';
+      } else if (typeLower === 'talabat') {
+        return 'طلبات';
+      }
+      return type; // Return original if no translation found
     };
 
 
@@ -573,7 +586,7 @@ html += `</div>
         <div class="order-details">
             <p>رقم الطلب: ${escapeHtml(String(orderNumber))}</p>
             <p>رقم الطاولة: ${escapeHtml(String(tableNumber))}</p>
-            <p>نوع الطلب: ${escapeHtml(String(orderType))}</p>
+            <p>نوع الطلب: ${escapeHtml(translateOrderType(String(orderType)))}</p>
             <p>حالة الطلب: ${escapeHtml(String(orderStatus))}</p>
             <p>تاريخ الطلب: ${escapeHtml(String(orderCreatedAt))}</p>
         </div>
@@ -611,7 +624,7 @@ items.forEach((item: any) => {
         html += `<td class="item-name">${name}`;
     } else {
         html += '<tr>';
-        html += `<td class="item-number">${itemNumber}</td>`;
+        html += `<td class="item-number"></td>`;
         html += `<td class="item-name">${name}`;
     }
 
