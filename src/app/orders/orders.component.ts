@@ -3071,6 +3071,35 @@ export class OrdersComponent implements OnDestroy {
         next: (response: any) => {
           this.isMergeSubmitting = false;
           if (response.status) {
+            // ✅ Remove secondary order from local list immediately
+            if (this.selectedOrderIdForMerge) {
+              // Remove from main orders array
+              this.orders = this.orders.filter(
+                (order: any) => order.order_details?.order_id !== this.selectedOrderIdForMerge
+              );
+              // Remove from filtered orders
+              this.filteredOrders = this.filteredOrders.filter(
+                (order: any) => order.order_details?.order_id !== this.selectedOrderIdForMerge
+              );
+              
+              // ✅ Remove from localStorage (saved orders) if exists
+              const savedOrders = localStorage.getItem('savedOrders');
+              if (savedOrders) {
+                try {
+                  const parsedOrders = JSON.parse(savedOrders);
+                  const updatedSavedOrders = parsedOrders.filter(
+                    (order: any) => order.orderId !== this.selectedOrderIdForMerge?.toString()
+                  );
+                  localStorage.setItem('savedOrders', JSON.stringify(updatedSavedOrders));
+                } catch (error) {
+                  console.error('Error removing order from localStorage:', error);
+                }
+              }
+              
+              // Update filtered orders by status
+              this.filterOrders();
+            }
+
             // Close confirmation modal
             const confirmModal = document.getElementById('mergeOrderConfirmationModal');
             if (confirmModal) {
@@ -3086,6 +3115,11 @@ export class OrdersComponent implements OnDestroy {
                 modal.show();
               }
             }, 300);
+
+            // ✅ Refresh orders data from API to ensure consistency
+            setTimeout(() => {
+              this.fetchOrdersData();
+            }, 500);
           } else {
             this.mergeErrorMessage =
               response.message || response.errorData?.error || 'حدث خطأ أثناء الإرسال';
