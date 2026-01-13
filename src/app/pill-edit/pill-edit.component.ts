@@ -721,6 +721,7 @@ export class PillEditComponent {
             this.showSuccessPillEditModal();
             this.fetchPillsDetails(this.pillId);
             location.reload();
+
           },
           error: (err) => {
             console.error('خطأ في حفظ الطلب:', err);
