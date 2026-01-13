@@ -1458,6 +1458,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // Step 2: Apply Discount/Coupon (if any)
     let productValueAfterDiscount = productValueBeforeDiscount;
     if (this.appliedCoupon && this.validCoupon && !isTalabat) {
+      // ✅ استخدام ?? بدلاً من || للتحقق من null/undefined فقط، وليس من 0
       productValueAfterDiscount = this.appliedCoupon.amount_after_coupon ?? productValueBeforeDiscount;
       // ✅ التأكد من أن القيمة لا تكون سالبة
       productValueAfterDiscount = Math.max(0, productValueAfterDiscount);
@@ -1517,7 +1518,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const serviceValue = this.branchData.service_fees;
 
     // Get product value after discount (from coupon)
-    const productValueAfterDiscount = this.appliedCoupon?.amount_after_coupon || this.getTotal();
+    // ✅ استخدام ?? بدلاً من || للتحقق من null/undefined فقط، وليس من 0
+    const productValueAfterDiscount = this.appliedCoupon?.amount_after_coupon ?? this.getTotal();
 
     // ✅ إذا كان الكوبون 100% خصم، يجب أن تكون رسوم الخدمة = 0
     if (productValueAfterDiscount <= 0) {
@@ -1547,8 +1549,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     let productValueAfterDiscount = this.getTotal();
 
     // If coupon is applied, use the discounted amount
+    // ✅ استخدام ?? بدلاً من || للتحقق من null/undefined فقط، وليس من 0
     if (this.appliedCoupon && this.validCoupon) {
-      productValueAfterDiscount = this.appliedCoupon.amount_after_coupon || this.getTotal();
+      productValueAfterDiscount = this.appliedCoupon.amount_after_coupon ?? this.getTotal();
     }
 
     // ✅ إذا كان الكوبون 100% خصم، يجب أن تكون رسوم الخدمة = 0
@@ -1611,8 +1614,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // According to Egyptian VAT law: VAT = (Product Value AFTER Discount + Service Charge) × 14%
     // Step 1: Get product value AFTER discount
     let productValueAfterDiscount = this.getTotal();
+    // ✅ استخدام ?? بدلاً من || للتحقق من null/undefined فقط، وليس من 0
     if (this.appliedCoupon && this.validCoupon) {
-      productValueAfterDiscount = this.appliedCoupon.amount_after_coupon || this.getTotal();
+      productValueAfterDiscount = this.appliedCoupon.amount_after_coupon ?? this.getTotal();
     }
 
     // ✅ إذا كان الكوبون 100% خصم، يجب أن تكون الضريبة = 0
