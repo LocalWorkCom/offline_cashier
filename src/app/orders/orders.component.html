@@ -1166,32 +1166,7 @@
         </p>
 
         <div class="row mb-4">
-          <!-- Secondary Order -->
-          <div class="col-md-5">
-            <div class="border rounded p-3 h-100">
-              <h6 class="fw-bold mb-3 text-danger">الطلب الثانوي (المرسل)</h6>
-              <div class="mb-2">
-                <strong>{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong>
-              </div>
-              <div class="mb-2">
-                <i class="fa-solid fa-house text-primary me-1"></i>
-                {{ getSecondaryMergeOrder()?.order_details?.order_type === 'dine-in' ? 'طاولة ' + getSecondaryMergeOrder()?.order_details?.table_number : 'إستلام' }}
-              </div>
-              <div class="mb-2">
-                <span class="badge bg-lightgray text-dark">{{ getSecondaryMergeOrder()?.order_details?.order_items_count }}</span>
-              </div>
-              <div class="fw-bold">
-                {{ getSecondaryMergeOrder()?.total_price }} {{ mergeOrderCurrency }}
-              </div>
-            </div>
-          </div>
-
-          <!-- Arrow -->
-          <div class="col-md-2 d-flex align-items-center justify-content-center">
-            <i class="fa-solid fa-arrow-right text-danger fs-1"></i>
-          </div>
-
-          <!-- Primary Order -->
+          <!-- Primary Order (Original) - Left Side -->
           <div class="col-md-5">
             <div class="border rounded p-3 h-100">
               <h6 class="fw-bold mb-3 text-success">الطلب الأساسي (المستلم)</h6>
@@ -1207,6 +1182,31 @@
               </div>
               <div class="fw-bold">
                 {{ currentMergeOrder?.total_price }} {{ mergeOrderCurrency }}
+              </div>
+            </div>
+          </div>
+
+          <!-- Arrow (pointing from right to left) -->
+          <div class="col-md-2 d-flex align-items-center justify-content-center">
+            <i class="fa-solid fa-arrow-left text-danger fs-1"></i>
+          </div>
+
+          <!-- Secondary Order (Sender) - Right Side -->
+          <div class="col-md-5">
+            <div class="border rounded p-3 h-100">
+              <h6 class="fw-bold mb-3 text-danger">الطلب الثانوي (المرسل)</h6>
+              <div class="mb-2">
+                <strong>{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong>
+              </div>
+              <div class="mb-2">
+                <i class="fa-solid fa-house text-primary me-1"></i>
+                {{ getSecondaryMergeOrder()?.order_details?.order_type === 'dine-in' ? 'طاولة ' + getSecondaryMergeOrder()?.order_details?.table_number : 'إستلام' }}
+              </div>
+              <div class="mb-2">
+                <span class="badge bg-lightgray text-dark">{{ getSecondaryMergeOrder()?.order_details?.order_items_count }}</span>
+              </div>
+              <div class="fw-bold">
+                {{ getSecondaryMergeOrder()?.total_price }} {{ mergeOrderCurrency }}
               </div>
             </div>
           </div>
