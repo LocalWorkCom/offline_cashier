@@ -190,9 +190,9 @@
     <!-- Coupon / Discount for unpaid orders -->
     <div *ngIf="invoices?.[0]?.transactions?.[0]?.payment_status !== 'paid'" class="card px-4 py-3 my-2">
       <h5 class="fw-bold mb-2"><i class="fas fa-percent me-2"></i> الكوبون / الخصم</h5>
-      
+
       <!-- زر إضافة كوبون - يظهر فقط إذا لم يكن هناك كوبون مطبق -->
-      <button *ngIf="!discountAmount || discountAmount === 0" class="btn reversed main-color d-flex align-items-center mx-2 mb-3" 
+      <button *ngIf="!discountAmount || discountAmount === 0" class="btn reversed main-color d-flex align-items-center mx-2 mb-3"
         data-bs-toggle="modal" data-bs-target="#couponModal">
         <i class="fa fa-plus" aria-hidden="true"></i>
         <span class="mb-0 w-100"> أضف كوبون </span>
@@ -203,17 +203,17 @@
         <i class="fa-solid fa-circle-check me-2"></i>
         {{ couponMessage }}
       </div>
-      
+
       <!-- رسالة خطأ -->
       <div *ngIf="couponError" class="alert alert-danger py-2 mb-2">
         <i class="fa-solid fa-circle-exclamation me-2"></i>
         {{ couponError }}
       </div>
-      
+
     </div>
 
       <!-- عرض الكوبون المطبق -->
-      <div *ngIf="discountAmount > 0 || (invoices[0]?.invoice_summary?.coupon_value && invoices[0].invoice_summary.coupon_value > 0)" 
+      <div *ngIf="discountAmount > 0 || (invoices[0]?.invoice_summary?.coupon_value && invoices[0].invoice_summary.coupon_value > 0)"
         class="mt-3 p-3 bg-light rounded">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span class="fw-bold">الكوبون المطبق:</span>
@@ -224,7 +224,7 @@
         <div class="d-flex justify-content-between align-items-center">
           <span class="fw-bold">قيمة الخصم:</span>
           <span class="text-danger fw-bold fs-5">
-            -{{ (discountAmount || invoices[0]?.invoice_summary?.coupon_value || 0) | number:'1.2-2' }} 
+            -{{ (discountAmount || invoices[0]?.invoice_summary?.coupon_value || 0) | number:'1.2-2' }}
             {{ invoices[0]?.invoice_summary?.currency_symbol }}
           </span>
         </div>
@@ -233,7 +233,7 @@
           <span class="text-muted fw-bold">{{ couponCode || invoices[0]?.invoice_summary?.coupon_code }}</span>
         </div>
         <!-- زر حذف الكوبون - يظهر فقط للطلبات غير المدفوعة -->
-        <button *ngIf="invoices?.[0]?.transactions?.[0]?.payment_status !== 'paid'" 
+        <button *ngIf="invoices?.[0]?.transactions?.[0]?.payment_status !== 'paid'"
           class="btn btn-danger btn-sm mt-3 w-100" (click)="removeDiscount()">
           <i class="fa-solid fa-trash me-2"></i>
           حذف الكوبون
@@ -267,7 +267,7 @@
       </div>
       <div class=" w-100 my-3"
         *ngIf="paymentStatus == 'paid' &&  ( invoices[0]?.order_type =='Takeaway' || invoices[0]?.order_type =='dine-in' || invoices[0]?.order_type =='Delivery')">
-        
+
         <!-- خيارات الدفع -->
         <div class="card p-3 mb-4">
           <div class="d-flex justify-content-between flex-wrap gap-2">
@@ -400,7 +400,7 @@
                 placeholder="المبلغ المدفوع فيزا" min="0"
                 (blur)="openMixedPaymentTipModal(billAmount, tipModalContent)">
             </div>
-            
+
             <hr class="my-3">
             <div class="mb-0 row mx-0 justify-content-center align-items-center">
               <div class="col-12 text-center mb-2">
@@ -418,7 +418,7 @@
                 </div>
               </div>
             </div>
-            
+
             @if (paymentError && selectedPaymentMethod === 'cash + credit') {
             <div class="alert alert-danger mt-3 py-2">
               <i class="fas fa-exclamation-circle me-1"></i>
@@ -431,7 +431,7 @@
         <!-- الملخص النهائي -->
         <div *ngIf="finalTipSummary" class="card p-4 my-3 final-summary-box">
           <hr class="my-3">
-          
+
           <div class="summary-line sub-total mb-3">
             <span>المجموع الفرعي (المستحق):</span>
             <span class="summary-value">{{ finalTipSummary.billAmount | number:'1.2-2' }} {{ currencySymbol }}</span>
@@ -546,7 +546,7 @@
         </h6>
         <h6 class="text-danger fw-bold mb-0 text-end">
           -
-          <span>{{ (item.coupon_value || discountAmount || invoices[0]?.invoice_summary?.coupon_value || 0) | number:'1.2-2' }} 
+          <span>{{ (item.coupon_value || discountAmount || invoices[0]?.invoice_summary?.coupon_value || 0) | number:'1.2-2' }}
             {{ item.currency_symbol }}
           </span>
         </h6>
@@ -595,7 +595,7 @@
 </div>
 
 <div id="printSectionn" class="bg_black printSection p-0 d-none">
-  <div class="px-4 py-2 my-2" *ngFor="let item of branchDetails">
+  <div class="py-2 my-2" *ngFor="let item of branchDetails">
     <div class="text-center border-bottom-dotted mb-2">
       <div class="card-img">
         <img src="assets/images/logo.png" alt="مطعم الكوت" class="img-fluid" />
@@ -702,43 +702,34 @@
       </div>
     </ng-container>
 
-    <table class="table table-bordered">
-      <thead class="text-center">
+    <table class="table table-bordered" style="width: 100%; table-layout: fixed; margin: 0; padding: 0;">
+      <thead class="text-right">
         <tr>
-          <th scope="col">الصنف</th>
-          <th scope="col">الكمية</th>
-          <th scope="col" *ngIf="test && (!showPrices || showPrices)">السعر</th>
-          <th scope="col" *ngIf="test && (!showPrices || showPrices)">
-            الاجمالي
-          </th>
+          <th style="text-align: right; padding: 0; margin: 0; word-wrap: break-word; overflow-wrap: break-word;">الصنف</th>
+          <th style="text-align: right; padding: 0; margin: 0; word-wrap: break-word; overflow-wrap: break-word;">الكمية</th>
+          <th style="text-align: right; padding: 0; margin: 0; word-wrap: break-word; overflow-wrap: break-word;" *ngIf="test && (!showPrices || showPrices)">السعر</th>
+          <th style="text-align: right; padding: 0; margin: 0; word-wrap: break-word; overflow-wrap: break-word;" *ngIf="test && (!showPrices || showPrices)">الاجمالي</th>
         </tr>
       </thead>
       <tbody>
-
-
-
-
         <tr *ngFor="let item of orderDetails[0]">
-          <td>
-            <div>
-              <div>
-                <small class="fw-bold">{{ item.dish_name }}</small>
+          <td style="text-align: right; padding: 1px; margin: 1px; word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">
+            <div style="margin:  1px; padding:  1px;">
+              <div style="margin:  1px; padding: 1px;">
+                <small class="fw-bold" style="margin:  1px; padding:  1px; display: block;">{{ item.dish_name }}</small>
               </div>
-              <div class="pe-2">{{ item.size }}</div>
-              <div class="pe-2" *ngFor="let addon of item.addons">
-                <small class="text-black fst-italic fw-semibold">- {{ addon.addon_name }}</small>
+              <div class="pe-2 fw-bold" *ngIf="item.size" style="margin:  1px; padding:  1px;">{{ item.size }}</div>
+              <div class="pe-2 fw-bold" *ngFor="let addon of item.addons" style="margin:  1px; padding:  1px;">
+                <small class="text-black fst-italic fw-semibold" style="margin: 0; padding: 0; display: block;">- {{ addon.addon_name }}</small>
               </div>
-
             </div>
           </td>
-          <td class="fw-bold">{{ item.quantity }}</td>
-          <td class="fw-bold" *ngIf="test && (!showPrices || showPrices)">
+          <td class="fw-bold" style="text-align: center; padding: 0; margin: 0; word-wrap: break-word; overflow-wrap: break-word;">{{ item.quantity }}</td>
+          <td class="fw-bold" style="text-align: center; padding: 0; margin: 0; word-wrap: break-word; overflow-wrap: break-word; white-space: normal;" *ngIf="test && (!showPrices || showPrices)">
             {{ item.total_dish_price / item.quantity | number }}
-            {{ invoiceSummary[0].currency_symbol }}
           </td>
-          <td class="fw-bold" *ngIf="test && (!showPrices || showPrices)">
+          <td class="fw-bold" style="text-align: center; padding: 0; margin: 0; word-wrap: break-word; overflow-wrap: break-word; white-space: normal;" *ngIf="test && (!showPrices || showPrices)">
             {{ item.total_dish_price | number }}
-            {{ invoiceSummary[0].currency_symbol }}
           </td>
         </tr>
       </tbody>
@@ -764,7 +755,7 @@
               </span>
             </h6>
             <span class="text-danger fw-bold">
-              -{{ (item.coupon_value || discountAmount || invoices[0]?.invoice_summary?.coupon_value || 0) | number:'1.2-2' }} 
+              -{{ (item.coupon_value || discountAmount || invoices[0]?.invoice_summary?.coupon_value || 0) | number:'1.2-2' }}
               {{ item.currency_symbol }}
             </span>
           </div>
@@ -853,7 +844,7 @@
           </div> -->
 
         </ng-container>
-      
+
         <hr style="  margin: 0.5rem 0 !important;
     color: inherit;
     border: 0;
@@ -924,7 +915,7 @@
         <button class="btn" (click)="applyCouponForInvoice()" [disabled]="isApplyingCoupon || !couponCode || !couponCode.trim()">
           {{ isApplyingCoupon ? "جاري التحقق...." : "تطبيق الكوبون" }}
         </button>
-        <button class="btn reversed main-color" (click)="removeDiscount()" 
+        <button class="btn reversed main-color" (click)="removeDiscount()"
           [disabled]="(!discountAmount || discountAmount === 0) && (!invoices?.[0]?.invoice_summary?.coupon_value || invoices[0].invoice_summary.coupon_value === 0)">
           حذف الكوبون
         </button>
@@ -943,15 +934,15 @@
 
   <div class="modal-body pt-3 px-4">
     <!-- إشعار timeout -->
-    <div *ngIf="tipModalTimeRemaining > 0 && tipModalTimeRemaining <= tipModalWarningTime" 
+    <div *ngIf="tipModalTimeRemaining > 0 && tipModalTimeRemaining <= tipModalWarningTime"
       class="alert alert-warning mb-4 d-flex align-items-center justify-content-between">
       <div>
         <i class="fas fa-clock me-2"></i>
-        <strong>تحذير:</strong> سيتم اختيار "بدون إكرامية" تلقائياً خلال 
+        <strong>تحذير:</strong> سيتم اختيار "بدون إكرامية" تلقائياً خلال
         <strong>{{ tipModalTimeRemaining }}</strong> ثانية
       </div>
     </div>
-    
+
     <div class="tip-summary-initial mb-4">
       <div class="d-flex justify-content-between summary-line mb-2">
         <span class="text-muted">المبلغ المُستحق:</span>
