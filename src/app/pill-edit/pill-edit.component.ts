@@ -758,14 +758,17 @@ export class PillEditComponent {
 
     // Step 2: Apply Discount/Coupon
     const discountValue = Math.min(discount, productValueBeforeDiscount);
-    const productValueAfterDiscount = productValueBeforeDiscount - discountValue;
+    const productValueAfterDiscount = Math.max(0, productValueBeforeDiscount - discountValue);
 
     // Step 3: Calculate Service Charge (on product value AFTER discount)
     let serviceAmount = 0;
-    if (servicePerc > 0) {
-      serviceAmount = (productValueAfterDiscount * servicePerc) / 100;
-    } else {
-      serviceAmount = serviceFixed;
+    // ✅ إذا كان الكوبون 100% خصم، يجب أن تكون رسوم الخدمة = 0
+    if (productValueAfterDiscount > 0) {
+      if (servicePerc > 0) {
+        serviceAmount = (productValueAfterDiscount * servicePerc) / 100;
+      } else {
+        serviceAmount = serviceFixed;
+      }
     }
     serviceAmount = Number(serviceAmount.toFixed(2));
 
@@ -774,7 +777,8 @@ export class PillEditComponent {
     const vatBase = productValueAfterDiscount + serviceAmount;
 
     let taxAmount = 0;
-    if (taxPerc > 0) {
+    // ✅ إذا كان الكوبون 100% خصم (vatBase = 0)، يجب أن تكون الضريبة = 0
+    if (vatBase > 0 && taxPerc > 0) {
       if (taxApplication) {
         // Tax included in price: extract tax from total
         taxAmount = vatBase - vatBase / (1 + taxPerc / 100);
