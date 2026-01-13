@@ -1649,12 +1649,18 @@ export class PillEditComponent {
     if (this.selectedPaymentMethod === 'cash') {
       this.cash_value = paymentAmountNum;
       this.cashPaymentInput = paymentAmountNum;
+      // ✅ استخدام setPaymentInputValue للتأكد من التحديث الصحيح
+      this.setPaymentInputValue(paymentAmountNum);
     } else if (this.selectedPaymentMethod === 'credit') {
       this.credit_value = paymentAmountNum;
-      // ✅ التأكد من تحديث الحقل بشكل صريح وتحويل القيمة إلى رقم
+      // ✅ تحديث creditPaymentInput مباشرة أولاً
       this.creditPaymentInput = paymentAmountNum;
-      // ✅ إجبار Angular على تحديث العرض
-      this.cdr.detectChanges();
+      // ✅ استخدام setPaymentInputValue للتأكد من التحديث الصحيح
+      this.setPaymentInputValue(paymentAmountNum);
+      // ✅ إجبار Angular على تحديث العرض بعد تأخير بسيط لضمان التحديث
+      setTimeout(() => {
+        this.cdr.detectChanges();
+      }, 0);
     }
 
     // ✅ مسح جميع الأخطاء عند اختيار مبلغ صحيح
@@ -1804,9 +1810,20 @@ export class PillEditComponent {
   // ✅ Getter and Setter for payment input value
   getPaymentInputValue(): any {
     if (this.selectedPaymentMethod === 'credit') {
-      return this.creditPaymentInput;
+      // ✅ إرجاع القيمة مباشرة (سيتم تحويلها تلقائياً في الحقل)
+      const value = this.creditPaymentInput;
+      // ✅ إذا كانت القيمة مسافة أو فارغة، إرجاع null أو 0
+      if (value === " " || value === "" || value === null || value === undefined) {
+        return null;
+      }
+      // ✅ إرجاع القيمة كرقم إذا أمكن
+      return typeof value === 'number' ? value : Number(value) || null;
     }
-    return this.cashPaymentInput;
+    const value = this.cashPaymentInput;
+    if (value === " " || value === "" || value === null || value === undefined) {
+      return null;
+    }
+    return typeof value === 'number' ? value : Number(value) || null;
   }
 
   setPaymentInputValue(value: any): void {
