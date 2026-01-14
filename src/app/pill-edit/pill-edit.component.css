@@ -43,7 +43,7 @@
 
 /* Set the width of the print section to fit the receipt printer */
 .printSection {
-  width: 90mm;
+  width: 85mm;
   font-size: 8px !important;
   margin: 0;
   padding: 0;
@@ -63,6 +63,169 @@
 .table {
   width: 100%;
   font-size: 10px;
+}
+
+/* Table styles for printSectionn - remove padding/margin and ensure text fits */
+.printSectionn .table {
+  width: 100% !important;
+  table-layout: fixed !important;
+  border-collapse: collapse !important;
+  font-size: 7px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.printSectionn .table thead th {
+  font-size: 7px !important;
+  padding: 2px !important;
+  margin: 0 !important;
+  text-align: right !important;
+  border: 1px solid black !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  white-space: normal !important;
+}
+
+.printSectionn .table tbody td {
+  font-size: 6px !important;
+  padding: 2px !important;
+  margin: 0 !important;
+  border: 1px solid black !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  vertical-align: top !important;
+  white-space: normal !important;
+  text-align: right !important;
+}
+
+.printSectionn .table tbody td small {
+  font-size: 6px !important;
+  line-height: 1.1 !important;
+  display: block !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  margin: 0 !important;
+  padding: 2px !important;
+}
+
+.printSectionn .table tbody td div {
+  font-size: 6px !important;
+  line-height: 1.1 !important;
+  word-wrap: break-word !important;
+  overflow-wrap: break-word !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.printSectionn .table tbody td div div {
+  font-size: 5.5px !important;
+  line-height: 1.1 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.printSectionn .table tbody td .pe-2 {
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Print media query for XPrinter 80C */
+@media print {
+  .printSectionn {
+    width: 80mm !important;
+    max-width: 80mm !important;
+    margin: 0 !important;
+    padding: 2mm !important;
+    font-size: 7px !important;
+  }
+
+  .printSectionn .table {
+    width: 100% !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+    font-size: 6px !important;
+    margin: 0 !important;
+    padding: 2px !important;
+  }
+
+  .printSectionn .table thead th {
+    font-size: 6px !important;
+    padding: 2px !important;
+    margin: 2px !important;
+    text-align: right !important;
+    border: 1px solid black !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: normal !important;
+  }
+
+  .printSectionn .table tbody td {
+    font-size: 7px !important;
+    padding: 2px !important;
+    margin: 2px !important;
+    border: 1px solid black !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    vertical-align: top !important;
+    white-space: normal !important;
+    text-align: right !important;
+  }
+
+  .printSectionn .table tbody td small {
+    font-size: 7px !important;
+    line-height: 1.1 !important;
+    display: block !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    margin: 2px !important;
+    padding: 2px !important;
+  }
+
+  .printSectionn .table tbody td div {
+    font-size: 7px !important;
+    line-height: 1.1 !important;
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    margin: 2px !important;
+    padding: 2px !important;
+  }
+
+  .printSectionn .table tbody td div div {
+    font-size: 7px !important;
+    line-height: 1.1 !important;
+    margin: 2px !important;
+    padding: 2px !important;
+  }
+
+  .printSectionn .table tbody td .pe-2 {
+    padding: 2px !important;
+    margin: 0 !important;
+  }
+
+  /* Ensure columns fit */
+  .printSectionn .table thead th:nth-child(1),
+  .printSectionn .table tbody td:nth-child(1) {
+    width: 35% !important;
+    max-width: 35% !important;
+  }
+
+  .printSectionn .table thead th:nth-child(2),
+  .printSectionn .table tbody td:nth-child(2) {
+    width: 15% !important;
+    max-width: 15% !important;
+  }
+
+  .printSectionn .table thead th:nth-child(3),
+  .printSectionn .table tbody td:nth-child(3) {
+    width: 25% !important;
+    max-width: 25% !important;
+  }
+
+  .printSectionn .table thead th:nth-child(4),
+  .printSectionn .table tbody td:nth-child(4) {
+    width: 25% !important;
+    max-width: 25% !important;
+  }
 }
 
 .card-img-qr img {

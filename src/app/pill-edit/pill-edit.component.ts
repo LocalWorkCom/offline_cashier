@@ -686,7 +686,7 @@ export class PillEditComponent {
           couponData // إرسال بيانات الكوبون
         ).pipe(finalize(() => this.loading = false))
         .subscribe({
-          next: (response) => {
+          next: async (response) => {
             // 🔒 التحقق من حالة الاستجابة قبل المتابعة
             if (response.status === false && response.message) {
               this.errr = response.message;
@@ -718,9 +718,58 @@ export class PillEditComponent {
               'pill_detail_data',
               JSON.stringify(response.data)
             );
-            this.showSuccessPillEditModal();
-            this.fetchPillsDetails(this.pillId);
+            // this.showSuccessPillEditModal();
+
+            const printContent = document.getElementById('printSectionn');
+            if (!printContent) {
+              console.error('Print section not found.');
+              return;
+            }
+
+            const originalHTML = document.body.innerHTML;
+
+            const copies = this.isDeliveryOrder
+              ? [
+                { showPrices: true, test: true },
+                { showPrices: false, test: false },
+                { showPrices: true, test: true },
+              ]
+              : [
+                { showPrices: true, test: true },
+                { showPrices: false, test: false },
+              ];
+
+            for (let i = 0; i < copies.length; i++) {
+              this.showPrices = copies[i].showPrices;
+              this.test = copies[i].test;
+              await new Promise((resolve) => setTimeout(resolve, 300));
+
+              const singlePageHTML = `
+              <div>
+                ${printContent.innerHTML}
+              </div>
+            `;
+
+              document.body.innerHTML = singlePageHTML;
+
+              await new Promise((resolve) =>
+                setTimeout(() => {
+                  window.print();
+                  resolve(true);
+                }, 200)
+              );
+            }
+
+            document.body.innerHTML = originalHTML;
+
+            // انتظار قليل قبل إعادة التحميل للتأكد من اكتمال الطباعة
+            await new Promise((resolve) => setTimeout(resolve, 500));
             location.reload();
+
+
+
+
+
           },
           error: (err) => {
             console.error('خطأ في حفظ الطلب:', err);
