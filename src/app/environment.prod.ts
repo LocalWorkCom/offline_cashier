@@ -2,11 +2,12 @@
 
 
  export const baseUrlForWebSocket ='https://erpfortest.testdomain100.online/'
+  export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
 
 /*  export const baseUrl ='http://127.0.0.1:8000/'
  */
 // export const baseUrl2 ='https://productowner.testdomain100.online/api'
-export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
+// export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
 
 // export const baseUrl2 ='https://erpmain.alkoot-restaurant.com/api'
 
