@@ -19,10 +19,12 @@ import { finalize } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { baseUrl } from '../environment';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { ReceiptComponent } from '../receipt/receipt.component';
+
 
 @Component({
   selector: 'app-pill-edit',
-  imports: [CommonModule, DecimalPipe, FormsModule, ConfirmDialogComponent],
+  imports: [CommonModule, DecimalPipe, FormsModule, ConfirmDialogComponent, ReceiptComponent],
   templateUrl: './pill-edit.component.html',
   styleUrl: './pill-edit.component.css',
   providers: [DatePipe],
@@ -33,6 +35,7 @@ export class PillEditComponent {
   @ViewChild('tipModalContent') tipModalContent!: TemplateRef<any>;
 
   loading: boolean = false;
+  receiptData: any;
   // @ViewChild('deliveredButton', { static: false }) deliveredButton!: ElementRef;
   invoices: any;
   pillDetails: any;
@@ -719,8 +722,53 @@ export class PillEditComponent {
               JSON.stringify(response.data)
             );
             // this.showSuccessPillEditModal();
+            console.log(response, 'response');
 
-            const printContent = document.getElementById('printSectionn');
+            // تحضير البيانات من استجابة API
+            const branchDetails = response.data.branch_details
+              ? [response.data.branch_details]
+              : [];
+
+            // إنشاء invoices array لأن مكون الإيصال يحتاجها
+            const invoices = [{
+              orderDetails: response.data.orderDetails || [],
+              cashier_info: response.data.cashier_info || null,
+              currency_symbol: response.data.currency_symbol || '',
+              invoice_summary: response.data.invoice_summary || {},
+              order_type: response.data.order_type || '',
+              transactions: response.data.transactions || []
+            }];
+
+            // تحويل invoice_summary إلى مصفوفة
+            const invoiceSummary = response.data.invoice_summary
+              ? [{
+                  ...response.data.invoice_summary,
+                  currency_symbol: response.data.currency_symbol || ''
+                }]
+              : [];
+
+            this.receiptData = {
+              branchDetails: branchDetails,
+              invoices: invoices,
+              order_id: response.data.order.id,
+              invoice_summary: invoiceSummary,
+              orderDetails: response.data.orderDetails || [],
+              date: response.data.order.date,
+              time: response.data.order.time,
+              showPrices: true,
+              paymentStatus: response.data.order.status,
+              invoice_id: response.data.order.order_transactions[0]?.invoice_id,
+              order_type: response.data.order_type,
+              table_number: response.data.order.table_id || null,
+              transactions: response.data.transactions || [],
+              isFinal: true,
+            };
+
+            // انتظار حتى يتم عرض مكون الإيصال
+            // await new Promise((resolve) => setTimeout(resolve, 500));
+            // this.cdr.detectChanges();
+
+            const printContent = document.getElementById('printSection');
             if (!printContent) {
               console.error('Print section not found.');
               return;
