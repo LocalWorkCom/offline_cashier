@@ -1090,12 +1090,12 @@
 <div class="modal fade" id="mergeOrderModal" tabindex="-1" aria-labelledby="mergeOrderModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content p-3">
-      <div class="modal-header border-0 d-flex justify-content-between align-items-center">
+      <div class="modal-header border-0 d-flex justify-content-between align-items-center w-100 position-relative">
         <div class="d-flex align-items-center gap-2">
           <i class="fa-solid fa-code-merge text-danger fs-4"></i>
           <h5 class="modal-title fw-bold mb-0" id="mergeOrderModalLabel">دمج الطلبات</h5>
         </div>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        <button type="button" class="btn-close position-absolute" style="left: 0; top: 50%; transform: translateY(-50%);" data-bs-dismiss="modal" aria-label="إغلاق"></button>
       </div>
       <div class="modal-body">
         <p class="text-muted mb-4">
@@ -1107,43 +1107,63 @@
             لا توجد طلبات متاحة للدمج
           </div>
           <div *ngFor="let order of eligibleOrdersForMerge"
-               class="border rounded p-3 mb-3 cursor-pointer"
+               class="border rounded p-3 mb-3 cursor-pointer position-relative"
                [class.border-danger]="selectedOrderIdForMerge === order.order_details.order_id"
+               [class.border-3]="selectedOrderIdForMerge === order.order_details.order_id"
                [class.bg-light]="selectedOrderIdForMerge === order.order_details.order_id"
                (click)="selectOrderForMerge(order.order_details.order_id)">
-            <div class="form-check">
-              <input class="form-check-input" type="radio" name="mergeOrderSelect"
-                     [id]="'merge-order-' + order.order_details.order_id"
-                     [value]="order.order_details.order_id"
-                     [(ngModel)]="selectedOrderIdForMerge"
-                     (ngModelChange)="onMergeOrderSelectionChange()">
-              <label class="form-check-label w-100" [for]="'merge-order-' + order.order_details.order_id">
-                <div class="d-flex justify-content-between align-items-center">
-                  <div>
-                    <strong class="d-block">{{ order.order_details.order_number }}</strong>
-                    <small class="text-muted">داخلي</small>
-                  </div>
-                  <div class="text-end">
-                    <div class="badge bg-warning text-dark mb-1">
-                      <i class="fa-solid fa-chair me-1"></i>
-                      طاولة {{ order.order_details.table_number }}
-                    </div>
-                    <div class="small text-muted">{{ order.order_details.order_items_count }} عناصر</div>
-                    <div class="small text-muted">{{ order.order_details.created_at | date : "hh:mm a" }}</div>
-                    <div class="fw-bold">{{ order.total_price }} {{ mergeOrderCurrency }}</div>
+            <div class="d-flex align-items-start justify-content-between w-100">
+              <!-- Left Side: Order Details with Table Badge spanning 2 rows -->
+              <div class="d-flex align-items-center gap-3">
+                <!-- First Column: Table Badge (spans 2 rows) -->
+                <div class="badge rounded px-3 py-2 d-inline-flex align-items-center justify-content-center" 
+                     style="background-color: #ff9800; color: #000; border: none; font-size: 0.85rem; min-height: 60px; align-self: stretch; border-radius: 8px !important;">
+                  <div class="d-flex flex-column align-items-center">
+                    <i class="fa-solid fa-chair mb-1" style="font-size: 0.75rem;"></i>
+                    <span>طاولة {{ order.order_details.table_number }}</span>
                   </div>
                 </div>
-              </label>
+                
+                <!-- Second Column: Order Number, Type, Time, Items -->
+                <div class="d-flex flex-column text-start" style="gap: 0.25rem;">
+                  <!-- First Row: Order Number and Type -->
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="fw-bold" style="font-size: 0.95rem;">{{ order.order_details.order_number }}</div>
+                    <div class="text-muted small">{{ order.order_details.table_type == 1 ? 'داخلي' : order.order_details.table_type == 2 ? 'خارجي' : (order.order_details.order_type === 'dine-in' ? 'داخلي' : order.order_details.order_type === 'Takeaway' ? 'إستلام' : order.order_details.order_type === 'Delivery' ? 'توصيل' : 'داخلي') }}</div>
+                  </div>
+                  <!-- Second Row: Time and Items Count -->
+                  <div class="d-flex align-items-center gap-2">
+                    <div class="text-muted small">{{ order.order_details.created_at | date : "hh:mm a" }}</div>
+                    <div class="text-muted small">{{ order.order_details.order_items_count }} عناصر</div>
+                  </div>
+                </div>
+              </div>
+              
+              <!-- Right Side: Total Amount + Radio Button -->
+              <div class="d-flex align-items-start gap-3">
+                <div class="d-flex flex-column text-end">
+                  <span class="text-muted small mb-1">الإجمالي</span>
+                  <span class="fw-bold" style="font-size: 1rem;">{{ order.total_price }} {{ mergeOrderCurrency }}</span>
+                </div>
+                <div class="form-check">
+                  <input class="form-check-input mt-1" type="radio" name="mergeOrderSelect"
+                         [id]="'merge-order-' + order.order_details.order_id"
+                         [value]="order.order_details.order_id"
+                         [(ngModel)]="selectedOrderIdForMerge"
+                         (ngModelChange)="onMergeOrderSelectionChange()">
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
       <div class="modal-footer border-0 d-flex justify-content-between">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء الأمر</button>
         <button type="button" class="btn btn-danger" (click)="goToMergeConfirmation()" [disabled]="!selectedOrderIdForMerge">
           <i class="fa-solid fa-code-merge me-2"></i>
           تأكيد الدمج
         </button>
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء الأمر</button>
+
       </div>
     </div>
   </div>
