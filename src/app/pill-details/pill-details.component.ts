@@ -351,7 +351,7 @@ private processPillDetails(data: any): void {
           paymentStatus: this.paymentStatus,
           invoice_id: response.data.invoice_tips[0]?.invoice_id,
           order_type: response.data.invoices[0]?.order_type,
-          table_number: this.branchDetails.table_number,
+          table_number: this.branchDetails[0]?.table_number,
           transactions: this.invoices[0]?.transactions,
           isFinal: this.isFinal, // change to true if you want to print the final invoice
         };
