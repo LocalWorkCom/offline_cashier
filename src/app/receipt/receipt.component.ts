@@ -46,4 +46,6 @@ export class ReceiptComponent {
     return new Date();
   }
 
+  
+
 }

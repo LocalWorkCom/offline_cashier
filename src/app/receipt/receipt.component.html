@@ -35,13 +35,15 @@
         <span class="info-value">{{ getOrderTypeLabel(data.order_type) }}</span>
       </div>
 
+      <div class="d-flex justify-content-between align-items-center">
       <div class="" *ngIf="data.invoice_id">
         <span class="info-label">فاتورة #</span>
         <span class="info-value">{{ data.invoice_id }}</span>
       </div>
 
       <div class="order-type-row" *ngIf="data.invoices[0]?.order_type === 'dine-in'">
-        <span> (Table {{ getTableNumber() }})</span>
+        <span> (Table {{ data.table_number }})</span>
+      </div>
       </div>
 
 
