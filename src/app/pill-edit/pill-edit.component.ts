@@ -19,6 +19,8 @@ import { finalize } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { baseUrl } from '../environment';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { ReceiptComponent } from '../receipt/receipt.component';
+
 
 @Component({
   selector: 'app-pill-edit',
@@ -33,6 +35,7 @@ export class PillEditComponent {
   @ViewChild('tipModalContent') tipModalContent!: TemplateRef<any>;
 
   loading: boolean = false;
+  receiptData: any;
   // @ViewChild('deliveredButton', { static: false }) deliveredButton!: ElementRef;
   invoices: any;
   pillDetails: any;
@@ -719,8 +722,24 @@ export class PillEditComponent {
               JSON.stringify(response.data)
             );
             // this.showSuccessPillEditModal();
+            this.receiptData = {
+              branchDetails: response.data.branchDetails,
+              invoices: response.data.invoices,
+              order_id: response.data.order.id,
+              invoice_summary:response.data.invoice_summary,
+              orderDetails: response.data.orderDetails,
+              date: response.data.order.date,
+              time: response.data.order.time,
+              showPrices: true,
+              paymentStatus: response.data.order.status,
+              invoice_id: response.data.order.order_transactions[0]?.invoice_id,
+              order_type: response.data.order_type,
+              table_number: this.branchDetails.table_number,
+              transactions: response.data.transactions,
+              isFinal: true,
+            };
 
-            const printContent = document.getElementById('printSectionn');
+            const printContent = document.getElementById('printSection');
             if (!printContent) {
               console.error('Print section not found.');
               return;

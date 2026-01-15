@@ -49,9 +49,11 @@ interface Country {
   code: string;
   flag: string;
 }
+import { ReceiptComponent } from '../receipt/receipt.component';
+
 @Component({
   selector: 'app-side-details',
-  imports: [FormsModule, RouterLink, RouterLinkActive, CommonModule, TranslateModule, NgxCountriesDropdownModule
+  imports: [FormsModule, RouterLink, RouterLinkActive, CommonModule, TranslateModule, NgxCountriesDropdownModule, ReceiptComponent
   ],
   providers: [DatePipe],
 
@@ -119,6 +121,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   note: string = 'لا يوجد';
   cuponValue: any;
   couponType: any;
+  receiptData: any = null;
+  receiptDataResponse: any = null;
   cashier_machine_id = Number(localStorage.getItem('cashier_machine_id'));
   createdOrderId!: any;
   showPrices?: boolean;
@@ -3886,6 +3890,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         this.pillDetailsService.getPillsDetailsById(this.pillId)
       );
 
+      console.log(response, "responsesaassadxs");
+
       this.invoices = response.data.invoices;
       console.log(response, "alaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
 
@@ -3920,8 +3926,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       this.branchDetails = this.invoices?.map(
         (e: { branch_details: any }) => e.branch_details
-      );
-      this.orderDetails = this.invoices?.map((e: any) => e.orderDetails);
+      ) || [];
+      this.orderDetails = this.invoices?.map((e: any) => e.orderDetails) || [];
 
       this.invoiceSummary = this.invoices?.map((e: any) => {
         let summary = {
@@ -3929,13 +3935,34 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           currency_symbol: e.currency_symbol,
         };
         return summary;
-      });
+      }) || [];
 
-      this.addressDetails = this.invoices?.map((e: any) => e.address_details);
+      this.addressDetails = this.invoices?.map((e: any) => e.address_details) || [];
 
       if (this.branchDetails?.length) {
         this.extractDateAndTime(this.branchDetails[0]);
       }
+
+      this.receiptDataResponse = {
+        branchDetails: Array.isArray(this.branchDetails) ? this.branchDetails : (this.branchDetails ? [this.branchDetails] : []),
+        invoices: response.data.invoices,
+        order_id: response.data.order_id,
+        invoice_summary: this.invoiceSummary || [],
+        orderDetails: this.orderDetails.flat() || [],
+        date: this.date,
+        time: this.time,
+        showPrices: true,
+        paymentStatus: this.paymentStatus,
+        invoice_id: response.data.invoice_tips[0]?.invoice_id,
+        order_type: response.data.invoices[0]?.order_type,
+        table_number: this.branchDetails.table_number,
+        transactions: this.invoices[0]?.transactions,
+        isFinal: false,
+      };
+
+      // تعيين receiptData حتى يتمكن القالب من عرض البيانات
+      this.receiptData = this.receiptDataResponse;
+
     } catch (error) {
       console.error('Error fetching pill details:', error);
     }
@@ -3963,6 +3990,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       //   )
       //   .toPromise();
       // console.log(test, 'test');
+      // Update receipt data before printing
+      this.receiptData = this.receiptDataResponse;
+
       const printContent = document.getElementById('printSection');
       if (!printContent) {
         console.error('Print section not found.');
@@ -6453,4 +6483,5 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   roundUpToTwoDecimals(value: number): number {
     return Math.ceil(value * 100) / 100;
   }
+
 }
