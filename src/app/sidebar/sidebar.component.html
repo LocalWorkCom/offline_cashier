@@ -658,7 +658,7 @@
 @if(reportData){
 <div id="logout-report-section" class="fw-bold d-none text-center">
   <div id="body-logo" class="mb-2">
-    <img src="../assets/images/logo-with-white-bg.png" id="logo" alt="" srcset="" class="w-100">
+    <img src="assets/images/logo-with-white-bg.png" id="logo" alt="" srcset="" class="w-100">
   </div>
   <div class="m-2" style="border-bottom: 1px dotted black;">
     <div class="text-center justify-content-center">
@@ -722,7 +722,7 @@
         <span>{{reportData.cashTotalLogout | number:'1.2-2'}} {{currency_Symbol}}</span>
       </p>
       <p class="fw-bold">الفرق :
-        <span [class.text-danger]="reportData.cashDifference < 0" [class.text-success]="reportData.cashDifference >= 0">
+        <span [class.text-black]="reportData.cashDifference < 0" [class.text-black]="reportData.cashDifference >= 0">
           {{reportData.cashDifference | number:'1.2-2'}} {{currency_Symbol}}
         </span>
       </p>
@@ -743,6 +743,7 @@
       <p>
         <img src="assets/images/vaadin_qrcode.png" class="img-fluid w-100" />
       </p>
+      <p> الرقم الضريبى : 675170532</p>
     </div>
   </footer>
 </div>
