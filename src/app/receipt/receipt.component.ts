@@ -46,6 +46,11 @@ export class ReceiptComponent {
     return new Date();
   }
 
-
+  getTableNumber(): string {
+    if (this.data?.table_number) {
+      return this.data.table_number;
+    }
+    return '';
+  }
 
 }
