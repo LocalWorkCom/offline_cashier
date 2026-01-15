@@ -42,7 +42,7 @@
       </div>
 
       <div class="order-type-row" *ngIf="data.invoices[0]?.order_type === 'dine-in'">
-        <span> (Table {{ data.table_number }})</span>
+        <span> (Table {{ getTableNumber() }})</span>
       </div>
       </div>
 
