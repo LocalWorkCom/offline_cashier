@@ -348,8 +348,13 @@
   </div>
 </div>
 
+
+<div id="printSection" class="d-none">
+  <app-receipt [data]="receiptData" *ngIf="receiptData"></app-receipt>
+</div>
+
 <!-- Hidden Printable Section -->
-<div id="printSection" class="bg_black printSection p-0 d-none">
+<!-- <div id="printSection" class="bg_black printSection p-0 d-none">
   <div class="px-4 py-2 my-2" *ngFor="let item of branchDetails">
     <div class="text-center border-bottom-dotted mb-2">
       <div class="card-img">
@@ -407,9 +412,7 @@
       </div>
 
       <div *ngIf="hasDineInOrder()">
-        <!-- <h6>
-          <span class="fw-bold">رقم الطلب:</span> {{ item?.order_number }}
-        </h6> -->
+
 
         <h6 style="font-size: 10px;" class="bg_black">
           <span class="fw-bold" >رقم الطاولة:</span> {{ item.table_number }}
@@ -417,12 +420,9 @@
       </div>
     </div>
 
-    <!-- Conditionally display client data for delivery orders -->
     <ng-container *ngIf="test && (!showPrices || showPrices)">
       <div class="client-data" *ngIf="isDeliveryOrder">
-        <!-- <h6>
-    رقم الطلب: <span>{{ branchDetails?.[0]?.order_number ?? 'لا يوجد' }}</span>
-  </h6> -->
+
         <div class="d-flex justify-content-between align-items-center mb-0 bg_black" style="font-size: 10px;">
           <h6 style="font-size: 10px;">
             اسم العميل:
@@ -531,7 +531,6 @@
             </h6>
             <p class="bg_black" style="font-size: 13px;">{{ item.tax_value }} {{ item.currency_symbol }}</p>
           </div>
-          <!-- Total price -->
           <ng-container *ngIf="test && (!showPrices || showPrices)">
             <div class=" bg_black total-price my-0" *ngFor="let item of invoiceSummary">
               <div class=" fw-bold  d-flex justify-content-between align-items-center">
@@ -548,7 +547,6 @@
           </div>
         </ng-container>
 
-        <!-- Payment Method -->
         <ng-container *ngIf="test && (!showPrices || showPrices)">
           <div class="d-flex justify-content-between align-items-center fw-bold bg_black ">
             <div style="font-size: 12px;">
@@ -572,24 +570,20 @@
           </div>
         </ng-container>
 
-        <!-- Payment Summary: المبلغ المستحق، المبلغ المدفوع، الباقي -->
         <ng-container *ngIf="test && (!showPrices || showPrices) && invoices[0]?.transactions">
           <div class="bg_black" style="font-size: 13px; margin-top: 10px;">
-            <!-- المبلغ المستحق -->
             <div class="d-flex justify-content-between fw-bold mb-2">
               <span>المبلغ المستحق:</span>
               <span>{{ item.total_price }} {{ item.currency_symbol }}</span>
             </div>
-            
-            <!-- المبلغ المدفوع -->
+
             <div class="d-flex justify-content-between fw-bold mb-2">
               <span>المبلغ المدفوع:</span>
               <span>
                 {{ getTotalPaid() | number:'1.2-2' }} {{ item.currency_symbol }}
               </span>
             </div>
-            
-            <!-- الباقي -->
+
             <div class="d-flex justify-content-between fw-bold">
               <span>الباقي:</span>
               <span>
@@ -601,7 +595,6 @@
 
         <div class="d-flex justify-content-between align-items-center">
 
-          <!-- Cash - visa -->
           <div *ngIf="invoices[0].transactions.length > 1">
             <div *ngFor="let inv of invoices[0].transactions">
               <div class=" fw-bold" *ngIf="invoices[0].transactions[0].payment_status == 'paid'">
@@ -612,16 +605,9 @@
               </div>
             </div>
           </div>
-          <!-- Cash - visa -->
         </div>
         <ng-container *ngIf="test && (!showPrices || showPrices)">
-          <!-- <div class="px-2 mb-1" *ngIf="!item.tax_application">
-            <h6>
-              تضاف ضريبة القيمة المضافة بنسبة
-              <span class="main-color">{{ item.tax_percentage }}% </span> بمعنى
-              اخر {{ item.tax_value }} {{ item.currency_symbol }}
-            </h6>
-          </div> -->
+
 
         </ng-container>
         <hr style="  margin: 0.5rem 0 !important;
@@ -632,7 +618,6 @@
     opacity: 1 !important;" />
 
 
-        <!-- Payment Status -->
 
         <div *ngIf="item.tax_application" class="include-tax d-flex justify-content-between fw-bold">
           <small> سعر الوجبات يشتمل على ضريبة القيمة المضافة </small>
@@ -650,7 +635,7 @@
       <h6>الرقم الضريبي <span>675170532</span></h6>
     </div>
   </div>
-</div>
+</div> -->
 <!-- <p-confirmDialog
       header="تأكيد"
       icon="pi pi-exclamation-triangle"

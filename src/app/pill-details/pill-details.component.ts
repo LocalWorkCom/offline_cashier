@@ -18,11 +18,12 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogComponent } from "../shared/ui/component/confirm-dialog/confirm-dialog.component";
 import { IndexeddbService } from '../services/indexeddb.service';
+import { ReceiptComponent } from '../receipt/receipt.component';
 
 @Component({
   selector: 'app-pill-details',
   imports: [CommonModule, ShowLoaderUntilPageLoadedDirective, DecimalPipe, ConfirmDialogModule,
-    ButtonModule, ConfirmDialogComponent,RouterLink ,RouterLinkActive],
+    ButtonModule, ConfirmDialogComponent,RouterLink ,RouterLinkActive, ReceiptComponent],
   templateUrl: './pill-details.component.html',
   styleUrls: ['./pill-details.component.css'],
   providers: [DatePipe],
@@ -40,6 +41,7 @@ export class PillDetailsComponent implements OnInit {
   note = localStorage.getItem('additionalNote');
   invoices: any;
   pillDetails: any;
+  receiptData: any;
   branchDetails: any;
   pillId!: any;
   orderDetails: any[] = [];
@@ -335,6 +337,24 @@ private processPillDetails(data: any): void {
         if (this.branchDetails?.length) {
           this.extractDateAndTime(this.branchDetails[0]);
         }
+
+
+        this.receiptData = {
+          branchDetails: Array.isArray(this.branchDetails) ? this.branchDetails : (this.branchDetails ? [this.branchDetails] : []),
+          invoices: response.data.invoices,
+          order_id: response.data.order_id,
+          invoice_summary: this.invoiceSummary || [],
+          orderDetails: this.orderDetails.flat() || [],
+          date: this.date,
+          time: this.time,
+          showPrices: true,
+          paymentStatus: this.paymentStatus,
+          invoice_id: response.data.invoice_tips[0]?.invoice_id,
+          order_type: response.data.invoices[0]?.order_type,
+          table_number: this.branchDetails.table_number,
+          transactions: this.invoices[0]?.transactions,
+          isFinal: this.isFinal, // change to true if you want to print the final invoice
+        };
       },
       error: (error: any) => {
         console.error(' Error fetching pill details:', error);
@@ -437,6 +457,10 @@ private processPillDetails(data: any): void {
   return;
 }
    */    console.log('Print invoice response:', response);
+
+
+
+
 
       const printContent = document.getElementById('printSection');
       if (!printContent) {
