@@ -12,9 +12,9 @@ export class ListenToNotificationsService {
   lang = localStorage.getItem(BasicsConstance.LANG);
   employeeID = localStorage.getItem(BasicsConstance.employeeID)!; 
   private channelName: string = `notification-${this.employeeID}-${BasicsConstance.FLAG}`;
-  event: string = 'Notifications';
+  event: string = '.Notifications';
   constructor(private pusherService: PusherService) {
-    this.listenToNewNotification();
+    // this.listenToNewNotification();
   }
 
   listenToNewNotification() {
@@ -29,7 +29,7 @@ export class ListenToNotificationsService {
   stopListening() {
     if (this.channelName) {
       this.pusherService.unsubscribe(this.channelName);
-      this.newNotificaion$.complete();
+      // this.newNotificaion$.complete();
     }
   }
   transformNotificationByLang(res: any): notification {

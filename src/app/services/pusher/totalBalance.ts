@@ -14,14 +14,14 @@ export class totalBalance {
      empId = localStorage.getItem('employee_id');;
      channel = `total-paid-${this.empId}`;
   listenToBalance() { 
-    this.pusherService.subscribe(this.channel, 'Cashier-total-paid', (res: any) => {
+    this.pusherService.subscribe(this.channel, '.Cashier-total-paid', (res: any) => {
       this.totalChange$.next(res); // Emit the new dish to subscribers
     });
   }
    stopListeningForBalance() {
     if (this.channel) {
       this.pusherService.unsubscribe(this.channel);
-      this.totalChange$.complete();
+      // this.totalChange$.complete();
     }
   }
 }

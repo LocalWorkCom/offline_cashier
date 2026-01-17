@@ -16,13 +16,13 @@ export class WebsocketService {
 
   constructor() {
     this.echo = new Echo({
-      broadcaster: 'pusher',
-      key: environment2.pusher.key,
-      cluster: environment2.pusher.cluster,
-      wsHost: environment2.pusher.wsHost,
-      wsPort: environment2.pusher.wsPort,
-      forceTLS: false, // إذا السيرفر غير HTTPS
-      enabledTransports: ['ws', 'wss'],
+      broadcaster: 'reverb',
+      key: environment2.reverb.key,
+      wsHost: environment2.reverb.wsHost,
+      wsPort: environment2.reverb.wsPort,
+      wssPort: environment2.reverb.wssPort,
+      forceTLS: environment2.reverb.forceTLS,
+      enabledTransports: environment2.reverb.enabledTransports as any,
     });
   }
 

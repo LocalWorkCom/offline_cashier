@@ -7,18 +7,23 @@
 
 export const environment = {
   production: false,
-  pusher: {
-    key: 'cfd52a74b92f9e278f2d',
-    cluster: 'mt1',
-  }
+  reverb: {
+    key: '77f608d73899bd256cfa',
+    wsHost: '127.0.0.1',
+    wsPort: 8080,
+    wssPort: 8080,
+    forceTLS: false,
+    enabledTransports: ['ws', 'wss'],
+  },
 };
 export const environment2 = {
   production: false,
-  pusher: {
-    key: 'localkey',
-    wsHost: 'erpfortest.testdomain100.online',
-    wsPort: 6001,
-    cluster: 'mt1',
+  reverb: {
+    key: '77f608d73899bd256cfa',
+    wsHost: '127.0.0.1',
+    wsPort: 8080,
+    wssPort: 8080,
     forceTLS: false,
+    enabledTransports: ['ws', 'wss'],
   },
 };

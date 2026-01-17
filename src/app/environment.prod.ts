@@ -40,16 +40,32 @@ export const baseUrl='https://productowner.testdomain100.online/'
    pusher: {
      key: '77f608d73899bd256cfa',  
      cluster: 'mt1',
-   }
+   },
+   reverb: {
+    key: '77f608d73899bd256cfa',
+    wsHost: 'productowner.testdomain100.online',
+    wsPort: 8080,
+    wssPort: 8080,
+    forceTLS: true,
+    enabledTransports: ['ws', 'wss'],
+  }
  }; 
  
 export const environment2 = {
   production: true,
   pusher: {
-    key: 'localkey', 
+    key: '77f608d73899bd256cfa', 
     wsHost: 'erpfortest.testdomain100.online',
     wsPort: 6001,
     cluster: 'mt1',
     forceTLS: false,
+  },
+  reverb: {
+    key: '77f608d73899bd256cfa',
+    wsHost: 'erpfortest.testdomain100.online',
+    wsPort: 8080,
+    wssPort: 8080,
+    forceTLS: false,
+    enabledTransports: ['ws', 'wss'],
   },
 };

@@ -42,7 +42,7 @@ export class NotificationComponent implements OnInit, OnDestroy, AfterViewInit {
       }
     });
   }
-  allNotificaions!: notifications[];
+  allNotificaions: notifications[] = [];
   unreadMessages: number = 0;
   dir = localStorage.getItem('direction') || BasicsConstance.DefaultDir;
   private notificationService = inject(NotificationService);
@@ -53,6 +53,7 @@ export class NotificationComponent implements OnInit, OnDestroy, AfterViewInit {
   ngOnInit(): void {
     this.getAllUserNotifications();
     this.listenToNewNotification();
+    this.newNotificationService.listenToNewNotification();
   }
 
   getAllUserNotifications() {

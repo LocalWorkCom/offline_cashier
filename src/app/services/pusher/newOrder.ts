@@ -19,7 +19,7 @@ export class NewOrderService {
 
     this.channelName = `newOrder2-${empId}-branch-${branchId}`;
 
-    this.pusherService.subscribe(this.channelName, 'new-order-added2', (res: any) => {
+    this.pusherService.subscribe(this.channelName, '.new-order-added2', (res: any) => {
       console.log('Received new order event:', res.data);
       console.log('test where event listen',a);
       this.orderAdded$.next(res.data);
@@ -44,7 +44,7 @@ export class NewOrderService {
   stopListening() {
     if (this.channelName) {
       this.pusherService.unsubscribe(this.channelName);
-      this.orderAdded$.complete();
+      // this.orderAdded$.complete();
     }
   }
 }

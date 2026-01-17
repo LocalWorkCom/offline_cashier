@@ -30,7 +30,7 @@ tables.filter((table: any) => {
 
 listenToTable(tableId:number){
 const channel=`table-status${tableId}`;
-this.pusherService.subscribe(channel,'Waiter-requests', (res: any) => {
+this.pusherService.subscribe(channel,'.Waiter-requests', (res: any) => {
   const data=res.data
 
   console.log(' Received updated table event:', res);
