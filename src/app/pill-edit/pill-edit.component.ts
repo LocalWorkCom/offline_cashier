@@ -768,16 +768,19 @@ export class PillEditComponent {
 
             const originalHTML = document.body.innerHTML;
 
-            const copies = this.isDeliveryOrder
-              ? [
-                { showPrices: true, test: true },
-                { showPrices: false, test: false },
-                { showPrices: true, test: true },
-              ]
-              : [
-                { showPrices: true, test: true },
-                { showPrices: false, test: false },
-              ];
+           // const copies = this.isDeliveryOrder
+            //   ? [
+            //     { showPrices: true, test: true },
+            //     { showPrices: false, test: false },
+            //     { showPrices: true, test: true },
+            //   ]
+            //   : [
+            //     { showPrices: true, test: true },
+            //     { showPrices: false, test: false },
+            //   ];
+            const copies = [
+              { showPrices: true, test: true },
+            ];
 
             for (let i = 0; i < copies.length; i++) {
               this.showPrices = copies[i].showPrices;

@@ -518,21 +518,21 @@
                     </div>
                   }
                 }
-                @else if(order.order_details.payment_status == 'unpaid' && order.order_details.status === 'pending'  && order.order_details.order_type != "talabat" && order.order_details.order_type == "dine-in") {
+                @else if(order.order_details.payment_status == 'unpaid' && order.order_details.status === 'pending'  && order.order_details.order_type != "talabat" ) {
                   <button type="button" class="btn btn-transparent w-100 py-2" routerLink="/tableavailable/{{order.order_details.order_id}}">
                       <span>
                         تغير الطاولة
                         </span>
                     </button>
 
-                  @if (canSplitOrder(order)) {
+                  @if (canSplitOrder(order) && order.order_details.order_type == "dine-in") {
                     <button type="button" class="btn btn-transparent w-100 py-2" (click)="openSplitModal(order)">
                       <i class="fa-solid fa-code-branch me-2"></i>
                       <span>تجزئة الطلب</span>
                     </button>
                   }
 
-                  @if (canMergeOrder(order)) {
+                  @if (canMergeOrder(order) && order.order_details.order_type == "dine-in") {
                     <button type="button" class="btn btn-transparent w-100 py-2" (click)="openMergeModal(order)">
                       <i class="fa-solid fa-code-merge me-2"></i>
                       <span>دمج الطلب</span>
@@ -1116,14 +1116,14 @@
               <!-- Left Side: Order Details with Table Badge spanning 2 rows -->
               <div class="d-flex align-items-center gap-3">
                 <!-- First Column: Table Badge (spans 2 rows) -->
-                <div class="badge rounded px-3 py-2 d-inline-flex align-items-center justify-content-center" 
+                <div class="badge rounded px-3 py-2 d-inline-flex align-items-center justify-content-center"
                      style="background-color: #ff9800; color: #000; border: none; font-size: 0.85rem; min-height: 60px; align-self: stretch; border-radius: 8px !important;">
                   <div class="d-flex flex-column align-items-center">
                     <i class="fa-solid fa-chair mb-1" style="font-size: 0.75rem;"></i>
                     <span>طاولة {{ order.order_details.table_number }}</span>
                   </div>
                 </div>
-                
+
                 <!-- Second Column: Order Number, Type, Time, Items -->
                 <div class="d-flex flex-column text-start" style="gap: 0.25rem;">
                   <!-- First Row: Order Number and Type -->
@@ -1138,7 +1138,7 @@
                   </div>
                 </div>
               </div>
-              
+
               <!-- Right Side: Total Amount + Radio Button -->
               <div class="d-flex align-items-start gap-3">
                 <div class="d-flex flex-column text-end">
