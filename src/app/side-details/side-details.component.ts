@@ -3104,71 +3104,55 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           orderData.cash_amount = billAmount;
           orderData.credit_amount = 0;
         } else if (this.selectedPaymentMethod === 'cash + credit') {
+          const billAmountNum = Number(billAmount) || 0;
+          let finalCashAmount: number;
+          let finalCreditAmount: number;
+
           // ✅ استخدام finalTipSummary إذا كان موجوداً (يحتوي على الإكرامية)
           if (this.finalTipSummary && this.finalTipSummary.cashAmountMixed !== undefined && this.finalTipSummary.creditAmountMixed !== undefined) {
-            // 🔒 التحقق من أن المبلغ المدفوع >= الإجمالي
-            const cashAmount = this.finalTipSummary.cashAmountMixed || 0;
-            const creditAmount = this.finalTipSummary.creditAmountMixed || 0;
-            const totalPaid = Number((cashAmount + creditAmount).toFixed(2));
-            const billAmountNum = Number(billAmount) || 0;
-
-            if (totalPaid < billAmountNum) {
-              this.amountError = true;
-              this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountNum.toFixed(2)} ${this.currencySymbol}`;
-              this.isLoading = false;
-              this.loading = false;
-              console.error('❌ خطأ في التحقق من المبلغ المختلط مع finalTipSummary:', {
-                cashAmount,
-                creditAmount,
-                totalPaid,
-                billAmount: billAmountNum
-              });
-              return; // ❌ منع المتابعة إذا كان المبلغ غير كافي
-            }
-
-            // استخدام المبالغ النهائية مع الإكرامية
-            orderData.cash_amount = cashAmount;
-            orderData.credit_amount = creditAmount;
-
-            console.log('💰 الدفع المختلط مع الإكرامية:', {
-              cashAmount: orderData.cash_amount,
-              creditAmount: orderData.credit_amount,
-              billAmount: this.finalTipSummary.billAmount,
-              tipAmount: this.finalTipSummary.tipAmount,
-              grandTotalWithTip: this.finalTipSummary.grandTotalWithTip,
-              changeToReturn: this.finalTipSummary.changeToReturn
-            });
+            finalCashAmount = this.finalTipSummary.cashAmountMixed || 0;
+            // ✅ دائماً: credit_amount = bill_amount - cash_amount
+            finalCreditAmount = Math.max(0, billAmountNum - finalCashAmount);
           } else {
             // في حالة عدم وجود finalTipSummary، استخدم القيم المدخلة
-            const cashAmount = this.cashAmountMixed || 0;
-            const creditAmount = this.creditAmountMixed || 0;
-
-            console.log('💰 الدفع المختلط:', {
-              cashAmount: cashAmount,
-              creditAmount: creditAmount,
-              total: cashAmount + creditAmount
-            });
-
-            orderData.cash_amount = cashAmount;
-            orderData.credit_amount = creditAmount;
-
-            const totalPaid = cashAmount + creditAmount;
-            const billAmount = this.getCartTotal();
-
-            if (totalPaid < billAmount) {
-              this.amountError = true;
-              this.isLoading = false;
-              this.loading = false;
-              this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmount} ${this.currencySymbol}`;
-              this.paymentError = this.falseMessage;
-              setTimeout(() => {
-                this.amountError = false;
-                this.falseMessage = '';
-                this.paymentError = '';
-              }, 3500);
-              return;
-            }
+            finalCashAmount = Number(this.cashAmountMixed) || 0;
+            // ✅ دائماً: credit_amount = bill_amount - cash_amount
+            finalCreditAmount = Math.max(0, billAmountNum - finalCashAmount);
           }
+
+          const totalPaid = Number((finalCashAmount + finalCreditAmount).toFixed(2));
+
+          if (totalPaid < billAmountNum) {
+            this.amountError = true;
+            this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountNum.toFixed(2)} ${this.currencySymbol}`;
+            this.isLoading = false;
+            this.loading = false;
+            this.paymentError = this.falseMessage;
+            console.error('❌ خطأ في التحقق من المبلغ المختلط:', {
+              cashAmount: finalCashAmount,
+              creditAmount: finalCreditAmount,
+              totalPaid,
+              billAmount: billAmountNum
+            });
+            setTimeout(() => {
+              this.amountError = false;
+              this.falseMessage = '';
+              this.paymentError = '';
+            }, 3500);
+            return;
+          }
+
+          // ✅ دائماً: credit_amount = bill_amount - cash_amount
+          orderData.cash_amount = finalCashAmount;
+          orderData.credit_amount = finalCreditAmount;
+
+          console.log('💰 الدفع المختلط:', {
+            cashAmount: orderData.cash_amount,
+            creditAmount: orderData.credit_amount,
+            billAmount: billAmountNum,
+            total: totalPaid,
+            hasFinalTipSummary: !!this.finalTipSummary
+          });
           orderData.payment_method = "cash";
 
           // const cashAmount = Number(this.cashAmountMixed) || 0;
@@ -3201,8 +3185,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               return; // ❌ منع المتابعة إذا كان المبلغ غير كافي
             }
 
-            // استخدام المبلغ الكلي مع الإكرامية
-            orderData.credit_amount = creditAmount;
+            // ✅ في حالة credit، يتم تعيين credit_amount = bill_amount
+            orderData.credit_amount = billAmountNum;
             orderData.cash_amount = 0;
 
             console.log('💳 تم تعيين مبالغ الدفع بالفيزا مع الإكرامية:', {
@@ -6302,6 +6286,34 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   calculateCashAmount(billAmount: number): void {
     const remaining = billAmount - this.creditAmountMixed;
     this.cashAmountMixed = Math.max(0, remaining);
+  }
+
+  // ✅ حساب الفيزا تلقائياً عند إدخال مبلغ في الكاش
+  onCashAmountInput(billAmount: number): void {
+    const cashValue = Number(this.cashAmountMixed) || 0;
+    
+    // إذا كان مبلغ الكاش أقل من أو يساوي bill_amount، احسب الباقي في الفيزا
+    if (cashValue > 0 && cashValue <= billAmount) {
+      const remaining = billAmount - cashValue;
+      this.creditAmountMixed = Math.max(0, remaining);
+    } else if (cashValue > billAmount) {
+      // إذا كان مبلغ الكاش أكبر من bill_amount، اترك الفيزا فارغة (0)
+      this.creditAmountMixed = 0;
+    }
+  }
+
+  // ✅ حساب الكاش تلقائياً عند إدخال مبلغ في الفيزا
+  onCreditAmountInput(billAmount: number): void {
+    const creditValue = Number(this.creditAmountMixed) || 0;
+    
+    // إذا كان مبلغ الفيزا أقل من أو يساوي bill_amount، احسب الباقي في الكاش
+    if (creditValue > 0 && creditValue <= billAmount) {
+      const remaining = billAmount - creditValue;
+      this.cashAmountMixed = Math.max(0, remaining);
+    } else if (creditValue > billAmount) {
+      // إذا كان مبلغ الفيزا أكبر من bill_amount، اترك الكاش فارغاً (0)
+      this.cashAmountMixed = 0;
+    }
   }
   // حساب المبلغ المتبقي
   getRemainingAmount(billAmount: number): number {
