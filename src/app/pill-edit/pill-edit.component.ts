@@ -67,6 +67,7 @@ export class PillEditComponent {
   referenceNumberTouched: boolean = false;
   referenceNumberError: string = '';
   paymentAmountError: string = '';
+  deliveryStatusError: string = '';
   formSubmitted: boolean = false;
   // Coupon / Discount
   couponCode: string = '';
@@ -322,6 +323,8 @@ export class PillEditComponent {
 
   changeTrackingStatus(status: string) {
     this.trackingStatus = status.trim();
+    // مسح رسالة الخطأ عند اختيار حالة التوصيل
+    this.deliveryStatusError = '';
     // console.log('تم تحديث حالة التوصيل:', this.trackingStatus);
     if (status == 'delivered') {
       this.show_delivered_only('delivered');
@@ -342,33 +345,22 @@ export class PillEditComponent {
     // مسح رسائل الخطأ السابقة
     this.referenceNumberError = '';
     this.paymentAmountError = '';
+    this.deliveryStatusError = '';
     this.amountError = false;
 
-    if (!this.paymentStatus && this.trackingStatus !== 'on_way') {
-      alert('يجب تحديد حالة الدفع  قبل الحفظ!');
-      if (
-        this.orderType == 'Delivery' && !this.trackingStatus
-      ) {
-        alert('يجب تحديد  حالة التوصيل قبل الحفظ!');
+    // ✅ التحقق من حالة التوصيل للطلبات التوصيل أولاً
+    if (this.orderType === 'Delivery') {
+      if (!this.trackingStatus || (this.trackingStatus !== 'on_way' && this.trackingStatus !== 'delivered')) {
+        this.deliveryStatusError = 'الرجاء تحديد حالة التوصيل';
+        this.loading = false;
         return;
       }
-      else if (this.orderType == 'Delivery' && this.trackingStatus == 'delivered') {
-        if (!this.paymentStatus) {
-          alert('يجب تحديد حالة الدفع  قبل الحفظ!');
-          return;
-        }
-      } else if (this.orderType == 'Delivery' && this.trackingStatus == 'on_way') {
-        if (!this.paymentStatus) {
-          alert('يجب تحديد حالة الدفع  قبل الحفظ!');
-          return;
-        }
-      }
-      else {
-        if (!this.paymentStatus) {
-          return;
-        }
-      }
-      return
+    }
+
+    // التحقق من حالة الدفع
+    if (!this.paymentStatus) {
+      alert('يجب تحديد حالة الدفع  قبل الحفظ!');
+      return;
     }
     // تحديد حالة التوصيل المناسبة
     let orderStatusToSend = '';
