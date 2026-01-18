@@ -1048,7 +1048,7 @@
       (click)="confirmTipAndClose(modal)">
       <span class="fw-bold">تكملة الدفع</span>
       <br>
-      <small class="fw-normal mt-1 d-block" style="color: #ffffff !important;">
+      <small class="fw-normal mt-1 d-block confirm-tip-btn-text">
         @if(selectedTipType === 'no_tip') {
           (المتبقي للرد: {{ roundUpToTwoDecimals(getMaxZero(tempChangeAmount)) | number:'1.2-2' }} {{ currencySymbol }})
         } @else if(selectedTipType === 'tip_the_change') {
