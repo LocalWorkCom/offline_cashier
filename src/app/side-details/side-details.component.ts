@@ -4429,7 +4429,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const orderType = order?.type || 'N/A';
     const orderStatus = order?.status || 'N/A';
     const orderCreatedAt = order?.date && order?.time ? `${order.date}   ${order.time}` : 'N/A';
-
+    const orderNote = order?.note || 'N/A';
     // XP-80C: 80mm paper width = 640px at 203 DPI
     const printerWidth = 576;
 
@@ -4635,6 +4635,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     html += `</tbody>
                     </table>
+            </div>
+            <div class="order-details">
+                <p> الملاحظات: ${escapeHtml(String(orderNote))}</p>
             </div>
                 </body>
                 </html>`;
