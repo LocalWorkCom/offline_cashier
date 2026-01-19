@@ -978,10 +978,16 @@
                       <i class="fa-solid fa-minus"></i>
                     </button>
                     <input type="number" class="form-control form-control-sm text-center"
-                           [(ngModel)]="item.selectedQuantity"
+                           [ngModel]="item.selectedQuantity"
+                           (ngModelChange)="onSplitQuantityChange(item, $event)"
+                           (input)="onSplitQuantityInput(item, $event)"
+                           (blur)="onSplitQuantityBlur(item, $event)"
+                           (keydown)="onSplitQuantityKeydown(item, $event)"
+                           (paste)="onSplitQuantityPaste(item, $event)"
                            [min]="0"
                            [max]="item.quantity"
-                           style="width: 60px;">
+                           style="width: 60px;"
+                           [class.is-invalid]="(item.selectedQuantity || 0) < 0 || (item.selectedQuantity || 0) > item.quantity">
                     <button class="btn btn-sm"
                             [class.btn-danger]="item.selectedQuantity > 0"
                             [class.btn-outline-secondary]="item.selectedQuantity === 0"
@@ -1005,7 +1011,10 @@
       </div>
       <div class="modal-footer border-0 d-flex justify-content-between">
         <button type="button" class="btn btn-outline-secondary" (click)="goBackToSplitStep1()">رجوع</button>
-        <button type="button" class="btn btn-danger" (click)="showSplitConfirmation()" [disabled]="getSplitNewOrderTotal() === 0">
+        <div *ngIf="splitErrorMessage" class="alert alert-danger text-center mb-2">
+          {{ splitErrorMessage }}
+        </div>
+        <button type="button" class="btn btn-danger" (click)="showSplitConfirmation()" [disabled]="getSplitNewOrderTotal() === 0 || !areSplitQuantitiesValid()">
           <i class="fa-solid fa-check me-2"></i>
           تأكيد التجزئة
         </button>
