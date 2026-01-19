@@ -3117,9 +3117,22 @@ export class OrdersComponent implements OnDestroy {
             }, 300);
 
             // ✅ Refresh orders data from API to ensure consistency
+            // Also update the primary order in the list
+            const primaryOrderIndex = this.orders.findIndex(
+              (order: any) => order.order_details?.order_id === this.currentMergeOrder?.order_details?.order_id
+            );
+            if (primaryOrderIndex !== -1) {
+              // Mark primary order as updated
+              this.orders[primaryOrderIndex].recentlyUpdated = true;
+              setTimeout(() => {
+                this.orders[primaryOrderIndex].recentlyUpdated = false;
+              }, 3000);
+            }
+
+            // Refresh orders after a short delay to ensure backend has processed
             setTimeout(() => {
               this.fetchOrdersData();
-            }, 500);
+            }, 1000);
           } else {
             this.mergeErrorMessage =
               response.message || response.errorData?.error || 'حدث خطأ أثناء الإرسال';
