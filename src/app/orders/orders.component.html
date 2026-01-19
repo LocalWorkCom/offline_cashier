@@ -513,9 +513,13 @@
                   }
                   @else
                   {
-                    <div class="btn btn-transparent w-100 py-2 text-danger">
-                      <span>للمرتجع لا يوجد رصيد كافى فى الخزنة</span>
-                    </div>
+                    @if (order.order_details.order_type != "talabat")
+                      {
+                        <div class="btn btn-transparent w-100 py-2 text-danger">
+                          <span>للمرتجع لا يوجد رصيد كافى فى الخزنة</span>
+                        </div>
+                      }
+
                   }
                 }
                 @else if(order.order_details.payment_status == 'unpaid' && order.order_details.status === 'pending'  && order.order_details.order_type != "talabat" ) {
@@ -539,13 +543,15 @@
                     </button>
                   }
 
-                  <button type="button" class="btn btn-transparent w-100 py-2" data-bs-toggle="modal"
-                  [attr.data-bs-target]="'#modal-' + order.order_details.order_id">
-                  <span>
-                    حذف
-                    الطلب </span>
-                </button>
                 }
+              @if((order.order_details.payment_status == 'unpaid' && order.order_details.status === 'pending') ){
+                    <button type="button" class="btn btn-transparent w-100 py-2" data-bs-toggle="modal"
+                      [attr.data-bs-target]="'#modal-' + order.order_details.order_id">
+                      <span>
+                        حذف
+                        الطلب </span>
+                    </button>
+                  }
                 <div class="modal fade" [id]="'modal-' + order.order_details.order_id" tabindex="-1"
                   aria-labelledby="exampleModalLabel" aria-hidden="true">
                   <div class="modal-dialog modal-dialog-centered">

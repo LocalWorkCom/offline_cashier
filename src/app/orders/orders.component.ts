@@ -1653,6 +1653,8 @@ export class OrdersComponent implements OnDestroy {
   isSubmitting = false; // للتحكم في حالة الإرسال
 
   submitCancelRequest(order: any): void {
+
+    console.log('order', order);
     if (this.isSubmitting) return; // منع تكرار الضغط لو لسه الطلب شغال
     this.isSubmitting = true; // ⏳ بداية الطلب
 
@@ -1681,6 +1683,38 @@ export class OrdersComponent implements OnDestroy {
         this.cancelErrorMessage = '';
       }, 4000);
       return;
+    }
+    //  check if the order is talabat then must be full return
+    if (order.order_details.order_type == "talabat") {
+      if (selectedItems.length !== order.order_items.length) {
+        this.cancelErrorMessage = 'يرجى اختيار جميع الأصناف بالكامل';
+        this.cancelSuccessMessage = '';
+        this.isSubmitting = false;
+        setTimeout(() => {
+          this.cancelErrorMessage = '';
+        }, 4000);
+        return;
+      }
+
+      // التحقق من أن الكمية المرجعة تساوي الكمية الأصلية لكل عنصر
+      const itemsWithWrongQuantity = order.order_items.filter((item: any) => {
+        const originalQuantity = item.quantity;
+        const selectedQuantity = item.selectedQuantity ?? item.quantity;
+        const returnedQuantity = originalQuantity - selectedQuantity;
+        // يجب أن تكون الكمية المرجعة = الكمية الأصلية (يعني selectedQuantity = 0)
+        return returnedQuantity !== originalQuantity;
+      });
+
+      if (itemsWithWrongQuantity.length > 0) {
+        const itemNames = itemsWithWrongQuantity.map((item: any) => item.dish_name).join('، ');
+        this.cancelErrorMessage = `يرجى إدخال نفس الكمية الأصلية للعناصر التالية: ${itemNames}`;
+        this.cancelSuccessMessage = '';
+        this.isSubmitting = false;
+        setTimeout(() => {
+          this.cancelErrorMessage = '';
+        }, 4000);
+        return;
+      }
     }
 
     // Validate cancelReason
@@ -2405,8 +2439,8 @@ export class OrdersComponent implements OnDestroy {
 
   shouldShowReturnInvoiceSection(order: any): boolean {
     return order.order_details.status !== 'cancelled' &&
-           !(order.order_details.payment_status == 'unpaid' && order.order_details.status === 'pending') &&
-           order.order_details.order_type != "talabat";
+           !(order.order_details.payment_status == 'unpaid' && order.order_details.status === 'pending');
+            // && order.order_details.order_type != "talabat";
   }
 
   // Split Order Properties
@@ -3081,7 +3115,7 @@ export class OrdersComponent implements OnDestroy {
               this.filteredOrders = this.filteredOrders.filter(
                 (order: any) => order.order_details?.order_id !== this.selectedOrderIdForMerge
               );
-              
+
               // ✅ Remove from localStorage (saved orders) if exists
               const savedOrders = localStorage.getItem('savedOrders');
               if (savedOrders) {
@@ -3095,7 +3129,7 @@ export class OrdersComponent implements OnDestroy {
                   console.error('Error removing order from localStorage:', error);
                 }
               }
-              
+
               // Update filtered orders by status
               this.filterOrders();
             }
