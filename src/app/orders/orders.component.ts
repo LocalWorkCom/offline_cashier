@@ -2577,17 +2577,143 @@ export class OrdersComponent implements OnDestroy {
     }, 300);
   }
 
+  // Handle split quantity change
+  onSplitQuantityChange(item: any, newValue: any): void {
+    this.validateAndCorrectSplitQuantity(item, newValue);
+  }
+
+  // Handle input event (for immediate validation)
+  onSplitQuantityInput(item: any, event: any): void {
+    const inputValue = event.target.value;
+    this.validateAndCorrectSplitQuantity(item, inputValue);
+  }
+
+  // Handle blur event (final validation when leaving field)
+  onSplitQuantityBlur(item: any, event: any): void {
+    const inputValue = event.target.value;
+    this.validateAndCorrectSplitQuantity(item, inputValue);
+    // Force update the input field value
+    event.target.value = item.selectedQuantity;
+  }
+
+  // Handle keydown to prevent invalid characters
+  onSplitQuantityKeydown(item: any, event: KeyboardEvent): void {
+    // Allow: backspace, delete, tab, escape, enter, decimal point
+    if ([46, 8, 9, 27, 13, 110, 190].indexOf(event.keyCode) !== -1 ||
+      // Allow: Ctrl+A, Ctrl+C, Ctrl+V, Ctrl+X
+      (event.keyCode === 65 && event.ctrlKey === true) ||
+      (event.keyCode === 67 && event.ctrlKey === true) ||
+      (event.keyCode === 86 && event.ctrlKey === true) ||
+      (event.keyCode === 88 && event.ctrlKey === true) ||
+      // Allow: home, end, left, right
+      (event.keyCode >= 35 && event.keyCode <= 39)) {
+      return;
+    }
+    // Ensure that it is a number and stop the keypress
+    if ((event.shiftKey || (event.keyCode < 48 || event.keyCode > 57)) && (event.keyCode < 96 || event.keyCode > 105)) {
+      event.preventDefault();
+    }
+  }
+
+  // Handle paste to validate pasted values
+  onSplitQuantityPaste(item: any, event: ClipboardEvent): void {
+    event.preventDefault();
+    const pastedText = event.clipboardData?.getData('text/plain') || '';
+    const pastedValue = Number(pastedText);
+    
+    if (!isNaN(pastedValue)) {
+      this.validateAndCorrectSplitQuantity(item, pastedValue);
+    }
+  }
+
+  // Central validation function
+  validateAndCorrectSplitQuantity(item: any, newValue: any): void {
+    // Convert to number - handle string inputs like "21", "-1", "1-", etc.
+    let quantity: number;
+    
+    // Handle string inputs that might contain non-numeric characters
+    if (typeof newValue === 'string') {
+      // Remove any non-numeric characters except minus at the start
+      const cleanedValue = newValue.replace(/[^\d-]/g, '').replace(/(?!^)-/g, '');
+      quantity = Number(cleanedValue);
+    } else {
+      quantity = Number(newValue);
+    }
+    
+    // Handle NaN, null, undefined, or empty string
+    if (isNaN(quantity) || quantity === null || quantity === undefined || newValue === '' || newValue === null) {
+      quantity = 0;
+    }
+
+    // Store original value for comparison
+    const originalQty = item.selectedQuantity || 0;
+    const maxQty = item.quantity || 0;
+
+    // Prevent negative values - force to 0
+    if (quantity < 0) {
+      quantity = 0;
+      if (originalQty !== quantity) {
+        this.splitErrorMessage = 'لا يمكن إدخال كميات سالبة';
+        setTimeout(() => {
+          this.splitErrorMessage = '';
+        }, 3000);
+      }
+    }
+
+    // Prevent values exceeding available quantity - force to max
+    if (quantity > maxQty) {
+      quantity = maxQty;
+      if (originalQty !== quantity) {
+        this.splitErrorMessage = `الكمية المدخلة أكبر من المتاحة. الحد الأقصى: ${maxQty}`;
+        setTimeout(() => {
+          this.splitErrorMessage = '';
+        }, 3000);
+      }
+    }
+
+    // Update the value immediately - this is critical
+    item.selectedQuantity = quantity;
+    
+    // Force change detection to update UI immediately
+    this.cdr.detectChanges();
+    
+    // Clear error if valid
+    if (quantity >= 0 && quantity <= maxQty) {
+      // Only clear if this was the error we set
+      if (this.splitErrorMessage && (this.splitErrorMessage.includes('سالب') || this.splitErrorMessage.includes('أكبر'))) {
+        this.splitErrorMessage = '';
+      }
+    }
+  }
+
   // Increase split quantity
   increaseSplitQuantity(item: any): void {
-    if (item.selectedQuantity < item.quantity) {
-      item.selectedQuantity = (item.selectedQuantity || 0) + 1;
+    const currentQty = item.selectedQuantity || 0;
+    const maxQty = item.quantity || 0;
+    
+    // Ensure we don't exceed the maximum
+    if (currentQty < maxQty) {
+      item.selectedQuantity = Math.min(currentQty + 1, maxQty); // Ensure never exceeds max
+      // Clear any error when increasing
+      if (this.splitErrorMessage) {
+        this.splitErrorMessage = '';
+      }
+      // Force change detection
+      this.cdr.detectChanges();
     }
   }
 
   // Decrease split quantity
   decreaseSplitQuantity(item: any): void {
-    if (item.selectedQuantity > 0) {
-      item.selectedQuantity = (item.selectedQuantity || 0) - 1;
+    const currentQty = item.selectedQuantity || 0;
+    if (currentQty > 0) {
+      item.selectedQuantity = Math.max(0, currentQty - 1); // Ensure never goes below 0
+      // Clear any error when decreasing
+      if (this.splitErrorMessage) {
+        this.splitErrorMessage = '';
+      }
+      // Force change detection
+      this.cdr.detectChanges();
     }
   }
 
@@ -2634,13 +2760,143 @@ export class OrdersComponent implements OnDestroy {
     return this.getSelectedSplitItems().reduce((count, item) => count + (item.selectedQuantity || 0), 0);
   }
 
-  // Show split confirmation
-  showSplitConfirmation(): void {
-    if (this.getSplitNewOrderTotal() === 0) {
-      this.splitErrorMessage = 'يرجى اختيار كمية واحدة على الأقل';
+  // Validate split quantity for a single item
+  validateSplitQuantity(item: any): void {
+    // Reset to 0 if negative
+    if (item.selectedQuantity < 0) {
+      item.selectedQuantity = 0;
+      this.splitErrorMessage = 'لا يمكن إدخال كميات سالبة';
+      setTimeout(() => {
+        this.splitErrorMessage = '';
+      }, 3000);
       return;
     }
 
+    // Reset to max quantity if exceeds available
+    if (item.selectedQuantity > item.quantity) {
+      item.selectedQuantity = item.quantity;
+      this.splitErrorMessage = `الكمية المدخلة أكبر من المتاحة. الحد الأقصى: ${item.quantity}`;
+      setTimeout(() => {
+        this.splitErrorMessage = '';
+      }, 3000);
+      return;
+    }
+
+    // Clear error if valid
+    if (this.splitErrorMessage && item.selectedQuantity >= 0 && item.selectedQuantity <= item.quantity) {
+      this.splitErrorMessage = '';
+    }
+  }
+
+  // Check if all split quantities are valid
+  areSplitQuantitiesValid(): boolean {
+    if (!this.splitOrderItems || this.splitOrderItems.length === 0) {
+      return false;
+    }
+
+    // Check each item
+    for (const item of this.splitOrderItems) {
+      const selectedQty = item.selectedQuantity || 0;
+      
+      // Check for negative quantities
+      if (selectedQty < 0) {
+        return false;
+      }
+
+      // Check for quantities exceeding available
+      if (selectedQty > item.quantity) {
+        return false;
+      }
+    }
+
+    return true;
+  }
+
+  // Show split confirmation
+  showSplitConfirmation(): void {
+    // Clear previous error
+    this.splitErrorMessage = '';
+
+    // ✅ First, validate and correct all quantities
+    let hasInvalidQuantities = false;
+    const invalidItems: any[] = [];
+
+    for (const item of this.splitOrderItems) {
+      let selectedQty = item.selectedQuantity || 0;
+      let wasCorrected = false;
+
+      // Check and correct negative values
+      if (selectedQty < 0) {
+        selectedQty = 0;
+        item.selectedQuantity = 0;
+        wasCorrected = true;
+        hasInvalidQuantities = true;
+      }
+
+      // Check and correct values exceeding available
+      if (selectedQty > item.quantity) {
+        selectedQty = item.quantity;
+        item.selectedQuantity = item.quantity;
+        wasCorrected = true;
+        hasInvalidQuantities = true;
+      }
+
+      if (wasCorrected) {
+        invalidItems.push(item);
+      }
+    }
+
+    // ✅ If any quantities were invalid, show error and prevent proceeding
+    if (hasInvalidQuantities) {
+      const hasNegative = invalidItems.some((item: any) => (item.selectedQuantity || 0) < 0);
+      const hasExceeded = invalidItems.some((item: any) => {
+        const qty = item.selectedQuantity || 0;
+        return qty > item.quantity;
+      });
+
+      if (hasNegative) {
+        this.splitErrorMessage = 'لا يمكن إدخال كميات سالبة. تم تصحيح الكميات تلقائياً';
+      } else if (hasExceeded) {
+        this.splitErrorMessage = 'لا يمكن إدخال كميات أكبر من المتاحة. تم تصحيح الكميات تلقائياً';
+      }
+
+      setTimeout(() => {
+        this.splitErrorMessage = '';
+      }, 4000);
+      
+      // ✅ Force change detection to update UI
+      this.cdr.detectChanges();
+      return; // Prevent proceeding to confirmation modal
+    }
+
+    // ✅ Double check with validation function
+    if (!this.areSplitQuantitiesValid()) {
+      this.splitErrorMessage = 'يرجى التأكد من صحة جميع الكميات المدخلة';
+      setTimeout(() => {
+        this.splitErrorMessage = '';
+      }, 3000);
+      return;
+    }
+
+    if (this.getSplitNewOrderTotal() === 0) {
+      this.splitErrorMessage = 'يرجى اختيار كمية واحدة على الأقل';
+      setTimeout(() => {
+        this.splitErrorMessage = '';
+      }, 3000);
+      return;
+    }
+
+    // Check if at least one item remains in original order
+    const remainingItems = this.getRemainingSplitItems();
+    if (remainingItems.length === 0) {
+      this.splitErrorMessage = 'يجب أن يبقى على الأقل صنف واحد في الطلب الأصلي';
+      setTimeout(() => {
+        this.splitErrorMessage = '';
+      }, 3000);
+      return;
+    }
+
+    // All validations passed, proceed to confirmation modal
     const modalElement = document.getElementById('splitOrderItemsModal');
     if (modalElement) {
       const modalInstance = bootstrap.Modal.getInstance(modalElement);
