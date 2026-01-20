@@ -446,7 +446,7 @@ export class OrdersComponent implements OnDestroy {
       // Show notification
       this.showUpdateNotification(
         `تم تحديث حالة الطلب #${updatedOrder.order_number
-        } إلى ${this.getStatusText(newStatus)}`,
+        } إلى ${this.getStatusText(this.orders[index])}`,
         'info'
       );
 
@@ -877,7 +877,16 @@ export class OrdersComponent implements OnDestroy {
     }
   }
 
-  getStatusText(status: any): string {
+  getStatusText(order: any): string {
+    // Handle both old format (status string) and new format (order object)
+    const status = typeof order === 'string' ? order : (order?.order_details?.status || order?.status);
+    const mergedIntoOrderId = typeof order === 'object' ? (order?.order_details?.merged_into_order_id || order?.merged_into_order_id) : null;
+
+    // Check if the order is cancelled AND merged into another order
+    if (status === 'cancelled' && mergedIntoOrderId) {
+      return 'تم الدمج';
+    }
+
     switch (status) {
       case 'all':
         return 'الكل';
@@ -2484,12 +2493,27 @@ export class OrdersComponent implements OnDestroy {
       return false;
     }
 
-    // const allItemsCompleted = order.order_items.every(
-    //   (item: any) => item.dish_status === 'completed' || item.dish_status === 'cancel'
-    // );
+    // Filter out completed and cancelled items
+    const activeItems = order.order_items.filter(
+      (item: any) => item.dish_status !== 'completed' && item.dish_status !== 'cancel'
+    );
 
-    // Must have at least 2 items to split (one must remain)
-    return  order.order_items.length >= 2;
+    if (activeItems.length === 0) {
+      return false;
+    }
+
+    // Case 1: Multiple items - can split if at least 2 active items
+    if (activeItems.length >= 2) {
+      return true;
+    }
+
+    // Case 2: Single item - can split if quantity > 1
+    if (activeItems.length === 1) {
+      const singleItem = activeItems[0];
+      return (singleItem.quantity || 0) > 1;
+    }
+
+    return false;
   }
 
   // Check if order can be merged
@@ -2920,10 +2944,10 @@ export class OrdersComponent implements OnDestroy {
       return;
     }
 
-    // Check if at least one item remains in original order
+    // Check if at least one item remains in original order (with quantity > 0)
     const remainingItems = this.getRemainingSplitItems();
     if (remainingItems.length === 0) {
-      this.splitErrorMessage = 'يجب أن يبقى على الأقل صنف واحد في الطلب الأصلي';
+      this.splitErrorMessage = 'يجب أن يبقى على الأقل كمية واحدة في الطلب الأصلي';
       setTimeout(() => {
         this.splitErrorMessage = '';
       }, 3000);
@@ -3220,10 +3244,10 @@ export class OrdersComponent implements OnDestroy {
       return;
     }
 
-    // Check if at least one item remains
+    // Check if at least one item remains (with quantity > 0)
     const remainingItems = this.getRemainingSplitItems();
     if (remainingItems.length === 0) {
-      this.splitErrorMessage = 'يجب أن يبقى على الأقل صنف واحد في الطلب الأصلي';
+      this.splitErrorMessage = 'يجب أن يبقى على الأقل كمية واحدة في الطلب الأصلي';
       return;
     }
 
