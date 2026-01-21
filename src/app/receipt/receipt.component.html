@@ -105,17 +105,17 @@
           </tr>
           <tr *ngIf="summaryItem.coupon_value && summaryItem.coupon_value > 0">
             <td class="text-right">
-              <span class="summary-label">كوبون خصم 
-                <span *ngIf="summaryItem.coupon_title">({{ summaryItem.coupon_title }})</span> : 
+              <span class="summary-label">كوبون خصم
+                <span *ngIf="summaryItem.coupon_title">({{ summaryItem.coupon_title }})</span> :
               </span>
             </td>
             <td class="text-left">
               <span class="summary-value">- {{ summaryItem.coupon_value }} {{ summaryItem.currency_symbol }}</span>
             </td>
           </tr>
-          <tr   *ngIf="summaryItem.service_fees && summaryItem.service_fees > 0">
+          <tr>
             <td class="text-right">
-              <span class="summary-label">الخدمة  </span>
+              <span class="summary-label">الخدمة({{ summaryItem.service_percentage }}%) </span>
             </td>
             <td class="text-left">
               <span class="summary-value">{{ summaryItem.service_fees }} {{ summaryItem.currency_symbol }}</span>
@@ -123,7 +123,7 @@
           </tr>
           <tr>
             <td class="text-right">
-              <span class="summary-label" *ngIf="summaryItem.tax_value && summaryItem.tax_value > 0">Vat({{ summaryItem.tax_percentage }}%)  </span>
+              <span class="summary-label">Vat({{ summaryItem.tax_percentage }}%)  </span>
             </td>
             <td class="text-left">
               <span class="summary-value">{{ summaryItem.tax_value }} {{ summaryItem.currency_symbol }}</span>
