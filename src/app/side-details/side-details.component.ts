@@ -6294,7 +6294,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   // ✅ حساب الفيزا تلقائياً عند إدخال مبلغ في الكاش
   onCashAmountInput(billAmount: number): void {
     const cashValue = Number(this.cashAmountMixed) || 0;
-    
+
     // إذا كان مبلغ الكاش أقل من أو يساوي bill_amount، احسب الباقي في الفيزا
     if (cashValue > 0 && cashValue <= billAmount) {
       const remaining = billAmount - cashValue;
@@ -6308,7 +6308,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   // ✅ حساب الكاش تلقائياً عند إدخال مبلغ في الفيزا
   onCreditAmountInput(billAmount: number): void {
     const creditValue = Number(this.creditAmountMixed) || 0;
-    
+
     // إذا كان مبلغ الفيزا أقل من أو يساوي bill_amount، احسب الباقي في الكاش
     if (creditValue > 0 && creditValue <= billAmount) {
       const remaining = billAmount - creditValue;
