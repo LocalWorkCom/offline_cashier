@@ -5,8 +5,13 @@ import { PrinterManagementService } from '../services/printer-management.service
 
 interface Printer {
   id?: number;
+  machine_name: string;
+  assigned_to: string;
+  type: number; // 1: Printer, 2: Screen, 3: Kiosk, 4: Computer
   ip: string;
   port: number;
+  status: number; // 1: Active, 2: Offline, 3: Maintenance
+  note?: string;
   branch_id: number;
   branch_menu_categories?: any[];
 }
@@ -29,7 +34,7 @@ export class PrinterManagementComponent implements OnInit {
 
   printers: Printer[] = [];
   categories: Category[] = [];
-  selectedPrinter: Printer = { ip: '', port: 9100, branch_id: 0 };
+  selectedPrinter: Printer = { machine_name: '', assigned_to: '', type: 1, ip: '', port: 9100, status: 1, branch_id: 0 };
   selectedCategoryIds: number[] = [];
   isEditingPrinter: boolean = false;
   printerModalMessage: string = '';
@@ -77,7 +82,7 @@ export class PrinterManagementComponent implements OnInit {
 
   resetPrinterForm() {
     const branchId = localStorage.getItem('branch_id');
-    this.selectedPrinter = { ip: '', port: 9100, branch_id: Number(branchId) };
+    this.selectedPrinter = { machine_name: '', assigned_to: '', type: 1, ip: '', port: 9100, status: 1, branch_id: Number(branchId) };
     this.selectedCategoryIds = [];
     this.isEditingPrinter = false;
     this.printerModalMessage = '';
@@ -149,6 +154,38 @@ export class PrinterManagementComponent implements OnInit {
       this.selectedCategoryIds.splice(index, 1);
     } else {
       this.selectedCategoryIds.push(categoryId);
+    }
+  }
+
+  getMachineNameLabel(value: string): string {
+    return value || 'بدون اسم';
+  }
+
+  getTypeLabel(type: number): string {
+    switch(type) {
+      case 1: return 'طابعة';
+      case 2: return 'شاشة';
+      case 3: return 'كشك';
+      case 4: return 'كمبيوتر';
+      default: return 'غير معروف';
+    }
+  }
+
+  getStatusLabel(status: number): string {
+    switch(status) {
+      case 1: return 'نشط';
+      case 2: return 'غير متصل';
+      case 3: return 'صيانة';
+      default: return 'غير معروف';
+    }
+  }
+
+  getStatusClass(status: number): string {
+    switch(status) {
+      case 1: return 'badge bg-success';
+      case 2: return 'badge bg-danger';
+      case 3: return 'badge bg-warning text-dark';
+      default: return 'badge bg-secondary';
     }
   }
 
