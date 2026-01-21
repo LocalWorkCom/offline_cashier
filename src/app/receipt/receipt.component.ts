@@ -53,4 +53,12 @@ export class ReceiptComponent {
     return '';
   }
 
+  hasServiceFees(serviceFees: any): boolean {
+    if (serviceFees == null || serviceFees === undefined) {
+      return false;
+    }
+    const value = typeof serviceFees === 'string' ? parseFloat(serviceFees) : Number(serviceFees);
+    return !isNaN(value) && value > 0;
+  }
+
 }
