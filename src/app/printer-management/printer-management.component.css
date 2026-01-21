@@ -7,19 +7,25 @@
 }
 
 .category-pill {
+  transition: all 0.2s ease-in-out;
   background-color: #f8f9fa;
-  color: #333;
+  color: #495057;
+  font-size: 0.85rem;
   user-select: none;
+  cursor: pointer;
+  border-color: #dee2e6 !important;
 }
 
 .category-pill:hover {
   background-color: #e9ecef;
+  transform: translateY(-1px);
 }
 
 .category-pill.active {
-  background-color: #fe0000;
+  background-color: #dc3545;
   color: white;
-  border-color: #fe0000 !important;
+  border-color: #dc3545 !important;
+  box-shadow: 0 4px 6px rgba(220, 53, 69, 0.2);
 }
 
 .badge {
@@ -29,4 +35,8 @@
 
 .table > :not(caption) > * > * {
   padding: 1rem 0.75rem;
+}
+
+.modal-content {
+  overflow: hidden;
 }
