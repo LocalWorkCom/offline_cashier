@@ -3985,16 +3985,19 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       const originalHTML = document.body.innerHTML;
 
-      const copies = this.isDeliveryOrder
-        ? [
-          { showPrices: true, test: true },
-          { showPrices: false, test: false },
-          { showPrices: true, test: true },
-        ]
-        : [
-          { showPrices: true, test: true },
-          { showPrices: false, test: false },
-        ];
+      // const copies = this.isDeliveryOrder
+      //   ? [
+      //     { showPrices: true, test: true },
+      //     { showPrices: false, test: false },
+      //     { showPrices: true, test: true },
+      //   ]
+      //   : [
+      //     { showPrices: true, test: true },
+      //     { showPrices: false, test: false },
+      //   ];
+      const copies = [
+        { showPrices: true, test: true },
+      ];
 
       for (const copy of copies) {
         this.showPrices = copy.showPrices;
