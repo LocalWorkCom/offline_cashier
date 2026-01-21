@@ -113,7 +113,7 @@
               <span class="summary-value">- {{ summaryItem.coupon_value }} {{ summaryItem.currency_symbol }}</span>
             </td>
           </tr>
-          <tr   *ngIf="summaryItem.service_fees">
+          <tr *ngIf="hasServiceFees(summaryItem.service_fees)">
             <td class="text-right">
               <span class="summary-label">الخدمة  </span>
             </td>
