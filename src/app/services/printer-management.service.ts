@@ -30,7 +30,7 @@ export class PrinterManagementService {
   }
 
   getBranchCategories(branchId: string | number): Observable<PrinterResponse> {
-    return this.http.get<PrinterResponse>(`${this.apiUrl}/branches/categories/showAll/${branchId}`, { headers: this.getHeaders() });
+    return this.http.get<PrinterResponse>(`${this.apiUrl}/menu-categories-lite?branchId=${branchId}`, { headers: this.getHeaders() });
   }
 
   createPrinter(payload: any): Observable<PrinterResponse> {

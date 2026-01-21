@@ -1,7 +1,7 @@
 import { Component, OnInit, Inject, PLATFORM_ID, Output, EventEmitter } from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { PrinterManagementService, PrinterResponse } from '../services/printer-management.service';
+import { PrinterManagementService } from '../services/printer-management.service';
 
 interface Printer {
   id?: number;
@@ -48,13 +48,13 @@ export class PrinterManagementComponent implements OnInit {
   fetchPrinters() {
     this.isPrinterLoading = true;
     this.printerService.getPrinters().subscribe({
-      next: (response: PrinterResponse) => {
+      next: (response) => {
         if (response.status) {
           this.printers = response.data;
         }
         this.isPrinterLoading = false;
       },
-      error: (error: any) => {
+      error: (error) => {
         console.error('Failed to fetch printers:', error);
         this.isPrinterLoading = false;
       }
@@ -65,12 +65,12 @@ export class PrinterManagementComponent implements OnInit {
     const branchId = localStorage.getItem('branch_id');
     if (branchId) {
       this.printerService.getBranchCategories(branchId).subscribe({
-        next: (response: PrinterResponse) => {
+        next: (response) => {
           if (response.status) {
             this.categories = response.data || response.data.data || [];
           }
         },
-        error: (error: any) => console.error('Failed to fetch categories:', error)
+        error: (error) => console.error('Failed to fetch categories:', error)
       });
     }
   }
@@ -108,7 +108,7 @@ export class PrinterManagementComponent implements OnInit {
       : this.printerService.createPrinter(payload);
 
     request.subscribe({
-      next: (response: PrinterResponse) => {
+      next: (response) => {
         if (response.status) {
           this.fetchPrinters(); // Reload table
           this.closePrinterModal();
@@ -117,7 +117,7 @@ export class PrinterManagementComponent implements OnInit {
           this.printerModalMessage = response.message || 'Error saving printer';
         }
       },
-      error: (error: any) => {
+      error: (error) => {
         console.error('Error saving printer:', error);
         this.printerModalMessage = error.error?.message || 'Server error';
       }
@@ -127,7 +127,7 @@ export class PrinterManagementComponent implements OnInit {
   deletePrinter(id: number) {
     if (confirm('هل أنت متأكد من حذف هذه الطابعة؟')) {
       this.printerService.deletePrinter(id).subscribe({
-        next: (response: PrinterResponse) => {
+        next: (response) => {
           if (response.status) {
              this.fetchPrinters(); // Reload table
              this.success.emit('تم حذف الطابعة بنجاح');
@@ -135,7 +135,7 @@ export class PrinterManagementComponent implements OnInit {
             alert(response.message || 'Error deleting printer');
           }
         },
-        error: (error: any) => {
+        error: (error) => {
           console.error('Error deleting printer:', error);
           alert('Server error while deleting printer');
         }
