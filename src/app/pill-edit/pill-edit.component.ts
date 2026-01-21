@@ -841,9 +841,18 @@ export class PillEditComponent {
 
     // According to User Story 17: Fixed calculation order
     // Step 1: Get Product Value (BEFORE discount)
-    const productValueBeforeDiscount = Number(summary.subtotal_price_before_coupon ?? summary.total_price ?? 0);
+    // ✅ حفظ القيمة الأصلية قبل الخصم (إذا لم تكن محفوظة مسبقاً)
+    if (!summary._original_subtotal_price_before_coupon) {
+      summary._original_subtotal_price_before_coupon = Number(summary.subtotal_price_before_coupon ?? summary.total_price ?? 0);
+    }
+    const productValueBeforeDiscount = Number(summary._original_subtotal_price_before_coupon);
+    
+    // ✅ حفظ القيم الأصلية للخدمة والضريبة
+    if (!summary._original_service_fees) {
+      summary._original_service_fees = Number(summary.service_fees || 0);
+    }
+    
     const servicePerc = Number(summary.service_percentage || 0);
-    const serviceFixed = Number(summary.service_fees || 0);
     const taxPerc = Number(summary.tax_percentage || 0);
     const taxApplication = summary.tax_application ?? false;
     const deliveryFees = Number(summary.delivery_fees || 0);
@@ -854,17 +863,22 @@ export class PillEditComponent {
 
     // Step 3: Calculate Service Charge (on product value AFTER discount)
     let serviceAmount = 0;
-    // ✅ إذا كان الكوبون 100% خصم، يجب أن تكون رسوم الخدمة = 0
+    // ✅ إذا كان الكوبون 100% خصم (قيمة المنتجات = 0)، يجب أن تكون رسوم الخدمة = 0
     if (productValueAfterDiscount > 0) {
       if (servicePerc > 0) {
         serviceAmount = (productValueAfterDiscount * servicePerc) / 100;
       } else {
-        serviceAmount = serviceFixed;
+        // ✅ للخدمة الثابتة: حساب نسبتها من القيمة الأصلية وتطبيقها على القيمة الجديدة
+        const originalServiceFees = Number(summary._original_service_fees || 0);
+        if (originalServiceFees > 0 && productValueBeforeDiscount > 0) {
+          const serviceRatio = productValueAfterDiscount / productValueBeforeDiscount;
+          serviceAmount = originalServiceFees * serviceRatio;
+        }
       }
     }
     serviceAmount = Number(serviceAmount.toFixed(2));
 
-    // Step 4: Calculate VAT (14% on Product Value AFTER Discount + Service Charge)
+    // Step 4: Calculate VAT (on Product Value AFTER Discount + Service Charge)
     // VAT Base = Product Value After Discount + Service Charge
     const vatBase = productValueAfterDiscount + serviceAmount;
 
@@ -885,7 +899,7 @@ export class PillEditComponent {
     // Final Total = Product Value After Discount + Service Charge + VAT + Delivery Fee
     const finalTotal = productValueAfterDiscount + serviceAmount + taxAmount + deliveryFees;
 
-    // تحديث بيانات الفاتورة
+    // تحديث بيانات الفاتورة الأصلية (invoices[0].invoice_summary)
     summary.coupon_value = discountValue;
     summary.coupon_title = title;
     summary.coupon_type = type;
@@ -895,12 +909,20 @@ export class PillEditComponent {
     summary.total_after_tax = Number(finalTotal.toFixed(2));
     summary.tax_value = Number(taxAmount.toFixed(3));
     summary.tax = Number(taxAmount.toFixed(3));
+    summary.service_fees = serviceAmount;
 
-    // تحديث بيانات رسوم الخدمة
-    if (servicePerc > 0) {
-      summary.service_fees = serviceAmount;
-    } else {
-      summary.service_fees = serviceAmount;
+    // ✅ تحديث invoiceSummary أيضاً (المستخدم في العرض)
+    if (this.invoiceSummary && this.invoiceSummary[0]) {
+      this.invoiceSummary[0].coupon_value = discountValue;
+      this.invoiceSummary[0].coupon_title = title;
+      this.invoiceSummary[0].coupon_type = type;
+      this.invoiceSummary[0].coupon_code = this.couponCode || title;
+      this.invoiceSummary[0].subtotal_price_before_coupon = productValueBeforeDiscount;
+      this.invoiceSummary[0].total_price = Number(finalTotal.toFixed(2));
+      this.invoiceSummary[0].total_after_tax = Number(finalTotal.toFixed(2));
+      this.invoiceSummary[0].tax_value = Number(taxAmount.toFixed(3));
+      this.invoiceSummary[0].tax = Number(taxAmount.toFixed(3));
+      this.invoiceSummary[0].service_fees = serviceAmount;
     }
 
     this.discountAmount = discountValue;
@@ -1047,48 +1069,70 @@ export class PillEditComponent {
                       (summary.coupon_value && summary.coupon_value > 0);
     if (!hasCoupon) return;
 
-    // حفظ القيم الأصلية
-    const originalSubtotal = Number(summary.subtotal_price_before_coupon || summary.total_price || 0);
+    // ✅ استخدام القيم الأصلية المحفوظة إذا كانت موجودة
+    const originalSubtotal = Number(summary._original_subtotal_price_before_coupon || summary.subtotal_price_before_coupon || summary.total_price || 0);
+    const originalServiceFees = Number(summary._original_service_fees || summary.service_fees || 0);
     const taxPerc = Number(summary.tax_percentage || 0);
     const servicePerc = Number(summary.service_percentage || 0);
-    const serviceFixed = Number(summary.service_fees || 0);
+    const taxApplication = summary.tax_application ?? false;
     const deliveryFees = Number(summary.delivery_fees || 0);
 
     // إعادة الحساب من الصفر
     let subtotalAfter = originalSubtotal;
 
-    // حساب رسوم الخدمة
+    // حساب رسوم الخدمة (إعادتها للقيمة الأصلية)
     let serviceAmount = 0;
     if (servicePerc > 0) {
       serviceAmount = (subtotalAfter * servicePerc) / 100;
     } else {
-      serviceAmount = serviceFixed;
+      serviceAmount = originalServiceFees;
     }
-
-    subtotalAfter += serviceAmount;
+    serviceAmount = Number(serviceAmount.toFixed(2));
 
     // حساب الضريبة
+    const vatBase = subtotalAfter + serviceAmount;
     let taxAmount = 0;
     if (taxPerc > 0) {
-      taxAmount = (subtotalAfter * taxPerc) / 100;
+      if (taxApplication) {
+        taxAmount = vatBase - vatBase / (1 + taxPerc / 100);
+      } else {
+        taxAmount = (vatBase * taxPerc) / 100;
+      }
     }
+    taxAmount = Number(taxAmount.toFixed(3));
 
     // الحساب النهائي (يشمل delivery_fees)
-    const finalTotal = subtotalAfter + taxAmount + deliveryFees;
+    const finalTotal = subtotalAfter + serviceAmount + taxAmount + deliveryFees;
 
-    // تحديث بيانات الفاتورة
+    // تحديث بيانات الفاتورة الأصلية
     summary.coupon_value = 0;
     summary.coupon_title = '';
     summary.coupon_type = '';
     summary.coupon_code = '';
+    summary.subtotal_price_before_coupon = originalSubtotal;
     summary.total_price = Number(finalTotal.toFixed(2));
     summary.total_after_tax = Number(finalTotal.toFixed(2));
-    summary.tax = Number(taxAmount.toFixed(2));
+    summary.tax_value = Number(taxAmount.toFixed(3));
+    summary.tax = Number(taxAmount.toFixed(3));
+    summary.service_fees = serviceAmount;
 
-    // تحديث بيانات رسوم الخدمة إذا كانت نسبة
-    if (servicePerc > 0) {
-      summary.service_fees = Number(serviceAmount.toFixed(2));
+    // ✅ تحديث invoiceSummary أيضاً (المستخدم في العرض)
+    if (this.invoiceSummary && this.invoiceSummary[0]) {
+      this.invoiceSummary[0].coupon_value = 0;
+      this.invoiceSummary[0].coupon_title = '';
+      this.invoiceSummary[0].coupon_type = '';
+      this.invoiceSummary[0].coupon_code = '';
+      this.invoiceSummary[0].subtotal_price_before_coupon = originalSubtotal;
+      this.invoiceSummary[0].total_price = Number(finalTotal.toFixed(2));
+      this.invoiceSummary[0].total_after_tax = Number(finalTotal.toFixed(2));
+      this.invoiceSummary[0].tax_value = Number(taxAmount.toFixed(3));
+      this.invoiceSummary[0].tax = Number(taxAmount.toFixed(3));
+      this.invoiceSummary[0].service_fees = serviceAmount;
     }
+
+    // ✅ مسح القيم الأصلية المحفوظة
+    delete summary._original_subtotal_price_before_coupon;
+    delete summary._original_service_fees;
 
     this.discountAmount = 0;
     this.couponTitle = '';
