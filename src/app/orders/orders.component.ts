@@ -1865,6 +1865,9 @@ export class OrdersComponent implements OnDestroy {
                 }, 1000);
               }
             }, 300);
+
+            // ✅ Refresh order data to get updated calculations (coupon, tax, total)
+            this.refreshOrderAfterCancel(order.order_details.order_id);
           }
         },
 
@@ -2165,6 +2168,9 @@ export class OrdersComponent implements OnDestroy {
               res.message || 'تم حذف الطلب بنجاح',
               'success'
             );
+
+            // ✅ Refresh order data to get updated calculations (coupon, tax, total)
+            this.refreshOrderAfterCancel(order.order_details.order_id);
 
 
 
@@ -3137,6 +3143,37 @@ export class OrdersComponent implements OnDestroy {
       const modalInstance = bootstrap.Modal.getInstance(modalElement);
       modalInstance?.hide();
     }
+  }
+
+  // Refresh order data after cancellation to update calculations
+  refreshOrderAfterCancel(orderId: number): void {
+    this._OrderListDetailsService.NewgetOrderById(orderId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: any) => {
+          if (res?.data?.order) {
+            const updatedOrder = res.data.order;
+            // Find and update the order in the orders array
+            const orderIndex = this.orders.findIndex(
+              (o: any) => o.order_details?.order_id === orderId
+            );
+            if (orderIndex !== -1) {
+              this.orders[orderIndex] = {
+                ...this.orders[orderIndex],
+                ...updatedOrder,
+                currency_symbol: this.currencySymbol
+              };
+              this.orders = [...this.orders];
+              this.filterOrders();
+              this.cdr.detectChanges();
+              console.log('✅ Order refreshed with updated calculations:', updatedOrder);
+            }
+          }
+        },
+        error: (err) => {
+          console.error('❌ Error refreshing order after cancel:', err);
+        }
+      });
   }
 
   // Fetch available tables
