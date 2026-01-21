@@ -32,7 +32,7 @@ export class NewOrderService {
 
       if (!branchId || !empId) {
         console.error('Missing branch_id or employee_id in localStorage');
-        console.log('branch_id:', branchId, 'employee_id:', empId);
+        console.log(`branch_id: ${branchId}, employee_id: ${empId}`);
         // Retry after a short delay, especially for Electron
         const retryDelay = this.isElectron() ? 1000 : 500;
         setTimeout(() => this.listenToNewOrder(a), retryDelay);
@@ -44,7 +44,7 @@ export class NewOrderService {
       console.log('Running in Electron:', this.isElectron());
 
       this.channelName = `newOrder2-${empId}-branch-${branchId}`;
-      console.log('Subscribing to channel:', this.channelName);
+      console.log(`Subscribing to channel: ${this.channelName}`);
 
       try {
         this.pusherService.subscribe(this.channelName, 'new-order-added2', (res: any) => {
@@ -54,73 +54,45 @@ export class NewOrderService {
           const order_id = res.data.order_id;
 
           this.printedInvoiceService
-          .printWaiter(order_id)
+          .printMenu(order_id)
           .subscribe({
             next: async (response) => {
-              if(response.order.make_type != 'cashier'){
+              if (response.order && response.order.make_type != 'cashier') {
               console.log('🖨️ [Kitchen Print] Response received:', response);
 
-              if(response.status && response.allDish && response.allDish.length > 0){
-                console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
-                try {
-                  await this.printInvoiceImage(response.allDish ,response.order, response.Ipall , response.portall);
-                  console.log('✅ [Kitchen Print] Drinks printed successfully');
-                } catch (err) {
-                  console.error('❌ [Kitchen Print] Error printing drinks:', err);
+                if (response.status && response.printers && response.printers.length > 0) {
+                  console.log(`🖨️ Found ${response.printers.length} printers to print to`);
+                  for (const group of response.printers) {
+                    if (group.items && group.items.length > 0) {
+                      console.log(`🖨️ Printing ${group.items.length} dishes to printer ${group.ip}:${group.port}...`);
+                      try {
+                        await this.printInvoiceImage(group.items, response.order, group.ip, group.port);
+                      } catch (err) {
+                        console.log(`❌ Error printing to ${group.ip}: ${err}`, 'error');
+                      }
+                      // Small delay between different printers
+                      await new Promise(resolve => setTimeout(resolve, 500));
+                    } else {
+                      console.log(`⚠️ Printer ${group.ip} has no items to print`, 'warn');
+                    }
+                  }
+                } else {
+                  console.log(`⚠️ No printers found in response context: ${JSON.stringify({
+                    status: response.status,
+                    printersCount: response.printers?.length
+                  })}`, 'warn');
                 }
+              } else {
+                console.log('⏭️ Skipping print logic because make_type is cashier or order is missing');
               }
-
-
-              await new Promise(resolve => setTimeout(resolve, 500));
-
-              // Print drinks first
-              if(response.status && response.drinks && response.drinks.length > 0){
-                console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
-                try {
-                  await this.printInvoiceImage(response.drinks ,response.order, response.IPdrinks , response.portdrinks);
-                  console.log('✅ [Kitchen Print] Drinks printed successfully');
-                } catch (err) {
-                  console.error('❌ [Kitchen Print] Error printing drinks:', err);
-                }
-              }
-
-              // Wait a bit before printing fish to the same printer
-              await new Promise(resolve => setTimeout(resolve, 500));
-
-              // Print fish
-              if(response.status && response.fish && response.fish.length > 0){
-                console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
-                try {
-                  await this.printInvoiceImage(response.fish ,response.order, response.IPfish , response.portfish);
-                  console.log('✅ [Kitchen Print] Fish printed successfully');
-                } catch (err) {
-                  console.error('❌ [Kitchen Print] Error printing fish:', err);
-                }
-              }
-
-
-              // Print grills to different printer (can run in parallel)
-              if(response.status && response.grills && response.grills.length > 0){
-                console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
-                this.printInvoiceImage(response.grills ,response.order, response.IPgrills , response.portgrills).catch(err => {
-                  console.error('❌ [Kitchen Print] Error printing grills:', err);
-                });
-              }
-            }
-              await new Promise(resolve => setTimeout(resolve, 5000));
-              location.reload();
+              
             },
             error: (error) => {
-              console.error('Kitchen print error:', error);
-              location.reload();
+              console.log(`❌ Print menu API error: ${JSON.stringify(error)}`, 'error');
             }
           });
 
           this.orderAdded$.next(res.data);
-          // this.http.get(`${baseUrl}api/orders/orderDetails/${3672}`).subscribe({
-          //   next: (response) => console.log('Order updated successfully:', response),
-          //   error: (err) => console.error('Failed to update order:', err)
-          // });
         });
         console.log('Successfully subscribed to channel:', this.channelName);
       } catch (error) {
@@ -160,7 +132,7 @@ export class NewOrderService {
     try {
       // Use local variable instead of shared class property to avoid conflicts when printing to multiple printers
       const itemsToPrint = data || [];
-      console.log('🖨️ [printInvoiceImage] Items to print:', itemsToPrint.length, 'for printer:', printerIP);
+      console.log(`Items to print: ${itemsToPrint.length} for printer: ${printerIP}`);
 
       if (!itemsToPrint.length) {
         console.warn("⚠️ [printInvoiceImage] No data to print");

@@ -1,0 +1,32 @@
+.cursor-pointer {
+  cursor: pointer;
+}
+
+.transition-all {
+  transition: all 0.3s ease;
+}
+
+.category-pill {
+  background-color: #f8f9fa;
+  color: #333;
+  user-select: none;
+}
+
+.category-pill:hover {
+  background-color: #e9ecef;
+}
+
+.category-pill.active {
+  background-color: #fe0000;
+  color: white;
+  border-color: #fe0000 !important;
+}
+
+.badge {
+  font-weight: 500;
+  padding: 0.5em 0.8em;
+}
+
+.table > :not(caption) > * > * {
+  padding: 1rem 0.75rem;
+}

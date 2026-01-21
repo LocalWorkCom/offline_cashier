@@ -5,6 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { isPlatformBrowser } from '@angular/common';
 import { finalize } from 'rxjs';
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
+import { PrinterManagementComponent } from '../printer-management/printer-management.component';
 
 interface Country {
   code: string;
@@ -40,7 +41,7 @@ const phoneValidationRules: { [key: string]: PhoneValidationRule } = {
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule,ShowLoaderUntilPageLoadedDirective],
+  imports: [CommonModule, FormsModule, ShowLoaderUntilPageLoadedDirective, PrinterManagementComponent],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css'],
 })
@@ -56,6 +57,8 @@ fullName: string = '';
   successMessage: string = '';
   dropdownOpen: boolean = false;
   imageUrl: string | null = null; 
+  successModalMessage: string = 'تم تحديث البيانات بنجاح!';
+
   constructor(
     private profileService: ProfileService,
     @Inject(PLATFORM_ID) private platformId: object
@@ -148,6 +151,24 @@ fetchUserProfile() {
     this.countryCode = country.code;
     localStorage.setItem('selectedCountry', JSON.stringify(country));
     this.dropdownOpen = false;
+  }
+
+  handlePrinterSuccess(message: string) {
+    this.successModalMessage = message;
+    this.showSuccessModal();
+  }
+
+  showSuccessModal() {
+    if (isPlatformBrowser(this.platformId)) {
+      import('bootstrap').then(({ Modal }) => {
+        const modalElement = document.getElementById('successModal');
+        if (modalElement) {
+          const successModal = new Modal(modalElement);
+          successModal.show();
+          setTimeout(() => successModal.hide(), 3000);
+        }
+      });
+    }
   }
 
   // saveProfile() {
@@ -274,20 +295,8 @@ saveProfile() {
       if (response.status) {
         this.successMessage = response.message;
         this.profileService.setFullName(this.fullName); // Update the full name
-        
-        // Show Success Modal
+        this.handlePrinterSuccess(response.message || 'تم تحديث البيانات بنجاح!');
         if (isPlatformBrowser(this.platformId)) {
-          import('bootstrap').then(({ Modal }) => {
-            const modalElement = document.getElementById('successModal');
-            if (modalElement) {
-              const successModal = new Modal(modalElement);
-              successModal.show();
-
-              setTimeout(() => {
-                successModal.hide();
-              }, 3000);
-            }
-          });
           this.imageUrl = localStorage.getItem('imageUrl');
         }
       } else {
