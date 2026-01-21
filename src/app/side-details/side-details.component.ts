@@ -3503,6 +3503,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const cartItemsForPrint = JSON.parse(JSON.stringify(this.cartItems));
       console.log(cartItemsForPrint, 'cartItemsForPrint');
 
+      // get current order data
+      const body = this.currentOrderData 
+        ? { cartItemsForPrint, flag: 'add' } 
+        : [];
+
       this.clearCart();
       this.resetLocalStorage();
       this.resetAddress();
@@ -3511,9 +3516,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.successMessage = 'تم تنفيذ طلبك بنجاح';
 
       if (this.successModal) {
-
-        this.printedInvoiceService
-          .printMenu(this.orderedId)
+      
+      
+          this.printedInvoiceService
+          .printMenu(this.orderedId , body)
           .subscribe({
             next: async (response) => {
               console.log('🖨️ [Print Menu] Response received:', response);
