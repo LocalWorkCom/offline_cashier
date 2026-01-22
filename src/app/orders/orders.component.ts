@@ -1968,6 +1968,8 @@ export class OrdersComponent implements OnDestroy {
   openEditModal(item: any, orderId: any) {
     const hasExtraData = item.size || item.dish_addons[0];
 
+    // console.log('item', item);
+
     const modalSize = hasExtraData ? 'lg' : 'md';
 
     const editModal = this.NgbModal.open(EditOrderModalComponent, {
@@ -2137,6 +2139,7 @@ export class OrdersComponent implements OnDestroy {
       ],
       type: 'partial',
       reason: 'cashier reason',
+      flag: 'cancel',
     };
 
     // 3️⃣ Call API
@@ -2197,7 +2200,7 @@ export class OrdersComponent implements OnDestroy {
             });
 
             console.log('Sending request to print-editor-cancel API...');
-            this.http.post(`${baseUrl}api/print-editor-cancel`, {order: order}, { headers: { Authorization: `Bearer ${token}` } }).subscribe({
+            this.http.post(`${baseUrl}api/print-editor-cancel`, {order: body}, { headers: { Authorization: `Bearer ${token}` } }).subscribe({
                    // print
                 next: async (response: any) => {
                   console.log('order updated successfully', response );
@@ -2684,7 +2687,7 @@ export class OrdersComponent implements OnDestroy {
     event.preventDefault();
     const pastedText = event.clipboardData?.getData('text/plain') || '';
     const pastedValue = Number(pastedText);
-    
+
     if (!isNaN(pastedValue)) {
       this.validateAndCorrectSplitQuantity(item, pastedValue);
     }
@@ -2694,7 +2697,7 @@ export class OrdersComponent implements OnDestroy {
   validateAndCorrectSplitQuantity(item: any, newValue: any): void {
     // Convert to number - handle string inputs like "21", "-1", "1-", etc.
     let quantity: number;
-    
+
     // Handle string inputs that might contain non-numeric characters
     if (typeof newValue === 'string') {
       // Remove any non-numeric characters except minus at the start
@@ -2703,7 +2706,7 @@ export class OrdersComponent implements OnDestroy {
     } else {
       quantity = Number(newValue);
     }
-    
+
     // Handle NaN, null, undefined, or empty string
     if (isNaN(quantity) || quantity === null || quantity === undefined || newValue === '' || newValue === null) {
       quantity = 0;
@@ -2737,10 +2740,10 @@ export class OrdersComponent implements OnDestroy {
 
     // Update the value immediately - this is critical
     item.selectedQuantity = quantity;
-    
+
     // Force change detection to update UI immediately
     this.cdr.detectChanges();
-    
+
     // Clear error if valid
     if (quantity >= 0 && quantity <= maxQty) {
       // Only clear if this was the error we set
@@ -2754,7 +2757,7 @@ export class OrdersComponent implements OnDestroy {
   increaseSplitQuantity(item: any): void {
     const currentQty = item.selectedQuantity || 0;
     const maxQty = item.quantity || 0;
-    
+
     // Ensure we don't exceed the maximum
     if (currentQty < maxQty) {
       item.selectedQuantity = Math.min(currentQty + 1, maxQty); // Ensure never exceeds max
@@ -2861,7 +2864,7 @@ export class OrdersComponent implements OnDestroy {
     // Check each item
     for (const item of this.splitOrderItems) {
       const selectedQty = item.selectedQuantity || 0;
-      
+
       // Check for negative quantities
       if (selectedQty < 0) {
         return false;
@@ -2927,7 +2930,7 @@ export class OrdersComponent implements OnDestroy {
       setTimeout(() => {
         this.splitErrorMessage = '';
       }, 4000);
-      
+
       // ✅ Force change detection to update UI
       this.cdr.detectChanges();
       return; // Prevent proceeding to confirmation modal

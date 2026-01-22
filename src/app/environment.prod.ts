@@ -38,9 +38,12 @@ export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
 
 //production
 
-
+// for  product owner
 // export const baseUrl='https://productowner.testdomain100.online/'
+// for  cashier test
 export const baseUrl='https://erp-cashier.testdomain100.online/'
+// for  cashier production
+// export const baseUrl='https://erpmain.alkoot-restaurant.com/api'
 
 // export const baseUrl='https://erpsystem.testdomain100.online/'
 
