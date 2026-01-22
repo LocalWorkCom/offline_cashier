@@ -573,7 +573,7 @@
 
       <!-- </div> -->
 
-      <div *ngIf="(currentOrderData && currentOrderData.total_due > 0) || getCartTotal() > 0 " class="my-3">
+      <div *ngIf="(currentOrderData && currentOrderData.total_due > 0) || getCartTotal() >= 0 || selectedPaymentStatus === 'paid'" class="my-3">
 
         <!-- خياات الدفع -->
         <div class="card p-3 mb-3">
@@ -610,37 +610,37 @@
             *ngIf="(selectedPaymentMethod === 'cash' || selectedPaymentMethod === 'credit') && selectedOrderType !== 'talabat'">
             <div class="card p-3 mt-3">
 
-              <ng-container *ngIf="getCartTotal() as billAmount">
+              <ng-container *ngIf="{ value: getCartTotal() } as bill">
                 <!-- عرض المبلغ المستحق -->
                 <div class="card p-3 mb-3">
                   <div class="d-flex justify-content-between align-items-center mb-3">
                     <h6 class="fw-bold mb-0">المبلغ المستحق:</h6>
-                    <h5 class="fw-bolder mb-0 main-color">{{ billAmount | number:'1.2-2' }} {{ currencySymbol }}</h5>
+                    <h5 class="fw-bolder mb-0 main-color">{{ bill.value | number:'1.2-2' }} {{ currencySymbol }}</h5>
                   </div>
                 </div>
 
                 <!-- اقتراحات المبالغ -->
                 <div class="d-flex justify-content-between flex-wrap gap-2 payment-suggestions-container mb-3">
                   <label class="payment-suggestion-label"
-                    [class.active-payment-suggestion]="selectedSuggestionType === 'billAmount' && finalTipSummary?.paymentAmount === billAmount"
-                    (click)="selectPaymentSuggestionAndOpenModal('billAmount', billAmount, billAmount, tipModalContent)">
-                    <strong>{{ billAmount | number:'1.2-2' }} {{ currencySymbol }}</strong>
+                    [class.active-payment-suggestion]="selectedSuggestionType === 'billAmount' && finalTipSummary?.paymentAmount === bill.value"
+                    (click)="selectPaymentSuggestionAndOpenModal('billAmount', bill.value, bill.value, tipModalContent)">
+                    <strong>{{ bill.value | number:'1.2-2' }} {{ currencySymbol }}</strong>
                     <small class="d-block text-muted">المبلغ المستحق</small>
                   </label>
 
-                  <ng-container *ngIf="getNearestAmount(billAmount, 50) as amount50">
-                    <label class="payment-suggestion-label" [class.disabled-suggestion]="amount50 < billAmount"
+                  <ng-container *ngIf="getNearestAmount(bill.value, 50) as amount50">
+                    <label class="payment-suggestion-label" [class.disabled-suggestion]="amount50 < bill.value"
                       [class.active-payment-suggestion]="selectedSuggestionType === 'amount50' && finalTipSummary?.paymentAmount === amount50"
-                      (click)="selectPaymentSuggestionAndOpenModal('amount50', billAmount, amount50, tipModalContent)">
+                      (click)="selectPaymentSuggestionAndOpenModal('amount50', bill.value, amount50, tipModalContent)">
                       <strong>{{ amount50 | number:'1.0-0' }} {{ currencySymbol }}</strong>
                       <small class="d-block text-muted">أقرب 50</small>
                     </label>
                   </ng-container>
 
-                  <ng-container *ngIf="getNearestAmount(billAmount, 100) as amount100">
-                    <label class="payment-suggestion-label" [class.disabled-suggestion]="amount100 < billAmount"
+                  <ng-container *ngIf="getNearestAmount(bill.value, 100) as amount100">
+                    <label class="payment-suggestion-label" [class.disabled-suggestion]="amount100 < bill.value"
                       [class.active-payment-suggestion]="selectedSuggestionType === 'amount100' && finalTipSummary?.paymentAmount === amount100"
-                      (click)="selectPaymentSuggestionAndOpenModal('amount100', billAmount, amount100, tipModalContent)">
+                      (click)="selectPaymentSuggestionAndOpenModal('amount100', bill.value, amount100, tipModalContent)">
                       <strong>{{ amount100 | number:'1.0-0' }} {{ currencySymbol }}</strong>
                       <small class="d-block text-muted">أقرب 100</small>
                     </label>
@@ -652,7 +652,7 @@
                   <label for="cashPaymentInput" class="form-label fw-bold">مبلغ مخصص</label>
                   <input type="number" class="form-control" id="cashPaymentInput" name="cashPaymentInput" [(ngModel)]="cashPaymentInput"
                     placeholder="أدخل المبلغ المدفوع" (input)="roundCashPayment()"
-                    (change)="handleManualPaymentBlur(billAmount, tipModalContent)" [class.is-invalid]="paymentError">
+                    (change)="handleManualPaymentBlur(bill.value, tipModalContent)" [class.is-invalid]="paymentError">
 
                   <!-- عرض رسالة الخطأ -->
                   @if (paymentError) {
@@ -687,14 +687,14 @@
         </ng-container>
         <!-- إدخال الدفع عند اختيار كاش + فيزا -->
         <div *ngIf="selectedPaymentMethod === 'cash + credit'" class="card p-3 mt-3">
-          <ng-container *ngIf="getCartTotal() as billAmount">
+          <ng-container *ngIf="{ value: getCartTotal() } as bill">
             <!-- حقل إدخال الكاش -->
             <div class="card p-3 mb-3">
               <label for="cashAmountInput" class="form-label fw-bold">المبلغ
                 المدفوع كاش</label>
               <input type="number" class="form-control" id="cashAmountInput" name="cashAmountInput" [(ngModel)]="cashAmountMixed"
                 placeholder="المبلغ المدفوع كاش" min="0"
-                (change)="openMixedPaymentTipModal(billAmount, tipModalContent)">
+                (change)="openMixedPaymentTipModal(bill.value, tipModalContent)">
 
               <!-- رسالة خطأ للكاش -->
               <div *ngIf="cashAmountMixed < 0" class="text-danger small mt-1">
@@ -709,7 +709,7 @@
                 المدفوع فيزا</label>
               <input type="number" class="form-control" id="creditAmountInput" name="creditAmountInput" [(ngModel)]="creditAmountMixed"
                 placeholder="المبلغ المدفوع فيزا" min="0"
-                (change)="openMixedPaymentTipModal(billAmount, tipModalContent)">
+                (change)="openMixedPaymentTipModal(bill.value, tipModalContent)">
 
               <!-- رسالة خطأ للفيزا -->
               <div *ngIf="creditAmountMixed < 0" class="text-danger small mt-1">
@@ -756,9 +756,9 @@
               </button>
             </div> -->
             <!-- رسالة تنبيه إذا كان المبلغ غير كافي -->
-            <div *ngIf="(cashAmountMixed + creditAmountMixed) < billAmount" class="alert alert-warning mt-2 py-2">
+            <div *ngIf="(cashAmountMixed + creditAmountMixed) < bill.value" class="alert alert-warning mt-2 py-2">
               <small>المبلغ المدفوع غير كافي. يرجى إدخال مبلغ يساوي أو أكبر من
-                {{ billAmount | number:'1.2-2' }} ج.م</small>
+                {{ bill.value | number:'1.2-2' }} ج.م</small>
             </div>
           </ng-container>
         </div>

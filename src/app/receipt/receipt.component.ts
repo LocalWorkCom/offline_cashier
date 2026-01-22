@@ -61,4 +61,15 @@ export class ReceiptComponent {
     return !isNaN(value) && value > 0;
   }
 
+  getTotalTipAmount(): number {
+    if (!this.data?.invoice_tips || !Array.isArray(this.data.invoice_tips) || this.data.invoice_tips.length === 0) {
+      return 0;
+    }
+    const totalTip = this.data.invoice_tips.reduce((sum: number, tip: any) => {
+      const tipAmount = typeof tip.tip_amount === 'string' ? parseFloat(tip.tip_amount) : Number(tip.tip_amount || 0);
+      return sum + (isNaN(tipAmount) ? 0 : tipAmount);
+    }, 0);
+    return totalTip;
+  }
+
 }
