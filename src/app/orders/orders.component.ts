@@ -446,7 +446,7 @@ export class OrdersComponent implements OnDestroy {
       // Show notification
       this.showUpdateNotification(
         `تم تحديث حالة الطلب #${updatedOrder.order_number
-        } إلى ${this.getStatusText(newStatus)}`,
+        } إلى ${this.getStatusText(this.orders[index])}`,
         'info'
       );
 
@@ -877,7 +877,16 @@ export class OrdersComponent implements OnDestroy {
     }
   }
 
-  getStatusText(status: any): string {
+  getStatusText(order: any): string {
+    // Handle both old format (status string) and new format (order object)
+    const status = typeof order === 'string' ? order : (order?.order_details?.status || order?.status);
+    const mergedIntoOrderId = typeof order === 'object' ? (order?.order_details?.merged_into_order_id || order?.merged_into_order_id) : null;
+
+    // Check if the order is cancelled AND merged into another order
+    if (status === 'cancelled' && mergedIntoOrderId) {
+      return 'تم الدمج';
+    }
+
     switch (status) {
       case 'all':
         return 'الكل';
@@ -1856,6 +1865,9 @@ export class OrdersComponent implements OnDestroy {
                 }, 1000);
               }
             }, 300);
+
+            // ✅ Refresh order data to get updated calculations (coupon, tax, total)
+            this.refreshOrderAfterCancel(order.order_details.order_id);
           }
         },
 
@@ -1955,6 +1967,8 @@ export class OrdersComponent implements OnDestroy {
   }
   openEditModal(item: any, orderId: any) {
     const hasExtraData = item.size || item.dish_addons[0];
+
+    // console.log('item', item);
 
     const modalSize = hasExtraData ? 'lg' : 'md';
 
@@ -2139,6 +2153,7 @@ export class OrdersComponent implements OnDestroy {
       ],
       type: 'partial',
       reason: 'cashier reason',
+      flag: 'cancel',
     };
 
     // 3️⃣ Call API
@@ -2170,6 +2185,9 @@ export class OrdersComponent implements OnDestroy {
               res.message || 'تم حذف الطلب بنجاح',
               'success'
             );
+
+            // ✅ Refresh order data to get updated calculations (coupon, tax, total)
+            this.refreshOrderAfterCancel(order.order_details.order_id);
 
 
 
@@ -2477,12 +2495,27 @@ export class OrdersComponent implements OnDestroy {
       return false;
     }
 
-    // const allItemsCompleted = order.order_items.every(
-    //   (item: any) => item.dish_status === 'completed' || item.dish_status === 'cancel'
-    // );
+    // Filter out completed and cancelled items
+    const activeItems = order.order_items.filter(
+      (item: any) => item.dish_status !== 'completed' && item.dish_status !== 'cancel'
+    );
 
-    // Must have at least 2 items to split (one must remain)
-    return  order.order_items.length >= 2;
+    if (activeItems.length === 0) {
+      return false;
+    }
+
+    // Case 1: Multiple items - can split if at least 2 active items
+    if (activeItems.length >= 2) {
+      return true;
+    }
+
+    // Case 2: Single item - can split if quantity > 1
+    if (activeItems.length === 1) {
+      const singleItem = activeItems[0];
+      return (singleItem.quantity || 0) > 1;
+    }
+
+    return false;
   }
 
   // Check if order can be merged
@@ -2647,7 +2680,7 @@ export class OrdersComponent implements OnDestroy {
     event.preventDefault();
     const pastedText = event.clipboardData?.getData('text/plain') || '';
     const pastedValue = Number(pastedText);
-    
+
     if (!isNaN(pastedValue)) {
       this.validateAndCorrectSplitQuantity(item, pastedValue);
     }
@@ -2657,7 +2690,7 @@ export class OrdersComponent implements OnDestroy {
   validateAndCorrectSplitQuantity(item: any, newValue: any): void {
     // Convert to number - handle string inputs like "21", "-1", "1-", etc.
     let quantity: number;
-    
+
     // Handle string inputs that might contain non-numeric characters
     if (typeof newValue === 'string') {
       // Remove any non-numeric characters except minus at the start
@@ -2666,7 +2699,7 @@ export class OrdersComponent implements OnDestroy {
     } else {
       quantity = Number(newValue);
     }
-    
+
     // Handle NaN, null, undefined, or empty string
     if (isNaN(quantity) || quantity === null || quantity === undefined || newValue === '' || newValue === null) {
       quantity = 0;
@@ -2700,10 +2733,10 @@ export class OrdersComponent implements OnDestroy {
 
     // Update the value immediately - this is critical
     item.selectedQuantity = quantity;
-    
+
     // Force change detection to update UI immediately
     this.cdr.detectChanges();
-    
+
     // Clear error if valid
     if (quantity >= 0 && quantity <= maxQty) {
       // Only clear if this was the error we set
@@ -2717,7 +2750,7 @@ export class OrdersComponent implements OnDestroy {
   increaseSplitQuantity(item: any): void {
     const currentQty = item.selectedQuantity || 0;
     const maxQty = item.quantity || 0;
-    
+
     // Ensure we don't exceed the maximum
     if (currentQty < maxQty) {
       item.selectedQuantity = Math.min(currentQty + 1, maxQty); // Ensure never exceeds max
@@ -2824,7 +2857,7 @@ export class OrdersComponent implements OnDestroy {
     // Check each item
     for (const item of this.splitOrderItems) {
       const selectedQty = item.selectedQuantity || 0;
-      
+
       // Check for negative quantities
       if (selectedQty < 0) {
         return false;
@@ -2890,7 +2923,7 @@ export class OrdersComponent implements OnDestroy {
       setTimeout(() => {
         this.splitErrorMessage = '';
       }, 4000);
-      
+
       // ✅ Force change detection to update UI
       this.cdr.detectChanges();
       return; // Prevent proceeding to confirmation modal
@@ -2913,10 +2946,10 @@ export class OrdersComponent implements OnDestroy {
       return;
     }
 
-    // Check if at least one item remains in original order
+    // Check if at least one item remains in original order (with quantity > 0)
     const remainingItems = this.getRemainingSplitItems();
     if (remainingItems.length === 0) {
-      this.splitErrorMessage = 'يجب أن يبقى على الأقل صنف واحد في الطلب الأصلي';
+      this.splitErrorMessage = 'يجب أن يبقى على الأقل كمية واحدة في الطلب الأصلي';
       setTimeout(() => {
         this.splitErrorMessage = '';
       }, 3000);
@@ -3108,6 +3141,37 @@ export class OrdersComponent implements OnDestroy {
     }
   }
 
+  // Refresh order data after cancellation to update calculations
+  refreshOrderAfterCancel(orderId: number): void {
+    this._OrderListDetailsService.NewgetOrderById(orderId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: any) => {
+          if (res?.data?.order) {
+            const updatedOrder = res.data.order;
+            // Find and update the order in the orders array
+            const orderIndex = this.orders.findIndex(
+              (o: any) => o.order_details?.order_id === orderId
+            );
+            if (orderIndex !== -1) {
+              this.orders[orderIndex] = {
+                ...this.orders[orderIndex],
+                ...updatedOrder,
+                currency_symbol: this.currencySymbol
+              };
+              this.orders = [...this.orders];
+              this.filterOrders();
+              this.cdr.detectChanges();
+              console.log('✅ Order refreshed with updated calculations:', updatedOrder);
+            }
+          }
+        },
+        error: (err) => {
+          console.error('❌ Error refreshing order after cancel:', err);
+        }
+      });
+  }
+
   // Fetch available tables
   fetchAvailableTables(): void {
     this.tablesService.getTables().subscribe({
@@ -3213,10 +3277,10 @@ export class OrdersComponent implements OnDestroy {
       return;
     }
 
-    // Check if at least one item remains
+    // Check if at least one item remains (with quantity > 0)
     const remainingItems = this.getRemainingSplitItems();
     if (remainingItems.length === 0) {
-      this.splitErrorMessage = 'يجب أن يبقى على الأقل صنف واحد في الطلب الأصلي';
+      this.splitErrorMessage = 'يجب أن يبقى على الأقل كمية واحدة في الطلب الأصلي';
       return;
     }
 

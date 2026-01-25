@@ -308,37 +308,37 @@
         <!-- محتوى الدفع للكاش أو الفيزا -->
         <div *ngIf="(selectedPaymentMethod === 'cash' || selectedPaymentMethod === 'credit')">
           <div class="card p-3 mt-3">
-            <ng-container *ngIf="getInvoiceTotal() as billAmount">
+            <ng-container *ngIf="{ value: getInvoiceTotal() } as bill">
               <!-- عرض المبلغ المستحق -->
               <div class="mb-4 text-center">
                 <p class="fw-bold mb-2">المبلغ المستحق:</p>
-                <p class="h4 fw-bold main-color">{{ getDisplayPaymentAmount(billAmount) | number:'1.2-2' }} {{ currencySymbol }}</p>
+                <p class="h4 fw-bold main-color">{{ getDisplayPaymentAmount(bill.value) | number:'1.2-2' }} {{ currencySymbol }}</p>
               </div>
 
               <!-- اقتراحات المبالغ -->
               <div class="d-flex justify-content-between flex-wrap gap-2 payment-suggestions-container mb-3">
                 <label class="payment-suggestion-label"
-                  [class.active-payment-suggestion]="selectedSuggestionType === 'billAmount' && finalTipSummary?.paymentAmount === billAmount"
-                  (click)="selectPaymentSuggestionAndOpenModal('billAmount', billAmount, billAmount, tipModalContent)">
-                  <strong>{{ billAmount | number:'1.2-2' }} {{ currencySymbol }}</strong>
+                  [class.active-payment-suggestion]="selectedSuggestionType === 'billAmount' && finalTipSummary?.paymentAmount === bill.value"
+                  (click)="selectPaymentSuggestionAndOpenModal('billAmount', bill.value, bill.value, tipModalContent)">
+                  <strong>{{ bill.value | number:'1.2-2' }} {{ currencySymbol }}</strong>
                   <small class="d-block text-muted">المبلغ المستحق</small>
                 </label>
 
-                <ng-container *ngIf="getNearestAmount(billAmount, 50) as amount50">
+                <ng-container *ngIf="getNearestAmount(bill.value, 50) as amount50">
                   <label class="payment-suggestion-label"
-                    [class.disabled-suggestion]="amount50 < billAmount"
+                    [class.disabled-suggestion]="amount50 < bill.value"
                     [class.active-payment-suggestion]="selectedSuggestionType === 'amount50' && finalTipSummary?.paymentAmount === amount50"
-                    (click)="selectPaymentSuggestionAndOpenModal('amount50', billAmount, amount50, tipModalContent)">
+                    (click)="selectPaymentSuggestionAndOpenModal('amount50', bill.value, amount50, tipModalContent)">
                     <strong>{{ amount50 | number:'1.0-0' }} {{ currencySymbol }}</strong>
                     <small class="d-block text-muted">أقرب 50</small>
                   </label>
                 </ng-container>
 
-                <ng-container *ngIf="getNearestAmount(billAmount, 100) as amount100">
+                <ng-container *ngIf="getNearestAmount(bill.value, 100) as amount100">
                   <label class="payment-suggestion-label"
-                    [class.disabled-suggestion]="amount100 < billAmount"
+                    [class.disabled-suggestion]="amount100 < bill.value"
                     [class.active-payment-suggestion]="selectedSuggestionType === 'amount100' && finalTipSummary?.paymentAmount === amount100"
-                    (click)="selectPaymentSuggestionAndOpenModal('amount100', billAmount, amount100, tipModalContent)">
+                    (click)="selectPaymentSuggestionAndOpenModal('amount100', bill.value, amount100, tipModalContent)">
                     <strong>{{ amount100 | number:'1.0-0' }} {{ currencySymbol }}</strong>
                     <small class="d-block text-muted">أقرب 100</small>
                   </label>
@@ -353,7 +353,7 @@
                   (ngModelChange)="setPaymentInputValue($event)"
                   [ngModelOptions]="{standalone: true}"
                   placeholder="أدخل المبلغ المدفوع"
-                  (change)="handleManualPaymentBlur(billAmount, tipModalContent)"
+                  (change)="handleManualPaymentBlur(bill.value, tipModalContent)"
                   [class.is-invalid]="paymentError"
                   min="0"
                   step="0.01">
@@ -391,7 +391,7 @@
 
         <!-- محتوى الدفع المختلط -->
         <div *ngIf="selectedPaymentMethod === 'cash + credit'" class="card p-3 mt-3">
-          <ng-container *ngIf="getInvoiceTotal() as billAmount">
+          <ng-container *ngIf="{ value: getInvoiceTotal() } as bill">
             <!-- حقل إدخال الكاش -->
             <div class="card p-3 mb-3">
               <label for="cashAmountInput" class="form-label fw-bold mb-2">المبلغ المدفوع كاش</label>
@@ -399,7 +399,7 @@
                 [(ngModel)]="cashAmountMixed"
                 [ngModelOptions]="{standalone: true}"
                 placeholder="المبلغ المدفوع كاش" min="0"
-                (blur)="openMixedPaymentTipModal(billAmount, tipModalContent)">
+                (blur)="openMixedPaymentTipModal(bill.value, tipModalContent)">
             </div>
 
             <!-- حقل إدخال الفيزا -->
@@ -409,7 +409,7 @@
                 [(ngModel)]="creditAmountMixed"
                 [ngModelOptions]="{standalone: true}"
                 placeholder="المبلغ المدفوع فيزا" min="0"
-                (blur)="openMixedPaymentTipModal(billAmount, tipModalContent)">
+                (blur)="openMixedPaymentTipModal(bill.value, tipModalContent)">
             </div>
 
             <hr class="my-3">
@@ -565,7 +565,7 @@
       <div class="d-flex justify-content-between px-2 mb-1 align-items-center" *ngIf="item.service_percentage">
         <h6 class="mb-0">الخدمة <span class="main-color">{{item.service_percentage}}%</span></h6>
         <h6 class="mb-0 text-end">
-          <span>{{ item.service_fees }} {{ item.currency_symbol }}</span>
+          <span>{{ item.service_fees | number:'1.2-2' }} {{ item.currency_symbol }}</span>
         </h6>
       </div>
       <div class="d-flex justify-content-between px-2 mb-1 align-items-center" *ngIf="item.delivery_fees">
@@ -578,10 +578,10 @@
         <h6 class="mb-0">سعر الوجبات يشتمل على ضريبة القيمة المضافة</h6>
       </div>
 
-      <div class="d-flex justify-content-between px-2 mb-1 align-items-center" *ngIf="!item.tax_application">
+      <div class="d-flex justify-content-between px-2 mb-1 align-items-center" *ngIf="!item.tax_application && item.tax_percentage">
         <h6 class="mb-0">ضريبة القيمة المضافة <span class="main-color">{{ item.tax_percentage }}%</span></h6>
         <h6 class="mb-0 text-end">
-          <span>{{ item.tax_value }} {{ item.currency_symbol }}</span>
+          <span>{{ item.tax_value | number:'1.2-2' }} {{ item.currency_symbol }}</span>
         </h6>
       </div>
       <div class="d-flex flex-column">
@@ -593,7 +593,7 @@
           </h4>
           <h6 class="fw-bold mb-0 fs-4 text-end">
             <!-- استخدام totalll إذا كان محدثاً (بعد تطبيق الكوبون)، وإلا استخدام invoice_summary.total_price -->
-            <span>{{ (totalll && totalll > 0 ? totalll : invoices[0].invoice_summary.total_price) | number:'1.2-2' }} {{ invoices[0].currency_symbol }}</span>
+            <span>{{ (totalll !== null && totalll !== undefined ? totalll : invoices[0].invoice_summary.total_price) | number:'1.2-2' }} {{ invoices[0].currency_symbol }}</span>
           </h6>
         </div>
       </div>
