@@ -1,6 +1,7 @@
 <div id="printSection" class="printSection">
   <div class="receipt-content">
     <!-- Header Section -->
+    <div class="branch-info" *ngFor="let item of data.branchDetails">
     <div class="header-section">
       <div class="logo-container">
         <img src="assets/images/logo-with-white-bg.png" alt="Logo" class="logo-img" />
@@ -9,17 +10,17 @@
         <p class="final bg_black">نهائي</p>
         }
 
-      <div class="branch-info" *ngFor="let item of data.branchDetails">
+
         <p class="branch-name">{{ item.branch_name }}</p>
         <p class="branch-address">العنوان : {{ item.branch_address }}</p>
         <p class="branch-phone">رقم الهاتف : {{ item.branch_phone }}</p>
-      </div>
+
 
       <h6>فاتورة عميل</h6>
 
 
       <div class="order-number-box">
-        <h3>الطلب # {{ data.order_id }}</h3>
+        <h3>الطلب {{ item.order_number }}</h3>
       </div>
     </div>
 
@@ -36,15 +37,16 @@
       </div>
 
       <div class="d-flex justify-content-between align-items-center">
-      <div class="" *ngIf="data.invoice_id">
+      <div class="" *ngIf="item.invoice_number">
         <span class="info-label">فاتورة #</span>
-        <span class="info-value">{{ data.invoice_id }}</span>
+        <span class="info-value">{{ item.invoice_number }}</span>
       </div>
 
       <div class="order-type-row" *ngIf="data.invoices[0]?.order_type === 'dine-in'">
-        <span> (Table {{ getTableNumber() }})</span>
+        <span> (Table {{ item.table_number }})</span>
       </div>
       </div>
+    </div>
 
 
 
@@ -105,17 +107,17 @@
           </tr>
           <tr *ngIf="summaryItem.coupon_value && summaryItem.coupon_value > 0">
             <td class="text-right">
-              <span class="summary-label">كوبون خصم 
-                <span *ngIf="summaryItem.coupon_title">({{ summaryItem.coupon_title }})</span> : 
+              <span class="summary-label">كوبون خصم
+                <span *ngIf="summaryItem.coupon_title">({{ summaryItem.coupon_title }})</span> :
               </span>
             </td>
             <td class="text-left">
               <span class="summary-value">- {{ summaryItem.coupon_value }} {{ summaryItem.currency_symbol }}</span>
             </td>
           </tr>
-          <tr   *ngIf="summaryItem.service_fees && summaryItem.service_fees > 0">
+          <tr>
             <td class="text-right">
-              <span class="summary-label">الخدمة  </span>
+              <span class="summary-label">الخدمة({{ summaryItem.service_percentage }}%) </span>
             </td>
             <td class="text-left">
               <span class="summary-value">{{ summaryItem.service_fees }} {{ summaryItem.currency_symbol }}</span>
@@ -123,12 +125,13 @@
           </tr>
           <tr>
             <td class="text-right">
-              <span class="summary-label" *ngIf="summaryItem.tax_value && summaryItem.tax_value > 0">Vat({{ summaryItem.tax_percentage }}%)  </span>
+              <span class="summary-label">Vat({{ summaryItem.tax_percentage }}%)  </span>
             </td>
             <td class="text-left">
               <span class="summary-value">{{ summaryItem.tax_value }} {{ summaryItem.currency_symbol }}</span>
             </td>
           </tr>
+         
           <tr>
             <td class="text-right">
               <span class="summary-label">الإجمالي : </span>

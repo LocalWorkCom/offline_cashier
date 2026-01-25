@@ -2576,7 +2576,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       tip_specific_amount: this.specificTipAmount ? this.finalTipSummary?.tipAmount : 0,
       payment_amount: this.finalTipSummary?.paymentAmount ?? 0,
       bill_amount: this.finalTipSummary?.billAmount ?? this.getCartTotal(),
-      total_with_tip: this.finalTipSummary ? (this.finalTipSummary.tipAmount ?? 0) + (this.finalTipSummary.billAmount ?? 0) : this.getCartTotal(),
+      // ✅ استخدام grandTotalWithTip مباشرة (المبلغ المستحق + الإكرامية)
+      total_with_tip: this.finalTipSummary?.grandTotalWithTip ?? ((this.finalTipSummary?.tipAmount ?? 0) + (this.finalTipSummary?.billAmount ?? 0)) ?? this.getCartTotal(),
       returned_amount: this.finalTipSummary?.changeToReturn ?? 0,
       menu_integration: this.selectedOrderType === 'talabat' ? true : false,
       payment_status_menu_integration: this.selectedPaymentStatus,
@@ -3080,17 +3081,20 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         orderData.cash_amount = null;
       } else if (this.selectedPaymentStatus == "paid") {
         const billAmount = this.finalTipSummary?.billAmount ?? this.getCartTotal();
+        // ✅ حساب المبلغ الكلي مع الإكرامية (للاستخدام في cash_amount و credit_amount)
+        const tipAmount = this.finalTipSummary?.tipAmount ?? 0;
+        const grandTotalWithTip = billAmount + tipAmount;
 
         // ✅ التعديل المطلوب: إذا كاش يحط في cash_amount، إذا فيزا يحط في credit_amount
         if (this.selectedPaymentMethod === 'cash') {
-          const cashAmount = this.cashPaymentInput > 0 ? this.cashPaymentInput : billAmount;
+          const cashAmount = this.cashPaymentInput > 0 ? this.cashPaymentInput : grandTotalWithTip;
 
-          // 🔒 التحقق من أن مبلغ الكاش لا يقل عن الإجمالي
-          if (cashAmount < billAmount) {
+          // 🔒 التحقق من أن مبلغ الكاش لا يقل عن الإجمالي مع الإكرامية
+          if (cashAmount < grandTotalWithTip) {
             this.amountError = true;
             this.isLoading = false;
             this.loading = false;
-            this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmount} ${this.currencySymbol}`;
+            this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${grandTotalWithTip.toFixed(2)} ${this.currencySymbol}`;
             this.paymentError = this.falseMessage;
             setTimeout(() => {
               this.amountError = false;
@@ -3100,8 +3104,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             return;
           }
 
-          // تسجيل الإجمالي بالضبط في cash_amount
-          orderData.cash_amount = billAmount;
+          // ✅ تسجيل المبلغ الكلي مع الإكرامية في cash_amount
+          orderData.cash_amount = grandTotalWithTip;
           orderData.credit_amount = 0;
         } else if (this.selectedPaymentMethod === 'cash + credit') {
           const billAmountNum = Number(billAmount) || 0;
@@ -3110,21 +3114,25 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
           // ✅ استخدام finalTipSummary إذا كان موجوداً (يحتوي على الإكرامية)
           if (this.finalTipSummary && this.finalTipSummary.cashAmountMixed !== undefined && this.finalTipSummary.creditAmountMixed !== undefined) {
+            // ✅ استخدام القيم من finalTipSummary مباشرة (تم حسابها بشكل صحيح مع الإكرامية)
             finalCashAmount = this.finalTipSummary.cashAmountMixed || 0;
-            // ✅ دائماً: credit_amount = bill_amount - cash_amount
-            finalCreditAmount = Math.max(0, billAmountNum - finalCashAmount);
+            finalCreditAmount = this.finalTipSummary.creditAmountMixed || 0;
           } else {
             // في حالة عدم وجود finalTipSummary، استخدم القيم المدخلة
             finalCashAmount = Number(this.cashAmountMixed) || 0;
-            // ✅ دائماً: credit_amount = bill_amount - cash_amount
+            // ✅ في حالة عدم وجود إكرامية: credit_amount = bill_amount - cash_amount
             finalCreditAmount = Math.max(0, billAmountNum - finalCashAmount);
           }
 
           const totalPaid = Number((finalCashAmount + finalCreditAmount).toFixed(2));
+          
+          // ✅ حساب المبلغ المطلوب (مع الإكرامية إذا كانت موجودة)
+          const tipAmount = this.finalTipSummary?.tipAmount || 0;
+          const requiredAmount = billAmountNum + tipAmount;
 
           if (totalPaid < billAmountNum) {
             this.amountError = true;
-            this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountNum.toFixed(2)} ${this.currencySymbol}`;
+            this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${requiredAmount.toFixed(2)} ${this.currencySymbol}`;
             this.isLoading = false;
             this.loading = false;
             this.paymentError = this.falseMessage;
@@ -3132,7 +3140,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               cashAmount: finalCashAmount,
               creditAmount: finalCreditAmount,
               totalPaid,
-              billAmount: billAmountNum
+              billAmount: billAmountNum,
+              tipAmount: tipAmount,
+              requiredAmount: requiredAmount
             });
             setTimeout(() => {
               this.amountError = false;
@@ -3162,19 +3172,22 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         else if (this.selectedPaymentMethod === 'credit') {
           // ✅ استخدام finalTipSummary إذا كان موجوداً (يحتوي على الإكرامية)
           if (this.finalTipSummary && this.finalTipSummary.grandTotalWithTip > 0) {
-            // 🔒 التحقق من أن المبلغ المدفوع >= الإجمالي
+            // 🔒 التحقق من أن المبلغ المدفوع >= الإجمالي مع الإكرامية
             const creditAmount = this.finalTipSummary.grandTotalWithTip;
             const billAmountNum = Number(billAmount) || 0;
+            const requiredAmount = billAmountNum + (this.finalTipSummary.tipAmount || 0);
 
-            if (creditAmount < billAmountNum) {
+            if (creditAmount < requiredAmount) {
               this.amountError = true;
               this.isLoading = false;
               this.loading = false;
-              this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountNum.toFixed(2)} ${this.currencySymbol}`;
+              this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${requiredAmount.toFixed(2)} ${this.currencySymbol}`;
               this.paymentError = this.falseMessage;
               console.error('❌ خطأ في التحقق من مبلغ الفيزا مع finalTipSummary:', {
                 creditAmount,
                 billAmount: billAmountNum,
+                tipAmount: this.finalTipSummary.tipAmount,
+                requiredAmount: requiredAmount,
                 grandTotalWithTip: this.finalTipSummary.grandTotalWithTip
               });
               setTimeout(() => {
@@ -3185,8 +3198,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               return; // ❌ منع المتابعة إذا كان المبلغ غير كافي
             }
 
-            // ✅ في حالة credit، يتم تعيين credit_amount = bill_amount
-            orderData.credit_amount = billAmountNum;
+            // ✅ في حالة credit، يتم تعيين credit_amount = grandTotalWithTip (المبلغ المستحق + الإكرامية)
+            orderData.credit_amount = this.finalTipSummary.grandTotalWithTip;
             orderData.cash_amount = 0;
 
             console.log('💳 تم تعيين مبالغ الدفع بالفيزا مع الإكرامية:', {
@@ -3197,20 +3210,21 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               grandTotalWithTip: this.finalTipSummary.grandTotalWithTip
             });
           } else {
-            // 🔒 الخطوة 1: التحقق أولاً من أن مبلغ الفيزا المدخل لا يقل عن الإجمالي
+            // 🔒 الخطوة 1: التحقق أولاً من أن مبلغ الفيزا المدخل لا يقل عن الإجمالي مع الإكرامية
             const enteredCreditAmount = Number(this.credit_amountt) || 0;
             const billAmountNum = Number(billAmount) || 0;
 
             // إذا تم إدخال مبلغ وكان أقل من الإجمالي، منع التنفيذ
-            if (enteredCreditAmount > 0 && enteredCreditAmount < billAmountNum) {
+            if (enteredCreditAmount > 0 && enteredCreditAmount < grandTotalWithTip) {
               this.amountError = true;
               this.isLoading = false;
               this.loading = false;
-              this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountNum.toFixed(2)} ${this.currencySymbol}`;
+              this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${grandTotalWithTip.toFixed(2)} ${this.currencySymbol}`;
               this.paymentError = this.falseMessage;
               console.error('❌ خطأ في التحقق من مبلغ الفيزا:', {
                 enteredCreditAmount,
                 billAmountNum,
+                grandTotalWithTip: grandTotalWithTip,
                 credit_amountt: this.credit_amountt
               });
               setTimeout(() => {
@@ -3221,8 +3235,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               return;
             }
 
-            // 🔒 الخطوة 2: إذا كان المبلغ صحيحاً (>= الإجمالي)، تسجيل الإجمالي بالضبط
-            orderData.credit_amount = billAmount;
+            // 🔒 الخطوة 2: إذا كان المبلغ صحيحاً (>= الإجمالي مع الإكرامية)، تسجيل المبلغ الكلي مع الإكرامية
+            orderData.credit_amount = grandTotalWithTip;
             orderData.cash_amount = 0;
 
             console.log('💳 تم تعيين مبالغ الدفع بالفيزا:', {
@@ -3239,15 +3253,16 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           orderData.credit_amount = 0;
         }
 
-        // 🔒 تأكيد أن المبلغ المدفوع لا يقل عن الإجمالي قبل متابعة الطلب
+        // 🔒 تأكيد أن المبلغ المدفوع لا يقل عن الإجمالي مع الإكرامية قبل متابعة الطلب
         if (this.selectedPaymentMethod !== 'deferred') {
           const totalPaidFinal = Number((Number(orderData.cash_amount || 0) + Number(orderData.credit_amount || 0)).toFixed(2));
-          const billAmountFinal = Number((billAmount || 0).toFixed(2));
+          // ✅ استخدام grandTotalWithTip (المبلغ المستحق + الإكرامية) للتحقق
+          const billAmountFinal = Number((grandTotalWithTip || 0).toFixed(2));
           if (totalPaidFinal < billAmountFinal) {
             this.amountError = true;
             this.isLoading = false;
             this.loading = false;
-            this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountFinal} ${this.currencySymbol}`;
+            this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${billAmountFinal.toFixed(2)} ${this.currencySymbol}`;
             this.paymentError = this.falseMessage;
             setTimeout(() => {
               this.amountError = false;
@@ -3911,6 +3926,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         order_type: response.data.invoices[0]?.order_type,
         table_number: this.branchDetails.table_number,
         transactions: this.invoices[0]?.transactions,
+        invoice_tips: response.data.invoice_tips || [],
         isFinal: false,
       };
 
@@ -3955,16 +3971,19 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       const originalHTML = document.body.innerHTML;
 
-      const copies = this.isDeliveryOrder
-        ? [
-          { showPrices: true, test: true },
-          { showPrices: false, test: false },
-          { showPrices: true, test: true },
-        ]
-        : [
-          { showPrices: true, test: true },
-          { showPrices: false, test: false },
-        ];
+      // const copies = this.isDeliveryOrder
+      //   ? [
+      //     { showPrices: true, test: true },
+      //     { showPrices: false, test: false },
+      //     { showPrices: true, test: true },
+      //   ]
+      //   : [
+      //     { showPrices: true, test: true },
+      //     { showPrices: false, test: false },
+      //   ];
+      const copies = [
+        { showPrices: true, test: true },
+      ];
 
       for (const copy of copies) {
         this.showPrices = copy.showPrices;
@@ -6055,22 +6074,21 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       if (totalPaid > 0) {
         const totalWithTip = this.tempBillAmount + finalTipAmount;
 
-        // ✅ حساب الباقي: يُرد من الكاش فقط (الفيزا لا يُرد منها باقي)
-        // الباقي = المبلغ المدفوع الإجمالي - المبلغ الكلي مع الإكرامية
-        const changeToReturnFromCash = Math.max(0, this.tempPaymentAmount - totalWithTip);
-
-        // توزيع المبلغ الكلي مع الإكرامية على الكاش والفيزا
-        // الفيزا = المبلغ المدفوع بالفيزا (لا يتغير، لا يُرد منها باقي)
+        // ✅ التصحيح: الفيزا تبقى كما دخلها المستخدم (لا تُخصم منها الإكرامية)
         creditFinal = Number(this.creditAmountMixed || 0);
 
-        // الكاش = المبلغ الكلي مع الإكرامية - الفيزا
-        // الباقي يُخصم من الكاش فقط
-        cashFinal = totalWithTip - creditFinal;
+        // ✅ التصحيح: الكاش = المبلغ المدخل في الكاش - الإكرامية
+        // الإكرامية تُخصم من الكاش فقط، وليس من الفيزا
+        const originalCashAmount = Number(this.cashAmountMixed || 0);
+        cashFinal = Math.max(0, originalCashAmount - finalTipAmount);
 
         // ✅ التأكد من أن الكاش لا يكون سالباً
+        // إذا كانت الإكرامية أكبر من الكاش المدخل، نضبط القيم
         if (cashFinal < 0) {
           cashFinal = 0;
-          creditFinal = totalWithTip;
+          // في هذه الحالة، إذا كانت الإكرامية أكبر من الكاش، 
+          // يمكن توزيعها على الفيزا (لكن هذا لا يجب أن يحدث عادة)
+          // creditFinal = totalWithTip;
         }
       }
     }
@@ -6080,7 +6098,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       total: this.tempBillAmount,
       serviceFee: 0,
       billAmount: this.tempBillAmount,
-      paymentAmount: this.selectedPaymentMethod === 'credit' ? grandTotalWithTip : this.tempPaymentAmount,
+      // ✅ التصحيح: paymentAmount يجب أن يكون grandTotalWithTip في جميع الحالات (المبلغ المستحق + الإكرامية)
+      paymentAmount: grandTotalWithTip,
       paymentMethod: this.selectedPaymentMethod === 'cash' ? 'كاش' :
         this.selectedPaymentMethod === 'credit' ? 'فيزا' : 'كاش + فيزا',
       tipAmount: finalTipAmount,
@@ -6264,7 +6283,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   // ✅ حساب الفيزا تلقائياً عند إدخال مبلغ في الكاش
   onCashAmountInput(billAmount: number): void {
     const cashValue = Number(this.cashAmountMixed) || 0;
-    
+
     // إذا كان مبلغ الكاش أقل من أو يساوي bill_amount، احسب الباقي في الفيزا
     if (cashValue > 0 && cashValue <= billAmount) {
       const remaining = billAmount - cashValue;
@@ -6278,7 +6297,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   // ✅ حساب الكاش تلقائياً عند إدخال مبلغ في الفيزا
   onCreditAmountInput(billAmount: number): void {
     const creditValue = Number(this.creditAmountMixed) || 0;
-    
+
     // إذا كان مبلغ الفيزا أقل من أو يساوي bill_amount، احسب الباقي في الكاش
     if (creditValue > 0 && creditValue <= billAmount) {
       const remaining = billAmount - creditValue;
