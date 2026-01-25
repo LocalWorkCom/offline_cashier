@@ -575,6 +575,7 @@ html += `</div>
             <tbody>`;
 
 let itemNumber = 1;
+console.log('🔍 [DEBUG] items:', items);
 items.forEach((item: any) => {
     const name = escapeHtml(item.name || '-');
     const name_en = escapeHtml(item.name_en || '-');
