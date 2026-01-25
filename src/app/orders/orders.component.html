@@ -529,19 +529,19 @@
                         </span>
                     </button>
 
-                  @if (canSplitOrder(order) && order.order_details.order_type == "dine-in") {
+                  <!-- @if (canSplitOrder(order) && order.order_details.order_type == "dine-in") {
                     <button type="button" class="btn btn-transparent w-100 py-2" (click)="openSplitModal(order)">
                       <i class="fa-solid fa-code-branch me-2"></i>
                       <span>تجزئة الطلب</span>
                     </button>
-                  }
+                  } -->
 
-                  @if (canMergeOrder(order) && order.order_details.order_type == "dine-in") {
+                  <!-- @if (canMergeOrder(order) && order.order_details.order_type == "dine-in") {
                     <button type="button" class="btn btn-transparent w-100 py-2" (click)="openMergeModal(order)">
                       <i class="fa-solid fa-code-merge me-2"></i>
                       <span>دمج الطلب</span>
                     </button>
-                  }
+                  } -->
 
                 }
               @if((order.order_details.payment_status == 'unpaid' && order.order_details.status === 'pending') ){
