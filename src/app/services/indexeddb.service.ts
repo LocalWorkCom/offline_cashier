@@ -20,7 +20,7 @@ export class IndexeddbService {
 
     this.initPromise = new Promise((resolve, reject) => {
 
-      const request = indexedDB.open('MyDB', 151); // Incremented version to 4
+      const request = indexedDB.open('MyDB', 152); // Incremented version to force upgrade
 
       request.onupgradeneeded = (event: any) => {
         this.db = event.target.result;
