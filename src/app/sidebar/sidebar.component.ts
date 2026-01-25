@@ -451,8 +451,9 @@ proceedToLogout(): void {
       const visaTotalLogout = parseValue(visaTotalLogoutStr);
       const cash_sales = parseValue(cash_salesStr);
       const visa_sales = parseValue(visa_salesStr);
-      const cashDifference = cashTotalLogout - (cash_sales);
-      const visaDifference =  visaTotalLogout - (visa_sales);
+      // ✅ النقدية المتوقعة = الرصيد الافتتاحي + مبيعات كاش
+      const cashDifference = cashTotalLogout - (cashTotal + cash_sales);
+      const visaDifference =  visaTotalLogout - (visaTotal + visa_sales);
 
       // Store report data for printing
       this.reportData = {
