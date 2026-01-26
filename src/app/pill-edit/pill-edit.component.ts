@@ -37,7 +37,7 @@ export class PillEditComponent {
   loading: boolean = false;
   receiptData: any;
   // @ViewChild('deliveredButton', { static: false }) deliveredButton!: ElementRef;
-  invoices: any;
+  invoices: any[] = [];
   pillDetails: any;
   branchDetails: any;
   pillId!: any;
@@ -213,8 +213,8 @@ export class PillEditComponent {
           || this.invoices[0]?.['order_status'];
 
         this.trackingStatus = trackingKey || '';
-        console.log(this.invoices[0].order_type);
-        this.orderType = this.invoices[0].order_type;
+        console.log(this.invoices[0]?.order_type);
+        this.orderType = this.invoices[0]?.order_type || '';
 
         // restore coupon data if exists on invoice
         const summary = this.invoices?.[0]?.invoice_summary;
@@ -239,7 +239,7 @@ export class PillEditComponent {
         // const trackingKey = this.invoices[0]?.['tracking-status'];
         // this.trackingStatus = trackingKey || '';
         this.orderNumber = Number(response.data.order_id);
-        this.couponType = this.invoices[0].invoice_summary.coupon_type;
+        this.couponType = this.invoices[0]?.invoice_summary?.coupon_type;
 
         this.addresDetails = this.invoices[0]?.address_details || {};
 

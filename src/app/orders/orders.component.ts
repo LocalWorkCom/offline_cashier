@@ -1968,6 +1968,8 @@ export class OrdersComponent implements OnDestroy {
   openEditModal(item: any, orderId: any) {
     const hasExtraData = item.size || item.dish_addons[0];
 
+    // console.log('item', item);
+
     const modalSize = hasExtraData ? 'lg' : 'md';
 
     const editModal = this.NgbModal.open(EditOrderModalComponent, {
@@ -1987,21 +1989,54 @@ export class OrdersComponent implements OnDestroy {
 
     editModal.result.then(
       (result) => {
+        console.log('🔍 [DEBUG] Modal result received:', result);
         if (result) {
+          console.log('🔍 [DEBUG] Result is truthy, proceeding...');
           this.successMessage = 'تم تحديث الطلب بنجاح';
           this.successMessageModal.show();
 
-          // get order from printkitchen indexeddb
+          // get order from printkitchen indexeddb (This contains the OLD state)
+          console.log('🔍 [DEBUG] Fetching order from IndexedDB, orderId:', orderId);
           this.dbService.getOrderFromPrintkitchenById(orderId).then((orderMetadata: any) => {
-            console.log('order from printkitchen indexeddb', orderMetadata);
+            console.log('🔍 [DEBUG] Order from printkitchen indexeddb:', orderMetadata);
             // Check if order exists before making the request
             if (!orderMetadata || !orderMetadata.order_data) {
-              console.error('Order not found in printkitchen indexeddb or order_data is missing');
+              console.error('❌ [DEBUG] Order not found in printkitchen indexeddb or order_data is missing');
+              console.error('orderMetadata:', orderMetadata);
               return;
             }
 
-            // Extract the actual order data from the metadata object
-            const order = orderMetadata;
+            console.log('🔍 [DEBUG] orderMetadata.order_data:', orderMetadata.order_data);
+            console.log('🔍 [DEBUG] orderMetadata.order_data.order_items:', orderMetadata.order_data.order_items);
+
+            // Filter to get ONLY the item that was edited (using the original item ID)
+            const editedItemOldState = orderMetadata.order_data.order_items.find(
+              (i: any) => i.order_detail_id === item.order_detail_id
+            );
+
+            if (!editedItemOldState) {
+               console.error('❌ [DEBUG] Original item not found in old order state');
+               return;
+            }
+
+            // Construct simplified payload with ONLY the edited item (Old State)
+            const oldItems = [{
+              item_id: editedItemOldState.order_detail_id,
+              quantity: editedItemOldState.quantity,
+              size: editedItemOldState.size,
+              // Ensure we pass addons in a format backend expects
+              dish_addons: editedItemOldState.dish_addons 
+            }];
+
+            console.log('🔍 [DEBUG] Constructed oldItems (Single Item):', oldItems);
+
+            const payload = {
+              order_id: orderId,
+              items: oldItems,
+              flag: 'edit'
+            };
+
+            console.log('🔍 [DEBUG] Final payload:', payload);
 
             // send to api to update the order with auth token
             const token = localStorage.getItem('authToken');
@@ -2013,63 +2048,33 @@ export class OrdersComponent implements OnDestroy {
               Authorization: `Bearer ${token}`
             });
 
-            console.log('Sending request to print-editor-cancel API...');
-            this.http.post(`${baseUrl}api/print-editor-cancel`, {order: order}, { headers: { Authorization: `Bearer ${token}` } }).subscribe({
-                   // print
+            console.log('Sending request to print-editor-cancel API...', payload);
+            this.http.post(`${baseUrl}api/print-editor-cancel`, { order: payload }, { headers: { Authorization: `Bearer ${token}` } }).subscribe({
                 next: async (response: any) => {
-                  console.log('order updated successfully', response );
+                  console.log('order updated successfully', response);
                   console.log('🖨️ [Kitchen Print] Response received:', response);
 
-                  if(response.status && response.allDish && response.allDish.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
-                    try {
-                        await this.newOrder.printInvoiceImage(response.allDish ,response.order, response.Ipall, response.portall ,response.type);
-                      console.log('✅ [Kitchen Print] All dishes printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing all dishes:', err);
+                  // Handle dynamic printers array
+                  if (response.status && response.printers && response.printers.length > 0) {
+                    for (const printer of response.printers) {
+                      if (printer.items && printer.items.length > 0) {
+                        console.log(`🖨️ [Kitchen Print] Printing to ${printer.ip}:${printer.port}...`);
+                        try {
+                          await this.newOrder.printInvoiceImage(
+                            printer.items,
+                            response.order,
+                            printer.ip,
+                            printer.port,
+                            response.type
+                          );
+                          console.log(`✅ [Kitchen Print] Successfully printed to ${printer.ip}:${printer.port}`);
+                          await new Promise(resolve => setTimeout(resolve, 500));
+                        } catch (err) {
+                          console.error(`❌ [Kitchen Print] Error printing to ${printer.ip}:${printer.port}:`, err);
+                        }
+                      }
                     }
                   }
-
-
-                  await new Promise(resolve => setTimeout(resolve, 500));
-
-                  // Print drinks first
-                  if(response.status && response.drinks && response.drinks.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
-                    try {
-                      await this.newOrder.printInvoiceImage(response.drinks ,response.order, response.IPdrinks, response.portdrinks ,response.type);
-                      console.log('✅ [Kitchen Print] Drinks printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing drinks:', err);
-                    }
-                  }
-
-                  // Wait a bit before printing fish to the same printer
-                  await new Promise(resolve => setTimeout(resolve, 500));
-
-                  // Print fish
-                  if(response.status && response.fish && response.fish.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
-                    try {
-                      await this.newOrder.printInvoiceImage(response.fish ,response.order, response.IPfish , response.portfish ,response.type);
-                      console.log('✅ [Kitchen Print] Fish printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing fish:', err);
-                    }
-                  }
-
-
-                  // Print grills to different printer (can run in parallel)
-                  if(response.status && response.grills && response.grills.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
-                    this.newOrder.printInvoiceImage(response.grills ,response.order, response.IPgrills , response.portgrills ,response.type).catch((err: any) => {
-                      console.error('❌ [Kitchen Print] Error printing grills:', err);
-                    });
-                  }
-
-                  // await new Promise(resolve => setTimeout(resolve, 60000));
-
-
 
                 this.dbService.deleteOrderFromPrintkitchenById(orderId).then(() => {
                   console.log('order deleted from printkitchen indexeddb', orderId);
@@ -2087,7 +2092,12 @@ export class OrdersComponent implements OnDestroy {
           });
 
           setTimeout(() => {
-            this.successMessageModal.dismiss();
+            // Safe dismiss - only call if method exists
+            if (this.successMessageModal && typeof this.successMessageModal.dismiss === 'function') {
+              this.successMessageModal.dismiss();
+            } else if (this.successMessageModal && typeof this.successMessageModal.hide === 'function') {
+              this.successMessageModal.hide();
+            }
             document
               .querySelectorAll('.modal-backdrop')
               .forEach((el) => el.remove());
@@ -2109,6 +2119,12 @@ export class OrdersComponent implements OnDestroy {
     this.removeLoading = true;
     const url = `${this.apiUrl}api/orders/cashier/request-cancel`;
     console.log(orderDetailId, order, 'id to delete');
+
+    // Safety check for order object
+    if (!order || !order.order_details) {
+      console.error('❌ Cannot cancel: Invalid order object', order);
+      return;
+    }
 
     // print cancel order to printkitchen indexeddb
     this.dbService.saveOrderToPrintkitchen(order.order_details.order_id, "cancel").then(() => {
@@ -2137,6 +2153,7 @@ export class OrdersComponent implements OnDestroy {
       ],
       type: 'partial',
       reason: 'cashier reason',
+      flag: 'cancel',
     };
 
     // 3️⃣ Call API
@@ -2184,7 +2201,7 @@ export class OrdersComponent implements OnDestroy {
             }
 
             // Extract the actual order data from the metadata object
-            const order = orderMetadata;
+            // const order = orderMetadata; // Removed to avoid shadowing and confusion
 
             // send to api to update the order with auth token
             const token = localStorage.getItem('authToken');
@@ -2197,62 +2214,41 @@ export class OrdersComponent implements OnDestroy {
             });
 
             console.log('Sending request to print-editor-cancel API...');
-            this.http.post(`${baseUrl}api/print-editor-cancel`, {order: order}, { headers: { Authorization: `Bearer ${token}` } }).subscribe({
+            
+            // Construct simplified payload for printing
+            const printPayload = {
+               order_id: orderMetadata.order_id, 
+               items: body.items, // Reuse items constructed for request-cancel
+               flag: 'cancel'
+            };
+            console.log('Sending request to print-editor-cancel API.', printPayload);
+            this.http.post(`${baseUrl}api/print-editor-cancel`, { order: printPayload }, { headers: { Authorization: `Bearer ${token}` } }).subscribe({
                    // print
                 next: async (response: any) => {
-                  console.log('order updated successfully', response );
+                  console.log('order updated successfully', response);
                   console.log('🖨️ [Kitchen Print] Response received:', response);
 
-                  if(response.status && response.allDish && response.allDish.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
-                    try {
-                        await this.newOrder.printInvoiceImage(response.allDish ,response.order, response.Ipall, response.portall ,response.type);
-                      console.log('✅ [Kitchen Print] All dishes printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing all dishes:', err);
+                  // Handle dynamic printers array
+                  if (response.status && response.printers && response.printers.length > 0) {
+                    for (const printer of response.printers) {
+                      if (printer.items && printer.items.length > 0) {
+                        console.log(`🖨️ [Kitchen Print] Printing to ${printer.ip}:${printer.port}...`);
+                        try {
+                          await this.newOrder.printInvoiceImage(
+                            printer.items,
+                            response.order,
+                            printer.ip,
+                            printer.port,
+                            response.type
+                          );
+                          console.log(`✅ [Kitchen Print] Successfully printed to ${printer.ip}:${printer.port}`);
+                          await new Promise(resolve => setTimeout(resolve, 500));
+                        } catch (err) {
+                          console.error(`❌ [Kitchen Print] Error printing to ${printer.ip}:${printer.port}:`, err);
+                        }
+                      }
                     }
                   }
-
-
-                  await new Promise(resolve => setTimeout(resolve, 500));
-
-                  // Print drinks first
-                  if(response.status && response.drinks && response.drinks.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
-                    try {
-                      await this.newOrder.printInvoiceImage(response.drinks ,response.order, response.IPdrinks, response.portdrinks ,response.type);
-                      console.log('✅ [Kitchen Print] Drinks printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing drinks:', err);
-                    }
-                  }
-
-                  // Wait a bit before printing fish to the same printer
-                  await new Promise(resolve => setTimeout(resolve, 500));
-
-                  // Print fish
-                  if(response.status && response.fish && response.fish.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
-                    try {
-                      await this.newOrder.printInvoiceImage(response.fish ,response.order, response.IPfish , response.portfish ,response.type);
-                      console.log('✅ [Kitchen Print] Fish printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing fish:', err);
-                    }
-                  }
-
-
-                  // Print grills to different printer (can run in parallel)
-                  if(response.status && response.grills && response.grills.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
-                    this.newOrder.printInvoiceImage(response.grills ,response.order, response.IPgrills , response.portgrills ,response.type).catch((err: any) => {
-                      console.error('❌ [Kitchen Print] Error printing grills:', err);
-                    });
-                  }
-
-                  // await new Promise(resolve => setTimeout(resolve, 60000));
-
-
 
                 this.dbService.deleteOrderFromPrintkitchenById(order.order_details.order_id).then(() => {
                   console.log('order deleted from printkitchen indexeddb', order.order_details.order_id);
@@ -2684,7 +2680,7 @@ export class OrdersComponent implements OnDestroy {
     event.preventDefault();
     const pastedText = event.clipboardData?.getData('text/plain') || '';
     const pastedValue = Number(pastedText);
-    
+
     if (!isNaN(pastedValue)) {
       this.validateAndCorrectSplitQuantity(item, pastedValue);
     }
@@ -2694,7 +2690,7 @@ export class OrdersComponent implements OnDestroy {
   validateAndCorrectSplitQuantity(item: any, newValue: any): void {
     // Convert to number - handle string inputs like "21", "-1", "1-", etc.
     let quantity: number;
-    
+
     // Handle string inputs that might contain non-numeric characters
     if (typeof newValue === 'string') {
       // Remove any non-numeric characters except minus at the start
@@ -2703,7 +2699,7 @@ export class OrdersComponent implements OnDestroy {
     } else {
       quantity = Number(newValue);
     }
-    
+
     // Handle NaN, null, undefined, or empty string
     if (isNaN(quantity) || quantity === null || quantity === undefined || newValue === '' || newValue === null) {
       quantity = 0;
@@ -2737,10 +2733,10 @@ export class OrdersComponent implements OnDestroy {
 
     // Update the value immediately - this is critical
     item.selectedQuantity = quantity;
-    
+
     // Force change detection to update UI immediately
     this.cdr.detectChanges();
-    
+
     // Clear error if valid
     if (quantity >= 0 && quantity <= maxQty) {
       // Only clear if this was the error we set
@@ -2754,7 +2750,7 @@ export class OrdersComponent implements OnDestroy {
   increaseSplitQuantity(item: any): void {
     const currentQty = item.selectedQuantity || 0;
     const maxQty = item.quantity || 0;
-    
+
     // Ensure we don't exceed the maximum
     if (currentQty < maxQty) {
       item.selectedQuantity = Math.min(currentQty + 1, maxQty); // Ensure never exceeds max
@@ -2861,7 +2857,7 @@ export class OrdersComponent implements OnDestroy {
     // Check each item
     for (const item of this.splitOrderItems) {
       const selectedQty = item.selectedQuantity || 0;
-      
+
       // Check for negative quantities
       if (selectedQty < 0) {
         return false;
@@ -2927,7 +2923,7 @@ export class OrdersComponent implements OnDestroy {
       setTimeout(() => {
         this.splitErrorMessage = '';
       }, 4000);
-      
+
       // ✅ Force change detection to update UI
       this.cdr.detectChanges();
       return; // Prevent proceeding to confirmation modal
