@@ -35,7 +35,7 @@ export class ReturnedInvoiceComponent implements OnInit {printOptions = [
   // @ViewChild('deliveredButton', { static: false }) deliveredButton!: ElementRef;
   currencySymbol = localStorage.getItem('currency_symbol');
   note = localStorage.getItem('additionalNote');
-  invoices: any;
+  invoices: any[] = [];
   pillDetails: any;
   branchDetails: any;
   pillId!: any;
@@ -57,7 +57,7 @@ export class ReturnedInvoiceComponent implements OnInit {printOptions = [
   showPrices = false;
   test: boolean | undefined;
   paymentMethod: any;
-loading:boolean=true;
+loading: boolean = false;
 isPrinting = false;
 
   constructor(
@@ -140,10 +140,12 @@ isPrinting = false;
     this.pillDetailsService.getPillsDetailsById(pillId).pipe(
     finalize(() => {
       this.loading=true;
+      this.cdr.detectChanges();
     })
   ).subscribe({
       next: (response: any) => {
-        this.invoices = response.data.invoices;
+        this.invoices = response.data.invoices || [];
+        if (this.invoices.length === 0) return;
         console.log( response,'response' );
         
 
@@ -158,17 +160,18 @@ isPrinting = false;
           delivered: 'تم التوصيل',
         };
 
-        const trackingKey = this.invoices[0]?.['tracking-status'];
+        const firstInvoice = this.invoices[0];
+        const trackingKey = firstInvoice?.['tracking-status'];
         if (trackingKey === 'completed') {
           this.isShow = false;
         }
         this.trackingStatus = statusMap[trackingKey] || trackingKey;
         this.orderNumber = response.data.order_id;
-        this.couponType = this.invoices[0].invoice_summary.coupon_type;
+        this.couponType = firstInvoice?.invoice_summary?.coupon_type;
 
-        this.addresDetails = this.invoices[0]?.address_details || {};
-        this.paymentMethod = this.invoices[0]?.transactions[0]?.['payment_method'];
-        this.paymentStatus = this.invoices[0]?.transactions[0]?.['payment_status'];
+        this.addresDetails = firstInvoice?.address_details || {};
+        this.paymentMethod = firstInvoice?.transactions?.[0]?.['payment_method'];
+        this.paymentStatus = firstInvoice?.transactions?.[0]?.['payment_status'];
         //  if (this.trackingStatus === 'completed' ) {
         //   this.deliveredButton?.nativeElement.click();
         //   }

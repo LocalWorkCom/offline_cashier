@@ -76,11 +76,17 @@
               ]
             },
             "development": {
-              "optimization": true,
-              "extractLicenses": true,
-              "sourceMap": false
-
-            }
+            "optimization": false,
+            "buildOptimizer": false,
+            "extractLicenses": false,
+            "sourceMap": {
+              "scripts": true,
+              "styles": true,
+              "vendor": true
+            },
+            "namedChunks": true,
+            "vendorChunk": true
+           }
           },
           "defaultConfiguration": "production"
         },
