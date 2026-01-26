@@ -51,9 +51,8 @@
         </h5>
 
         <p class="fw-bold" *ngIf="
-            invoices &&
-            invoices.length > 0 &&
-            invoices[0].order_type === 'Delivery' &&
+            invoices?.length > 0 &&
+            invoices[0]?.order_type === 'Delivery' &&
             isShow
           ">
           حالة الطلب :
@@ -97,9 +96,8 @@
         </p>
         <p><span class="fw-bold">رقم الطلب :</span> {{ item.order_number }}</p>
         <p *ngIf="
-            invoices &&
-            invoices.length > 0 &&
-            invoices[0].order_type === 'dine-in'
+            invoices?.length > 0 &&
+            invoices[0]?.order_type === 'dine-in'
           ">
           <span class="fw-bold">رقم الطاولة :</span> {{ item.table_number }}
         </p>
@@ -110,29 +108,29 @@
     </ng-container>
 
     <div class="card px-4 py-2 my-2" *ngIf="
-        invoices && invoices.length > 0 && invoices[0].order_type === 'Delivery'
+        invoices?.length > 0 && invoices[0]?.order_type === 'Delivery'
       ">
       <h5>
         <i class="fas fa-file-alt main-color fs-4 ps-2"></i>معلومات التوصيل
       </h5>
 
-      <p v-if="addresDetails.client_name">
+      <p *ngIf="addresDetails?.client_name">
         <span class="fw-bold">الاسم :</span>
         {{ addresDetails.client_name}}
       </p>
-      <p v-if="addresDetails.client_address || addresDetails.branch_name">
+      <p *ngIf="addresDetails?.client_address || addresDetails?.branch_name">
         <span class="fw-bold">العنوان :</span>
         {{ addresDetails.client_address ?? "غير متوفر" }}
         {{ addresDetails.branch_name }}
       </p>
-
-      <p v-if="addresDetails.address_phone">
+  
+      <p *ngIf="addresDetails?.address_phone">
         <span class="fw-bold">رقم الهاتف :</span>
         {{ addresDetails.address_phone}}
       </p>
       <p>
-        <span class="fw-bold" *ngIf="invoices[0].delivery_name">اسم الطيار :</span>
-        {{ invoices[0].delivery_name }}
+        <span class="fw-bold" *ngIf="invoices?.length > 0 && invoices[0]?.delivery_name">اسم الطيار :</span>
+        {{ invoices?.length > 0 ? invoices[0]?.delivery_name : '' }}
       </p>
     </div>
 
@@ -151,7 +149,7 @@
           <div id="flush-collapseOne" class="accordion-collapse collapse show" aria-labelledby="flush-headingOne"
             data-bs-parent="#accordionFlushExample">
             <div class="accordion-body">
-              <div *ngFor="let item of orderDetails[0]"
+              <div *ngFor="let item of (orderDetails && orderDetails.length > 0 ? orderDetails[0] : [])"
                 class="d-flex justify-content-between px-1 mb-1 align-items-start">
                 <div class="d-flex flex-column">
                   <h6>
@@ -183,9 +181,8 @@
     <div class="card px-4 py-2 my-2">
       <h5><i class="fas fa-file-alt main-color fs-4 ps-2"></i>معلومات الدفع</h5>
       <div *ngIf="
-          invoices &&
-          invoices.length > 0 &&
-          invoices[0].order_type === 'Delivery' &&
+          invoices?.length > 0 &&
+          invoices[0]?.order_type === 'Delivery' &&
           isShow
         ">
         <!-- <div class="d-flex gap-4">
@@ -210,11 +207,11 @@
       </div>
 
       <div class="d-flex justify-content-between align-items-center py-3" *ngIf="invoices && invoices.length > 0">
-        <h5 class="mb-0" *ngIf="invoices[0].transactions.length == 1">
-          <span class="badge bg-success text-white">
+        <h5 class="mb-0" *ngIf="invoices?.length > 0 && invoices[0]?.transactions">
+          <span class="badge bg-success text-white" *ngIf="invoices[0].transactions.length == 1">
             الدفع :
             {{
-            invoices[0]?.transactions[0].payment_method === "credit"
+            invoices[0].transactions[0].payment_method === "credit"
             ? "الفيزا"
             : "كاش"
             }}
@@ -228,10 +225,10 @@
         </div>
       </div>
       <!-- Cash - visa -->
-      <div *ngIf="invoices && invoices.length > 0 && invoices[0]?.transactions?.length > 1">
-        <div *ngFor="let inv of invoices[0]?.transactions">
+      <div *ngIf="invoices?.length > 0 && invoices[0]?.transactions?.length > 1">
+        <div *ngFor="let inv of invoices[0].transactions">
           <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
-            *ngIf="invoices[0]?.transactions[0]?.payment_status == 'paid'">
+            *ngIf="invoices[0].transactions[0]?.payment_status == 'paid'">
             <div>
               {{ inv.payment_method === "cash" ? " الكاش" : " الفيزا" }}
             </div>
@@ -247,7 +244,7 @@
       <div class="d-flex justify-content-between px-2 mb-1">
         <h6>مجموع الطلب</h6>
         <h6>
-          <span>{{ invoices[0]?.invoice_summary.subtotal_price }}
+          <span>{{ invoices?.length > 0 ? invoices[0]?.invoice_summary?.subtotal_price : '0' }}
             {{ item.currency_symbol }}</span>
         </h6>
       </div>
@@ -359,8 +356,8 @@
       <h6>
         <small>
           اسم الكاشير:
-          <span>{{ invoices[0].cashier_info.first_name }} &nbsp;
-            {{ invoices[0].cashier_info.last_name }}
+          <span>{{ invoices?.length > 0 && invoices[0]?.cashier_info ? invoices[0].cashier_info.first_name : '' }} &nbsp;
+            {{ invoices?.length > 0 && invoices[0]?.cashier_info ? invoices[0].cashier_info.last_name : '' }}
           </span></small>
       </h6>
       <hr />
@@ -395,8 +392,7 @@
         </h6>
         <h6>
           اسم الطيار:
-          <span>{{ invoices?.[0]?.delivery_name && invoices[0].delivery_name.trim() !== '' ? invoices[0].delivery_name :
-            'لا يوجد' }}</span>
+          <span>{{ invoices?.length > 0 ? invoices[0]?.delivery_name : 'لا يوجد' }}</span>
         </h6>
 
         <h6>
@@ -435,11 +431,11 @@
             </div>
           </td>
           <td>{{ item.quantity }}</td>
-          <td *ngIf="test && (!showPrices || showPrices)">
+          <td *ngIf="test && (!showPrices || showPrices) && invoiceSummary && invoiceSummary.length > 0">
             {{ item.total_dish_price / item.quantity | number }}
             {{ invoiceSummary[0].currency_symbol }}
           </td>
-          <td *ngIf="test && (!showPrices || showPrices)">
+          <td *ngIf="test && (!showPrices || showPrices) && invoiceSummary && invoiceSummary.length > 0">
             {{ item.total_dish_price | number }}
             {{ invoiceSummary[0].currency_symbol }}
           </td>
@@ -510,8 +506,8 @@
             <h6 class="mb-0">طريقة الدفع:</h6>
             <p class="mb-0">
               {{
-              invoices[0]?.transactions[0].payment_method === "credit"
-              ? "الفيزا"
+              invoices?.length > 0 && invoices[0]?.transactions?.length > 0 ?
+              (invoices[0].transactions[0].payment_method === "credit" ? "الفيزا" : "كاش")
               : "كاش"
               }}
             </p>
@@ -525,15 +521,15 @@
             " -->
             <h6 class="mb-0 fw-bold">حالة الدفع:</h6>
             <p class="mb-0 fw-bold">
-              {{ (invoices[0]?.transactions[0]?.payment_status === "paid" || paymentStatus === "paid") ? "مدفوعة" : "غير مدفوعة" }}
+              {{ (invoices?.length > 0 && invoices[0]?.transactions?.[0]?.payment_status === "paid" || paymentStatus === "paid") ? "مدفوعة" : "غير مدفوعة" }}
             </p>
           </div>
         </ng-container>
         <!-- Cash - visa -->
-        <div *ngIf="invoices[0].transactions.length > 1">
+        <div *ngIf="invoices?.length > 0 && invoices[0]?.transactions?.length > 1">
           <div *ngFor="let inv of invoices[0].transactions">
             <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
-              *ngIf="invoices[0].transactions[0].payment_status == 'paid'">
+              *ngIf="invoices[0].transactions[0]?.payment_status == 'paid'">
               <div>
                 {{ inv.payment_method === "cash" ? " الكاش" : " الفيزا" }}
               </div>
