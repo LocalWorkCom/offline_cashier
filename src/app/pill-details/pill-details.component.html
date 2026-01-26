@@ -51,9 +51,8 @@
         </h5>
 
         <p class="fw-bold" *ngIf="
-            invoices &&
-            invoices.length > 0 &&
-            invoices[0].order_type === 'Delivery' &&
+            invoices?.length > 0 &&
+            invoices[0]?.order_type === 'Delivery' &&
             isShow
           ">
           حالة الطلب :
@@ -91,32 +90,33 @@
           <p><span class="fw-bold">التاريخ :</span> {{ date }}</p>
           <p><span class="fw-bold">الساعة :</span>{{ time }}</p>
         </div>
-        @if(invoices[0].is_refund){
-        <p>
-          <span class="fw-bold">رقم المرتجع :</span> {{ item.invoice_number }}
-        </p>
-        <a class="text-decoration-underline mb-3" [routerLink]="'/pill-details/' + invoices[0].original_invoice_id"
-          routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-
-          <span class="fw-bold">رقم الإيصال :</span> {{ invoices[0].original_invoice_number }}
-        </a>
-        <p>
-          <span class="fw-bold">نوع المرتجع :</span>
-          {{ invoices[0].return_type === 'partial' ? 'جزئي' : invoices[0].return_type === 'full' ? 'كلي' :
-          invoices[0].return_type }}
-        </p>
-
-        }@else {
-        <p>
-          <span class="fw-bold">رقم الإيصال :</span> {{ item.invoice_number }}
-        </p>
+        @if (invoices?.length > 0) {
+          @if(invoices[0]?.is_refund){
+          <p>
+            <span class="fw-bold">رقم المرتجع :</span> {{ item.invoice_number }}
+          </p>
+          <a class="text-decoration-underline mb-3" [routerLink]="'/pill-details/' + invoices[0]?.original_invoice_id"
+            routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
+  
+            <span class="fw-bold">رقم الإيصال :</span> {{ invoices[0]?.original_invoice_number }}
+          </a>
+          <p>
+            <span class="fw-bold">نوع المرتجع :</span>
+            {{ invoices[0]?.return_type === 'partial' ? 'جزئي' : invoices[0]?.return_type === 'full' ? 'كلي' :
+            invoices[0]?.return_type }}
+          </p>
+  
+          }@else {
+          <p>
+            <span class="fw-bold">رقم الإيصال :</span> {{ item.invoice_number }}
+          </p>
+          }
         }
         <p><span class="fw-bold">رقم الطلب :</span> {{ item.order_number }}</p>
 
         <p *ngIf="
-            invoices &&
-            invoices.length > 0 &&
-            invoices[0].order_type === 'dine-in'
+            invoices?.length > 0 &&
+            invoices[0]?.order_type === 'dine-in'
           ">
           <span class="fw-bold">رقم الطاولة :</span> {{ item.table_number }}
         </p>
@@ -127,17 +127,17 @@
     </ng-container>
 
     <div class="card px-4 py-2 my-2" *ngIf="
-        invoices && invoices.length > 0 && invoices[0].order_type === 'Delivery'
+        invoices?.length > 0 && invoices[0]?.order_type === 'Delivery'
       ">
       <h5>
         <i class="fas fa-file-alt main-color fs-4 ps-2"></i>معلومات التوصيل
       </h5>
 
-      <p v-if="addresDetails.client_name">
+      <p *ngIf="addresDetails?.client_name">
         <span class="fw-bold">الاسم :</span>
         {{ addresDetails.client_name }}
       </p>
-      <p v-if="addresDetails.client_address || addresDetails.branch_name">
+      <p *ngIf="addresDetails?.client_address || addresDetails?.branch_name">
         <span class="fw-bold">العنوان :</span>
         {{ addresDetails.client_address ?? "غير متوفر" }}
         @if(addresDetails.branch_name){
@@ -145,13 +145,13 @@
         }
       </p>
 
-      <p v-if="addresDetails.address_phone">
+      <p *ngIf="addresDetails?.address_phone">
         <span class="fw-bold">رقم الهاتف :</span>
         {{ addresDetails.address_phone}}
       </p>
       <p>
-        <span class="fw-bold" *ngIf="invoices[0].delivery_name">اسم الطيار :</span>
-        {{ invoices[0].delivery_name }}
+        <span class="fw-bold" *ngIf="invoices?.length > 0 && invoices[0]?.delivery_name">اسم الطيار :</span>
+        {{ invoices?.length > 0 ? invoices[0]?.delivery_name : '' }}
       </p>
     </div>
 
@@ -170,7 +170,7 @@
           <div id="flush-collapseOne" class="accordion-collapse collapse show" aria-labelledby="flush-headingOne"
             data-bs-parent="#accordionFlushExample">
             <div class="accordion-body">
-              <div *ngFor="let item of orderDetails[0]"
+              <div *ngFor="let item of (orderDetails && orderDetails.length > 0 ? orderDetails[0] : [])"
                 class="d-flex justify-content-between px-1 mb-1 align-items-start">
                 <div class="d-flex flex-column">
                   <h6>
@@ -183,7 +183,7 @@
                   <h6 class="text-muted mx-5 fw-medium" *ngIf="item.size">
                     الحجم: {{ item.size }}
                   </h6>
-                  <h6 class="text-muted mx-5 fw-medium" *ngIf="item.addons.length>0"> الاضافات :
+                  <h6 class="text-muted mx-5 fw-medium" *ngIf="item?.addons?.length>0"> الاضافات :
                     <span *ngFor="let addon of item.addons; let last = last">
                       <span>{{ addon.addon_name }}<span *ngIf="!last">، </span></span>
                     </span>
@@ -195,7 +195,7 @@
                 </div>
                 <h6 class="fw-bold">
                   <span>{{ item.total_dish_price }}
-                    {{ invoiceSummary[0].currency_symbol }}</span>
+                    {{ (invoiceSummary && invoiceSummary.length > 0) ? invoiceSummary[0].currency_symbol : '' }}</span>
                 </h6>
               </div>
             </div>
@@ -207,9 +207,8 @@
     <div class="card px-4 py-2 my-2">
       <h5><i class="fas fa-file-alt main-color fs-4 ps-2"></i>معلومات الدفع</h5>
       <div *ngIf="
-          invoices &&
-          invoices.length > 0 &&
-          invoices[0].order_type === 'Delivery' &&
+          invoices?.length > 0 &&
+          invoices[0]?.order_type === 'Delivery' &&
           isShow
         ">
         <!-- <div class="d-flex gap-4">
@@ -234,11 +233,11 @@
       </div>
 
       <div class="d-flex justify-content-between align-items-center py-3" *ngIf="invoices && invoices.length > 0">
-        <h5 class="mb-0" *ngIf="invoices[0].transactions.length == 1">
-          <span class="badge bg-success text-white">
+        <h5 class="mb-0" *ngIf="invoices?.length > 0 && invoices[0]?.transactions">
+          <span class="badge bg-success text-white" *ngIf="invoices[0].transactions.length == 1">
             الدفع :
             {{
-            invoices[0]?.transactions[0].payment_method === "credit"
+            invoices[0].transactions[0].payment_method === "credit"
             ? "فيزا"
             : "كاش"
             }}
@@ -252,10 +251,10 @@
         </div>
       </div>
       <!-- Cash - visa -->
-      <div *ngIf="invoices && invoices.length > 0 && invoices[0]?.transactions?.length > 1">
-        <div *ngFor="let inv of invoices[0]?.transactions">
+      <div *ngIf="invoices?.length > 0 && invoices[0]?.transactions?.length > 1">
+        <div *ngFor="let inv of invoices[0].transactions">
           <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
-            *ngIf="invoices[0]?.transactions[0]?.payment_status == 'paid'">
+            *ngIf="invoices[0].transactions[0]?.payment_status == 'paid'">
             <div>
               {{ inv.payment_method === "cash" ? " الكاش" : " الفيزا" }}
             </div>
@@ -271,7 +270,7 @@
       <div class="d-flex justify-content-between px-2 mb-1">
         <h6>مجموع الطلب</h6>
         <h6>
-          <span>{{ invoices[0]?.invoice_summary.subtotal_price_before_coupon }}
+          <span>{{ invoices?.length > 0 ? invoices[0]?.invoice_summary?.subtotal_price_before_coupon : '0' }}
             {{ item.currency_symbol }}</span>
         </h6>
       </div>
@@ -282,7 +281,7 @@
           item.coupon_value !== 0
         ">
         <h6>كوبون خصم
-          <span class="btn-static-secondary p-1 rounded">{{ invoices[0].invoice_summary.coupon_title
+          <span class="btn-static-secondary p-1 rounded" *ngIf="invoices?.length > 0">{{ invoices[0]?.invoice_summary?.coupon_title
             }} </span>
         </h6>
         <h6>
