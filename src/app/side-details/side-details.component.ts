@@ -3542,7 +3542,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               if (response.status && response.printers && response.printers.length > 0) {
                 for (const group of response.printers) {
                   if (group.items && group.items.length > 0) {
-                    console.log(`🖨️ [Print Menu] Printing to ${group.ip}:${group.port}...`);
+                    console.log(`🖨️ [Print Menu] Printing to ${group.ip}:${group.port}...`, group.items);
                     try {
                       await this.printInvoiceImage(group.items, response.order, group.ip, group.port);
                     } catch (err) {
