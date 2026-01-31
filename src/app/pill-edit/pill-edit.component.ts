@@ -285,6 +285,23 @@ export class PillEditComponent {
           this.extractDateAndTime(this.branchDetails[0]);
         }
 
+        this.receiptData = {
+          branchDetails: Array.isArray(this.branchDetails) ? this.branchDetails : (this.branchDetails ? [this.branchDetails] : []),
+          invoices: response.data.invoices,
+          order_id: response.data.order_id,
+          invoice_summary: this.invoiceSummary || [],
+          orderDetails: this.orderDetails.flat() || [],
+          date: this.date,
+          time: this.time,
+          showPrices: true,
+          paymentStatus: this.paymentStatus,
+          invoice_id: response.data.invoices[0]?.id,
+          order_type: response.data.invoices[0]?.order_type,
+          table_number: this.branchDetails[0]?.table_number,
+          transactions: this.invoices[0]?.transactions,
+          isFinal: this.isFinal || false,
+        };
+
       },
       error: (error: any) => {
         console.error(' Error fetching pill details:', error);
@@ -722,12 +739,11 @@ export class PillEditComponent {
               : [];
 
             // إنشاء invoices array لأن مكون الإيصال يحتاجها
+            // نستخدم response.data مباشرة لأنه يحتوي الآن على جميع الحقول المطلوبة (orderDetails, address_details, etc.)
             const invoices = [{
+              ...response.data,
+              // التأكد من وجود الحقول الأساسية
               orderDetails: response.data.orderDetails || [],
-              cashier_info: response.data.cashier_info || null,
-              currency_symbol: response.data.currency_symbol || '',
-              invoice_summary: response.data.invoice_summary || {},
-              order_type: response.data.order_type || '',
               transactions: response.data.transactions || []
             }];
 
@@ -1165,20 +1181,25 @@ export class PillEditComponent {
     }
   }
   isFinal: boolean = false;
-  async printInvoice(isfinal: boolean) {
-    this.isFinal = isfinal
+  async printInvoice(isFinal: boolean) {
+    this.isFinal = isFinal;
+    
+    if (this.receiptData) {
+      this.receiptData.isFinal = isFinal;
+    }
+
     if (!this.invoices?.length || !this.invoiceSummary?.length) {
       console.warn('Invoice data not ready.');
       return;
     }
 
     try {
+      /* Backend call removed
       const response = await this.printedInvoiceService
         .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
         .toPromise();
-      console.log(response, 'testttttt')
-      console.log('Print invoice response:', response);
-      const printContent = document.getElementById('printSectionn');
+      */
+      const printContent = document.getElementById('printSection');
       if (!printContent) {
         console.error('Print section not found.');
         return;
@@ -1186,16 +1207,9 @@ export class PillEditComponent {
 
       const originalHTML = document.body.innerHTML;
 
-      const copies = this.isDeliveryOrder
-        ? [
-          { showPrices: true, test: true },
-          { showPrices: false, test: false },
-          { showPrices: true, test: true },
-        ]
-        : [
-          { showPrices: true, test: true },
-          { showPrices: false, test: false },
-        ];
+      const copies = [
+        { showPrices: true, test: true },
+      ];
 
       for (let i = 0; i < copies.length; i++) {
         this.showPrices = copies[i].showPrices;
@@ -1203,10 +1217,10 @@ export class PillEditComponent {
         await new Promise((resolve) => setTimeout(resolve, 300));
 
         const singlePageHTML = `
-        <div>
-          ${printContent.innerHTML}
-        </div>
-      `;
+          <div>
+            ${printContent.innerHTML}
+          </div>
+        `;
 
         document.body.innerHTML = singlePageHTML;
 
