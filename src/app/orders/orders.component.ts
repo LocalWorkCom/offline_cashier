@@ -621,7 +621,8 @@ export class OrdersComponent implements OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    this.newOrder.stopListening();
+    // Do NOT call stopListening() on newOrder - it's managed globally in app.component.ts
+    // this.newOrder.stopListening();
     this.orderChangeStatus.stopListeningOfOrderStatus();
     this.orderChange.stopListening();
     // this.activeOrderChannels.forEach(orderId => {

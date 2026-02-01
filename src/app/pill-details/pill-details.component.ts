@@ -358,6 +358,9 @@ private processPillDetails(data: any): void {
           table_number: this.branchDetails[0]?.table_number,
           transactions: this.invoices[0]?.transactions,
           isFinal: this.isFinal, // change to true if you want to print the final invoice
+          cashier: response.data.cashier,
+          waiter: response.data.waiter,
+          make_type: response.data.make_type
         };
       },
       error: (error: any) => {

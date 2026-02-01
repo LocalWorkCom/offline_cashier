@@ -10,6 +10,13 @@ import { CommonModule } from '@angular/common';
 export class ReceiptComponent {
   @Input() data: any;
 
+  ngOnInit() {
+    console.log('Receipt data:', this.data);
+    console.log('Cashier:', this.data?.cashier);
+    console.log('Waiter:', this.data?.waiter);
+    console.log('Make type:', this.data?.make_type);
+  }
+
   getOrderTypeLabel(type: string): string {
     const map: any = {
       'dine-in': 'في المطعم',
@@ -96,7 +103,7 @@ export class ReceiptComponent {
   getCustomerName(): string {
     const invoice = this.data?.invoices?.[0];
     if (!invoice) return 'N/A';
-    
+    console.log(invoice.address_details);
     // Backend provides pre-calculated client name in address_details for delivery
     if (invoice.address_details && invoice.address_details.client_name) {
       return invoice.address_details.client_name;

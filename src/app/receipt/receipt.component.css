@@ -2,12 +2,11 @@
 .printSection {
   max-width: 80mm;
   width: 100%;
-  margin: 0 auto;
+  margin: 0;
   padding: 0;
   font-family: 'Arial', 'Courier New', monospace;
-  
-  
-  line-height: 1.5;
+  font-size: 11px;
+  line-height: 1.4;
   color: #000;
   background: #fff;
 }
@@ -153,6 +152,7 @@
   margin-bottom: 2px;
 }
 
+
 .product-size {
   display: block;
   margin-bottom: 2px;
@@ -247,30 +247,82 @@
 
 /* Print specific styles */
 @media print {
+  @page {
+    margin: 0 !important;
+    size: auto;
+  }
+  
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
   .printSection {
-    max-width: 90mm;
-    width: 100%;
-    margin: 0;
-    padding: 0;
+    max-width: 74mm !important; /* Slightly narrower to avoid hardware margin clipping */
+    width: 74mm !important;
+    margin: 0 auto !important; /* Center the receipt on the paper */
+    padding: 0 !important;
+    background: #fff;
+    display: block !important;
   }
 
   .receipt-content {
-    padding: 5mm 3mm;
+    padding: 0mm 2mm !important; /* Add small horizontal padding to prevent cutting */
+    margin-top: 0 !important;
+  }
+
+  .header-section {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+  
+  .logo-container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  .logo-img {
+    max-width: 40mm !important; /* Slightly smaller logo to fit better */
   }
   
   .printSection * {
     font-weight: bold !important;
     -webkit-print-color-adjust: exact; 
     print-color-adjust: exact;
-    font-size: 14px !important;
+    font-size: 11px !important;
   }
 
-.divider-row td {
-  padding: 0;
-  border: none;
-}
-.tr-first {
+  .divider-row td {
+    padding: 0;
+    border: none;
+  }
+  
+  .tr-first {
     text-align: center;
-}
+  }
 
+  .divider {
+    margin: 5px 0 !important;
+    border: none !important;
+    background-color: black !important;
+    color: black !important;
+    height: 2px !important;
+    width: 100% !important;
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  hr.divider {
+    border: none !important;
+    background: black !important;
+    height: 2px !important;
+  }
+  .total {
+    font-size: 16px !important;
+  }
 }
