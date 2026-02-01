@@ -300,6 +300,9 @@ export class PillEditComponent {
           table_number: this.branchDetails[0]?.table_number,
           transactions: this.invoices[0]?.transactions,
           isFinal: this.isFinal || false,
+          cashier: response.data.cashier,
+          waiter: response.data.waiter,
+          make_type: response.data.make_type
         };
 
       },
@@ -770,6 +773,9 @@ export class PillEditComponent {
               table_number: response.data.order.table_id || null,
               transactions: response.data.transactions || [],
               isFinal: true,
+              cashier: response.data.cashier,
+              waiter: response.data.waiter,
+              make_type: response.data.make_type
             };
 
             // انتظار حتى يتم عرض مكون الإيصال

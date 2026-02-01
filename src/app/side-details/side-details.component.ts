@@ -3533,7 +3533,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       if (this.successModal) {
       
       
-          /* this.printedInvoiceService
+          this.printedInvoiceService
           .printMenu(this.orderedId , body)
           .subscribe({
             next: async (response) => {
@@ -3542,7 +3542,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               if (response.status && response.printers && response.printers.length > 0) {
                 for (const group of response.printers) {
                   if (group.items && group.items.length > 0) {
-                    console.log(`🖨️ [Print Menu] Printing to ${group.ip}:${group.port}...`, group.items);
+                    console.log(`🖨️ [Print Menu] Printing to ${group.ip}:${group.port}...`);
                     try {
                       await this.printInvoiceImage(group.items, response.order, group.ip, group.port);
                     } catch (err) {
@@ -3558,12 +3558,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               console.error('Print menu error:', error);
               location.reload();
             }
-          }); */
-
-          // Use browser print for all orders
-          setTimeout(() => {
-            this.printInvoice();
-          }, 2000);
+          });
 
         await new Promise(resolve => setTimeout(resolve, 2000));
         this.successModal.show();

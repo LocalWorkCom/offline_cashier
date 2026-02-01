@@ -829,7 +829,7 @@ export class OrdersCardComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    this.newOrder.stopListening();
-
+    // Do NOT call stopListening() - the listener is managed globally in app.component.ts
+    // this.newOrder.stopListening();
   }
 }

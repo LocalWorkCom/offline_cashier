@@ -31,18 +31,23 @@
     <div class="order-info-section">
       
       <div class="info-row" *ngIf="data.branchDetails[0]?.invoice_number">
-        <span class="d-label">رقم الفاتورة : </span>
-        <span class="d-value">{{ data.branchDetails[0].invoice_number }}</span>
+        <span class="d-label">رقم الفاتورة : {{ data.branchDetails[0].invoice_number }} </span>
+        <span class="d-value" *ngIf="data.invoices[0]?.order_type === 'dine-in'">طاولة :  {{ getTableNumber() }}</span>
       </div>
 
       <div class="info-row">
         <span class="d-label">  وقت إنشاء الطلب :</span>
         <span class="d-value">{{ data.date }}   {{ data.time }}</span>
       </div>
-   
-      <div class="info-row" *ngIf="data.invoices[0]?.order_type === 'dine-in'">
-        <span class="d-label">طاولة :</span>
-        <span class="d-value">{{ getTableNumber() }}</span>
+
+      <div class="info-row" *ngIf="data.make_type == 'cashier'">
+        <span class="d-label" >   اسم الكاشير :</span>
+        <span class="d-value">{{ data.cashier?.first_name }} {{ data.cashier?.last_name }}</span>
+      </div>
+
+      <div class="info-row" *ngIf="data.make_type == 'waiter'">
+        <span class="d-label" >   اسم الويتر :</span>
+        <span class="d-value">{{ data.waiter?.first_name }} {{ data.waiter?.last_name }}</span>
       </div>
 
       <!-- <div class="info-row">
@@ -58,31 +63,43 @@
     </div>
 
     <!-- DELIVERY SPECIFIC INFO -->
-    <div class="" *ngIf="isDelivery()">   
+    <div class="" >   
       
         <!-- Driver Info -->
-      <div class="summary-row">
+      <div class="summary-row" *ngIf="isDelivery()">
         <span class="d-label">اسم الطيار :</span>
         <span class="d-value">{{ getDriverName() }}</span>
       </div>
-      <div class="summary-row">
+      <div class="summary-row" *ngIf="data.invoices[0]['order_type'] == 'Delivery'">
         <span class="d-label">حالة الطلب  :</span>
         <span class="d-value">{{ getTrackingStatusTranslation(data.invoices[0]['tracking-status']) }}</span>
       </div>
       <hr class="divider"/>
       <div class="summary-row">
-        <span class="d-label">{{ data.branchDetails[0].invoice_number }}</span>
-        <span class="d-value">:Invoice</span>
+        <span class="d-label">Invoice : {{ data.branchDetails[0].invoice_number }} </span>
+        <span class="d-value" *ngIf="data.invoices[0]?.order_type === 'dine-in'"> {{ getTableNumber() }} : Table </span>
+
       </div>
       <div class="summary-row">
         <span class="d-label">{{ data.date }} {{ data.time }} </span>
         <span class="d-value">:Created at </span>
       </div>
-      <div class="summary-row">
+      
+      <div class="info-row" *ngIf="data.make_type == 'cashier'">
+        <span class="d-label" >  {{ data.cashier?.first_name }} {{ data.cashier?.last_name }} </span>
+        <span class="d-value">  : Cashier Name</span>
+      </div>
+
+      <div class="info-row" *ngIf="data.make_type == 'waiter'">
+        <span class="d-label" >  {{ data.waiter?.first_name }} {{ data.waiter?.last_name }} </span>
+        <span class="d-value">  : Waiter Name </span>
+      </div>
+
+      <div class="summary-row" *ngIf="isDelivery()">
         <span class="d-label">{{ getDriverName() }}</span>
         <span class="d-value">:Delivery Agent</span>
       </div>
-      <div class="summary-row">
+      <div class="summary-row" *ngIf="data.invoices[0]['order_type'] == 'Delivery'">
         <span class="d-label">{{getTrackingStatusTranslationEn(data.invoices[0]['tracking-status'])}}</span>
         <span class="d-value">:Order Status</span>
       </div>
@@ -101,10 +118,10 @@
         <span class="d-label">رقم العميل:</span>
         <span class="d-value">{{ getCustomerPhone() }}</span>
       </div>
-      <div class="summary-row">
+      <div class="summary-row" *ngIf="isDelivery()">
         <span class="d-label">عنوان التوصيل:</span>
       </div>
-      <div class="summary-row">
+      <div class="summary-row" *ngIf="isDelivery()">
        {{ getDeliveryAddress() }}
       </div>
 
@@ -128,9 +145,11 @@
           <tr>
             <td class="col-item">
               <div class="item-name">{{ item.dish_name }}</div>
+              <div class="item-name" *ngIf="item.dish_name_en">{{ item.dish_name_en }}</div>
               <div class="item-meta" *ngIf="item.size">{{ item.size }}</div>
               <div class="item-meta" *ngFor="let addon of item.addons">
                 + {{ addon.addon_name }}
+                <div class="item-meta" *ngIf="addon.addon_name_en">({{ addon.addon_name_en }})</div>
               </div>
               <div class="item-meta note" *ngIf="item.note">
                 {{ item.note }}
@@ -158,6 +177,12 @@
         <span class="d-value">{{ summary.subtotal_price_before_coupon }} {{ summary.currency_symbol }}</span>
       </div>
 
+       <div class="summary-row">
+        <span class="d-label">الخدمة({{ summary.service_percentage }}%) </span>
+        <span class="d-value">{{ summary.service_fees }} {{ summary.currency_symbol }}</span>
+      </div>
+
+
       <div class="summary-row" *ngIf="summary.tax_value && summary.tax_value > 0">
         <span class="d-label">ضريبة  ({{ summary.tax_percentage }}%)</span>
         <span class="d-value">{{ summary.tax_value }} {{ summary.currency_symbol }}</span>
@@ -175,7 +200,7 @@
 
       <div class="summary-row grand-total">
         <span class="d-label">الإجمالي</span>
-        <span class="d-value">{{ summary.total_price }} {{ summary.currency_symbol }}</span>
+        <span class="d-value total">{{ summary.total_price }} {{ summary.currency_symbol }}</span>
       </div>
     </div>
 
@@ -186,7 +211,7 @@
         <span class="d-value">{{ (data.invoices[0]?.transactions[0]?.payment_status === "paid") ? "مدفوع" : "غير مدفوع" }}</span>
       </div>
 
-      <div class="summary-row">
+      <div class="summary-row" *ngIf="data.invoices[0]?.transactions[0]?.payment_status === 'paid'">
         <span class="d-label">طريقة الدفع</span>
         <span class="d-value">{{ getPaymentMethod() }}</span>
       </div>
@@ -199,6 +224,6 @@
       <hr class="divider" />
       <h6 class="item-count">عدد المنتجات: {{ data.orderDetails?.length || 0 }}</h6>
     </div>
-
+    <br/>
   </div>
 </div>
