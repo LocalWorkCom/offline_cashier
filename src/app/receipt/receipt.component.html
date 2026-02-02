@@ -76,9 +76,14 @@
           <td class="quantity-col">{{ orderItem.quantity }} x </td>
           <td class="product-col">
             <span class="product-name">{{ orderItem.dish_name }}</span>
-            <span class="product-size" *ngIf="orderItem.size">{{ orderItem.size }}</span>
-            <span class="product-addon" *ngFor="let addon of orderItem.addons">
-              - {{ addon.addon_name }}
+            <!-- Display Size if available -->
+            <span class="product-size" *ngIf="getSize(orderItem)">
+              ({{ getSize(orderItem) }})
+            </span>
+            <!-- Display Add-ons if available -->
+            <span class="product-addon" *ngFor="let addon of getAddons(orderItem)">
+              + {{ addon.addon_name }}
+              <span *ngIf="addon.quantity && addon.quantity > 1"> ({{ addon.quantity }})</span>
             </span>
           </td>
           <td class="price-col">

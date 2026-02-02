@@ -2483,6 +2483,13 @@ export class OrdersComponent implements OnDestroy {
   mergeReason: string = '';
   mergeOrderItems: any[] = [];
 
+  // Change Order Type Properties
+  currentOrderForTypeChange: any = null;
+  selectedNewOrderType: string = '';
+  selectedTableIdForTypeChange: string = '';
+  isChangeTypeSubmitting: boolean = false;
+  changeTypeSuccessMessage: string = '';
+
   // Check if order can be split
   canSplitOrder(order: any): boolean {
     // Must be dine-in, unpaid, and status 'pending' (which is 'packing' in backend)
@@ -3143,6 +3150,119 @@ export class OrdersComponent implements OnDestroy {
       const modalInstance = bootstrap.Modal.getInstance(modalElement);
       modalInstance?.hide();
     }
+  }
+
+  // --- Change Order Type ---
+  openChangeTypeModal(order: any): void {
+    if (order.order_details.payment_status === 'paid') {
+      const warningEl = document.getElementById('changeTypePaidWarningModal');
+      if (warningEl) {
+        const modal = new bootstrap.Modal(warningEl);
+        modal.show();
+      }
+      return;
+    }
+    this.currentOrderForTypeChange = order;
+    const rawType = order.order_details?.order_type || '';
+    this.selectedNewOrderType = rawType === 'reservation-table' ? 'dine-in' : (['Delivery', 'Takeaway', 'dine-in'].includes(rawType) ? rawType : '');
+    this.selectedTableIdForTypeChange = order.order_details?.table_id ? String(order.order_details.table_id) : '';
+    this.fetchAvailableTables();
+    const modalEl = document.getElementById('changeOrderTypeModal');
+    if (modalEl) {
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    }
+  }
+
+  openChangeTypeConfirmModal(): void {
+    const modalEl = document.getElementById('changeOrderTypeModal');
+    if (modalEl) {
+      const inst = bootstrap.Modal.getInstance(modalEl);
+      inst?.hide();
+    }
+    setTimeout(() => {
+      const confirmEl = document.getElementById('confirmChangeOrderTypeModal');
+      if (confirmEl) {
+        const modal = new bootstrap.Modal(confirmEl);
+        modal.show();
+      }
+    }, 300);
+  }
+
+  getOrderTypeLabelForChange(type: string): string {
+    if (!type) return '';
+    const labels: Record<string, string> = {
+      'dine-in': 'داخل المطعم (محلي)',
+      'Takeaway': 'استلام من الفرع',
+      'Delivery': 'توصيل',
+    };
+    return labels[type] || type;
+  }
+
+  getTableNameForTypeChange(): string {
+    if (this.selectedNewOrderType !== 'dine-in' || !this.selectedTableIdForTypeChange) return '';
+    const table = this.availableTables.find(
+      (t: any) => String(t.id) === String(this.selectedTableIdForTypeChange)
+    );
+    return table ? `طاولة ${table.number}` : '';
+  }
+
+  private readonly changeOrderTypeAllowedValues = ['Delivery', 'Takeaway', 'dine-in'] as const;
+
+  submitChangeOrderType(): void {
+    if (!this.currentOrderForTypeChange) return;
+    const newOrderType = (this.selectedNewOrderType && this.changeOrderTypeAllowedValues.includes(this.selectedNewOrderType as any))
+      ? this.selectedNewOrderType
+      : '';
+    if (!newOrderType) return;
+    if (newOrderType === 'dine-in' && !this.selectedTableIdForTypeChange) return;
+
+    this.isChangeTypeSubmitting = true;
+    const token = localStorage.getItem('authToken');
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      lang: 'ar',
+    });
+    const body: Record<string, unknown> = {
+      order_id: this.currentOrderForTypeChange.order_details.order_id,
+      new_order_type: newOrderType,
+    };
+    if (newOrderType === 'dine-in' && this.selectedTableIdForTypeChange) {
+      body['table_id'] = parseInt(this.selectedTableIdForTypeChange, 10);
+    }
+
+    this.http.post(`${baseUrl}api/orders/changeOrderType`, body, { headers }).subscribe({
+      next: (res: any) => {
+        this.isChangeTypeSubmitting = false;
+        const confirmEl = document.getElementById('confirmChangeOrderTypeModal');
+        if (confirmEl) {
+          const inst = bootstrap.Modal.getInstance(confirmEl);
+          inst?.hide();
+        }
+        if (res?.status && res?.message) {
+          this.changeTypeSuccessMessage = res.message;
+          this.successMessage = res.message;
+          if (this.successMessageModal) this.successMessageModal.show();
+          this.refreshOrderAfterCancel(this.currentOrderForTypeChange.order_details.order_id);
+          this.currentOrderForTypeChange = null;
+          this.selectedNewOrderType = '';
+          this.selectedTableIdForTypeChange = '';
+        } else {
+          const errMsg = res?.errorData?.error || res?.message || 'حدث خطأ أثناء تغيير نوع الطلب.';
+          this.showMessageModal(Array.isArray(errMsg) ? errMsg[0] : errMsg, 'error');
+        }
+      },
+      error: (err: any) => {
+        this.isChangeTypeSubmitting = false;
+        const errMsg =
+          err?.error?.errorData?.error ||
+          err?.error?.message ||
+          err?.message ||
+          'حدث خطأ أثناء تغيير نوع الطلب.';
+        this.showMessageModal(Array.isArray(errMsg) ? errMsg[0] : errMsg, 'error');
+      },
+    });
   }
 
   // Refresh order data after cancellation to update calculations
