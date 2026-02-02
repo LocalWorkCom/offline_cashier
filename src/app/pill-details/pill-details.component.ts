@@ -358,6 +358,9 @@ private processPillDetails(data: any): void {
           table_number: this.branchDetails[0]?.table_number,
           transactions: this.invoices[0]?.transactions,
           isFinal: this.isFinal, // change to true if you want to print the final invoice
+          cashier: response.data.cashier,
+          waiter: response.data.waiter,
+          make_type: response.data.make_type
         };
       },
       error: (error: any) => {
@@ -452,19 +455,19 @@ private processPillDetails(data: any): void {
       return;
     }
 
+    // Update isFinal in receiptData if it exists
+    if (this.receiptData) {
+      this.receiptData.isFinal = isFinal;
+    }
+
     try {
+      // Backend API call removed as per request
+      /*
       const response = await this.printedInvoiceService
         .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
         .toPromise();
-/* if(response.status==false){
-  alert(response.message);
-  return;
-}
-   */    console.log('Print invoice response:', response);
-
-
-
-
+      console.log('Print invoice response:', response);
+      */
 
       const printContent = document.getElementById('printSection');
       if (!printContent) {
@@ -474,16 +477,6 @@ private processPillDetails(data: any): void {
 
       const originalHTML = document.body.innerHTML;
 
-      // const copies = this.isDeliveryOrder
-      //   ? [
-      //     { showPrices: true, test: true },
-      //     { showPrices: false, test: false },
-      //     { showPrices: true, test: true },
-      //   ]
-      //   : [
-      //     { showPrices: true, test: true },
-      //     { showPrices: false, test: false },
-      //   ];
       const copies = [
         { showPrices: true, test: true },
       ];
@@ -494,10 +487,10 @@ private processPillDetails(data: any): void {
         await new Promise((resolve) => setTimeout(resolve, 300));
 
         const singlePageHTML = `
-  <div>
-    ${printContent.innerHTML}
-  </div>
-`;
+          <div>
+            ${printContent.innerHTML}
+          </div>
+        `;
 
 
         document.body.innerHTML = singlePageHTML;
