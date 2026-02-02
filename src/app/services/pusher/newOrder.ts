@@ -15,6 +15,7 @@ import html2canvas from 'html2canvas';
 export class NewOrderService {
   orderAdded$ = new Subject<any>();
   private channelName!: string;
+  private isListening = false;
 
   constructor(private pusherService: PusherService , private http: HttpClient , private printedInvoiceService: PrintedInvoiceService,) {}
 
@@ -22,8 +23,12 @@ export class NewOrderService {
     return !!(window && (window as any).deviceAPI);
   }
 
-  listenToNewOrder(a:string='string') {
-    // Use longer delay for Electron to ensure localStorage and Pusher are ready
+  listenToNewOrder(a: string = 'string') {
+    if (this.isListening) {
+      console.log('Already listening to new orders, skipping...');
+      return;
+    }
+
     const delay = this.isElectron() ? 500 : 100;
 
     setTimeout(() => {
@@ -32,72 +37,51 @@ export class NewOrderService {
 
       if (!branchId || !empId) {
         console.error('Missing branch_id or employee_id in localStorage');
-        console.log(`branch_id: ${branchId}, employee_id: ${empId}`);
-        // Retry after a short delay, especially for Electron
         const retryDelay = this.isElectron() ? 1000 : 500;
         setTimeout(() => this.listenToNewOrder(a), retryDelay);
         return;
       }
 
-      console.log('Received new order event:');
-      console.log('Branch ID:', branchId, 'Employee ID:', empId);
-      console.log('Running in Electron:', this.isElectron());
-
+      this.isListening = true;
       this.channelName = `newOrder2-${empId}-branch-${branchId}`;
-      console.log(`Subscribing to channel: ${this.channelName}`);
+      console.log(`[Pusher] Subscribing to: ${this.channelName} (Source: ${a})`);
 
       try {
         this.pusherService.subscribe(this.channelName, 'new-order-added2', (res: any) => {
-          console.log('Received new order event:', res.data);
-          console.log('Received new order_id event:', res.data.order_id);
-          console.log('test where event listen', a);
-          const order_id = res.data.order_id;
+          console.log('[Pusher] Event Received: new-order-added2', res);
+          
+          const orderData = res.data || res;
+          const order_id = orderData.order_id;
+          
+          console.log('[Pusher] New order_id:', order_id);
 
-          this.printedInvoiceService
-          .printMenu(order_id)
-          .subscribe({
+          this.printedInvoiceService.printMenu(order_id).subscribe({
             next: async (response) => {
               if (response.order && response.order.make_type != 'cashier') {
-              console.log('🖨️ [Kitchen Print] Response received:', response);
-
+                console.log('🖨️ [Kitchen Print] Processing printers...', response.printers?.length);
                 if (response.status && response.printers && response.printers.length > 0) {
-                  console.log(`🖨️ Found ${response.printers.length} printers to print to`);
                   for (const group of response.printers) {
                     if (group.items && group.items.length > 0) {
-                      console.log(`🖨️ Printing ${group.items.length} dishes to printer ${group.ip}:${group.port}...`);
                       try {
                         await this.printInvoiceImage(group.items, response.order, group.ip, group.port);
                       } catch (err) {
-                        console.log(`❌ Error printing to ${group.ip}: ${err}`, 'error');
+                        console.error(`❌ Printer error (${group.ip}):`, err);
                       }
-                      // Small delay between different printers
                       await new Promise(resolve => setTimeout(resolve, 500));
-                    } else {
-                      console.log(`⚠️ Printer ${group.ip} has no items to print`, 'warn');
                     }
                   }
-                } else {
-                  console.log(`⚠️ No printers found in response context: ${JSON.stringify({
-                    status: response.status,
-                    printersCount: response.printers?.length
-                  })}`, 'warn');
                 }
-              } else {
-                console.log('⏭️ Skipping print logic because make_type is cashier or order is missing');
               }
-              
             },
-            error: (error) => {
-              console.log(`❌ Print menu API error: ${JSON.stringify(error)}`, 'error');
-            }
+            error: (error) => console.error('❌ Print menu API error:', error)
           });
 
-          this.orderAdded$.next(res.data);
+          this.orderAdded$.next(orderData);
         });
-        console.log('Successfully subscribed to channel:', this.channelName);
+        console.log('[Pusher] Successfully bound to new-order-added2');
       } catch (error) {
-        console.error('Error subscribing to Pusher channel:', error);
-        // Retry subscription after a delay, longer for Electron
+        console.error('[Pusher] Subscription failed:', error);
+        this.isListening = false;
         const retryDelay = this.isElectron() ? 2000 : 1000;
         setTimeout(() => this.listenToNewOrder(a), retryDelay);
       }
@@ -120,8 +104,10 @@ export class NewOrderService {
 
   stopListening() {
     if (this.channelName) {
+      console.log(`[Pusher] Stopping listening to: ${this.channelName}`);
       this.pusherService.unsubscribe(this.channelName);
-      this.orderAdded$.complete();
+      this.isListening = false;
+      // Do NOT call orderAdded$.complete() if you want to reuse the service
     }
   }
 
@@ -331,7 +317,7 @@ export class NewOrderService {
 
     // Get order information
     const orderNumber = order?.order_number || 'N/A';
-    const tableNumber =  order?.table_id !== null ? order?.table?.table_number : 'N/A';
+    const tableNumber = order?.table?.table_number || order?.table_id || 'N/A';
     const orderType = order?.type || 'N/A';
     const orderStatus = order?.status || 'N/A';
     const orderCreatedAt = order?.date && order?.time ? `${order.date}   ${order.time}` : 'N/A';
@@ -575,6 +561,7 @@ html += `</div>
             <tbody>`;
 
 let itemNumber = 1;
+console.log('🔍 [DEBUG] items:', items);
 items.forEach((item: any) => {
     const name = escapeHtml(item.name || '-');
     const name_en = escapeHtml(item.name_en || '-');

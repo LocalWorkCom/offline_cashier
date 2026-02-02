@@ -3518,6 +3518,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const cartItemsForPrint = JSON.parse(JSON.stringify(this.cartItems));
       console.log(cartItemsForPrint, 'cartItemsForPrint');
 
+      // get current order data
+      const body = this.currentOrderData 
+        ? { cartItemsForPrint, flag: 'add' } 
+        : [];
+
       this.clearCart();
       this.resetLocalStorage();
       this.resetAddress();
@@ -3526,9 +3531,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.successMessage = 'تم تنفيذ طلبك بنجاح';
 
       if (this.successModal) {
-
-        this.printedInvoiceService
-          .printMenu(this.orderedId)
+      
+      
+          this.printedInvoiceService
+          .printMenu(this.orderedId , body)
           .subscribe({
             next: async (response) => {
               console.log('🖨️ [Print Menu] Response received:', response);
@@ -3536,7 +3542,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               if (response.status && response.printers && response.printers.length > 0) {
                 for (const group of response.printers) {
                   if (group.items && group.items.length > 0) {
-                    console.log(`🖨️ [Print Menu] Printing to ${group.ip}:${group.port}...`);
+                    console.log(`🖨️ [Print Menu] Printing to ${group.ip}:${group.port}...`, group.items);
                     try {
                       await this.printInvoiceImage(group.items, response.order, group.ip, group.port);
                     } catch (err) {

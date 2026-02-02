@@ -39,7 +39,7 @@ export class PillDetailsComponent implements OnInit {
   // @ViewChild('deliveredButton', { static: false }) deliveredButton!: ElementRef;
   currencySymbol = localStorage.getItem('currency_symbol');
   note = localStorage.getItem('additionalNote');
-  invoices: any;
+  invoices: any[] = [];
   pillDetails: any;
   receiptData: any;
   branchDetails: any;
@@ -62,7 +62,7 @@ export class PillDetailsComponent implements OnInit {
   showPrices = false;
   test: boolean | undefined;
   paymentMethod: any;
-  loading: boolean = true;
+  loading: boolean = false;
   isPrinting = false;
 
   constructor(
@@ -186,7 +186,7 @@ private processPillDetails(data: any): void {
     };
 
     const trackingKey = this.invoices[0]?.['tracking-status'];
-    if (trackingKey === 'completed') {
+    if (this.invoices[0] && trackingKey === 'completed') {
       this.isShow = false;
     }
     this.trackingStatus = statusMap[trackingKey] || trackingKey;
@@ -269,10 +269,13 @@ private processPillDetails(data: any): void {
       })
     ).subscribe({
       next: (response: any) => {
-        this.order_id = response.data.order_id
-        this.invoices = response.data.invoices;
-        console.log(response, 'response gggg');
-
+        this.order_id = response.data.order_id;
+        this.invoices = response.data.invoices || [];
+        
+        if (this.invoices.length === 0) {
+          console.warn('No invoices found in response');
+          return;
+        }
 
         const statusMap: { [key: string]: string } = {
           completed: 'مكتمل',
@@ -285,17 +288,18 @@ private processPillDetails(data: any): void {
           delivered: 'تم التوصيل',
         };
 
-        const trackingKey = this.invoices[0]?.['tracking-status'];
+        const firstInvoice = this.invoices[0];
+        const trackingKey = firstInvoice?.['tracking-status'];
         if (trackingKey === 'completed') {
           this.isShow = false;
         }
         this.trackingStatus = statusMap[trackingKey] || trackingKey;
         this.orderNumber = response.data.order_id;
-        this.couponType = this.invoices[0].invoice_summary.coupon_type;
+        this.couponType = firstInvoice?.invoice_summary?.coupon_type;
 
-        this.addresDetails = this.invoices[0]?.address_details || {};
-        this.paymentMethod = this.invoices[0]?.transactions[0]?.['payment_method'];
-        this.paymentStatus = this.invoices[0]?.transactions[0]?.['payment_status'];
+        this.addresDetails = firstInvoice?.address_details || {};
+        this.paymentMethod = firstInvoice?.transactions?.[0]?.['payment_method'];
+        this.paymentStatus = firstInvoice?.transactions?.[0]?.['payment_status'];
         //  if (this.trackingStatus === 'completed' ) {
         //   this.deliveredButton?.nativeElement.click();
         //   }
