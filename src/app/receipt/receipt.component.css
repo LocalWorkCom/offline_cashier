@@ -2,12 +2,11 @@
 .printSection {
   max-width: 80mm;
   width: 100%;
-  margin: 0 auto;
+  margin: 0;
   padding: 0;
   font-family: 'Arial', 'Courier New', monospace;
-  font-weight: bold;
-  font-size: 14px;
-  line-height: 1.5;
+  font-size: 11px;
+  line-height: 1.4;
   color: #000;
   background: #fff;
 }
@@ -19,11 +18,11 @@
 /* Header Section */
 .header-section {
   text-align: center;
-  margin-bottom: 8px;
+  margin-bottom: 3px;
 }
 
 .logo-container {
-  margin-bottom: 8px;
+  margin-bottom: 3px;
 }
 
 .logo-img {
@@ -34,27 +33,21 @@
 }
 
 .branch-info {
-  margin-bottom: 6px;
+  margin-bottom: 3px;
 }
 
 .branch-name {
-  font-size: 14px;
-  font-weight: bold;
   margin: 2px 0;
   text-align: center;
 }
 
 .branch-address {
-  font-size: 11px;
-  font-weight: bold;
   margin: 0px;
   text-align: center;
   line-height: 1.4;
 }
 
-.branch-phone {
-  font-size: 11px;
-  font-weight: bold;
+.branch-phone {  
   margin: 0px;
   text-align: center;
 }
@@ -65,33 +58,27 @@
 
 .invoice-label p {
   font-size: 13px;
-  font-weight: bold;
   text-align: center;
   margin: 0;
 }
 
 .order-number-box {
   border: 2px solid #000;
-  padding: 2px;
+  padding: 7px;
   margin: 8px auto;
   display: inline-block;
   min-width: 20mm;
 }
 
 .order-number-box h3 {
-  font-size: 16px;
-  font-weight: bold;
+  font-size: 16px;  
   margin: 0;
   text-align: center;
 }
 
 /* Order Info Section */
 .order-info-section {
-  margin: 8px 0;
-  font-size: 11px;
-  font-weight: bold;
   text-align: right;
-  border-bottom: 1px solid #000;
 }
 
 .info-row {
@@ -103,22 +90,16 @@
 }
 
 .info-label {
-  text-align: left;
-  font-weight: bold;
   flex: 1;
 }
 
 .info-value {
   text-align: right;
-  font-weight: bold;
   flex: 1;
-  font-size: 10px;
 }
 
 .order-type-row {
   margin: 0px;
-  font-size: 11px;
-  font-weight: bold;
   text-align: right;
 }
 
@@ -126,7 +107,7 @@
 .divider {
   margin: 8px 0;
   border: 0;
-  border-top: 1px solid #000;
+  border-top: 3px solid #000;
   height: 0;
 }
 
@@ -135,19 +116,11 @@
   width: 100%;
   border-collapse: collapse;
   margin: 8px 0;
-  font-size: 11px;
-  font-weight: bold;
 }
 
-.products-table thead {
-  border-bottom: 1px solid #000;
-}
-
-.products-table th {
-  font-weight: bold;
+.products-table th {  
   padding: 4px 2px;
   text-align: right;
-  font-size: 11px;
 }
 
 .product-col {
@@ -170,44 +143,32 @@
 .products-table td {
   padding: 6px 2px;
   vertical-align: top;
+  border: 0px;
 }
 
-.products-table tbody tr {
-  min-height: 30px;
+.products-table  td .d-label {
+    text-align: right;
 }
-
 .product-name {
   display: block;
-  font-weight: bold;
   margin-bottom: 2px;
   line-height: 1.4;
 }
 
+
 .product-size {
-  display: inline-block;
-  font-weight: bold;
-  font-size: 10px;
-  margin-right: 4px;
-  color: #333;
+  display: block;
+  margin-bottom: 2px;
 }
 
 .product-addon {
   display: block;
-  font-weight: bold;
-  font-size: 9px;
-  margin-top: 1px;
-  margin-right: 8px;
-  margin-left: 4px;
-  color: #555;
-  line-height: 1.4;
-  text-indent: 0;
+  margin-bottom: 1px;
 }
 
 /* Summary Section */
 .summary-section {
   margin: 8px 0;
-  font-size: 12px;
-  font-weight: bold;
 }
 
 .summary-table {
@@ -235,25 +196,16 @@
 
 .summary-label {
   text-align: left;
-  font-weight: bold;
   flex: 1;
 }
 
 .summary-value {
   text-align: right;
-  font-weight: bold;
   flex: 1;
 }
 
-.total-row {
-  font-size: 14px;
-  font-weight: bold;
+.total-row {  
   margin: 6px 0;
-}
-
-.payment-row {
-  font-size: 12px;
-  font-weight: bold;
 }
 
 /* Footer Section */
@@ -266,19 +218,15 @@
   margin-bottom: 8px;
 }
 
-.products-count p {
-  font-size: 11px;
-  font-weight: bold;
+.products-count p {  
   margin: 0;
 }
 
 .thank-you {
-  margin-top: 8px;
+  margin-top: 2px;
 }
 
 .thank-you p {
-  font-size: 12px;
-  font-weight: bold;
   margin: 0;
 }
 
@@ -287,22 +235,97 @@
   font-weight: bold !important;
 }
 
+.d-label { 
+  text-align: right;
+  flex: 1;
+}
+
+.d-value {
+  text-align: left;
+ }
+
+.tr-first {
+    text-align: center;
+}
+
 /* Print specific styles */
 @media print {
+  @page {
+    margin: 0 !important;
+    size: auto;
+  }
+  
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
   .printSection {
-    max-width: 80mm;
-    width: 100%;
-    margin: 0;
-    padding: 0;
+    max-width: 74mm !important; /* Slightly narrower to avoid hardware margin clipping */
+    width: 74mm !important;
+    margin: 0 auto !important; /* Center the receipt on the paper */
+    padding: 0 !important;
+    background: #fff;
+    display: block !important;
   }
 
   .receipt-content {
-    padding: 5mm 3mm;
+    padding: 0mm 2mm !important; /* Add small horizontal padding to prevent cutting */
+    margin-top: 0 !important;
   }
 
+  .header-section {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+  
+  .logo-container {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  .logo-img {
+    max-width: 40mm !important; /* Slightly smaller logo to fit better */
+  }
+  
   .printSection * {
     font-weight: bold !important;
-    -webkit-print-color-adjust: exact;
+    -webkit-print-color-adjust: exact; 
     print-color-adjust: exact;
+    font-size: 11px !important;
+  }
+
+  .divider-row td {
+    padding: 0;
+    border: none;
+  }
+  
+  .tr-first {
+    text-align: center;
+  }
+
+  .divider {
+    margin: 5px 0 !important;
+    border: none !important;
+    background-color: black !important;
+    color: black !important;
+    height: 2px !important;
+    width: 100% !important;
+    display: block !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  
+  hr.divider {
+    border: none !important;
+    background: black !important;
+    height: 2px !important;
+  }
+  .total {
+    font-size: 16px !important;
   }
 }

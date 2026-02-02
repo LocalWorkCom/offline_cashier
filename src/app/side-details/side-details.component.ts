@@ -3484,9 +3484,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         //   });
         // Print invoice AFTER starting kitchen print (delay enough to let kitchen print complete before reload)
         // Kitchen print takes ~2-3 seconds, so delay invoice print by 4 seconds to ensure completion
-        setTimeout(() => {
-          this.printInvoice();
-        }, 8000);
+        // setTimeout(() => {
+        //   this.printInvoice();
+        // }, 8000);
 
 
 
@@ -3542,7 +3542,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
               if (response.status && response.printers && response.printers.length > 0) {
                 for (const group of response.printers) {
                   if (group.items && group.items.length > 0) {
-                    console.log(`🖨️ [Print Menu] Printing to ${group.ip}:${group.port}...`, group.items);
+                    console.log(`🖨️ [Print Menu] Printing to ${group.ip}:${group.port}...`);
                     try {
                       await this.printInvoiceImage(group.items, response.order, group.ip, group.port);
                     } catch (err) {
@@ -3952,14 +3952,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                 this.selectedPaymentMethod
               )
               .toPromise(); */
-      // const test = await this.printedInvoiceService
-      //   .printInvoice(
-      //     this.orderedId,
-      //     this.cashier_machine_id,
-      //     this.selectedPaymentMethod
-      //   )
-      //   .toPromise();
-      // console.log(test, 'test');
+
+      // Fetch fresh data from API as requested
+      if (this.pillId) {
+        await this.fetchPillsDetails(String(this.pillId));
+      }
+
       // Update receipt data before printing
       this.receiptData = this.receiptDataResponse;
 

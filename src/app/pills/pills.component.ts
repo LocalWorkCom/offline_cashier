@@ -56,8 +56,9 @@ export class PillsComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-    this.newOrder.stopListening();
-    this.newInvoice.stopListening();
+    // Do NOT call stopListening() - the listener is managed globally in app.component.ts
+    // this.newOrder.stopListening();
+    // this.newInvoice.stopListening();
   }
 
   // ngOnInit() {

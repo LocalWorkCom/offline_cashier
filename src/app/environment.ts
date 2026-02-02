@@ -4,12 +4,21 @@
  export const baseUrl ='http://127.0.0.1:8000/'
   export const baseUrl2 ='https://erpsystem.testdomain100.online/api'
 
+//test
+// export const environment = {
+//   production: false,
+//   pusher: {
+//     key: 'cfd52a74b92f9e278f2d',
+//     cluster: 'mt1',
+//   }
+// };
 
+//localhost
 export const environment = {
   production: false,
   pusher: {
-    key: 'cfd52a74b92f9e278f2d',
-    cluster: 'mt1',
+    key: '45700f4c3cc882528180',
+    cluster: 'eu',
   }
 };
 
