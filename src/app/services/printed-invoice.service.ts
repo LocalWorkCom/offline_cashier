@@ -56,15 +56,19 @@ export class PrintedInvoiceService {
 
     return this.http.post(`${this.apiUrl2}/print-waiter`, body, { headers });
   }
-  
-  printMenu(order_id: number): Observable<any> {
+
+  printMenu(order_id: number , data?:any): Observable<any> {
     const token = localStorage.getItem('authToken');
     console.log(`[PrintedInvoiceService] Requesting print menu for order_id: ${order_id} (Token present: ${!!token})`);
     const headers = new HttpHeaders({
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     });
+    // const body = {
+    //   order_id:order_id
+    // };
 
-    return this.http.get(`${this.apiUrl}/print-menu/${order_id}`, { headers });
+    console.log("data",data);
+    return this.http.post(`${this.apiUrl}/print-menu/${order_id}`, data, { headers });
   }
 }

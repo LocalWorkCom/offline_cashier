@@ -1773,134 +1773,152 @@ export class OrdersComponent implements OnDestroy {
 
     console.log('Sending:', body, selectedItems, order);
 
-    this.http
-      .post(`${baseUrl}api/orders/cashier/request-cancel`, body)
-      .subscribe({
-        next: (res: any) => {
-          this.isSubmitting = false; // ✅ رجّع الزرار بعد الرد
+    // Save to IndexedDB first to match removeDish logic
+    this.dbService.saveOrderToPrintkitchen(order.order_details.order_id, "cancel").then(() => {
+      console.log('order cancelled and saved to printkitchen indexeddb', order.order_details.order_id);
 
-          this.cancelSuccessMessage = 'تم إرسال طلب المرتجع بنجاح';
-          this.cancelErrorMessage = '';
-          setTimeout(() => {
-            this.cancelSuccessMessage = '';
-          }, 2000);
+      this.http
+        .post(`${baseUrl}api/orders/cashier/request-cancel`, body)
+        .subscribe({
+          next: (res: any) => {
+            this.isSubmitting = false; // ✅ رجّع الزرار بعد الرد
 
-          if (!res?.status) {
-            let errorText = 'حدث خطأ أثناء الإرسال';
-            const reasonErrors = res?.errorData?.reason;
+            this.cancelSuccessMessage = 'تم إرسال طلب المرتجع بنجاح';
+            this.cancelErrorMessage = '';
+            setTimeout(() => {
+              this.cancelSuccessMessage = '';
+            }, 2000);
+
+            if (!res?.status) {
+              let errorText = 'حدث خطأ أثناء الإرسال';
+              const reasonErrors = res?.errorData?.reason;
+              if (Array.isArray(reasonErrors) && reasonErrors.length > 0) {
+                errorText = reasonErrors[0];
+              }
+              const statusErrors = res?.errorData?.status;
+              if (Array.isArray(statusErrors) && statusErrors.length > 0) {
+                errorText = statusErrors[0];
+              }
+              const Err = res?.errorData?.error;
+              if (Array.isArray(Err) && Err.length > 0) {
+                errorText = Err[0];
+              }
+              const errorString = res?.errorData?.error;
+              if (typeof errorString === 'string' && errorString.trim() !== '') {
+                errorText = errorString;
+              }
+              console.log(res);
+              this.cancelErrorMessage = errorText;
+              this.cancelSuccessMessage = '';
+
+              setTimeout(() => {
+                this.cancelErrorMessage = '';
+              }, 2000);
+            }
+
+            if (res?.status === true) {
+              this.cancelSuccessMessage = 'تم إرسال طلب المرتجع بنجاح';
+              this.cancelErrorMessage = '';
+              this.cancelReason = '';
+              this.cancelReasonTouched = false;
+              const modal_id = `modal-${order.order_details.order_id}`;
+              const currentModal = document.getElementById(modal_id);
+              console.log(currentModal);
+
+              if (currentModal) {
+                const modalInstance = bootstrap.Modal.getInstance(currentModal);
+                modalInstance?.hide();
+
+                currentModal.addEventListener(
+                  'hidden.bs.modal',
+                  () => {
+                    order.order_items.forEach((item: any) => {
+                      item.isChecked = false;
+                      item.selectedQuantity = item.quantity;
+                    });
+                    this.cancelReason = '';
+                    this.cancelReasonTouched = false;
+                  },
+                  { once: true }
+                );
+              }
+
+              const modalId = `modal-${order.order_details.order_id}`;
+              const currentModalEl = document.getElementById(modalId);
+              if (currentModalEl) {
+                const modalInstance = bootstrap.Modal.getInstance(currentModalEl);
+                modalInstance?.hide();
+              }
+
+              setTimeout(() => {
+                const successModalEl =
+                  document.getElementById('successSmallModal');
+                if (successModalEl) {
+                  const successModal = new bootstrap.Modal(successModalEl, {
+                    backdrop: 'static',
+                  });
+                  successModal.show();
+
+                  setTimeout(() => {
+                    successModal.hide();
+                    document
+                      .querySelectorAll('.modal-backdrop')
+                      .forEach((el) => el.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                  }, 1000);
+                }
+              }, 300);
+
+              // ✅ Refresh order data to get updated calculations (coupon, tax, total)
+              this.refreshOrderAfterCancel(order.order_details.order_id);
+
+              // NEW: Print Cancel Request to Kitchen
+              this.dbService.getOrderFromPrintkitchenById(order.order_details.order_id).then((orderMetadata: any) => {
+                if (orderMetadata) {
+                  this.processKitchenPrint(order.order_details.order_id, body.items, 'cancel');
+                }
+              }).catch((err) => {
+                console.error('error getting order from printkitchen indexeddb', err);
+              });
+
+            }
+          },
+
+          error: (err) => {
+            this.isSubmitting = false; // ✅ رجّع الزرار بعد الفشل
+            console.error('Error:', err);
+
+            let errorText;
+            const reasonErrors = err?.error?.errorData?.error?.reason;
             if (Array.isArray(reasonErrors) && reasonErrors.length > 0) {
               errorText = reasonErrors[0];
             }
-            const statusErrors = res?.errorData?.status;
+
+            const statusErrors = err?.error?.errorData?.error?.status;
             if (Array.isArray(statusErrors) && statusErrors.length > 0) {
               errorText = statusErrors[0];
             }
-            const Err = res?.errorData?.error;
+            const Err = err?.error?.errorData?.error?.error;
             if (Array.isArray(Err) && Err.length > 0) {
               errorText = Err[0];
             }
-            const errorString = res?.errorData?.error;
+            const errorString = err?.error?.errorData?.error;
             if (typeof errorString === 'string' && errorString.trim() !== '') {
               errorText = errorString;
             }
-            console.log(res);
             this.cancelErrorMessage = errorText;
             this.cancelSuccessMessage = '';
 
             setTimeout(() => {
               this.cancelErrorMessage = '';
-            }, 2000);
-          }
-
-          if (res?.status === true) {
-            this.cancelSuccessMessage = 'تم إرسال طلب المرتجع بنجاح';
-            this.cancelErrorMessage = '';
-            this.cancelReason = '';
-            this.cancelReasonTouched = false;
-            const modal_id = `modal-${order.order_details.order_id}`;
-            const currentModal = document.getElementById(modal_id);
-            console.log(currentModal);
-
-            if (currentModal) {
-              const modalInstance = bootstrap.Modal.getInstance(currentModal);
-              modalInstance?.hide();
-
-              currentModal.addEventListener(
-                'hidden.bs.modal',
-                () => {
-                  order.order_items.forEach((item: any) => {
-                    item.isChecked = false;
-                    item.selectedQuantity = item.quantity;
-                  });
-                  this.cancelReason = '';
-                  this.cancelReasonTouched = false;
-                },
-                { once: true }
-              );
-            }
-
-            const modalId = `modal-${order.order_details.order_id}`;
-            const currentModalEl = document.getElementById(modalId);
-            if (currentModalEl) {
-              const modalInstance = bootstrap.Modal.getInstance(currentModalEl);
-              modalInstance?.hide();
-            }
-
-            setTimeout(() => {
-              const successModalEl =
-                document.getElementById('successSmallModal');
-              if (successModalEl) {
-                const successModal = new bootstrap.Modal(successModalEl, {
-                  backdrop: 'static',
-                });
-                successModal.show();
-
-                setTimeout(() => {
-                  successModal.hide();
-                  document
-                    .querySelectorAll('.modal-backdrop')
-                    .forEach((el) => el.remove());
-                  document.body.classList.remove('modal-open');
-                  document.body.style.overflow = '';
-                }, 1000);
-              }
-            }, 300);
-
-            // ✅ Refresh order data to get updated calculations (coupon, tax, total)
-            this.refreshOrderAfterCancel(order.order_details.order_id);
-          }
-        },
-
-        error: (err) => {
-          this.isSubmitting = false; // ✅ رجّع الزرار بعد الفشل
-          console.error('Error:', err);
-
-          let errorText;
-          const reasonErrors = err?.error?.errorData?.error?.reason;
-          if (Array.isArray(reasonErrors) && reasonErrors.length > 0) {
-            errorText = reasonErrors[0];
-          }
-
-          const statusErrors = err?.error?.errorData?.error?.status;
-          if (Array.isArray(statusErrors) && statusErrors.length > 0) {
-            errorText = statusErrors[0];
-          }
-          const Err = err?.error?.errorData?.error?.error;
-          if (Array.isArray(Err) && Err.length > 0) {
-            errorText = Err[0];
-          }
-          const errorString = err?.error?.errorData?.error;
-          if (typeof errorString === 'string' && errorString.trim() !== '') {
-            errorText = errorString;
-          }
-          this.cancelErrorMessage = errorText;
-          this.cancelSuccessMessage = '';
-
-          setTimeout(() => {
-            this.cancelErrorMessage = '';
-          }, 4000);
-        },
-      });
+            }, 4000);
+          },
+        });
+    }).catch((err) => {
+      console.error('error saving to printkitchen indexeddb', err);
+      this.isSubmitting = false; // reset flag if save failed
+    });
   }
 
   status_order: any;
@@ -1968,6 +1986,8 @@ export class OrdersComponent implements OnDestroy {
   openEditModal(item: any, orderId: any) {
     const hasExtraData = item.size || item.dish_addons[0];
 
+    // console.log('item', item);
+
     const modalSize = hasExtraData ? 'lg' : 'md';
 
     const editModal = this.NgbModal.open(EditOrderModalComponent, {
@@ -1987,107 +2007,50 @@ export class OrdersComponent implements OnDestroy {
 
     editModal.result.then(
       (result) => {
+        console.log('🔍 [DEBUG] Modal result received:', result);
         if (result) {
+          console.log('🔍 [DEBUG] Result is truthy, proceeding...');
           this.successMessage = 'تم تحديث الطلب بنجاح';
           this.successMessageModal.show();
 
-          // get order from printkitchen indexeddb
+          // get order from printkitchen indexeddb (This contains the OLD state)
+          console.log('🔍 [DEBUG] Fetching order from IndexedDB, orderId:', orderId);
           this.dbService.getOrderFromPrintkitchenById(orderId).then((orderMetadata: any) => {
-            console.log('order from printkitchen indexeddb', orderMetadata);
-            // Check if order exists before making the request
+            console.log('🔍 [DEBUG] Order from printkitchen indexeddb:', orderMetadata);
             if (!orderMetadata || !orderMetadata.order_data) {
-              console.error('Order not found in printkitchen indexeddb or order_data is missing');
+              console.error('❌ [DEBUG] Order not found in printkitchen indexeddb or order_data is missing');
               return;
             }
 
-            // Extract the actual order data from the metadata object
-            const order = orderMetadata;
+            // Filter to get ONLY the item that was edited
+            const editedItemOldState = orderMetadata.order_data.order_items.find(
+              (i: any) => i.order_detail_id === item.order_detail_id
+            );
 
-            // send to api to update the order with auth token
-            const token = localStorage.getItem('authToken');
-            if (!token) {
-              console.error('Auth token not found');
-              return;
+            if (!editedItemOldState) {
+               console.error('❌ [DEBUG] Original item not found in old order state');
+               return;
             }
-            const headers = new HttpHeaders({
-              Authorization: `Bearer ${token}`
-            });
 
-            console.log('Sending request to print-editor-cancel API...');
-            this.http.post(`${baseUrl}api/print-editor-cancel`, {order: order}, { headers: { Authorization: `Bearer ${token}` } }).subscribe({
-                   // print
-                next: async (response: any) => {
-                  console.log('order updated successfully', response );
-                  console.log('🖨️ [Kitchen Print] Response received:', response);
+            const oldItems = [{
+              item_id: editedItemOldState.order_detail_id,
+              quantity: editedItemOldState.quantity,
+              size: editedItemOldState.size,
+              dish_addons: editedItemOldState.dish_addons 
+            }];
 
-                  if(response.status && response.allDish && response.allDish.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
-                    try {
-                        await this.newOrder.printInvoiceImage(response.allDish ,response.order, response.Ipall, response.portall ,response.type);
-                      console.log('✅ [Kitchen Print] All dishes printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing all dishes:', err);
-                    }
-                  }
-
-
-                  await new Promise(resolve => setTimeout(resolve, 500));
-
-                  // Print drinks first
-                  if(response.status && response.drinks && response.drinks.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
-                    try {
-                      await this.newOrder.printInvoiceImage(response.drinks ,response.order, response.IPdrinks, response.portdrinks ,response.type);
-                      console.log('✅ [Kitchen Print] Drinks printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing drinks:', err);
-                    }
-                  }
-
-                  // Wait a bit before printing fish to the same printer
-                  await new Promise(resolve => setTimeout(resolve, 500));
-
-                  // Print fish
-                  if(response.status && response.fish && response.fish.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
-                    try {
-                      await this.newOrder.printInvoiceImage(response.fish ,response.order, response.IPfish , response.portfish ,response.type);
-                      console.log('✅ [Kitchen Print] Fish printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing fish:', err);
-                    }
-                  }
-
-
-                  // Print grills to different printer (can run in parallel)
-                  if(response.status && response.grills && response.grills.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
-                    this.newOrder.printInvoiceImage(response.grills ,response.order, response.IPgrills , response.portgrills ,response.type).catch((err: any) => {
-                      console.error('❌ [Kitchen Print] Error printing grills:', err);
-                    });
-                  }
-
-                  // await new Promise(resolve => setTimeout(resolve, 60000));
-
-
-
-                this.dbService.deleteOrderFromPrintkitchenById(orderId).then(() => {
-                  console.log('order deleted from printkitchen indexeddb', orderId);
-                }).catch((err) => {
-                  console.error('error deleting order from printkitchen indexeddb', err);
-                });
-                // print
-              },
-              error: (err) => {
-                console.error('error updating order', err);
-              }
-            });
+            this.processKitchenPrint(orderId, oldItems, 'edit');
           }).catch((err) => {
             console.error('error getting order from printkitchen indexeddb', err);
           });
 
           setTimeout(() => {
-            this.successMessageModal.dismiss();
+            // Safe dismiss - only call if method exists
+            if (this.successMessageModal && typeof this.successMessageModal.dismiss === 'function') {
+              this.successMessageModal.dismiss();
+            } else if (this.successMessageModal && typeof this.successMessageModal.hide === 'function') {
+              this.successMessageModal.hide();
+            }
             document
               .querySelectorAll('.modal-backdrop')
               .forEach((el) => el.remove());
@@ -2109,6 +2072,12 @@ export class OrdersComponent implements OnDestroy {
     this.removeLoading = true;
     const url = `${this.apiUrl}api/orders/cashier/request-cancel`;
     console.log(orderDetailId, order, 'id to delete');
+
+    // Safety check for order object
+    if (!order || !order.order_details) {
+      console.error('❌ Cannot cancel: Invalid order object', order);
+      return;
+    }
 
     // print cancel order to printkitchen indexeddb
     this.dbService.saveOrderToPrintkitchen(order.order_details.order_id, "cancel").then(() => {
@@ -2137,6 +2106,7 @@ export class OrdersComponent implements OnDestroy {
       ],
       type: 'partial',
       reason: 'cashier reason',
+      flag: 'cancel',
     };
 
     // 3️⃣ Call API
@@ -2176,95 +2146,9 @@ export class OrdersComponent implements OnDestroy {
 
              // get order from printkitchen indexeddb
           this.dbService.getOrderFromPrintkitchenById(order.order_details.order_id).then((orderMetadata: any) => {
-            console.log('order from printkitchen indexeddb', orderMetadata);
-            // Check if order exists before making the request
-            if (!orderMetadata || !orderMetadata.order_data) {
-              console.error('Order not found in printkitchen indexeddb or order_data is missing');
-              return;
+            if (orderMetadata) {
+              this.processKitchenPrint(order.order_details.order_id, body.items, 'cancel');
             }
-
-            // Extract the actual order data from the metadata object
-            const order = orderMetadata;
-
-            // send to api to update the order with auth token
-            const token = localStorage.getItem('authToken');
-            if (!token) {
-              console.error('Auth token not found');
-              return;
-            }
-            const headers = new HttpHeaders({
-              Authorization: `Bearer ${token}`
-            });
-
-            console.log('Sending request to print-editor-cancel API...');
-            this.http.post(`${baseUrl}api/print-editor-cancel`, {order: order}, { headers: { Authorization: `Bearer ${token}` } }).subscribe({
-                   // print
-                next: async (response: any) => {
-                  console.log('order updated successfully', response );
-                  console.log('🖨️ [Kitchen Print] Response received:', response);
-
-                  if(response.status && response.allDish && response.allDish.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for all dishes...');
-                    try {
-                        await this.newOrder.printInvoiceImage(response.allDish ,response.order, response.Ipall, response.portall ,response.type);
-                      console.log('✅ [Kitchen Print] All dishes printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing all dishes:', err);
-                    }
-                  }
-
-
-                  await new Promise(resolve => setTimeout(resolve, 500));
-
-                  // Print drinks first
-                  if(response.status && response.drinks && response.drinks.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for drinks...');
-                    try {
-                      await this.newOrder.printInvoiceImage(response.drinks ,response.order, response.IPdrinks, response.portdrinks ,response.type);
-                      console.log('✅ [Kitchen Print] Drinks printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing drinks:', err);
-                    }
-                  }
-
-                  // Wait a bit before printing fish to the same printer
-                  await new Promise(resolve => setTimeout(resolve, 500));
-
-                  // Print fish
-                  if(response.status && response.fish && response.fish.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for fish...');
-                    try {
-                      await this.newOrder.printInvoiceImage(response.fish ,response.order, response.IPfish , response.portfish ,response.type);
-                      console.log('✅ [Kitchen Print] Fish printed successfully');
-                    } catch (err) {
-                      console.error('❌ [Kitchen Print] Error printing fish:', err);
-                    }
-                  }
-
-
-                  // Print grills to different printer (can run in parallel)
-                  if(response.status && response.grills && response.grills.length > 0){
-                    console.log('🖨️ [Kitchen Print] Calling printInvoiceImage for grills...');
-                    this.newOrder.printInvoiceImage(response.grills ,response.order, response.IPgrills , response.portgrills ,response.type).catch((err: any) => {
-                      console.error('❌ [Kitchen Print] Error printing grills:', err);
-                    });
-                  }
-
-                  // await new Promise(resolve => setTimeout(resolve, 60000));
-
-
-
-                this.dbService.deleteOrderFromPrintkitchenById(order.order_details.order_id).then(() => {
-                  console.log('order deleted from printkitchen indexeddb', order.order_details.order_id);
-                }).catch((err) => {
-                  console.error('error deleting order from printkitchen indexeddb', err);
-                });
-                // print
-              },
-              error: (err) => {
-                console.error('error updating order', err);
-              }
-            });
           }).catch((err) => {
             console.error('error getting order from printkitchen indexeddb', err);
           });
@@ -2305,6 +2189,54 @@ export class OrdersComponent implements OnDestroy {
         },
       });
   }
+
+  processKitchenPrint(orderId: any, items: any[], flag: string): void {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      console.error('Auth token not found');
+      return;
+    }
+
+    const printPayload = {
+      order_id: orderId,
+      items: items,
+      flag: flag
+    };
+
+    console.log(`Sending request to print-editor-cancel API with flag: ${flag}`, printPayload);
+    this.http.post(`${baseUrl}api/print-editor-cancel`, { order: printPayload }, { headers: { Authorization: `Bearer ${token}` } }).subscribe({
+      next: async (response: any) => {
+        console.log('order updated successfully', response);
+
+        if (response.status && response.printers && response.printers.length > 0) {
+          for (const printer of response.printers) {
+            if (printer.items && printer.items.length > 0) {
+              try {
+                await this.newOrder.printInvoiceImage(
+                  printer.items,
+                  response.order,
+                  printer.ip,
+                  printer.port,
+                  response.type
+                );
+                await new Promise(resolve => setTimeout(resolve, 500));
+              } catch (err) {
+                console.error(`Error printing to ${printer.ip}:`, err);
+              }
+            }
+          }
+        }
+
+        this.dbService.deleteOrderFromPrintkitchenById(orderId).catch((err) => {
+          console.error('error deleting order from printkitchen indexeddb', err);
+        });
+      },
+      error: (err) => {
+        console.error('error calling print-editor-cancel', err);
+      }
+    });
+  }
+
   @ViewChild('messageModal') messageModal: any;
 
   showMessageModal(msg: string, type: 'success' | 'error') {
@@ -2460,6 +2392,7 @@ export class OrdersComponent implements OnDestroy {
 
   // Split Order Properties
   splitOrderItems: any[] = [];
+  newSplitOrderNumber: string = '';
   selectedTableIdForSplit: string = '';
   splitOrderCurrency: string = '';
   currentSplitOrder: any = null;
@@ -2588,6 +2521,7 @@ export class OrdersComponent implements OnDestroy {
     this.selectedTableIdForSplit = '';
     this.splitErrorMessage = '';
     this.splitSuccessMessage = '';
+    this.newSplitOrderNumber = 'CS-' + Math.floor(Math.random() * 100000);
 
     // Fetch available tables
     this.fetchAvailableTables();
@@ -2691,7 +2625,7 @@ export class OrdersComponent implements OnDestroy {
     event.preventDefault();
     const pastedText = event.clipboardData?.getData('text/plain') || '';
     const pastedValue = Number(pastedText);
-    
+
     if (!isNaN(pastedValue)) {
       this.validateAndCorrectSplitQuantity(item, pastedValue);
     }
@@ -2701,7 +2635,7 @@ export class OrdersComponent implements OnDestroy {
   validateAndCorrectSplitQuantity(item: any, newValue: any): void {
     // Convert to number - handle string inputs like "21", "-1", "1-", etc.
     let quantity: number;
-    
+
     // Handle string inputs that might contain non-numeric characters
     if (typeof newValue === 'string') {
       // Remove any non-numeric characters except minus at the start
@@ -2710,7 +2644,7 @@ export class OrdersComponent implements OnDestroy {
     } else {
       quantity = Number(newValue);
     }
-    
+
     // Handle NaN, null, undefined, or empty string
     if (isNaN(quantity) || quantity === null || quantity === undefined || newValue === '' || newValue === null) {
       quantity = 0;
@@ -2744,10 +2678,10 @@ export class OrdersComponent implements OnDestroy {
 
     // Update the value immediately - this is critical
     item.selectedQuantity = quantity;
-    
+
     // Force change detection to update UI immediately
     this.cdr.detectChanges();
-    
+
     // Clear error if valid
     if (quantity >= 0 && quantity <= maxQty) {
       // Only clear if this was the error we set
@@ -2761,7 +2695,7 @@ export class OrdersComponent implements OnDestroy {
   increaseSplitQuantity(item: any): void {
     const currentQty = item.selectedQuantity || 0;
     const maxQty = item.quantity || 0;
-    
+
     // Ensure we don't exceed the maximum
     if (currentQty < maxQty) {
       item.selectedQuantity = Math.min(currentQty + 1, maxQty); // Ensure never exceeds max
@@ -2823,7 +2757,7 @@ export class OrdersComponent implements OnDestroy {
 
   // Get new split order number (placeholder)
   getNewSplitOrderNumber(): string {
-    return 'CS-' + Math.floor(Math.random() * 100000);
+    return this.newSplitOrderNumber;
   }
 
   // Get selected split items count
@@ -2868,7 +2802,7 @@ export class OrdersComponent implements OnDestroy {
     // Check each item
     for (const item of this.splitOrderItems) {
       const selectedQty = item.selectedQuantity || 0;
-      
+
       // Check for negative quantities
       if (selectedQty < 0) {
         return false;
@@ -2934,7 +2868,7 @@ export class OrdersComponent implements OnDestroy {
       setTimeout(() => {
         this.splitErrorMessage = '';
       }, 4000);
-      
+
       // ✅ Force change detection to update UI
       this.cdr.detectChanges();
       return; // Prevent proceeding to confirmation modal

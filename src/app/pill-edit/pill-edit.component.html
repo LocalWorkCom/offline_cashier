@@ -132,17 +132,17 @@
       <h5>
         <i class="fas fa-file-alt main-color fs-4 ps-2"></i>معلومات التوصيل
       </h5>
-      <p v-if="addresDetails.client_name">
+      <p *ngIf="addresDetails?.client_name">
         <span class="fw-bold">الاسم :</span>
         {{ addresDetails.client_name }}
       </p>
-      <p v-if="addresDetails.client_address || addresDetails.branch_name">
+      <p *ngIf="addresDetails?.client_address || addresDetails?.branch_name">
         <span class="fw-bold">العنوان :</span>
         {{ addresDetails.client_address ?? "غير متوفر" }}
         {{ addresDetails.branch_name ?? "" }}
       </p>
-
-      <p v-if="addresDetails.address_phone">
+  
+      <p *ngIf="addresDetails?.address_phone">
         <span class="fw-bold">رقم الهاتف :</span>
         {{ addresDetails.address_phone }}
       </p>
@@ -189,7 +189,7 @@
                   </h6>
                 </div>
                 <h6 class="fw-bold">
-                  <span>{{ item.total_dish_price }}
+                  <span *ngIf="invoiceSummary && invoiceSummary.length > 0">{{ item.total_dish_price }}
                     {{ invoiceSummary[0].currency_symbol }}</span>
                 </h6>
               </div>
@@ -224,7 +224,7 @@
     </div>
 
       <!-- عرض الكوبون المطبق -->
-      <div *ngIf="discountAmount > 0 || (invoices[0]?.invoice_summary?.coupon_value && invoices[0].invoice_summary.coupon_value > 0)"
+      <div *ngIf="invoices?.length > 0 && (discountAmount > 0 || (invoices[0]?.invoice_summary?.coupon_value && invoices[0].invoice_summary.coupon_value > 0))"
         class="mt-3 p-3 bg-light rounded">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span class="fw-bold">الكوبون المطبق:</span>
@@ -244,7 +244,7 @@
           <span class="text-muted fw-bold">{{ couponCode || invoices[0]?.invoice_summary?.coupon_code }}</span>
         </div>
         <!-- زر حذف الكوبون - يظهر فقط للطلبات غير المدفوعة -->
-        <button *ngIf="invoices?.[0]?.transactions?.[0]?.payment_status !== 'paid'"
+        <button *ngIf="invoices[0]?.transactions?.[0]?.payment_status !== 'paid'"
           class="btn btn-danger btn-sm mt-3 w-100" (click)="removeDiscount()">
           <i class="fa-solid fa-trash me-2"></i>
           حذف الكوبون
@@ -259,10 +259,10 @@
         ">
         <div
           *ngIf="invoices[0].order_type === 'Takeaway' ||invoices[0].order_type === 'dine-in' || invoices[0].order_type === 'Delivery'">
-          <div class="d-flex gap-4"> <!--  *ngIf="invoices[0].transactions[0].payment_status != 'paid'" ALAAA -->
+          <div class="d-flex gap-4" *ngIf="invoices[0]?.transactions"> 
             <button class="fs-6 rounded-4 w-50 btn" [ngClass]="{
-              'btn-static-main text-white': paymentStatus === 'unpaid' || (invoices[0].transactions[0].payment_status === 'unpaid' && paymentStatus !== 'paid'),
-              'btn-transparent border-1': paymentStatus !== 'unpaid' || invoices[0].transactions[0].payment_status !== 'unpaid'
+              'btn-static-main text-white': paymentStatus === 'unpaid' || (invoices[0]?.transactions[0]?.payment_status === 'unpaid' && paymentStatus !== 'paid'),
+              'btn-transparent border-1': paymentStatus !== 'unpaid' || invoices[0]?.transactions[0]?.payment_status !== 'unpaid'
             }" (click)="changePaymentStatus('unpaid')">
               غير مدفوعة
             </button>
@@ -483,10 +483,12 @@
         </div>
         }
         @if (amountError && !referenceNumberError) {
-        <div class="alert alert-danger text-center" role="alert">
-          يجب أن يكون مجموع الكاش والفيزا مساويًا لقيمة الطلب: {{ invoices[0].invoice_summary.total_price}} {{
-          invoices[0].currency_symbol }}
-        </div>
+        @if (invoices && invoices.length > 0 && invoices[0]?.invoice_summary) {
+          <div class="alert alert-danger text-center" role="alert">
+            يجب أن يكون مجموع الكاش والفيزا مساويًا لقيمة الطلب: {{ invoices[0].invoice_summary.total_price}} {{
+            invoices[0].currency_symbol }}
+          </div>
+        }
         }
         @if (paymentAmountError && !referenceNumberError) {
         <div class="alert alert-danger text-center" role="alert">
@@ -508,8 +510,8 @@
           </span>
         </h5>
 
-        <div class="d-flex align-items-center">
-          <p *ngIf="invoices[0].transactions[0].payment_status" class="mb-0 fw-bold">
+        <div class="d-flex align-items-center" *ngIf="invoices[0]?.transactions">
+          <p *ngIf="invoices[0].transactions[0]?.payment_status" class="mb-0 fw-bold">
             {{ invoices[0].transactions[0].payment_status=== "paid" ? "مدفوعة" : "غير مدفوعة" }}
           </p>
         </div>
@@ -519,11 +521,11 @@
       <div *ngIf="invoices[0]?.transactions?.length>1" class="ps-2">
         <div *ngFor="let inv of invoices[0].transactions">
           <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
-            *ngIf="invoices[0].transactions[0].payment_status == 'paid'">
+            *ngIf="invoices[0]?.transactions?.[0]?.payment_status == 'paid'">
             <div>
               {{ inv.payment_method === 'cash' ? ' الكاش' : ' الفيزا' }}
             </div>
-            <div>{{ inv.paid }} {{invoices[0].currency_symbol}}</div>
+            <div>{{ inv.paid }} {{invoices[0]?.currency_symbol}}</div>
           </div>
 
         </div>
@@ -536,7 +538,7 @@
       <h5><i class="fas fa-file-alt main-color fs-4 ps-2"></i> الفاتورة</h5>
       <div class="d-flex justify-content-between px-2 mb-1 align-items-center">
         <h6 class="mb-0">مجموع الطلب</h6>
-        <h6 class="mb-0 text-end">
+        <h6 class="mb-0 text-end" *ngIf="invoices[0]?.invoice_summary">
           <span>{{ (invoices[0].invoice_summary.subtotal_price_before_coupon || invoices[0].invoice_summary.total_price
             || 0).toFixed(2) }}
             {{ item.currency_symbol }}</span>
@@ -591,7 +593,7 @@
           <h4 class="mb-0" style="font-weight: bold !important">
             المجموع الكلى
           </h4>
-          <h6 class="fw-bold mb-0 fs-4 text-end">
+          <h6 class="fw-bold mb-0 fs-4 text-end" *ngIf="invoices[0]?.invoice_summary">
             <!-- استخدام totalll إذا كان محدثاً (بعد تطبيق الكوبون)، وإلا استخدام invoice_summary.total_price -->
             <span>{{ (totalll !== null && totalll !== undefined ? totalll : invoices[0].invoice_summary.total_price) | number:'1.2-2' }} {{ invoices[0].currency_symbol }}</span>
           </h6>

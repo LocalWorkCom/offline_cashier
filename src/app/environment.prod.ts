@@ -6,10 +6,10 @@
 
 /*  export const baseUrl ='http://127.0.0.1:8000/'
  */
-// export const baseUrl2 ='https://productowner.testdomain100.online/api'
-export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
+//export const baseUrl2 ='https://productowner.testdomain100.online/api'
+// export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
 
-// export const baseUrl2 ='https://erpmain.alkoot-restaurant.com/api'
+ export const baseUrl2 ='https://erpmain.alkoot-restaurant.com/api'
 
 //for test domain
 // export const baseUrl='https://erpsystem.testdomain100.online/'
@@ -38,9 +38,12 @@ export const environment = {
 
 //production
 
-
+// for  product owner
 // export const baseUrl='https://productowner.testdomain100.online/'
+// for  cashier test
 export const baseUrl='https://erp-cashier.testdomain100.online/'
+// for  cashier production
+// export const baseUrl='https://erpmain.alkoot-restaurant.com/api'
 
 // export const baseUrl='https://erpsystem.testdomain100.online/'
 

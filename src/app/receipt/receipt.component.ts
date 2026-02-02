@@ -47,8 +47,8 @@ export class ReceiptComponent {
   }
 
   getTableNumber(): string {
-    if (this.data?.table_number) {
-      return this.data.table_number;
+    if (this.data?.invoices[0]) {
+      return this.data.invoices[0]?.branch_details[0]?.table_number;
     }
     return '';
   }
