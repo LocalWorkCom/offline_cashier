@@ -13,13 +13,13 @@ export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
 
 //for test domain
 // export const baseUrl='https://erpsystem.testdomain100.online/'
-// export const environment = {
-//   production: true,
-//   pusher: {
-//     key: 'cfd52a74b92f9e278f2d',
-//     cluster: 'mt1',
-//   }
-// };
+export const environment = {
+  production: true,
+  pusher: {
+    key: 'cfd52a74b92f9e278f2d',
+    cluster: 'mt1',
+  }
+};
 
 
 //alkoot
@@ -45,13 +45,13 @@ export const baseUrl='https://erp-cashier.testdomain100.online/'
 // export const baseUrl='https://erpsystem.testdomain100.online/'
 
 
- export const environment = {
-   production: true,
-   pusher: {
-     key: 'cfd52a74b92f9e278f2d',
-     cluster: 'mt1',
-   }
- };
+//  export const environment = {
+//    production: true,
+//    pusher: {
+//      key: 'cfd52a74b92f9e278f2d',
+//      cluster: 'mt1',
+//    }
+//  };
 
 export const environment2 = {
   production: true,

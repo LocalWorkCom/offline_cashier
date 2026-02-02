@@ -545,6 +545,11 @@
 
                 }
               @if((order.order_details.payment_status == 'unpaid' && order.order_details.status === 'pending') ){
+                    @if (order.order_details.order_type != 'talabat') {
+                      <button type="button" class="btn btn-transparent w-100 py-2" (click)="openChangeTypeModal(order)">
+                        <span>تغيير النوع</span>
+                      </button>
+                    }
                     <button type="button" class="btn btn-transparent w-100 py-2" data-bs-toggle="modal"
                       [attr.data-bs-target]="'#modal-' + order.order_details.order_id">
                       <span>
@@ -1134,8 +1139,8 @@
                 <div class="badge rounded px-3 py-2 d-inline-flex align-items-center justify-content-center"
                      style="background-color: #ff9800; color: #000; border: none; font-size: 0.85rem; min-height: 60px; align-self: stretch; border-radius: 8px !important;">
                   <div class="d-flex flex-column align-items-center">
-                    <i class="fa-solid fa-chair mb-1" style="font-size: 0.75rem;"></i>
-                    <span>طاولة {{ order.order_details.table_number }}</span>
+                    <span>طاولة</span>
+                    <span>{{ order.order_details.table_number }}</span>
                   </div>
                 </div>
 
@@ -1172,13 +1177,12 @@
           </div>
         </div>
       </div>
-      <div class="modal-footer border-0 d-flex justify-content-between">
-        <button type="button" class="btn btn-danger" (click)="goToMergeConfirmation()" [disabled]="!selectedOrderIdForMerge">
+      <div class="modal-footer border-0 d-flex justify-content-between gap-2">
+        <button type="button" class="btn btn-danger flex-fill" (click)="goToMergeConfirmation()" [disabled]="!selectedOrderIdForMerge">
           <i class="fa-solid fa-code-merge me-2"></i>
           تأكيد الدمج
         </button>
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء الأمر</button>
-
+        <button type="button" class="btn flex-fill" style="background-color: #f5f5f5; color: #666; border: 1px solid #d0d0d0;" data-bs-dismiss="modal">إلغاء الأمر</button>
       </div>
     </div>
   </div>
@@ -1188,12 +1192,12 @@
 <div class="modal fade" id="mergeOrderConfirmationModal" tabindex="-1" aria-labelledby="mergeOrderConfirmationModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content p-3">
-      <div class="modal-header border-0 d-flex justify-content-between align-items-center">
+      <div class="modal-header border-0 d-flex justify-content-between align-items-center position-relative">
         <div class="d-flex align-items-center gap-2">
           <i class="fa-solid fa-code-merge text-danger fs-4"></i>
           <h5 class="modal-title fw-bold mb-0" id="mergeOrderConfirmationModalLabel">تأكيد دمج الطلبات</h5>
         </div>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        <button type="button" class="btn-close position-absolute" style="left: 0; top: 50%; transform: translateY(-50%);" data-bs-dismiss="modal" aria-label="إغلاق"></button>
       </div>
       <div class="modal-body">
         <p class="text-muted mb-4">
@@ -1203,20 +1207,22 @@
         <div class="row mb-4">
           <!-- Primary Order (Original) - Left Side -->
           <div class="col-md-5">
-            <div class="border rounded p-3 h-100">
+            <div class="border rounded p-3 h-100" style="background-color: #fff5f5; border-color: #dc3545 !important;">
               <h6 class="fw-bold mb-3 text-success">الطلب الأساسي (المستلم)</h6>
-              <div class="mb-2">
+              <div class="mb-2 d-flex align-items-center justify-content-between">
                 <strong>{{ currentMergeOrder?.order_details?.order_number }}</strong>
+                <div class="d-flex flex-column align-items-end">
+                  <span>طاولة</span>
+                  <span>{{ currentMergeOrder?.order_details?.table_number }}</span>
+                </div>
               </div>
-              <div class="mb-2">
-                <i class="fa-solid fa-chair text-success me-1"></i>
-                طاولة {{ currentMergeOrder?.order_details?.table_number }}
+              <div class="mb-2 d-flex justify-content-between align-items-center">
+                <span class="text-muted">عدد العناصر</span>
+                <strong>{{ currentMergeOrder?.order_details?.order_items_count }}</strong>
               </div>
-              <div class="mb-2">
-                <span class="badge bg-lightgray text-dark">{{ currentMergeOrder?.order_details?.order_items_count }}</span>
-              </div>
-              <div class="fw-bold">
-                {{ currentMergeOrder?.total_price }} {{ mergeOrderCurrency }}
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted">الإجمالي</span>
+                <strong>{{ currentMergeOrder?.total_price }} {{ mergeOrderCurrency }}</strong>
               </div>
             </div>
           </div>
@@ -1228,44 +1234,49 @@
 
           <!-- Secondary Order (Sender) - Right Side -->
           <div class="col-md-5">
-            <div class="border rounded p-3 h-100">
-              <h6 class="fw-bold mb-3 text-danger">الطلب الثانوي (المرسل)</h6>
-              <div class="mb-2">
+            <div class="border rounded p-3 h-100" style="background-color: #f5f5f5; border-color: #d0d0d0 !important;">
+              <h6 class="fw-bold mb-3" style="color: #666;">الطلب الثانوي (المرسل)</h6>
+              <div class="mb-2 d-flex align-items-center justify-content-between">
                 <strong>{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong>
+                <div class="d-flex flex-column align-items-end">
+                  <span>{{ getSecondaryMergeOrder()?.order_details?.order_type === 'dine-in' ? 'طاولة' : 'إستلام' }}</span>
+                  <span *ngIf="getSecondaryMergeOrder()?.order_details?.order_type === 'dine-in'">{{ getSecondaryMergeOrder()?.order_details?.table_number }}</span>
+                </div>
               </div>
-              <div class="mb-2">
-                <i class="fa-solid fa-house text-primary me-1"></i>
-                {{ getSecondaryMergeOrder()?.order_details?.order_type === 'dine-in' ? 'طاولة ' + getSecondaryMergeOrder()?.order_details?.table_number : 'إستلام' }}
+              <div class="mb-2 d-flex justify-content-between align-items-center">
+                <span class="text-muted">عدد العناصر</span>
+                <strong>{{ getSecondaryMergeOrder()?.order_details?.order_items_count }}</strong>
               </div>
-              <div class="mb-2">
-                <span class="badge bg-lightgray text-dark">{{ getSecondaryMergeOrder()?.order_details?.order_items_count }}</span>
-              </div>
-              <div class="fw-bold">
-                {{ getSecondaryMergeOrder()?.total_price }} {{ mergeOrderCurrency }}
+              <div class="d-flex justify-content-between align-items-center">
+                <span class="text-muted">الإجمالي</span>
+                <strong>{{ getSecondaryMergeOrder()?.total_price }} {{ mergeOrderCurrency }}</strong>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Merge Summary -->
-        <div class="alert alert-warning">
-          <h6 class="fw-bold mb-2">ملخص الدمج</h6>
+        <div class="alert alert-warning" style="background-color: #fff3cd; border-color: #ffc107;">
+          <h6 class="fw-bold mb-2">
+            <i class="fa-solid fa-circle-exclamation text-warning me-2"></i>
+            ملخص الدمج
+          </h6>
           <div class="d-flex justify-content-between align-items-center">
-            <span>الإجمالي الجديد للطلب الأساسي:</span>
-            <strong class="fs-5">{{ getMergeNewTotal() }} {{ mergeOrderCurrency }}</strong>
+            <span class="text-dark">الإجمالي الجديد للطلب الأساسي:</span>
+            <strong class="fs-5 text-danger">{{ getMergeNewTotal() }} {{ mergeOrderCurrency }}</strong>
           </div>
-          <div class="mt-2 small text-muted">
-            سيتم إغلاق الطلب الثانوي <strong>{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong> نهائياً.
+          <div class="mt-2 small" style="color: #dc3545;">
+            * سيتم إغلاق الطلب الثانوي <strong>{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong> نهائياً.
           </div>
         </div>
       </div>
       <div class="modal-footer border-0 d-flex justify-content-between">
-        <button type="button" class="btn btn-outline-secondary" (click)="goBackToMergeStep1()">إلغاء</button>
         <button type="button" class="btn btn-danger" (click)="submitMergeRequest()" [disabled]="isMergeSubmitting">
           <span *ngIf="isMergeSubmitting" class="spinner-border spinner-border-sm me-2"></span>
           <i *ngIf="!isMergeSubmitting" class="fa-solid fa-check me-2"></i>
           {{ isMergeSubmitting ? 'جاري الإرسال...' : 'تأكيد الدمج' }}
         </button>
+        <button type="button" class="btn btn-danger" (click)="goBackToMergeStep1()">إلغاء</button>
       </div>
     </div>
   </div>
@@ -1426,6 +1437,154 @@
             تعديل الاختيار
           </button>
         </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Change Order Type Modal - Step 1: Select Type -->
+<div class="modal fade" id="changeOrderTypeModal" tabindex="-1" aria-labelledby="changeOrderTypeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-3">
+      <div class="modal-header border-0 d-flex justify-content-between align-items-center flex-row-reverse">
+        <div class="d-flex align-items-center gap-2">
+          <i class="fa-solid fa-arrows-rotate text-danger fs-5"></i>
+          <h5 class="modal-title fw-bold mb-0" id="changeOrderTypeModalLabel">تغيير نوع الطلب</h5>
+        </div>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small mb-3">
+          يرجى اختيار نوع الطلب الجديد لهذا الطلب رقم {{ currentOrderForTypeChange?.order_details?.order_number }}. سيتم تحديث تفاصيل الفاتورة تلقائياً بناءً على الاختيار.
+        </p>
+        <div class="d-flex flex-column gap-3">
+          <div class="form-check border rounded p-3 d-flex flex-row-reverse align-items-center gap-3"
+               [class.border-danger]="selectedNewOrderType === 'dine-in'">
+            <input class="form-check-input flex-shrink-0" type="radio" name="newOrderType" id="typeDineIn" value="dine-in"
+                   [(ngModel)]="selectedNewOrderType">
+            <label class="form-check-label d-flex align-items-center gap-2 flex-grow-1 justify-content-end" for="typeDineIn">
+              <i class="fa-solid fa-utensils rounded-circle p-2 text-white" style="background-color: #ff9800;"></i>
+              <div class="text-end">
+                <strong>داخل المطعم (محلي)</strong>
+                <div class="text-muted small">تقديم الطلب على طاولة داخل المطعم</div>
+              </div>
+            </label>
+          </div>
+          <div class="form-check border rounded p-3 d-flex flex-row-reverse align-items-center gap-3"
+               [class.border-primary]="selectedNewOrderType === 'Takeaway'">
+            <input class="form-check-input flex-shrink-0" type="radio" name="newOrderType" id="typeTakeaway" value="Takeaway"
+                   [(ngModel)]="selectedNewOrderType">
+            <label class="form-check-label d-flex align-items-center gap-2 flex-grow-1 justify-content-end" for="typeTakeaway">
+              <i class="fa-solid fa-bag-shopping rounded-circle p-2 text-white bg-primary"></i>
+              <div class="text-end">
+                <strong>استلام من الفرع (سفري)</strong>
+                <div class="text-muted small">يأتي العميل لاستلام الطلب بنفسه</div>
+              </div>
+            </label>
+          </div>
+          <div class="form-check border rounded p-3 d-flex flex-row-reverse align-items-center gap-3"
+               [class.border-primary]="selectedNewOrderType === 'Delivery'">
+            <input class="form-check-input flex-shrink-0" type="radio" name="newOrderType" id="typeDelivery" value="Delivery"
+                   [(ngModel)]="selectedNewOrderType">
+            <label class="form-check-label d-flex align-items-center gap-2 flex-grow-1 justify-content-end" for="typeDelivery">
+              <i class="fa-solid fa-truck rounded-circle p-2 text-white" style="background-color: #9c27b0;"></i>
+              <div class="text-end">
+                <strong>توصيل</strong>
+                <div class="text-muted small">توصيل الطلب إلى موقع العميل</div>
+              </div>
+            </label>
+          </div>
+        </div>
+        @if (selectedNewOrderType === 'dine-in') {
+          <div class="mt-3">
+            <label class="form-label fw-bold">اختر الطاولة</label>
+            <select class="form-select" [(ngModel)]="selectedTableIdForTypeChange" name="tableIdForTypeChange">
+              <option value="">اختر الطاولة...</option>
+              @for (table of availableTables; track table.id) {
+                <option [value]="table.id" [disabled]="table.status === 2">
+                  طاولة {{ table.number }} {{ table.status === 2 ? '(مشغول)' : '' }}
+                </option>
+              }
+            </select>
+          </div>
+        }
+      </div>
+      <div class="modal-footer border-0 d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <button type="button" class="btn btn-danger" (click)="openChangeTypeConfirmModal()"
+                [disabled]="!selectedNewOrderType || (selectedNewOrderType === 'dine-in' && !selectedTableIdForTypeChange)">
+          <i class="fa-solid fa-check me-2"></i>
+          تأكيد التغيير
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Change Order Type Modal -->
+<div class="modal fade" id="confirmChangeOrderTypeModal" tabindex="-1" aria-labelledby="confirmChangeOrderTypeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-3">
+      <div class="modal-header border-0 text-center d-block">
+        <div class="mb-2">
+          <i class="fa-solid fa-arrows-rotate text-warning rounded-circle p-2" style="background-color: #fff3cd;"></i>
+        </div>
+        <h5 class="modal-title fw-bold" id="confirmChangeOrderTypeModalLabel">تأكيد تغيير نوع الطلب</h5>
+        <p class="text-muted small mb-0">يرجى مراجعة تفاصيل التغيير أدناه قبل المتابعة</p>
+      </div>
+      <div class="modal-body">
+        <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
+          <div class="flex-grow-1">
+            <small class="text-muted d-block">من</small>
+            <div class="border rounded p-2 d-flex align-items-center gap-2">
+              <i class="fa-solid fa-bag-shopping text-primary" *ngIf="currentOrderForTypeChange?.order_details?.order_type === 'Takeaway'"></i>
+              <i class="fa-solid fa-truck" *ngIf="currentOrderForTypeChange?.order_details?.order_type === 'Delivery'" style="color: #9c27b0;"></i>
+              <i class="fa-solid fa-utensils" *ngIf="currentOrderForTypeChange?.order_details?.order_type === 'dine-in'" style="color: #ff9800;"></i>
+              <span>{{ getOrderTypeLabelForChange(currentOrderForTypeChange?.order_details?.order_type) }}</span>
+            </div>
+          </div>
+          <i class="fa-solid fa-arrow-left text-muted"></i>
+          <div class="flex-grow-1">
+            <small class="text-muted d-block">إلى</small>
+            <div class="border rounded p-2 d-flex align-items-center gap-2 bg-light">
+              <i class="fa-solid fa-bag-shopping text-primary" *ngIf="selectedNewOrderType === 'Takeaway'"></i>
+              <i class="fa-solid fa-truck" *ngIf="selectedNewOrderType === 'Delivery'" style="color: #9c27b0;"></i>
+              <i class="fa-solid fa-utensils" *ngIf="selectedNewOrderType === 'dine-in'" style="color: #ff9800;"></i>
+              <span>{{ getOrderTypeLabelForChange(selectedNewOrderType) }}</span>
+              <span *ngIf="selectedNewOrderType === 'dine-in' && getTableNameForTypeChange()" class="text-danger fw-bold">{{ getTableNameForTypeChange() }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="alert alert-warning d-flex align-items-start gap-2 mb-0">
+          <i class="fa-solid fa-circle-info mt-1"></i>
+          <div>
+            سيتم تغيير نوع الطلب {{ currentOrderForTypeChange?.order_details?.order_number }}. قد يؤثر هذا على الأسعار والضرائب المطبقة. هل أنت متأكد أنك تريد المتابعة؟
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 d-flex justify-content-between">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <button type="button" class="btn btn-danger" (click)="submitChangeOrderType()" [disabled]="isChangeTypeSubmitting">
+          <span *ngIf="isChangeTypeSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!isChangeTypeSubmitting" class="fa-solid fa-check me-2"></i>
+          تأكيد التغيير
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Paid Order Warning Modal (Change Type) -->
+<div class="modal fade" id="changeTypePaidWarningModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content p-4 text-center">
+      <div class="modal-body">
+        <div class="rounded-circle bg-danger d-inline-flex align-items-center justify-content-center text-white mb-3" style="width: 60px; height: 60px;">
+          <i class="fa-solid fa-exclamation fa-2x"></i>
+        </div>
+        <h6 class="fw-bold mb-2">تنبيه</h6>
+        <p class="text-muted small mb-4">لا يمكن تغيير نوع الطلب لطلب مدفوع.</p>
+        <button type="button" class="btn btn-danger w-100" data-bs-dismiss="modal">حسناً</button>
       </div>
     </div>
   </div>
