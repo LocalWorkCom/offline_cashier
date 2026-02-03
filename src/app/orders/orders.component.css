@@ -245,3 +245,35 @@ button.dropdown-item {
     width: 100%;
     object-fit: contain;
 }
+
+/* Change type delivery modal – نفس تنسيق delivery-details (نوع العقار) */
+#changeTypeDeliveryDetailsModal .delivery-places .nav-link {
+    background-color: #fff;
+    padding: 0.5rem 1rem;
+    margin-left: 1rem;
+    border: 1px solid #808080;
+    color: #808080;
+}
+#changeTypeDeliveryDetailsModal .delivery-places .nav-link .fas,
+#changeTypeDeliveryDetailsModal .delivery-places .nav-link .fa-solid {
+    margin-left: 0.5rem;
+}
+#changeTypeDeliveryDetailsModal .delivery-places .nav-link.active,
+#changeTypeDeliveryDetailsModal .delivery-places .show > .nav-link {
+    background: #FE0000;
+    color: #fff;
+    border-color: #FE0000;
+    border: 1px solid transparent;
+}
+#changeTypeDeliveryDetailsModal .input-group .input-group-text {
+    border-top-right-radius: 15px;
+    border-bottom-right-radius: 15px;
+}
+#changeTypeDeliveryDetailsModal .input-group .form-control {
+    border-top-left-radius: 15px;
+    border-bottom-left-radius: 15px;
+}
+#changeTypeDeliveryDetailsModal .input-group.has-value .form-control,
+#changeTypeDeliveryDetailsModal .input-group .form-control.has-value {
+    border-color: #FE0000;
+}
