@@ -529,19 +529,19 @@
                         </span>
                     </button>
 
-                  <!-- @if (canSplitOrder(order) && order.order_details.order_type == "dine-in") {
+                  @if (canSplitOrder(order) && order.order_details.order_type == "dine-in") {
                     <button type="button" class="btn btn-transparent w-100 py-2" (click)="openSplitModal(order)">
                       <i class="fa-solid fa-code-branch me-2"></i>
                       <span>تجزئة الطلب</span>
                     </button>
-                  } -->
+                  }
 
-                  <!-- @if (canMergeOrder(order) && order.order_details.order_type == "dine-in") {
+                  @if (canMergeOrder(order) && order.order_details.order_type == "dine-in") {
                     <button type="button" class="btn btn-transparent w-100 py-2" (click)="openMergeModal(order)">
                       <i class="fa-solid fa-code-merge me-2"></i>
                       <span>دمج الطلب</span>
                     </button>
-                  } -->
+                  }
 
                 }
               @if((order.order_details.payment_status == 'unpaid' && order.order_details.status === 'pending') ){
@@ -1446,53 +1446,55 @@
 <div class="modal fade" id="changeOrderTypeModal" tabindex="-1" aria-labelledby="changeOrderTypeModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content p-3">
-      <div class="modal-header border-0 d-flex justify-content-between align-items-center flex-row-reverse">
+      <div class="modal-header border-0 d-flex justify-content-between align-items-center" dir="rtl">
         <div class="d-flex align-items-center gap-2">
-          <i class="fa-solid fa-arrows-rotate text-danger fs-5"></i>
+          <span class="bg-primary text-white rounded p-2 d-inline-flex align-items-center justify-content-center">
+            <i class="fa-solid fa-arrows-rotate fs-5"></i>
+          </span>
           <h5 class="modal-title fw-bold mb-0" id="changeOrderTypeModalLabel">تغيير نوع الطلب</h5>
         </div>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="إغلاق"></button>
       </div>
       <div class="modal-body">
         <p class="text-muted small mb-3">
-          يرجى اختيار نوع الطلب الجديد لهذا الطلب رقم {{ currentOrderForTypeChange?.order_details?.order_number }}. سيتم تحديث تفاصيل الفاتورة تلقائياً بناءً على الاختيار.
+          يرجى اختيار نوع الطلب الجديد لهذا الطلب رقم <strong class="text-dark">{{ currentOrderForTypeChange?.order_details?.order_number }}</strong>. سيتم تحديث تفاصيل الفاتورة تلقائياً بناءً على الاختيار.
         </p>
-        <div class="d-flex flex-column gap-3">
-          <div class="form-check border rounded p-3 d-flex flex-row-reverse align-items-center gap-3"
-               [class.border-danger]="selectedNewOrderType === 'dine-in'">
-            <input class="form-check-input flex-shrink-0" type="radio" name="newOrderType" id="typeDineIn" value="dine-in"
+        <div class="d-flex flex-column gap-3" dir="ltr">
+          <div class="form-check rounded-3 p-3 d-flex align-items-center gap-3 transition-all"
+               [style.border]="selectedNewOrderType === 'dine-in' ? '2px solid #0d6efd' : '1px solid #dee2e6'">
+            <input class="form-check-input flex-shrink-0 ms-3 me-2" type="radio" name="newOrderType" id="typeDineIn" value="dine-in"
                    [(ngModel)]="selectedNewOrderType">
-            <label class="form-check-label d-flex align-items-center gap-2 flex-grow-1 justify-content-end" for="typeDineIn">
-              <i class="fa-solid fa-utensils rounded-circle p-2 text-white" style="background-color: #ff9800;"></i>
-              <div class="text-end">
-                <strong>داخل المطعم (محلي)</strong>
-                <div class="text-muted small">تقديم الطلب على طاولة داخل المطعم</div>
-              </div>
-            </label>
+            <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end">
+              <label class="form-check-label text-end cursor-pointer mb-0" for="typeDineIn">
+                <strong class="d-block">داخل المطعم (محلي)</strong>
+                <span class="text-muted small">تقديم الطلب على طاولة داخل المطعم</span>
+              </label>
+              <i class="fa-solid fa-utensils rounded-circle p-2 text-white flex-shrink-0" style="background-color: #ff9800;"></i>
+            </div>
           </div>
-          <div class="form-check border rounded p-3 d-flex flex-row-reverse align-items-center gap-3"
-               [class.border-primary]="selectedNewOrderType === 'Takeaway'">
-            <input class="form-check-input flex-shrink-0" type="radio" name="newOrderType" id="typeTakeaway" value="Takeaway"
+          <div class="form-check rounded-3 p-3 d-flex align-items-center gap-3 transition-all"
+               [style.border]="selectedNewOrderType === 'Takeaway' ? '2px solid #0d6efd' : '1px solid #dee2e6'">
+            <input class="form-check-input flex-shrink-0 ms-3 me-2" type="radio" name="newOrderType" id="typeTakeaway" value="Takeaway"
                    [(ngModel)]="selectedNewOrderType">
-            <label class="form-check-label d-flex align-items-center gap-2 flex-grow-1 justify-content-end" for="typeTakeaway">
-              <i class="fa-solid fa-bag-shopping rounded-circle p-2 text-white bg-primary"></i>
-              <div class="text-end">
-                <strong>استلام من الفرع (سفري)</strong>
-                <div class="text-muted small">يأتي العميل لاستلام الطلب بنفسه</div>
-              </div>
-            </label>
+            <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end">
+              <label class="form-check-label text-end cursor-pointer mb-0" for="typeTakeaway">
+                <strong class="d-block">استلام من الفرع (سفري)</strong>
+                <span class="text-muted small">يأتي العميل لاستلام الطلب بنفسه</span>
+              </label>
+              <i class="fa-solid fa-bag-shopping rounded-circle p-2 text-white bg-primary flex-shrink-0"></i>
+            </div>
           </div>
-          <div class="form-check border rounded p-3 d-flex flex-row-reverse align-items-center gap-3"
-               [class.border-primary]="selectedNewOrderType === 'Delivery'">
-            <input class="form-check-input flex-shrink-0" type="radio" name="newOrderType" id="typeDelivery" value="Delivery"
+          <div class="form-check rounded-3 p-3 d-flex align-items-center gap-3 transition-all"
+               [style.border]="selectedNewOrderType === 'Delivery' ? '2px solid #0d6efd' : '1px solid #dee2e6'">
+            <input class="form-check-input flex-shrink-0 ms-3 me-2" type="radio" name="newOrderType" id="typeDelivery" value="Delivery"
                    [(ngModel)]="selectedNewOrderType">
-            <label class="form-check-label d-flex align-items-center gap-2 flex-grow-1 justify-content-end" for="typeDelivery">
-              <i class="fa-solid fa-truck rounded-circle p-2 text-white" style="background-color: #9c27b0;"></i>
-              <div class="text-end">
-                <strong>توصيل</strong>
-                <div class="text-muted small">توصيل الطلب إلى موقع العميل</div>
-              </div>
-            </label>
+            <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end">
+              <label class="form-check-label text-end cursor-pointer mb-0" for="typeDelivery">
+                <strong class="d-block">توصيل</strong>
+                <span class="text-muted small">توصيل الطلب إلى موقع العميل</span>
+              </label>
+              <i class="fa-solid fa-truck rounded-circle p-2 text-white flex-shrink-0" style="background-color: #9c27b0;"></i>
+            </div>
           </div>
         </div>
         @if (selectedNewOrderType === 'dine-in') {
@@ -1509,13 +1511,13 @@
           </div>
         }
       </div>
-      <div class="modal-footer border-0 d-flex justify-content-between">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+      <div class="modal-footer border-0 d-flex justify-content-between flex-row-reverse">
         <button type="button" class="btn btn-danger" (click)="openChangeTypeConfirmModal()"
                 [disabled]="!selectedNewOrderType || (selectedNewOrderType === 'dine-in' && !selectedTableIdForTypeChange)">
           <i class="fa-solid fa-check me-2"></i>
           تأكيد التغيير
         </button>
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
       </div>
     </div>
   </div>
@@ -1564,11 +1566,235 @@
       </div>
       <div class="modal-footer border-0 d-flex justify-content-between">
         <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
-        <button type="button" class="btn btn-danger" (click)="submitChangeOrderType()" [disabled]="isChangeTypeSubmitting">
+        <button type="button" class="btn btn-danger" (click)="onConfirmChangeOrderTypeClick()" [disabled]="isChangeTypeSubmitting">
           <span *ngIf="isChangeTypeSubmitting" class="spinner-border spinner-border-sm me-2"></span>
           <i *ngIf="!isChangeTypeSubmitting" class="fa-solid fa-check me-2"></i>
           تأكيد التغيير
         </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delivery Details Modal (Change Type → Delivery) -->
+<div class="modal fade" id="changeTypeDeliveryDetailsModal" tabindex="-1" aria-labelledby="changeTypeDeliveryDetailsModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content p-3">
+      <div class="modal-header border-0 d-flex justify-content-between align-items-center" dir="rtl">
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        <div class="d-flex align-items-center gap-2">
+          <span class="rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="background-color: #e8e0f0;">
+            <i class="fa-solid fa-truck" style="color: #9c27b0;"></i>
+          </span>
+          <h5 class="modal-title fw-bold mb-0" id="changeTypeDeliveryDetailsModalLabel">بيانات التوصيل</h5>
+        </div>
+      </div>
+      <div class="modal-body">
+        <p class="small text-muted mb-3">أدخل بيانات العميل والعنوان لتحديد رسوم التوصيل حسب المنطقة.</p>
+        <h6 class="fw-bold mb-3">معلومات العميل</h6>
+        <div class="mb-3">
+          <div class="mb-3 input-group">
+            <span class="input-group-text" *ngIf="changeTypeDeliveryName">ادخل اسم العميل</span>
+            <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryName"
+                   name="changeTypeDeliveryNameModal" placeholder="اسم العميل"
+                   [ngClass]="{'has-value': changeTypeDeliveryName}">
+          </div>
+        </div>
+        <div class="d-flex gap-2 align-items-start mb-3">
+          <div class="w-50">
+            <div class="mb-3 input-group">
+              <span class="input-group-text" *ngIf="changeTypeDeliveryPhone">ادخل رقم العميل</span>
+              <input type="text" class="form-control text-end" [(ngModel)]="changeTypeDeliveryPhone"
+                     name="changeTypeDeliveryPhoneModal" placeholder="ادخل رقم الهاتف"
+                     [ngClass]="{'has-value': changeTypeDeliveryPhone}">
+            </div>
+          </div>
+          <div class="w-25">
+            <div class="input-group">
+              <span class="input-group-text text-muted" *ngIf="changeTypeDeliveryCountryCode">كود الدولة</span>
+              <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryCountryCode"
+                     name="changeTypeDeliveryCountryCodeModal" placeholder="+965"
+                     [ngClass]="{'has-value': changeTypeDeliveryCountryCode}">
+            </div>
+          </div>
+        </div>
+
+        <h6 class="fw-bold mb-3">اضف عنوان التوصيل</h6>
+        <div class="mb-3">
+          <label for="changeTypeArea" class="form-label fw-bold">اختر المنطقة</label>
+          <select id="changeTypeArea" class="form-select styled-select" [(ngModel)]="changeTypeDeliveryAreaId"
+                  name="changeTypeDeliveryAreaIdModal">
+            <option value="">اختر المنطقة...</option>
+            @for (area of deliveryAreas; track area.id) {
+              <option [value]="area.id">{{ area.name_ar || area.name_en || area.name }}</option>
+            }
+          </select>
+        </div>
+
+        <ul class="delivery-places nav nav-pills px-0 mb-3" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill" type="button" [class.active]="changeTypeDeliveryBuildingType === 'apartment'"
+                    (click)="changeTypeDeliveryBuildingType = 'apartment'">
+              <i class="fas fa-city"></i> شقة
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill" type="button" [class.active]="changeTypeDeliveryBuildingType === 'villa'"
+                    (click)="changeTypeDeliveryBuildingType = 'villa'">
+              <i class="fas fa-home"></i> فيلا
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill" type="button" [class.active]="changeTypeDeliveryBuildingType === 'office'"
+                    (click)="changeTypeDeliveryBuildingType = 'office'">
+              <i class="fas fa-building"></i> مكتب
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link rounded-pill" type="button" [class.active]="changeTypeDeliveryBuildingType === 'hotel'"
+                    (click)="changeTypeDeliveryBuildingType = 'hotel'">
+              <i class="fa-solid fa-hotel px-1"></i> فندق
+            </button>
+          </li>
+        </ul>
+
+        <div class="tab-content">
+          <!-- شقة -->
+          <div *ngIf="changeTypeDeliveryBuildingType === 'apartment'">
+            <div class="mb-3 input-group">
+              <span class="input-group-text text-muted" *ngIf="changeTypeDeliveryBuilding">ادخل المبني</span>
+              <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryBuilding"
+                     name="changeTypeDeliveryBuildingApt" placeholder="ادخل المبني"
+                     [ngClass]="{'has-value': changeTypeDeliveryBuilding}">
+            </div>
+            <div class="mb-3 d-flex gap-2">
+              <div class="flex-grow-1">
+                <div class="mb-3 input-group">
+                  <span class="input-group-text text-muted" *ngIf="changeTypeDeliveryApartment">ادخل رقم الشقة</span>
+                  <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryApartment"
+                         name="changeTypeDeliveryApartmentApt" placeholder="ادخل رقم الشقة"
+                         [ngClass]="{'has-value': changeTypeDeliveryApartment}">
+                </div>
+              </div>
+              <div class="me-2">
+                <div class="mb-3 input-group">
+                  <span class="input-group-text text-muted" *ngIf="changeTypeDeliveryFloor">ادخل الدور</span>
+                  <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryFloor"
+                         name="changeTypeDeliveryFloorApt" placeholder="ادخل الدور"
+                         [ngClass]="{'has-value': changeTypeDeliveryFloor}">
+                </div>
+              </div>
+            </div>
+            <div class="mb-3 input-group">
+              <span class="input-group-text" *ngIf="changeTypeDeliveryAddress">ادخل العنوان</span>
+              <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryAddress"
+                     name="changeTypeDeliveryAddressApt" placeholder="ادخل العنوان"
+                     [ngClass]="{'has-value': changeTypeDeliveryAddress}">
+            </div>
+            <div class="mb-3 input-group">
+              <span class="input-group-text text-muted" *ngIf="changeTypeDeliveryNotes">علامة مميزة (اختياري)</span>
+              <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryNotes"
+                     name="changeTypeDeliveryNotesApt" placeholder="علامة مميزة (اختياري)"
+                     [ngClass]="{'has-value': changeTypeDeliveryNotes}">
+            </div>
+          </div>
+
+          <!-- فيلا -->
+          <div *ngIf="changeTypeDeliveryBuildingType === 'villa'">
+            <div class="mb-3 input-group">
+              <span class="input-group-text text-muted" *ngIf="changeTypeDeliveryBuilding">ادخل اسم الفيلا</span>
+              <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryBuilding"
+                     name="changeTypeDeliveryBuildingVilla" placeholder="ادخل اسم الفيلا"
+                     [ngClass]="{'has-value': changeTypeDeliveryBuilding}">
+            </div>
+            <div class="mb-3 input-group">
+              <span class="input-group-text text-muted" *ngIf="changeTypeDeliveryApartment">ادخل رقم الفيلا</span>
+              <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryApartment"
+                     name="changeTypeDeliveryApartmentVilla" placeholder="ادخل رقم الفيلا"
+                     [ngClass]="{'has-value': changeTypeDeliveryApartment}">
+            </div>
+            <div class="mb-3 input-group">
+              <span class="input-group-text" *ngIf="changeTypeDeliveryAddress">ادخل العنوان</span>
+              <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryAddress"
+                     name="changeTypeDeliveryAddressVilla" placeholder="ادخل العنوان"
+                     [ngClass]="{'has-value': changeTypeDeliveryAddress}">
+            </div>
+            <div class="mb-3 input-group">
+              <span class="input-group-text text-muted" *ngIf="changeTypeDeliveryNotes">علامة مميزة (اختياري)</span>
+              <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryNotes"
+                     name="changeTypeDeliveryNotesVilla" placeholder="علامة مميزة (اختياري)"
+                     [ngClass]="{'has-value': changeTypeDeliveryNotes}">
+            </div>
+          </div>
+
+          <!-- مكتب -->
+          <div *ngIf="changeTypeDeliveryBuildingType === 'office'">
+            <div class="mb-3 input-group">
+              <span class="input-group-text text-muted" *ngIf="changeTypeDeliveryBuilding">ادخل اسم المكتب</span>
+              <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryBuilding"
+                     name="changeTypeDeliveryBuildingOffice" placeholder="ادخل اسم المكتب"
+                     [ngClass]="{'has-value': changeTypeDeliveryBuilding}">
+            </div>
+            <div class="mb-3 d-flex gap-2">
+              <div class="flex-grow-1">
+                <div class="mb-3 input-group">
+                  <span class="input-group-text text-muted" *ngIf="changeTypeDeliveryApartment">ادخل رقم المكتب</span>
+                  <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryApartment"
+                         name="changeTypeDeliveryApartmentOffice" placeholder="ادخل رقم المكتب"
+                         [ngClass]="{'has-value': changeTypeDeliveryApartment}">
+                </div>
+              </div>
+              <div class="me-2">
+                <div class="mb-3 input-group">
+                  <span class="input-group-text text-muted" *ngIf="changeTypeDeliveryFloor">ادخل الدور</span>
+                  <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryFloor"
+                         name="changeTypeDeliveryFloorOffice" placeholder="ادخل الدور"
+                         [ngClass]="{'has-value': changeTypeDeliveryFloor}">
+                </div>
+              </div>
+            </div>
+            <div class="mb-3 input-group">
+              <span class="input-group-text" *ngIf="changeTypeDeliveryAddress">ادخل العنوان</span>
+              <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryAddress"
+                     name="changeTypeDeliveryAddressOffice" placeholder="ادخل العنوان"
+                     [ngClass]="{'has-value': changeTypeDeliveryAddress}">
+            </div>
+            <div class="mb-3 input-group">
+              <span class="input-group-text text-muted" *ngIf="changeTypeDeliveryNotes">علامة مميزة (اختياري)</span>
+              <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryNotes"
+                     name="changeTypeDeliveryNotesOffice" placeholder="علامة مميزة (اختياري)"
+                     [ngClass]="{'has-value': changeTypeDeliveryNotes}">
+            </div>
+          </div>
+
+          <!-- فندق -->
+          <div *ngIf="changeTypeDeliveryBuildingType === 'hotel'">
+            <div class="mb-3">
+              <label class="form-label fw-bold">اختر الفندق</label>
+              <select class="form-select styled-select" [(ngModel)]="changeTypeDeliveryHotelId"
+                      name="changeTypeDeliveryHotelId" (ngModelChange)="onChangeTypeHotelSelect($event)">
+                <option value="">اختر الفندق...</option>
+                @for (hotel of changeTypeDeliveryHotels; track hotel.id) {
+                  <option [value]="hotel.id">{{ hotel.name_ar || hotel.name_en || hotel.name }}</option>
+                }
+              </select>
+            </div>
+            <div class="mb-3 input-group" *ngIf="changeTypeDeliveryHotels.length === 0">
+              <span class="input-group-text text-muted" *ngIf="changeTypeDeliveryHotelName">اسم الفندق</span>
+              <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryHotelName"
+                     name="changeTypeDeliveryHotelName" placeholder="اسم الفندق (إذا لم تظهر القائمة)"
+                     [ngClass]="{'has-value': changeTypeDeliveryHotelName}">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer border-0 d-flex justify-content-between flex-row-reverse">
+        <button type="button" class="btn btn-danger" (click)="submitChangeOrderTypeFromDeliveryModal()" [disabled]="!isDeliveryInfoComplete() || isChangeTypeSubmitting">
+          <span *ngIf="isChangeTypeSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!isChangeTypeSubmitting" class="fa-solid fa-check me-2"></i>
+          تأكيد البيانات
+        </button>
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
       </div>
     </div>
   </div>
