@@ -4592,8 +4592,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       if (item.addons && item.addons.length > 0) {
         const addons = item.addons;
         addonNames = addons
-          .map((a: any) => escapeHtml(a.name || ''))
-          .filter((name: string) => name)
+          .map((a: any) => {
+            const nameAr = escapeHtml(a.name || '');
+            const nameEn = a.name_en ? escapeHtml(a.name_en) : '';
+            return nameEn ? `${nameAr} (${nameEn})` : nameAr;
+          })
+          .filter((s: string) => s)
           .join(', ');
       }
 
