@@ -93,6 +93,12 @@ export class NewOrderService {
             console.log('🖨️ [Global Listener] Print data detected, triggering silent print...');
             this.handleGlobalPrint(payload);
           } else if (payload && payload.items_updated && payload.items_updated.length > 0) {
+            // Safety check: prevent duplicate printing across multiple stations using the same account.
+            // You can run: localStorage.setItem('disableSilentPrint', 'true') on secondary machines.
+            if (localStorage.getItem('disableSilentPrint') === 'true') {
+              console.log('🔇 [Global Listener] Silent printing is disabled on this machine (disableSilentPrint is true).');
+              return;
+            }
             console.log('🔄 [Global Listener] Status update detected, requesting print details...');
             this.handleWaiterPrintRequest(payload);
           }
@@ -167,6 +173,8 @@ export class NewOrderService {
       items: data.items_updated.map((item: any) => ({
         item_id: item.order_detail_id,
         quantity: item.old_quantity !== undefined ? item.old_quantity : item.quantity,
+        size_id: item.old_size_id !== undefined ? item.old_size_id : item.size_id,
+        note: item.old_note !== undefined ? item.old_note : item.note,
         dish_status: item.dish_status,
         dish_addons: item.dish_addons || []
       }))
@@ -176,13 +184,14 @@ export class NewOrderService {
 
     this.http.post(url, payload, { headers }).subscribe({
       next: (res: any) => {
-        // The server will broadcast the dishChangeStatus2 event WITH printers array.
-        // Our listener will catch that broadcast and execute the print.
-        console.log('✅ [Global Listener] Print request successful. Server will broadcast print data.');
+        console.log('✅ [Global Listener] Print request successful.');
+        if (res && res.printers && res.printers.length > 0) {
+          console.log('🖨️ [Global Listener] Handling print results from API response.');
+          this.handleGlobalPrint(res);
+        }
       },
       error: (err) => {
         console.error('❌ [Global Listener] Failed to request print details:', err);
-        if (err.status === 401) console.error('   -> Unauthorized: Check if token is expired.');
       }
     });
   }
