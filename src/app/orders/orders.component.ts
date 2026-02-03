@@ -2421,6 +2421,22 @@ export class OrdersComponent implements OnDestroy {
   currentOrderForTypeChange: any = null;
   selectedNewOrderType: string = '';
   selectedTableIdForTypeChange: string = '';
+  deliveryAreas: any[] = [];
+  changeTypeDeliveryName: string = '';
+  changeTypeDeliveryPhone: string = '';
+  changeTypeDeliveryCountryCode: string = '';
+  changeTypeDeliveryAddress: string = '';
+  changeTypeDeliveryAreaId: string = '';
+  changeTypeDeliveryBuildingType: string = 'apartment';
+  changeTypeDeliveryBuilding: string = '';
+  changeTypeDeliveryApartment: string = '';
+  changeTypeDeliveryFloor: string = '';
+  changeTypeDeliveryNotes: string = '';
+  changeTypeDeliveryHotelName: string = '';
+  changeTypeDeliveryHotelId: number | string = '';
+  changeTypeDeliveryHotels: any[] = [];
+  changeTypeDeliveryWhatsapp: string = '';
+  changeTypeDeliveryWhatsappCode: string = '';
   isChangeTypeSubmitting: boolean = false;
   changeTypeSuccessMessage: string = '';
 
@@ -2479,9 +2495,16 @@ export class OrdersComponent implements OnDestroy {
     return eligibleOrders.length > 0;
   }
 
-  // Get eligible orders for merge (excluding current order)
+  // Get eligible orders for merge (excluding current order) – same branch only
   getEligibleOrdersForMerge(currentOrder: any): any[] {
+    const currentBranchId = localStorage.getItem('branch_id');
     return this.orders.filter((order: any) => {
+      // Must be from the same branch (avoid showing tables/orders from another branch)
+      const orderBranchId = order.branch_id ?? order.details_order?.branch_id ?? order.order_details?.branch_id;
+      if (currentBranchId != null && orderBranchId != null && String(orderBranchId) !== String(currentBranchId)) {
+        return false;
+      }
+
       // Must be different order
       if (order.order_details.order_id === currentOrder.order_details.order_id) {
         return false;
@@ -3102,6 +3125,12 @@ export class OrdersComponent implements OnDestroy {
     this.selectedNewOrderType = rawType === 'reservation-table' ? 'dine-in' : (['Delivery', 'Takeaway', 'dine-in'].includes(rawType) ? rawType : '');
     this.selectedTableIdForTypeChange = order.order_details?.table_id ? String(order.order_details.table_id) : '';
     this.fetchAvailableTables();
+    this.loadDeliveryAreas();
+    this.changeTypeDeliveryName = order.order_details?.client_name ?? '';
+    this.changeTypeDeliveryPhone = order.order_details?.client_phone ?? '';
+    this.changeTypeDeliveryCountryCode = order.order_details?.client_country_code ?? '';
+    this.changeTypeDeliveryAddress = '';
+    this.changeTypeDeliveryAreaId = order.details_order?.client_address_id ? '' : '';
     const modalEl = document.getElementById('changeOrderTypeModal');
     if (modalEl) {
       const modal = new bootstrap.Modal(modalEl);
@@ -3124,6 +3153,57 @@ export class OrdersComponent implements OnDestroy {
     }, 300);
   }
 
+  onConfirmChangeOrderTypeClick(): void {
+    if (this.selectedNewOrderType === 'Delivery') {
+      const confirmEl = document.getElementById('confirmChangeOrderTypeModal');
+      if (confirmEl) {
+        const inst = bootstrap.Modal.getInstance(confirmEl);
+        inst?.hide();
+      }
+      setTimeout(() => this.openChangeTypeDeliveryDetailsModal(), 300);
+    } else {
+      this.submitChangeOrderType();
+    }
+  }
+
+  openChangeTypeDeliveryDetailsModal(): void {
+    const o = this.currentOrderForTypeChange;
+    if (o?.order_details) {
+      this.changeTypeDeliveryName = this.changeTypeDeliveryName || o.order_details.client_name || '';
+      this.changeTypeDeliveryPhone = this.changeTypeDeliveryPhone || o.order_details.client_phone || '';
+      this.changeTypeDeliveryCountryCode = this.changeTypeDeliveryCountryCode || o.order_details.client_country_code || '';
+    }
+    this.loadDeliveryAreas();
+    this.loadChangeTypeHotels();
+    const modalEl = document.getElementById('changeTypeDeliveryDetailsModal');
+    if (modalEl) {
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    }
+  }
+
+  submitChangeOrderTypeFromDeliveryModal(): void {
+    this.buildChangeTypeDeliveryAddressFromParts();
+    this.submitChangeOrderType();
+  }
+
+  private buildChangeTypeDeliveryAddressFromParts(): void {
+    const parts: string[] = [];
+    const typeLabels: Record<string, string> = { apartment: 'شقة', villa: 'فيلا', office: 'مكتب', hotel: 'فندق' };
+    if (this.changeTypeDeliveryBuildingType) parts.push(typeLabels[this.changeTypeDeliveryBuildingType] || this.changeTypeDeliveryBuildingType);
+    if (this.changeTypeDeliveryBuildingType === 'hotel' && this.changeTypeDeliveryHotelName?.trim()) {
+      parts.push(this.changeTypeDeliveryHotelName.trim());
+    } else if (this.changeTypeDeliveryBuilding?.trim()) {
+      parts.push(this.changeTypeDeliveryBuilding.trim());
+    }
+    if (this.changeTypeDeliveryApartment?.trim()) parts.push('شقة ' + this.changeTypeDeliveryApartment.trim());
+    if (this.changeTypeDeliveryFloor?.trim()) parts.push('الدور ' + this.changeTypeDeliveryFloor.trim());
+    let built = parts.join('، ');
+    if (this.changeTypeDeliveryAddress?.trim()) built = built ? built + ' - ' + this.changeTypeDeliveryAddress.trim() : this.changeTypeDeliveryAddress.trim();
+    if (this.changeTypeDeliveryNotes?.trim()) built = built ? built + ' - ' + this.changeTypeDeliveryNotes.trim() : this.changeTypeDeliveryNotes.trim();
+    if (built) this.changeTypeDeliveryAddress = built;
+  }
+
   getOrderTypeLabelForChange(type: string): string {
     if (!type) return '';
     const labels: Record<string, string> = {
@@ -3142,7 +3222,83 @@ export class OrdersComponent implements OnDestroy {
     return table ? `طاولة ${table.number}` : '';
   }
 
+  loadDeliveryAreas(): void {
+    const branchId = localStorage.getItem('branch_id');
+    if (!branchId) return;
+    this.http.get<{ status: boolean; data: any[] }>(`${baseUrl}api/areas/${branchId}`).subscribe({
+      next: (res) => {
+        if (res?.status && Array.isArray(res.data)) this.deliveryAreas = res.data;
+      },
+      error: () => {},
+    });
+  }
+
+  loadChangeTypeHotels(): void {
+    const token = localStorage.getItem('authToken');
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+    });
+    this.http.get<{ data?: any[] }>(`${baseUrl}api/listHotels`, { headers }).subscribe({
+      next: (res) => {
+        this.changeTypeDeliveryHotels = Array.isArray(res?.data) ? res.data : [];
+      },
+      error: () => { this.changeTypeDeliveryHotels = []; },
+    });
+  }
+
+  onChangeTypeHotelSelect(hotelId: string | number): void {
+    if (!hotelId) {
+      this.changeTypeDeliveryHotelName = '';
+      return;
+    }
+    const hotel = this.changeTypeDeliveryHotels.find((h: any) => String(h.id) === String(hotelId));
+    this.changeTypeDeliveryHotelName = hotel ? (hotel.name_ar || hotel.name_en || hotel.name || '') : '';
+  }
+
+  isDeliveryInfoComplete(): boolean {
+    if (this.selectedNewOrderType !== 'Delivery') return true;
+    const o = this.currentOrderForTypeChange;
+    const hasExisting = o?.order_details?.client_address_id || (o?.details_order as any)?.client_address_id;
+    const hasName = !!(o?.order_details?.client_name || this.changeTypeDeliveryName?.trim());
+    const hasPhone = !!(o?.order_details?.client_phone || this.changeTypeDeliveryPhone?.trim());
+    const hasCode = !!(o?.order_details?.client_country_code || this.changeTypeDeliveryCountryCode?.trim());
+    if (hasExisting && hasName && hasPhone && hasCode) return true;
+    const hasAddress = !!(
+      this.changeTypeDeliveryAddress?.trim() ||
+      this.changeTypeDeliveryBuilding?.trim() ||
+      this.changeTypeDeliveryApartment?.trim() ||
+      this.changeTypeDeliveryFloor?.trim() ||
+      (this.changeTypeDeliveryBuildingType === 'hotel' && (this.changeTypeDeliveryHotelId || this.changeTypeDeliveryHotelName?.trim()))
+    );
+    if (this.changeTypeDeliveryBuildingType === 'hotel') {
+      return !!(this.changeTypeDeliveryHotelId || this.changeTypeDeliveryHotelName?.trim());
+    }
+    return !!(
+      this.changeTypeDeliveryName?.trim() &&
+      this.changeTypeDeliveryPhone?.trim() &&
+      this.changeTypeDeliveryCountryCode?.trim() &&
+      this.changeTypeDeliveryAreaId &&
+      hasAddress
+    );
+  }
+
   private readonly changeOrderTypeAllowedValues = ['Delivery', 'Takeaway', 'dine-in'] as const;
+
+  private getChangeOrderTypeErrorMessage(errorData: any, fallback?: string): string {
+    const defaultMsg = 'حدث خطأ أثناء تغيير نوع الطلب.';
+    if (errorData && typeof errorData === 'object' && !Array.isArray(errorData)) {
+      const messages: string[] = [];
+      for (const key of Object.keys(errorData)) {
+        const val = errorData[key];
+        if (Array.isArray(val) && val.length > 0 && val[0]) messages.push(String(val[0]).trim());
+        else if (typeof val === 'string') messages.push(val.trim());
+      }
+      if (messages.length > 0) return messages.join(' ');
+    }
+    if (typeof errorData === 'string') return errorData;
+    if (Array.isArray(errorData) && errorData[0]) return String(errorData[0]);
+    return fallback || defaultMsg;
+  }
 
   submitChangeOrderType(): void {
     if (!this.currentOrderForTypeChange) return;
@@ -3166,6 +3322,38 @@ export class OrdersComponent implements OnDestroy {
     if (newOrderType === 'dine-in' && this.selectedTableIdForTypeChange) {
       body['table_id'] = parseInt(this.selectedTableIdForTypeChange, 10);
     }
+    // When changing to Delivery: send existing order client data or cashier-entered delivery info
+    if (newOrderType === 'Delivery') {
+      const o = this.currentOrderForTypeChange;
+      const od = o?.order_details;
+      const details = (o as any)?.details_order;
+      const addressId = details?.client_address_id ?? od?.client_address_id ?? (o as any)?.client_address_id;
+      if (addressId != null && !this.changeTypeDeliveryAreaId) {
+        body['client_address'] = addressId;
+      }
+      body['client_name'] = this.changeTypeDeliveryName?.trim() || od?.client_name || '';
+      body['client_phone'] = this.changeTypeDeliveryPhone?.trim() || od?.client_phone || '';
+      body['client_country_code'] = this.changeTypeDeliveryCountryCode?.trim() || od?.client_country_code || '';
+      if (this.changeTypeDeliveryAreaId) {
+        body['area_id'] = parseInt(this.changeTypeDeliveryAreaId, 10);
+        body['delivery_address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || 'عنوان التوصيل';
+        // Full address payload for storeAddress (same as add-address)
+        body['address_type'] = this.changeTypeDeliveryBuildingType || 'apartment';
+        body['building'] = this.changeTypeDeliveryBuilding?.trim() || null;
+        body['apartment_number'] = this.changeTypeDeliveryApartment?.trim() || null;
+        body['floor_number'] = this.changeTypeDeliveryFloor?.trim() || null;
+        body['address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || 'عنوان التوصيل';
+        body['notes'] = this.changeTypeDeliveryNotes?.trim() || null;
+        if (this.changeTypeDeliveryBuildingType === 'hotel' && this.changeTypeDeliveryHotelId) {
+          body['hotel_id'] = parseInt(String(this.changeTypeDeliveryHotelId), 10);
+        }
+        if (this.changeTypeDeliveryWhatsappCode?.trim()) body['whatsapp_number_code'] = this.changeTypeDeliveryWhatsappCode.trim();
+        if (this.changeTypeDeliveryWhatsapp?.trim()) body['whatsapp_number'] = this.changeTypeDeliveryWhatsapp.trim();
+      }
+      if (addressId != null && !this.changeTypeDeliveryAreaId) {
+        body['client_address'] = addressId;
+      }
+    }
 
     this.http.post(`${baseUrl}api/orders/changeOrderType`, body, { headers }).subscribe({
       next: (res: any) => {
@@ -3175,6 +3363,11 @@ export class OrdersComponent implements OnDestroy {
           const inst = bootstrap.Modal.getInstance(confirmEl);
           inst?.hide();
         }
+        const deliveryDetailsEl = document.getElementById('changeTypeDeliveryDetailsModal');
+        if (deliveryDetailsEl) {
+          const inst2 = bootstrap.Modal.getInstance(deliveryDetailsEl);
+          inst2?.hide();
+        }
         if (res?.status && res?.message) {
           this.changeTypeSuccessMessage = res.message;
           this.successMessage = res.message;
@@ -3183,19 +3376,32 @@ export class OrdersComponent implements OnDestroy {
           this.currentOrderForTypeChange = null;
           this.selectedNewOrderType = '';
           this.selectedTableIdForTypeChange = '';
+          this.changeTypeDeliveryName = '';
+          this.changeTypeDeliveryPhone = '';
+          this.changeTypeDeliveryCountryCode = '';
+          this.changeTypeDeliveryAddress = '';
+          this.changeTypeDeliveryAreaId = '';
+          this.changeTypeDeliveryBuilding = '';
+          this.changeTypeDeliveryApartment = '';
+          this.changeTypeDeliveryFloor = '';
+          this.changeTypeDeliveryBuildingType = 'apartment';
+          this.changeTypeDeliveryNotes = '';
+          this.changeTypeDeliveryHotelName = '';
+          this.changeTypeDeliveryHotelId = '';
+          this.changeTypeDeliveryWhatsapp = '';
+          this.changeTypeDeliveryWhatsappCode = '';
         } else {
-          const errMsg = res?.errorData?.error || res?.message || 'حدث خطأ أثناء تغيير نوع الطلب.';
-          this.showMessageModal(Array.isArray(errMsg) ? errMsg[0] : errMsg, 'error');
+          const errMsg = this.getChangeOrderTypeErrorMessage(res?.errorData, res?.message);
+          this.showMessageModal(errMsg, 'error');
         }
       },
       error: (err: any) => {
         this.isChangeTypeSubmitting = false;
-        const errMsg =
-          err?.error?.errorData?.error ||
-          err?.error?.message ||
-          err?.message ||
-          'حدث خطأ أثناء تغيير نوع الطلب.';
-        this.showMessageModal(Array.isArray(errMsg) ? errMsg[0] : errMsg, 'error');
+        const errMsg = this.getChangeOrderTypeErrorMessage(
+          err?.error?.errorData,
+          err?.error?.message || err?.message
+        );
+        this.showMessageModal(errMsg, 'error');
       },
     });
   }

@@ -39,9 +39,9 @@ export const environment = {
 //production
 
 // for  product owner
-//  export const baseUrl='https://productowner.testdomain100.online/'
+ export const baseUrl='https://productowner.testdomain100.online/'
 // for  cashier test
-export const baseUrl='https://erp-cashier.testdomain100.online/'
+// export const baseUrl='https://erp-cashier.testdomain100.online/'
 
 // for  cashier production
 // export const baseUrl='https://erpmain.alkoot-restaurant.com/api'
