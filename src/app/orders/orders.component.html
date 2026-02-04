@@ -1532,44 +1532,21 @@
           <i class="fa-solid fa-arrows-rotate text-warning rounded-circle p-2" style="background-color: #fff3cd;"></i>
         </div>
         <h5 class="modal-title fw-bold" id="confirmChangeOrderTypeModalLabel">تأكيد تغيير نوع الطلب</h5>
-        <p class="text-muted small mb-0">يرجى مراجعة تفاصيل التغيير أدناه قبل المتابعة</p>
       </div>
       <div class="modal-body">
-        <div class="d-flex align-items-center justify-content-between gap-2 mb-3">
-          <div class="flex-grow-1">
-            <small class="text-muted d-block">من</small>
-            <div class="border rounded p-2 d-flex align-items-center gap-2">
-              <i class="fa-solid fa-bag-shopping text-primary" *ngIf="currentOrderForTypeChange?.order_details?.order_type === 'Takeaway'"></i>
-              <i class="fa-solid fa-truck" *ngIf="currentOrderForTypeChange?.order_details?.order_type === 'Delivery'" style="color: #9c27b0;"></i>
-              <i class="fa-solid fa-utensils" *ngIf="currentOrderForTypeChange?.order_details?.order_type === 'dine-in'" style="color: #ff9800;"></i>
-              <span>{{ getOrderTypeLabelForChange(currentOrderForTypeChange?.order_details?.order_type) }}</span>
-            </div>
-          </div>
-          <i class="fa-solid fa-arrow-left text-muted"></i>
-          <div class="flex-grow-1">
-            <small class="text-muted d-block">إلى</small>
-            <div class="border rounded p-2 d-flex align-items-center gap-2 bg-light">
-              <i class="fa-solid fa-bag-shopping text-primary" *ngIf="selectedNewOrderType === 'Takeaway'"></i>
-              <i class="fa-solid fa-truck" *ngIf="selectedNewOrderType === 'Delivery'" style="color: #9c27b0;"></i>
-              <i class="fa-solid fa-utensils" *ngIf="selectedNewOrderType === 'dine-in'" style="color: #ff9800;"></i>
-              <span>{{ getOrderTypeLabelForChange(selectedNewOrderType) }}</span>
-              <span *ngIf="selectedNewOrderType === 'dine-in' && getTableNameForTypeChange()" class="text-danger fw-bold">{{ getTableNameForTypeChange() }}</span>
-            </div>
-          </div>
-        </div>
-        <div class="alert alert-warning d-flex align-items-start gap-2 mb-0">
-          <i class="fa-solid fa-circle-info mt-1"></i>
-          <div>
-            سيتم تغيير نوع الطلب {{ currentOrderForTypeChange?.order_details?.order_number }}. قد يؤثر هذا على الأسعار والضرائب المطبقة. هل أنت متأكد أنك تريد المتابعة؟
-          </div>
-        </div>
+        <p class="fw-bold mb-3" id="confirmChangeOrderTypeMessage">
+          {{ getConfirmChangeOrderTypeMessage() }}
+        </p>
+        <p class="text-muted small mb-0">
+          {{ getConfirmChangeOrderTypeSubtext() }}
+        </p>
       </div>
       <div class="modal-footer border-0 d-flex justify-content-between">
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
-        <button type="button" class="btn btn-danger" (click)="onConfirmChangeOrderTypeClick()" [disabled]="isChangeTypeSubmitting">
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal" aria-label="Cancel">إلغاء</button>
+        <button type="button" class="btn btn-danger" (click)="onConfirmChangeOrderTypeClick()" [disabled]="isChangeTypeSubmitting" aria-label="Confirm">
           <span *ngIf="isChangeTypeSubmitting" class="spinner-border spinner-border-sm me-2"></span>
           <i *ngIf="!isChangeTypeSubmitting" class="fa-solid fa-check me-2"></i>
-          تأكيد التغيير
+          تأكيد
         </button>
       </div>
     </div>
@@ -1800,17 +1777,18 @@
   </div>
 </div>
 
-<!-- Paid Order Warning Modal (Change Type) -->
-<div class="modal fade" id="changeTypePaidWarningModal" tabindex="-1" aria-hidden="true">
+<!-- Paid Order Error Modal (Change Type) - FR2: block action, show error message -->
+<div class="modal fade" id="changeTypePaidWarningModal" tabindex="-1" aria-labelledby="changeTypePaidErrorLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-sm">
     <div class="modal-content p-4 text-center">
       <div class="modal-body">
         <div class="rounded-circle bg-danger d-inline-flex align-items-center justify-content-center text-white mb-3" style="width: 60px; height: 60px;">
           <i class="fa-solid fa-exclamation fa-2x"></i>
         </div>
-        <h6 class="fw-bold mb-2">تنبيه</h6>
+        <h6 class="fw-bold mb-2" id="changeTypePaidErrorLabel">تنبيه</h6>
+        <p class="text-danger small mb-4 fw-bold">Cannot change the order type for a paid order.</p>
         <p class="text-muted small mb-4">لا يمكن تغيير نوع الطلب لطلب مدفوع.</p>
-        <button type="button" class="btn btn-danger w-100" data-bs-dismiss="modal">حسناً</button>
+        <button type="button" class="btn btn-danger w-100" data-bs-dismiss="modal" aria-label="Close">حسناً</button>
       </div>
     </div>
   </div>

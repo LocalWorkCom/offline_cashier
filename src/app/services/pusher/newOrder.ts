@@ -5,6 +5,7 @@ import { PusherService } from './pusher.service';
 import { baseUrl2, baseUrl } from '../../environment';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { PrintedInvoiceService } from '../printed-invoice.service';
+import { PrintTimeService } from '../print-time.service';
 import html2canvas from 'html2canvas';
 
 
@@ -17,7 +18,12 @@ export class NewOrderService {
   private channelName!: string;
   private isListening = false;
 
-  constructor(private pusherService: PusherService , private http: HttpClient , private printedInvoiceService: PrintedInvoiceService,) {}
+  constructor(
+    private pusherService: PusherService,
+    private http: HttpClient,
+    private printedInvoiceService: PrintedInvoiceService,
+    private printTime: PrintTimeService
+  ) {}
 
   private isElectron(): boolean {
     return !!(window && (window as any).deviceAPI);
@@ -315,12 +321,14 @@ export class NewOrderService {
       return '<!DOCTYPE html><html><body>No items to print</body></html>';
     }
 
-    // Get order information
+    // Get order information – مصدر وقت واحد وتنسيق 12 ساعة دائماً
     const orderNumber = order?.order_number || 'N/A';
     const tableNumber = order?.table?.table_number || order?.table_id || 'N/A';
     const orderType = order?.type || 'N/A';
     const orderStatus = order?.status || 'N/A';
-    const orderCreatedAt = order?.date && order?.time ? `${order.date}   ${order.time}` : 'N/A';
+    const orderCreatedAt = order?.created_at
+      ? this.printTime.formatOrderDateTime(order.created_at)
+      : this.printTime.parseAndFormatOrderDateTime(order?.date, order?.time);
     const orderNote = order?.note || 'N/A';
 
     // XP-80C: 80mm paper width = 640px at 203 DPI
