@@ -126,6 +126,8 @@
 .product-col {
   text-align: right;
   width: 55%;
+  vertical-align: top;
+  padding-top: 4px;
 }
 
 .quantity-col {
@@ -139,7 +141,7 @@
 }
 
 .products-table td {
-  padding: 4px 2px;
+  padding: 6px 2px;
   vertical-align: top;
   border: 0px;
 }
@@ -150,6 +152,7 @@
 .product-name {
   display: block;
   margin-bottom: 2px;
+  line-height: 1.4;
 }
 
 

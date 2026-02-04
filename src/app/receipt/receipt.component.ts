@@ -85,6 +85,44 @@ export class ReceiptComponent {
     return totalTip;
   }
 
+  /**
+   * Get formatted addons for an order item
+   * Ensures addons are properly displayed even if data structure varies
+   */
+  getAddons(orderItem: any): any[] {
+    if (!orderItem) return [];
+    
+    // Handle different possible data structures
+    if (Array.isArray(orderItem.addons)) {
+      return orderItem.addons.filter((addon: any) => addon && addon.addon_name);
+    }
+    
+    return [];
+  }
+
+  /**
+   * Get formatted size for an order item
+   * Returns size if available and not empty
+   */
+  getSize(orderItem: any): string | null {
+    if (!orderItem) return null;
+    
+    const size = orderItem.size || orderItem.size_name || orderItem.dish_size;
+    if (size && typeof size === 'string' && size.trim() !== '') {
+      return size.trim();
+    }
+    
+    return null;
+  }
+
+  /**
+   * Check if order item has addons
+   */
+  hasAddons(orderItem: any): boolean {
+    const addons = this.getAddons(orderItem);
+    return addons.length > 0;
+  }
+
   getDriverName(): string {
     const invoice = this.data?.invoices?.[0];
     if (!invoice) return 'N/A';
