@@ -55,7 +55,9 @@ export class NewOrderService {
           
           console.log('[Pusher] New order_id:', order_id);
 
-          this.printedInvoiceService.printMenu(order_id).subscribe({
+          const printData = orderData.items_id && orderData.items_id.length > 0 ? { items_id: orderData.items_id } : null;
+
+          this.printedInvoiceService.printMenu(order_id, printData).subscribe({
             next: async (response) => {
               if (response.order && response.order.make_type != 'cashier') {
                 console.log('🖨️ [Kitchen Print] Processing printers...', response.printers?.length);
@@ -78,7 +80,33 @@ export class NewOrderService {
 
           this.orderAdded$.next(orderData);
         });
-        console.log('[Pusher] Successfully bound to new-order-added2');
+
+        // 2. Global Listener for Kitchen Prints (Silent Printing)
+        this.pusherService.subscribe('dish-order-statuses-changed2', 'Dish-status2', (res: any) => {
+          let payload = res;
+          // Robustly unwrap the payload (Pusher can nest data in .data)
+          while (payload && payload.data && !payload.printers && !payload.items_updated) {
+            payload = payload.data;
+          }
+
+          console.log('🖨️ [Global Listener] Received event:', payload);
+
+          if (payload && payload.printers && payload.printers.length > 0) {
+            console.log('🖨️ [Global Listener] Print data detected, triggering silent print...');
+            this.handleGlobalPrint(payload);
+          } else if (payload && payload.items_updated && payload.items_updated.length > 0) {
+            // Safety check: prevent duplicate printing across multiple stations using the same account.
+            // You can run: localStorage.setItem('disableSilentPrint', 'true') on secondary machines.
+            if (localStorage.getItem('disableSilentPrint') === 'true') {
+              console.log('🔇 [Global Listener] Silent printing is disabled on this machine (disableSilentPrint is true).');
+              return;
+            }
+            console.log('🔄 [Global Listener] Status update detected, requesting print details...');
+            this.handleWaiterPrintRequest(payload);
+          }
+        });
+
+        console.log('[Pusher] Successfully bound to new-order-added2 and global status channel');
       } catch (error) {
         console.error('[Pusher] Subscription failed:', error);
         this.isListening = false;
@@ -86,6 +114,88 @@ export class NewOrderService {
         setTimeout(() => this.listenToNewOrder(a), retryDelay);
       }
     }, delay);
+  }
+
+  private async handleGlobalPrint(data: any) {
+    if (!data.printers || data.printers.length === 0) return;
+
+    for (const printer of data.printers) {
+      if (printer.items && printer.items.length > 0) {
+        try {
+          // Compatibility with different naming conventions (ip/printer_ip)
+          const ip = printer.ip || printer.printer_ip;
+          const port = printer.port || printer.printer_port;
+
+          if (!ip) {
+            console.warn('⚠️ [Global Print] Printer IP missing, skipping:', printer);
+            continue;
+          }
+
+          console.log(`📡 [Global Print] Printing ${printer.items.length} items to ${ip}:${port}`);
+          
+          await this.printInvoiceImage(
+            printer.items,
+            data.order,
+            ip,
+            port,
+            data.type || 'edit_cancel'
+          );
+          
+          // Small delay between printers to avoid congestion
+          await new Promise(resolve => setTimeout(resolve, 500));
+        } catch (err) {
+          console.error(`❌ [Global Print] Error printing to ${printer.ip}:`, err);
+        }
+      }
+    }
+  }
+
+  private handleWaiterPrintRequest(data: any) {
+    const cleanBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+    const url = `${cleanBaseUrl}/api/print-editor-cancel`;
+    const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+    
+    if (!token) {
+      console.warn('⚠️ [Global Listener] No authToken found in localStorage or sessionStorage, cannot request print details.');
+      return;
+    }
+
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+
+    const items = data.items_updated || [];
+    // If any item is cancelled, we treat the whole print as a cancellation layout.
+    const flag = items.some((i: any) => i.dish_status === 'cancel' || i.status === 'cancel') ? 'cancel' : 'edit';
+
+    const payload = {
+      order_id: data.order_id,
+      flag: flag,
+      force_print: true, // Crucial: ensures print even if DB already matches request
+      items: data.items_updated.map((item: any) => ({
+        item_id: item.order_detail_id,
+        quantity: item.old_quantity !== undefined ? item.old_quantity : item.quantity,
+        size_id: item.old_size_id !== undefined ? item.old_size_id : item.size_id,
+        note: item.old_note !== undefined ? item.old_note : item.note,
+        dish_status: item.dish_status,
+        dish_addons: item.dish_addons || []
+      }))
+    };
+
+    console.log(`📡 [Global Listener] Requesting print details for Order #${data.order_id} (${flag})...`, payload);
+
+    this.http.post(url, payload, { headers }).subscribe({
+      next: (res: any) => {
+        console.log('✅ [Global Listener] Print request successful.');
+        if (res && res.printers && res.printers.length > 0) {
+          console.log('🖨️ [Global Listener] Handling print results from API response.');
+          this.handleGlobalPrint(res);
+        }
+      },
+      error: (err) => {
+        console.error('❌ [Global Listener] Failed to request print details:', err);
+      }
+    });
   }
 /*   listenToNewOrder(a:string='string') {
     const branchId = localStorage.getItem('branch_id');
