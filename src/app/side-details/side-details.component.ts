@@ -3516,14 +3516,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
       localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
 
-      // Save cart items for printing before clearing
-      const cartItemsForPrint = JSON.parse(JSON.stringify(this.cartItems));
-      console.log(cartItemsForPrint, 'cartItemsForPrint');
-
-      // get current order data
-      const body = this.currentOrderData 
-        ? { cartItemsForPrint, flag: 'add' } 
-        : [];
+      // get new item IDs from response for selective printing
+      const addedItems = (response as any).data?.dish_data?.added_items || [];
+      const items_id = addedItems.map((item: any) => item.order_detail_id).filter((id: any) => !!id);
+      
+      const body = items_id.length > 0 ? { items_id } : {};
 
       this.clearCart();
       this.resetLocalStorage();
@@ -3533,8 +3530,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.successMessage = 'تم تنفيذ طلبك بنجاح';
 
       if (this.successModal) {
-      
-      
           this.printedInvoiceService
           .printMenu(this.orderedId , body)
           .subscribe({
@@ -3558,7 +3553,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             },
             error: (error) => {
               console.error('Print menu error:', error);
-              location.reload();
+              // location.reload();
             }
           });
 
