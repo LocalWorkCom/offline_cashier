@@ -3457,20 +3457,32 @@ export class OrdersComponent implements OnDestroy {
       });
   }
 
-  // Fetch available tables
+  // Fetch available tables (preserve type, floor, area from API for correct tab filtering)
   fetchAvailableTables(): void {
     this.tablesService.getTables().subscribe({
       next: (response: any) => {
         if (response.status && response.data) {
-          this.availableTables = response.data.map((table: any) => ({
-            id: table.id,
-            name: table.name_ar || table.name || `طاولة ${table.number}`,
-            number: table.number,
-            status: table.status || 1, // 1 = available, 2 = occupied
-            seats: table.seats || table.seat_count,
-            location: table.floor_partition_id || table.floor_id || 'main', // Default to main if no location
-          }));
-          // Initialize filtered tables
+          this.availableTables = response.data.map((table: any) => {
+            const typeRaw = (table.type ?? table.table_type ?? table.type_ar ?? table.type_en ?? '').toString().toLowerCase().trim();
+            const typeAr = (table.type_ar ?? table.type ?? '').toString().trim();
+            const floorId = table.floor_id ?? table.floor?.id ?? null;
+            const floorName = (table.floor_name ?? table.floor?.name ?? table.floor?.name_en ?? table.floor?.name_ar ?? '').toString().toLowerCase();
+            const areaName = (table.floor_area_name ?? table.area_name ?? table.floor_partition?.name ?? table.floor_partition?.name_ar ?? table.floor_area ?? '').toString().toLowerCase();
+            return {
+              id: table.id,
+              name: table.name_ar || table.name || `طاولة ${table.number}`,
+              number: table.number,
+              status: table.status || 1,
+              seats: table.seats || table.seat_count,
+              location: table.floor_partition_id ?? table.floor_id,
+              tableType: typeRaw || typeAr,
+              tableTypeAr: typeAr,
+              type_id: table.type_id ?? table.table_type_id,
+              floorId,
+              floorName,
+              areaName,
+            };
+          });
           this.filterTablesByLocation('all');
         }
       },
@@ -3480,22 +3492,52 @@ export class OrdersComponent implements OnDestroy {
     });
   }
 
-  // Filter tables by location
+  /** هل الطاولة مصنفة كـ "داخلية" (الصالة الرئيسية). */
+  private isTableInternal(table: any): boolean {
+    const t = (table.tableType ?? table.tableTypeAr ?? '').toString().toLowerCase();
+    const ar = (table.tableTypeAr ?? '').toString().trim();
+    return t === 'internal' || ar === 'داخلي' || t === 'داخلي' || table.type_id === 1;
+  }
+
+  /** هل الطاولة مصنفة كـ "خارجية" (التراس الخارجي). */
+  private isTableExternal(table: any): boolean {
+    const t = (table.tableType ?? table.tableTypeAr ?? '').toString().toLowerCase();
+    const ar = (table.tableTypeAr ?? '').toString().trim();
+    return t === 'external' || ar === 'خارجي' || t === 'خارجي' || table.type_id === 2;
+  }
+
+  /** هل الطاولة في الطابق العلوي. */
+  private isTableUpperFloor(table: any): boolean {
+    const name = (table.floorName ?? '').toString();
+    const id = table.floorId;
+    return name.includes('upper') || name.includes('علوي') || name.includes('طابق 2') || id === 2 || id === '2';
+  }
+
+  /** هل الطاولة في قسم العائلات. */
+  private isTableFamily(table: any): boolean {
+    const name = (table.areaName ?? '').toString();
+    return name.includes('family') || name.includes('عائل');
+  }
+
+  // Filter tables by location: Main = internal, Terrace = external, Upper = upper floor, Family = family area
   filterTablesByLocation(location: string): void {
     this.selectedLocationFilter = location;
     if (location === 'all') {
       this.filteredTablesForSplit = [...this.availableTables];
     } else {
-      // Filter by location (you may need to adjust this based on your actual data structure)
       this.filteredTablesForSplit = this.availableTables.filter((table: any) => {
-        // This is a placeholder - adjust based on your actual location mapping
-        const locationMap: any = {
-          'main': [1, 2, 3], // Example: floor_partition_ids for main hall
-          'terrace': [4, 5, 6], // Example: floor_partition_ids for terrace
-          'upper': [7, 8, 9], // Example: floor_partition_ids for upper floor
-          'family': [10, 11, 12], // Example: floor_partition_ids for family section
-        };
-        return locationMap[location]?.includes(table.location) || false;
+        switch (location) {
+          case 'main':
+            return this.isTableInternal(table);
+          case 'terrace':
+            return this.isTableExternal(table);
+          case 'upper':
+            return this.isTableUpperFloor(table);
+          case 'family':
+            return this.isTableFamily(table);
+          default:
+            return false;
+        }
       });
     }
   }

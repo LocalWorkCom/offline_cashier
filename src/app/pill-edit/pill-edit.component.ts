@@ -19,6 +19,7 @@ import { finalize } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { baseUrl } from '../environment';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { PrintTimeService } from '../services/print-time.service';
 import { ReceiptComponent } from '../receipt/receipt.component';
 
 
@@ -120,21 +121,19 @@ export class PillEditComponent {
     private printedInvoiceService: PrintedInvoiceService,
     private router: Router,
     private http: HttpClient,
-    private modalService: NgbModal
+    private modalService: NgbModal,
+    private printTime: PrintTimeService
   ) {
     this.currencySymbol = localStorage.getItem('currency_symbol') || 'ج.م';
   }
 
   private extractDateAndTime(branch: any): void {
     const { created_at } = branch;
-    console.log(created_at, 'test');
 
     if (created_at) {
-      const dateObj = new Date(created_at);
-
-      this.date = this.datePipe.transform(dateObj, 'yyyy-MM-dd');
-
-      this.time = this.datePipe.transform(dateObj, 'hh:mm a');
+      const { dateStr, timeStr } = this.printTime.formatForPrint(created_at);
+      this.date = dateStr;
+      this.time = timeStr;
     }
   }
   order_id: any;
