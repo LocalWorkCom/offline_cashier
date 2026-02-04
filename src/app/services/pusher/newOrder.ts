@@ -55,7 +55,9 @@ export class NewOrderService {
           
           console.log('[Pusher] New order_id:', order_id);
 
-          this.printedInvoiceService.printMenu(order_id).subscribe({
+          const printData = orderData.items_id && orderData.items_id.length > 0 ? { items_id: orderData.items_id } : null;
+
+          this.printedInvoiceService.printMenu(order_id, printData).subscribe({
             next: async (response) => {
               if (response.order && response.order.make_type != 'cashier') {
                 console.log('🖨️ [Kitchen Print] Processing printers...', response.printers?.length);
