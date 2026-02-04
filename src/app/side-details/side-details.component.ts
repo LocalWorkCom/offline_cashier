@@ -42,6 +42,7 @@ import { baseUrl } from '../environment';
 //start hanan
 import { IndexeddbService } from '../services/indexeddb.service';
 import { SyncService } from '../services/sync.service';
+import { PrintTimeService } from '../services/print-time.service';
 //end hanan
 
 declare var bootstrap: any;
@@ -239,7 +240,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     public authService: AuthService,
     // start hanan
     private dbService: IndexeddbService,
-    private syncService: SyncService
+    private syncService: SyncService,
+    private printTime: PrintTimeService
     // end hanan
   ) {
     this.cashier_machine_id = this.getCashierMachineId();
@@ -3696,10 +3698,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const { created_at } = branch;
 
     if (created_at) {
-      const dateObj = new Date(created_at); // Automatically handles the UTC 'Z'
-
-      this.date = this.datePipe.transform(dateObj, 'yyyy-MM-dd') ?? '';
-      this.time = this.datePipe.transform(dateObj, 'hh:mm a') ?? '';
+      const { dateStr, timeStr } = this.printTime.formatForPrint(created_at);
+      this.date = dateStr;
+      this.time = timeStr;
     }
   }
 
@@ -3911,6 +3912,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       if (this.branchDetails?.length) {
         this.extractDateAndTime(this.branchDetails[0]);
       }
+      const orderCreatedAt = response.data?.created_at ?? response.data?.order?.created_at ?? this.invoices?.[0]?.created_at ?? (Array.isArray(this.branchDetails) ? this.branchDetails[0]?.created_at : this.branchDetails?.created_at);
+      if (orderCreatedAt && (!this.date || !this.time)) {
+        const { dateStr, timeStr } = this.printTime.formatForPrint(orderCreatedAt);
+        this.date = dateStr;
+        this.time = timeStr;
+      }
 
       this.receiptDataResponse = {
         branchDetails: Array.isArray(this.branchDetails) ? this.branchDetails : (this.branchDetails ? [this.branchDetails] : []),
@@ -3920,6 +3927,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         orderDetails: this.orderDetails.flat() || [],
         date: this.date,
         time: this.time,
+        created_at: orderCreatedAt ?? (Array.isArray(this.branchDetails) ? this.branchDetails[0]?.created_at : this.branchDetails?.created_at),
         showPrices: true,
         paymentStatus: this.paymentStatus,
         invoice_id: response.data.invoice_tips[0]?.invoice_id,
@@ -4410,12 +4418,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       return '<!DOCTYPE html><html><body>No items to print</body></html>';
     }
 
-    // Get order information
+    // Get order information – مصدر وقت واحد وتنسيق 12 ساعة دائماً
     const orderNumber = order?.order_number || 'N/A';
     const tableNumber = order?.table_id !== null ? order?.table?.table_number : 'N/A';
     const orderType = order?.type || 'N/A';
     const orderStatus = order?.status || 'N/A';
-    const orderCreatedAt = order?.date && order?.time ? `${order.date}   ${order.time}` : 'N/A';
+    const orderCreatedAt = order?.created_at
+      ? this.printTime.formatOrderDateTime(order.created_at)
+      : this.printTime.parseAndFormatOrderDateTime(order?.date, order?.time);
     const orderNote = order?.note || 'N/A';
     // XP-80C: 80mm paper width = 640px at 203 DPI
     const printerWidth = 576;

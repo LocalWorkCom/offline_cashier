@@ -1,5 +1,6 @@
 import { Component, Input } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { PrintTimeService } from '../services/print-time.service';
 
 @Component({
   selector: 'app-receipt',
@@ -9,6 +10,8 @@ import { CommonModule } from '@angular/common';
 })
 export class ReceiptComponent {
   @Input() data: any;
+
+  constructor(private printTime: PrintTimeService) {}
 
   ngOnInit() {
     console.log('Receipt data:', this.data);
@@ -49,8 +52,24 @@ export class ReceiptComponent {
     return 'غير محدد';
   }
 
-  now(): Date {
-    return new Date();
+  /** وقت الطباعة بتنسيق 12 ساعة (نفس مصدر وقت الطلب للاتساق). */
+  getPrintTimeNow(): { dateStr: string; timeStr: string } {
+    return this.printTime.getPrintTimeNow();
+  }
+
+  /** وقت وتاريخ الطلب بتنسيق 12 ساعة دائماً؛ مصدر واحد: الخدمة. */
+  getOrderDateTime(): string {
+    const created_at =
+      this.data?.created_at ??
+      this.data?.branchDetails?.[0]?.created_at ??
+      this.data?.invoices?.[0]?.created_at;
+    if (created_at) {
+      return this.printTime.formatOrderDateTime(created_at);
+    }
+    if (this.data?.date != null || this.data?.time != null) {
+      return this.printTime.parseAndFormatOrderDateTime(this.data.date, this.data.time);
+    }
+    return '--/--/----   --:-- --';
   }
 
   getTableNumber(): string {

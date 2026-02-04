@@ -24,7 +24,7 @@
       <div class="order-number-box" *ngIf="data.branchDetails && data.branchDetails[0]">
         <h3> رقم الطلب :{{ data.branchDetails[0].order_number }}</h3>
       </div>
-       <p> وقت الطباعة  : {{ now() | date:'dd/MM/yyyy' }} {{ now() | date:'hh:mm:ss a' }}</p>
+       <p> وقت الطباعة  : {{ getPrintTimeNow().dateStr }} {{ getPrintTimeNow().timeStr }}</p>
     </div>
 
     <!-- Order Meta Data -->
@@ -37,7 +37,7 @@
 
       <div class="info-row">
         <span class="d-label">  وقت إنشاء الطلب :</span>
-        <span class="d-value">{{ data.date }}   {{ data.time }}</span>
+        <span class="d-value">{{ getOrderDateTime() }}</span>
       </div>
 
       <div class="info-row" *ngIf="data.make_type == 'cashier'">
@@ -81,7 +81,7 @@
 
       </div>
       <div class="summary-row">
-        <span class="d-label">{{ data.date }} {{ data.time }} </span>
+        <span class="d-label">{{ getOrderDateTime() }} </span>
         <span class="d-value">:Created at </span>
       </div>
       

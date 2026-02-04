@@ -18,6 +18,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogComponent } from "../shared/ui/component/confirm-dialog/confirm-dialog.component";
 import { IndexeddbService } from '../services/indexeddb.service';
+import { PrintTimeService } from '../services/print-time.service';
 import { ReceiptComponent } from '../receipt/receipt.component';
 
 @Component({
@@ -73,17 +74,15 @@ export class PillDetailsComponent implements OnInit {
     private datePipe: DatePipe,
     private dbService: IndexeddbService,
     private printedInvoiceService: PrintedInvoiceService,
-    private router: Router) { }
+    private router: Router,
+    private printTime: PrintTimeService) { }
   private extractDateAndTime(branch: any): void {
     const { created_at } = branch;
-    // console.log(created_at, 'test');
 
     if (created_at) {
-      const dateObj = new Date(created_at);
-
-      this.date = this.datePipe.transform(dateObj, 'yyyy-MM-dd');
-
-      this.time = this.datePipe.transform(dateObj, 'hh:mm a');
+      const { dateStr, timeStr } = this.printTime.formatForPrint(created_at);
+      this.date = dateStr;
+      this.time = timeStr;
     }
   }
 
