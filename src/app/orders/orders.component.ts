@@ -3214,6 +3214,24 @@ export class OrdersComponent implements OnDestroy {
     return labels[type] || type;
   }
 
+  /** FR1: Confirmation modal message – "This order type will be changed from [X] to [Y]. Are you sure you want to proceed?" */
+  getConfirmChangeOrderTypeMessage(): string {
+    const fromType = this.getOrderTypeLabelForChange(this.currentOrderForTypeChange?.order_details?.order_type || '');
+    const toType = this.getOrderTypeLabelForChange(this.selectedNewOrderType || '');
+    const x = fromType || '[X]';
+    const y = toType || '[Y]';
+    const lang = (typeof localStorage !== 'undefined' && localStorage.getItem('lang')) || 'ar';
+    if (lang === 'en') {
+      return `This order type will be changed from ${x} to ${y}. Are you sure you want to proceed?`;
+    }
+    return `سيتم تغيير نوع هذا الطلب من ${x} إلى ${y}. هل أنت متأكد أنك تريد المتابعة؟`;
+  }
+
+  /** Subtext for confirmation modal (recalculation note). */
+  getConfirmChangeOrderTypeSubtext(): string {
+    return 'سيتم إعادة حساب الرسوم والمجاميع تلقائياً حسب النوع الجديد دون تغيير الأصناف أو الكميات أو أسعارها.';
+  }
+
   getTableNameForTypeChange(): string {
     if (this.selectedNewOrderType !== 'dine-in' || !this.selectedTableIdForTypeChange) return '';
     const table = this.availableTables.find(
@@ -3368,9 +3386,11 @@ export class OrdersComponent implements OnDestroy {
           const inst2 = bootstrap.Modal.getInstance(deliveryDetailsEl);
           inst2?.hide();
         }
-        if (res?.status && res?.message) {
-          this.changeTypeSuccessMessage = res.message;
-          this.successMessage = res.message;
+        if (res?.status) {
+          this.changeTypeSuccessMessage = (res?.message && String(res.message).trim())
+            ? res.message
+            : 'تم تغيير نوع الطلب وإعادة حساب الرسوم والمجاميع بنجاح.';
+          this.successMessage = this.changeTypeSuccessMessage;
           if (this.successMessageModal) this.successMessageModal.show();
           this.refreshOrderAfterCancel(this.currentOrderForTypeChange.order_details.order_id);
           this.currentOrderForTypeChange = null;
