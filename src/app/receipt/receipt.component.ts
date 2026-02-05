@@ -71,7 +71,24 @@ export class ReceiptComponent {
     }
     return '--/--/----   --:-- --';
   }
-
+  getOrderDateTimeSeperated(): { dateStr: string; timeStr: string } {
+    const created_at =
+      this.data?.created_at ??
+      this.data?.branchDetails?.[0]?.created_at ??
+      this.data?.invoices?.[0]?.created_at;
+    if (created_at) {
+      return this.printTime.formatForPrint(created_at);
+    }
+    if (this.data?.date != null || this.data?.time != null) {
+      const formatted = this.printTime.parseAndFormatOrderDateTime(this.data.date, this.data.time);
+      const parts = formatted.split('   ');
+      return {
+        dateStr: parts[0] || '--/--/----',
+        timeStr: parts[1] || '--:-- --'
+      };
+    }
+    return { dateStr: '--/--/----', timeStr: '--:-- --' };
+  }
   getTableNumber(): string {
     const invoice = this.data?.invoices?.[0];
     if (invoice && invoice.branch_details) {
