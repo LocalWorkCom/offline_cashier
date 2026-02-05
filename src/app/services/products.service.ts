@@ -116,6 +116,27 @@ export class ProductsService {
     return this.http.get<any>(url, { headers: authContext.headers });
   }
 
+  getMenuCategoriesAll(): Observable<any> {
+    const authContext = this.buildAuthContext();
+    if (!authContext) return throwError(() => new Error('Auth context missing'));
+    const url = `${this.apiUrl}/menu-categories-all?branchId=${authContext.branchId}`;
+    return this.http.get<any>(url, { headers: authContext.headers });
+  }
+
+  getMenuDishesAll(categoryId: number | string): Observable<any> {
+    const authContext = this.buildAuthContext();
+    if (!authContext) return throwError(() => new Error('Auth context missing'));
+    const url = `${this.apiUrl}/menu-dishes-all?categoryId=${categoryId}&branchId=${authContext.branchId}`;
+    return this.http.get<any>(url, { headers: authContext.headers });
+  }
+
+  toggleDishStatus(id: number, isActive: boolean): Observable<any> {
+    const authContext = this.buildAuthContext();
+    if (!authContext) return throwError(() => new Error('Auth context missing'));
+    const url = `${this.apiUrl}/menu-dishes/toggle-status`;
+    return this.http.post<any>(url, { id, is_active: isActive }, { headers: authContext.headers });
+  }
+
   getMenuDataLite(): Observable<any> {
     return this.getMenuCategoriesLite().pipe(
       switchMap((categoriesResponse: any) => {

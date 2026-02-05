@@ -6,6 +6,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { finalize } from 'rxjs';
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
 import { PrinterManagementComponent } from '../printer-management/printer-management.component';
+import { DishManagementComponent } from './dish-management/dish-management.component';
 
 interface Country {
   code: string;
@@ -41,7 +42,7 @@ const phoneValidationRules: { [key: string]: PhoneValidationRule } = {
 @Component({
   selector: 'app-settings',
   standalone: true,
-  imports: [CommonModule, FormsModule, ShowLoaderUntilPageLoadedDirective, PrinterManagementComponent],
+  imports: [CommonModule, FormsModule, ShowLoaderUntilPageLoadedDirective, PrinterManagementComponent, DishManagementComponent],
   templateUrl: './settings.component.html',
   styleUrls: ['./settings.component.css'],
 })
