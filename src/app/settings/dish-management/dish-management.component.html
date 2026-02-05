@@ -1,0 +1,71 @@
+<div class="dish-management p-3 text-end" dir="rtl">
+    <h5 class="fw-bold mb-4"> إدارة المنتجات</h5>
+
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <label class="form-label">اختر التصنيف</label>
+            <select class="form-select text-end" [(ngModel)]="selectedCategoryId" (change)="onCategoryChange()">
+                <option [value]="null" disabled selected>اختر تصنيف</option>
+                <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }} ({{ cat.dishes_count }})</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    <div *ngIf="successMessage" class="alert alert-success text-center py-2 fade show">
+        {{ successMessage }}
+    </div>
+    <div *ngIf="errorMessage" class="alert alert-danger text-center py-2 fade show">
+        {{ errorMessage }}
+    </div>
+
+    <!-- Loading Spinner for Disher -->
+    <div *ngIf="dishesLoading" class="text-center my-5">
+        <div class="spinner-border main-color" role="status">
+            <span class="visually-hidden">Loading...</span>
+        </div>
+    </div>
+
+    <!-- Dishes Table -->
+    <div *ngIf="!dishesLoading && selectedCategoryId && dishes.length > 0" class="table-responsive mt-3">
+        <table class="table table-hover align-middle border">
+            <thead class="bg-light">
+                <tr>
+                    <th class="text-center" width="80">الصورة</th>
+                    <th class="text-end">اسم المنتج</th>
+                    <th class="text-center">السعر</th>
+                    <th class="text-center">الحالة</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr *ngFor="let dish of dishes">
+                    <td class="text-center">
+                        <img [src]="dish.image || 'assets/images/dish-placeholder.png'" 
+                             class="rounded shadow-sm" style="width: 50px; height: 50px; object-fit: cover;"
+                             (error)="dish.image = 'assets/images/dish-placeholder.png'">
+                    </td>
+                    <td class="text-end fw-medium">{{ dish.name }}</td>
+                    <td class="text-center">{{ dish.price | number:'1.2-2' }} {{ dish.currency_symbol }}</td>
+                    <td class="text-center">
+                        <div class="form-check form-switch d-flex justify-content-center">
+                            <input class="form-check-input custom-switch" type="checkbox" 
+                                   [(ngModel)]="dish.is_active" 
+                                   (change)="toggleStatus(dish)">
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- No Dishes Found -->
+    <div *ngIf="!dishesLoading && selectedCategoryId && dishes.length === 0" class="text-center my-5 text-muted">
+        لا يوجد منتجات في هذا التصنيف.
+    </div>
+
+    <!-- No Category Selected -->
+    <div *ngIf="!selectedCategoryId && !loading" class="text-center my-5 text-muted bg-light p-5 rounded-4 border border-dashed">
+        <i class="fas fa-arrow-up fs-2 mb-3"></i>
+        <h5>الرجاء اختيار تصنيف لعرض المنتجات</h5>
+    </div>
+</div>
