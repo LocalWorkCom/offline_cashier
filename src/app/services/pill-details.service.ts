@@ -70,6 +70,7 @@ export class PillDetailsService {
     });
   
     // بناء payload واحد متسق
+    // ملاحظة: الـ API يجب أن يقبل payment_status = 'paid' أو 'unpaid' (راجع docs/API_PAYMENT_STATUS_FIX.md عند خطأ 400)
     let payload: any = {
       order_number: orderNumber,
       payment_status: paymentStatus || null,

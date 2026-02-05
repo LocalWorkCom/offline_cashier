@@ -2437,6 +2437,12 @@ export class OrdersComponent implements OnDestroy {
   changeTypeDeliveryHotels: any[] = [];
   changeTypeDeliveryWhatsapp: string = '';
   changeTypeDeliveryWhatsappCode: string = '';
+  changeTypeDeliveryUseSameWhatsapp: boolean = true;
+  changeTypeDeliveryCountryList: any[] = [];
+  changeTypeDeliveryFilteredCountries: any[] = [];
+  changeTypeDeliverySelectedCountry: { code: string; flag: string; phoneLength?: number } | null = null;
+  changeTypeDeliveryCountrySearchTerm: string = '';
+  changeTypeDeliverySearchPhoneIdle: boolean = true;
   isChangeTypeSubmitting: boolean = false;
   changeTypeSuccessMessage: string = '';
 
@@ -3175,11 +3181,80 @@ export class OrdersComponent implements OnDestroy {
     }
     this.loadDeliveryAreas();
     this.loadChangeTypeHotels();
+    this.loadChangeTypeDeliveryCountries();
     const modalEl = document.getElementById('changeTypeDeliveryDetailsModal');
     if (modalEl) {
       const modal = new bootstrap.Modal(modalEl);
       modal.show();
     }
+  }
+
+  loadChangeTypeDeliveryCountries(): void {
+    if (this.changeTypeDeliveryCountryList.length > 0) {
+      this.filterChangeTypeDeliveryCountries();
+      this.syncChangeTypeSelectedCountryFromCode();
+      return;
+    }
+    this.http.get<any>(`${baseUrl}api/country`).subscribe({
+      next: (response) => {
+        if (response?.data && Array.isArray(response.data)) {
+          const allowedCodes = ['+20', '+962', '+964', '+212', '+963', '+965', '+966'];
+          this.changeTypeDeliveryCountryList = response.data
+            .map((c: { phone_code: string; image: string; length: number }) => ({
+              code: (c.phone_code || '').trim(),
+              flag: c.image || '',
+              phoneLength: c.length || 10,
+            }))
+            .filter((c: any) => allowedCodes.includes(c.code.replace(/\s+/g, '')));
+          this.filterChangeTypeDeliveryCountries();
+          this.syncChangeTypeSelectedCountryFromCode();
+        }
+      },
+      error: () => {},
+    });
+  }
+
+  private syncChangeTypeSelectedCountryFromCode(): void {
+    const code = (this.changeTypeDeliveryCountryCode || '').trim().replace(/\s+/g, '');
+    if (!code) return;
+    const match = this.changeTypeDeliveryCountryList.find(
+      (c: any) => (c.code || '').replace(/\s+/g, '') === code
+    );
+    if (match) this.changeTypeDeliverySelectedCountry = match;
+  }
+
+  filterChangeTypeDeliveryCountries(): void {
+    const term = (this.changeTypeDeliveryCountrySearchTerm || '').trim().toLowerCase();
+    if (!term) {
+      this.changeTypeDeliveryFilteredCountries = [...this.changeTypeDeliveryCountryList];
+      return;
+    }
+    this.changeTypeDeliveryFilteredCountries = this.changeTypeDeliveryCountryList.filter(
+      (c: any) => (c.code || '').toLowerCase().includes(term)
+    );
+  }
+
+  selectChangeTypeDeliveryCountry(country: any): void {
+    this.changeTypeDeliverySelectedCountry = country;
+    this.changeTypeDeliveryCountryCode = country?.code || '';
+    this.cdr.detectChanges();
+  }
+
+  useSameWhatsappChangeType(value: boolean): void {
+    this.changeTypeDeliveryUseSameWhatsapp = value;
+    if (value) {
+      this.changeTypeDeliveryWhatsapp = '';
+      this.changeTypeDeliveryWhatsappCode = this.changeTypeDeliverySelectedCountry?.code || this.changeTypeDeliveryCountryCode || '';
+    }
+    this.cdr.detectChanges();
+  }
+
+  searchChangeTypeByPhone(): void {
+    this.changeTypeDeliverySearchPhoneIdle = false;
+    setTimeout(() => {
+      this.changeTypeDeliverySearchPhoneIdle = true;
+      this.cdr.detectChanges();
+    }, 800);
   }
 
   submitChangeOrderTypeFromDeliveryModal(): void {
@@ -3212,6 +3287,37 @@ export class OrdersComponent implements OnDestroy {
       'Delivery': 'توصيل',
     };
     return labels[type] || type;
+  }
+
+  /** Short label for confirm-change-type modal (Figma): استلام، محلي، توصيل */
+  getOrderTypeShortLabel(type: string): string {
+    if (!type) return '';
+    const short: Record<string, string> = {
+      'dine-in': 'محلي',
+      'Takeaway': 'استلام',
+      'Delivery': 'توصيل',
+    };
+    return short[type] || this.getOrderTypeLabelForChange(type);
+  }
+
+  /** Icon class for order type in confirm modal (Figma) */
+  getOrderTypeIconClass(type: string): string {
+    if (!type) return 'fa-solid fa-circle';
+    const icons: Record<string, string> = {
+      'dine-in': 'fa-solid fa-utensils',
+      'Takeaway': 'fa-solid fa-bag-shopping',
+      'Delivery': 'fa-solid fa-truck',
+    };
+    return icons[type] || 'fa-solid fa-circle';
+  }
+
+  /** Table number for "to" box when changing to dine-in (e.g. "39") */
+  getSelectedTableNumberForTypeChange(): string {
+    if (this.selectedNewOrderType !== 'dine-in' || !this.selectedTableIdForTypeChange) return '';
+    const table = this.availableTables.find(
+      (t: any) => String(t.id) === String(this.selectedTableIdForTypeChange)
+    );
+    return table ? String(table.number) : '';
   }
 
   /** FR1: Confirmation modal message – "This order type will be changed from [X] to [Y]. Are you sure you want to proceed?" */
@@ -3351,7 +3457,7 @@ export class OrdersComponent implements OnDestroy {
       }
       body['client_name'] = this.changeTypeDeliveryName?.trim() || od?.client_name || '';
       body['client_phone'] = this.changeTypeDeliveryPhone?.trim() || od?.client_phone || '';
-      body['client_country_code'] = this.changeTypeDeliveryCountryCode?.trim() || od?.client_country_code || '';
+      body['client_country_code'] = (this.changeTypeDeliverySelectedCountry?.code || this.changeTypeDeliveryCountryCode || od?.client_country_code || '').trim();
       if (this.changeTypeDeliveryAreaId) {
         body['area_id'] = parseInt(this.changeTypeDeliveryAreaId, 10);
         body['delivery_address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || 'عنوان التوصيل';
@@ -3410,6 +3516,9 @@ export class OrdersComponent implements OnDestroy {
           this.changeTypeDeliveryHotelId = '';
           this.changeTypeDeliveryWhatsapp = '';
           this.changeTypeDeliveryWhatsappCode = '';
+          this.changeTypeDeliveryUseSameWhatsapp = true;
+          this.changeTypeDeliverySelectedCountry = null;
+          this.changeTypeDeliveryCountrySearchTerm = '';
         } else {
           const errMsg = this.getChangeOrderTypeErrorMessage(res?.errorData, res?.message);
           this.showMessageModal(errMsg, 'error');
