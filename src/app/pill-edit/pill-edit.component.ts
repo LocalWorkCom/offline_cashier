@@ -367,6 +367,11 @@ export class PillEditComponent {
     this.deliveryStatusError = '';
     this.amountError = false;
 
+    // للطلبات غير المدفوعة: مسح أخطاء الدفع حتى لا تمنع حفظ الطلب (مثلاً بعد إضافة كوبون)
+    if (this.paymentStatus === 'unpaid') {
+      this.paymentError = '';
+    }
+
     // ✅ التحقق من حالة التوصيل للطلبات التوصيل أولاً
     if (this.orderType === 'Delivery') {
       if (!this.trackingStatus || (this.trackingStatus !== 'on_way' && this.trackingStatus !== 'delivered')) {
