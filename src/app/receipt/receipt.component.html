@@ -24,7 +24,7 @@
       <div class="order-number-box" *ngIf="data.branchDetails && data.branchDetails[0]">
         <h3> رقم الطلب :{{ data.branchDetails[0].order_number }}</h3>
       </div>
-       <p> وقت الطباعة  : {{ getPrintTimeNow().dateStr }} <span style="display: inline-block; width: 20px;"></span> {{ getPrintTimeNow().timeStr }}</p>
+       <p> وقت الطباعة  : <span style="display: inline-flex; direction: ltr; align-items: center;"><span>{{ getPrintTimeNow().timeStr }}</span><span style="width: 20px;"></span><span>{{ getPrintTimeNow().dateStr }}</span></span></p>
     </div>
 
     <!-- Order Meta Data -->
@@ -37,7 +37,7 @@
 
       <div class="info-row">
         <span class="d-label">  وقت إنشاء الطلب :</span>
-        <span class="d-value">{{ getOrderDateTimeSeperated().dateStr }} <span style="display: inline-block; width: 20px;"></span> {{ getOrderDateTimeSeperated().timeStr }}</span>
+        <span class="d-value" style="display: inline-flex; direction: ltr; align-items: center;"><span>{{ getOrderDateTimeSeperated().dateStr }}</span><span style="width: 20px;"></span><span>{{ getOrderDateTimeSeperated().timeStr }}</span></span>
       </div>
 
       <div class="info-row" *ngIf="data.make_type == 'cashier'">
@@ -81,7 +81,11 @@
 
       </div>
       <div class="summary-row">
-        <span class="d-label">{{ getOrderDateTimeSeperated().dateStr }} <span style="display: inline-block; width: 20px;"></span> {{ getOrderDateTimeSeperated().timeStr }} </span>
+        <span class="d-label">
+           <span style="display: inline-flex; direction: ltr; align-items: center;">
+             {{ getOrderDateTimeSeperated().dateStr }} <span style="width: 20px;"></span> {{ getOrderDateTimeSeperated().timeStr }}
+           </span>
+        </span>
         <span class="d-value">:Created at </span>
       </div>
       
@@ -215,14 +219,15 @@
         <span class="d-label">طريقة الدفع</span>
         <span class="d-value">{{ getPaymentMethod() }}</span>
       </div>
-     
-    </div>
-  <hr class="divider" />
-    <!-- FOOTER -->
+      </div>
+
+      <hr class="divider" />
+      <!-- FOOTER -->
     <div class="footer-section">
       <h6 class="item-count">عدد المنتجات: {{ data.orderDetails?.length || 0 }}</h6>
       <hr class="divider" />
-      <h6 class="thank-you">شكراً لزيارتكم</h6>    </div>
+      <h6 class="thank-you">شكراً لزيارتكم</h6>
+    </div>
     <br/>
   </div>
 </div>

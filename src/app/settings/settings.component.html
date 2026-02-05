@@ -14,6 +14,11 @@
             aria-controls="v-pills-printers" aria-selected="false">   
             <i class="fas fa-print ms-1 main-color"></i>الطابعات 
           </button>
+          <button class="nav-link text-dark fs-5 text-end" id="v-pills-dishes-tab" data-bs-toggle="pill"
+            data-bs-target="#v-pills-dishes" type="button" role="tab"
+            aria-controls="v-pills-dishes" aria-selected="false">   
+            <i class="fas fa-utensils ms-1 main-color"></i>المنتجات 
+          </button>
         </div>
       </div>
       <div class="col-lg-9">
@@ -61,6 +66,11 @@
             <!-- Printers Tab -->
             <div class="tab-pane fade" id="v-pills-printers" role="tabpanel" aria-labelledby="v-pills-printers-tab">
               <app-printer-management (success)="handlePrinterSuccess($event)"></app-printer-management>
+            </div>
+
+            <!-- Products Tab -->
+            <div class="tab-pane fade" id="v-pills-dishes" role="tabpanel" aria-labelledby="v-pills-dishes-tab">
+              <app-dish-management></app-dish-management>
             </div>
           </div>
         </div>
