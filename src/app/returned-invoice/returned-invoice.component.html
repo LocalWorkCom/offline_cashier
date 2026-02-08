@@ -211,9 +211,11 @@
           <span class="badge bg-success text-white" *ngIf="invoices[0].transactions.length == 1">
             الدفع :
             {{
-            invoices[0].transactions[0].payment_method === "credit"
+            invoices[0].transactions[0].payment_method === "credit" && invoices[0].transactions[0].payment_status === 'paid'
             ? "الفيزا"
-            : "كاش"
+            : invoices[0].transactions[0].payment_method === "cash" && invoices[0].transactions[0].payment_status === 'paid'
+            ? "كاش"
+            : "غير محدد"
             }}
           </span>
         </h5>
@@ -230,7 +232,7 @@
           <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
             *ngIf="invoices[0].transactions[0]?.payment_status == 'paid'">
             <div>
-              {{ inv.payment_method === "cash" ? " الكاش" : " الفيزا" }}
+              {{ inv.payment_method === "cash" && inv.payment_status === 'paid' ? " الكاش" : inv.payment_method === "credit" && inv.payment_status === 'paid' ? " الفيزا" : "غير محدد" }}
             </div>
             <div>{{ inv.paid }} {{ invoices[0].currency_symbol }}</div>
           </div>
