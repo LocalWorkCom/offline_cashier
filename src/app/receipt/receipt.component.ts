@@ -122,33 +122,101 @@ export class ReceiptComponent {
   }
 
   /**
-   * Get formatted addons for an order item
-   * Ensures addons are properly displayed even if data structure varies
+   * Get formatted addons for an order item.
+   * Supports order print and invoice print: addons, dish_addons, addon_categories[].addons.
+   * Normalizes addon_name and addon_name_en from any common API keys.
    */
   getAddons(orderItem: any): any[] {
     if (!orderItem) return [];
-    
-    // Handle different possible data structures
-    if (Array.isArray(orderItem.addons)) {
-      return orderItem.addons.filter((addon: any) => addon && addon.addon_name);
+    const rawAddons: any[] = [];
+    if (Array.isArray(orderItem.addons)) rawAddons.push(...orderItem.addons);
+    if (Array.isArray(orderItem.dish_addons)) rawAddons.push(...orderItem.dish_addons);
+    if (Array.isArray(orderItem.addon_categories)) {
+      for (const cat of orderItem.addon_categories) {
+        if (Array.isArray(cat.addons)) rawAddons.push(...cat.addons);
+      }
     }
-    
-    return [];
+    if (rawAddons.length === 0) return [];
+
+    return rawAddons
+      .filter((addon: any) => addon && (addon.addon_name || addon.name || addon.addon_name_ar || (addon.addon && (addon.addon.addon_name || addon.addon.name))))
+      .map((addon: any) => this.normalizeAddonForDisplay(addon));
   }
 
   /**
-   * Get formatted size for an order item
-   * Returns size if available and not empty
+   * Normalize a single addon so addon_name and addon_name_en are set from any common API keys.
+   */
+  private normalizeAddonForDisplay(addon: any): any {
+    const inner = addon.addon;
+    const name =
+      addon.addon_name ??
+      addon.name ??
+      addon.addon_name_ar ??
+      (inner && (inner.addon_name ?? inner.name ?? inner.addon_name_ar)) ??
+      '';
+    const nameEn =
+      addon.addon_name_en ??
+      addon.name_en ??
+      addon.name_english ??
+      addon.addon_name_english ??
+      (inner && (inner.addon_name_en ?? inner.name_en ?? inner.name_english ?? inner.addon_name_english)) ??
+      '';
+    const resolvedEn = typeof nameEn === 'string' && nameEn.trim() !== '' ? nameEn.trim() : (addon.addon_name_en ?? '');
+    return {
+      ...addon,
+      addon_name: name,
+      addon_name_en: resolvedEn,
+      quantity: addon.quantity ?? addon.addon_quantity ?? 1,
+    };
+  }
+
+  /**
+   * Get dish English name from any common API key (invoice/order print).
+   */
+  getDishNameEn(orderItem: any): string {
+    if (!orderItem) return '';
+    const en =
+      orderItem.dish_name_en ??
+      orderItem.name_en ??
+      orderItem.dish_name_english ??
+      orderItem.name_english ??
+      orderItem.dish?.dish_name_en ??
+      orderItem.dish?.name_en ??
+      (orderItem.dish && (orderItem.dish as any).name_english) ??
+      '';
+    return typeof en === 'string' ? en.trim() : '';
+  }
+
+  /**
+   * Get formatted size for an order item (Arabic/main).
+   * Handles string or object with name/name_ar.
    */
   getSize(orderItem: any): string | null {
     if (!orderItem) return null;
-    
-    const size = orderItem.size || orderItem.size_name || orderItem.dish_size;
-    if (size && typeof size === 'string' && size.trim() !== '') {
-      return size.trim();
+    const size = orderItem.size ?? orderItem.size_name ?? orderItem.dish_size;
+    if (size != null) {
+      if (typeof size === 'string' && size.trim() !== '') return size.trim();
+      if (typeof size === 'object' && (size.name_ar ?? size.name ?? size.size_name)) {
+        return String(size.name_ar ?? size.name ?? size.size_name ?? '').trim() || null;
+      }
     }
-    
     return null;
+  }
+
+  /**
+   * Get size English name from any common API key (invoice/order print).
+   */
+  getSizeEn(orderItem: any): string {
+    if (!orderItem) return '';
+    const size = orderItem.size ?? orderItem.size_name ?? orderItem.dish_size;
+    const en =
+      orderItem.size_en ??
+      orderItem.size_name_en ??
+      orderItem.dish_size_en ??
+      orderItem.size_english ??
+      (typeof size === 'object' && size && (size.name_en ?? (size as any).name_english ?? (size as any).size_name_en)) ??
+      '';
+    return typeof en === 'string' ? en.trim() : '';
   }
 
   /**
@@ -242,5 +310,12 @@ export class ReceiptComponent {
     };
 
     return statusTranslations[status] || status || 'غير محدد';
+  }
+
+  /** عدد المنتجات = مجموع الكميات (مثلاً 1 + 2 = 3) وليس عدد الأسطر. */
+  getTotalProductCount(): number {
+    const details = this.data?.invoices?.[0]?.orderDetails ?? this.data?.orderDetails ?? [];
+    if (!Array.isArray(details)) return 0;
+    return details.reduce((sum, item) => sum + (Number(item?.quantity) || 0), 0);
   }
 }
