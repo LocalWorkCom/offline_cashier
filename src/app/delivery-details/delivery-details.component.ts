@@ -862,6 +862,13 @@ export class DeliveryDetailsComponent implements OnInit {
       addressExample: '121 مصدق الدقي ,المهندسين الجيزه',
       notes: 'علامة مميزة (اختياري)',
     },
+    hotel: {
+      apartment_number: 'رقم الغرفة',
+      apartmentNumberExample: 'الغرفة 101',
+      address: 'العنوان',
+      addressExample: 'فندق الرحاب',
+      notes: 'علامة مميزة (اختياري)',
+    },
   };
 
   getValidationMessage(controlName: string): string | null {
