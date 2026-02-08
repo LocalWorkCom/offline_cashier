@@ -11,19 +11,7 @@
     <!-- <button class="btn fs-6 rounded-4" (click)="onPrintButtonClick()">
       <i class="fas fa-print ms-1"></i> طباعة الفاتورة
     </button> -->
-    <button class="btn fs-6 bg-success rounded-4" [disabled]="loading || amountError || (paymentError && paymentError.trim() !== '') || (paymentAmountError && paymentAmountError.trim() !== '') || (referenceNumberError && referenceNumberError.trim() !== '') || (deliveryStatusError && deliveryStatusError.trim() !== '')" (click)="saveOrder()" *ngIf="
-        invoices &&
-        invoices.length > 0
-      "> <!--  &&
-        isShow -->
-      <h5 class="mb-0">
-        <i *ngIf="!loading" class="fa-solid fa-floppy-disk ms-1"> حفظ التعديلات </i>
-        <span *ngIf="loading">
-          <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-          جارٍ التنفيذ...
-        </span>
-      </h5>
-    </button>
+
 
   </div>
   <!--   @if (amountError) {
@@ -283,14 +271,16 @@
         <div class="card p-3 mb-4">
           <div class="d-flex justify-content-between flex-wrap gap-2">
             <label class="payment-option-label"
-              [class.active-payment]="selectedPaymentMethod === 'cash'"
+              [class.active-payment]="selectedPaymentMethod === 'cash' && invoices[0].transactions[0].payment_status === 'paid'"
               (click)="selectPaymentMethod('cash')">
               <i class="fas fa-money-bill-wave me-1"></i>
-              <span class="label-text">كاش</span>
+              <span class="label-text">كاش
+                0000
+              </span>
             </label>
 
             <label class="payment-option-label"
-              [class.active-payment]="selectedPaymentMethod === 'credit'"
+              [class.active-payment]="selectedPaymentMethod === 'credit' && invoices[0].transactions[0].payment_status === 'paid'"
               (click)="selectPaymentMethod('credit')">
               <i class="fab fa-cc-visa me-1"></i>
               <span class="label-text">فيزا</span>
@@ -506,7 +496,7 @@
         <h5 class="mb-0" *ngIf="invoices[0]?.transactions?.length == 1">
           <span class="badge bg-success text-white">
             الدفع :
-            {{ invoices[0]?.transactions?.length > 1 ? "كاش" : (invoices[0]?.transactions[0]?.payment_method === "credit" ? "فيزا" : "كاش") }}
+            {{ invoices[0]?.transactions?.length > 1 && invoices[0]?.transactions[0]?.payment_method === "cash" ? "كاش" : (invoices[0]?.transactions[0]?.payment_method === "credit" ? "فيزا" : "غير محدد") }}
           </span>
         </h5>
 
