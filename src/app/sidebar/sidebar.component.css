@@ -267,21 +267,38 @@ max-width: 100%;
 }
 #dd{
   width: 100%;
-   /* background-image: url('../../../public/assets/images/bk2224.png'); */
- /* background-position: center center; */
- /* background-size: cover; */
- position: relative;
+  position: relative;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  page-break-inside: avoid;
+}
+/* Avoid absolute positioning in print – keeps footer in flow and prevents overlapping */
+#print-section .footer{
+  position: static;
+  bottom: auto;
+  left: auto;
+  transform: none;
+  display: block;
+  width: 100%;
+  padding: 0.5rem 0;
+  margin-top: 1rem;
+  border-top: 1px dashed #333;
+  page-break-inside: avoid;
+}
+#print-section .footer p{
+  display: block;
+  margin: 0.25rem 0;
+  line-height: 1.4;
 }
 .footer{
   position: absolute;
-    bottom: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 3;
-    width: 100%;
-    display: flex
-;
-    padding:0px 12px;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 3;
+  width: 100%;
+  display: flex;
+  padding: 0 12px;
 }
  
 
@@ -291,4 +308,28 @@ max-width: 100%;
 .line{
   padding-bottom:10px;
   border-bottom:3px solid black
+}
+
+/* Shift Closing Report – prevent footer overlap when printing */
+@media print {
+  #print-section .print-report-footer,
+  #print-section .print-report-footer-bottom,
+  #print-section #dd {
+    position: static !important;
+    margin-top: 1rem !important;
+    padding-top: 0.5rem !important;
+    page-break-inside: avoid;
+  }
+  #print-section .footer {
+    position: static !important;
+    bottom: auto !important;
+    left: auto !important;
+    transform: none !important;
+    display: block !important;
+  }
+  #print-section .footer p {
+    display: block !important;
+    margin: 0.35em 0 !important;
+    line-height: 1.5 !important;
+  }
 }
