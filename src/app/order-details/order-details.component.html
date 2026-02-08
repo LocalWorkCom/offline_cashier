@@ -49,11 +49,11 @@
         <h5>
           <span class="badge bg-success text-white">
             {{
-            paymenMethod === "cash"
+            paymenMethod === "cash" && orderDetails.transactions[0].payment_status === "paid" 
             ? "نقدا"
-            : paymenMethod === "credit"
+            : paymenMethod === "credit" && orderDetails.transactions[0].payment_status === "paid" 
             ? "فيزا"
-            : paymenMethod
+            : "غير محدد"
             }}
           </span>
         </h5>
@@ -72,7 +72,7 @@
         <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
           *ngIf="orderDetails.transactions[0].payment_status == 'paid'">
           <div>
-            {{ inv.payment_method === 'cash' ? ' الكاش' : ' الفيزا' }}
+            {{ inv.payment_method === 'cash' ? ' الكاش' : inv.payment_method === 'credit' ? ' الفيزا' : 'غير محدد' }}
           </div>
           <div>{{ inv.paid }} {{currencySymbol}}</div>
         </div>
