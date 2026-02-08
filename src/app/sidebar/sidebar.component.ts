@@ -865,12 +865,13 @@ private waitForRender(selector: string): Observable<Element> {
       this.CloseTheModalAndClear()
       this.closeModal()
 
-  const printContents = document.getElementById('print-section')?.innerHTML;
-  if (!printContents) return;
-
+  const printSection = document.getElementById('print-section');
+  if (!printSection) return;
+  const printContents = printSection.innerHTML;
   const originalContents = document.body.innerHTML;
 
-  document.body.innerHTML = printContents;
+  // Wrap in div#print-section so #print-section .footer CSS still applies after body replace
+  document.body.innerHTML = '<div id="print-section" class="fw-bold">' + printContents + '</div>';
 
   window.print();
 
