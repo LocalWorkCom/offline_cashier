@@ -571,6 +571,23 @@
           <small>الرجاء اختيار الفندق</small>
         </div>
       </div>
+
+      <div class="mb-3">
+        <div class="mb-3 input-group">
+          <span class="input-group-text text-muted" id="basic-addon1" *ngIf="form.get('apartment_number')?.value">
+            ادخل رقم الغرفة
+          </span>
+          <input type="text" class="form-control" [ngClass]="{
+            'has-value': form.get('apartment_number')?.value
+          }" placeholder="ادخل رقم الغرفة" formControlName="apartment_number" [ngClass]="{
+            'is-invalid': submitted && appartmentNumber?.invalid
+          }" />
+        </div>
+
+        <div *ngIf="submitted && appartmentNumber?.invalid" class="invalid-feedback d-block text-danger small">
+          {{ getValidationMessage("apartment_number") }}
+        </div>
+      </div>
     </div>
     }}
 
