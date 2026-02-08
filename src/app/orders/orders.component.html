@@ -1513,7 +1513,7 @@
       </div>
       <div class="modal-footer border-0 d-flex justify-content-between flex-row-reverse">
         <button type="button" class="btn btn-danger" (click)="openChangeTypeConfirmModal()"
-                [disabled]="!selectedNewOrderType || (selectedNewOrderType === 'dine-in' && !selectedTableIdForTypeChange)">
+                [disabled]="!selectedNewOrderType || (selectedNewOrderType === 'dine-in' && !selectedTableIdForTypeChange) || isSameOrderTypeSelected()">
           <i class="fa-solid fa-check me-2"></i>
           تأكيد التغيير
         </button>
@@ -1608,37 +1608,37 @@
                    [ngClass]="{'has-value': changeTypeDeliveryName}">
           </div>
         </div>
-        <!-- رقم الهاتف + كود الدولة + ابحث برقم الهاتف (مثل تنفيذ الطلب) -->
-        <div class="d-flex gap-2 align-items-start mb-3 flex-wrap">
-          <div class="search" style="flex: 0 0 auto;">
-            <button type="button" class="btn btn-danger rounded-0 rounded-start px-3 py-2" (click)="searchChangeTypeByPhone()" [disabled]="!changeTypeDeliverySearchPhoneIdle">
-              <span *ngIf="changeTypeDeliverySearchPhoneIdle">ابحث برقم الهاتف</span>
-              <span *ngIf="!changeTypeDeliverySearchPhoneIdle" class="d-flex align-items-center gap-2">
-                <span class="spinner-border spinner-border-sm" role="status"></span>
-                جاري البحث...
-              </span>
-            </button>
+        <!-- رقم الهاتف + كود الدولة + ابحث برقم الهاتف (مثل تنفيذ الطلب: حقل الهاتف | اختر الدولة أبيض | زر البحث أحمر) -->
+        <div class="d-flex gap-2 align-items-stretch mb-3 flex-wrap" dir="rtl">
+          <div class="flex-grow-1" style="min-width: 140px;">
+            <div class="input-group h-100">
+              <span class="input-group-text" *ngIf="changeTypeDeliveryPhone">ادخل رقم العميل</span>
+              <input type="text" class="form-control text-end" [(ngModel)]="changeTypeDeliveryPhone" name="changeTypeDeliveryPhoneModal" placeholder="ادخل رقم الهاتف" [ngClass]="{'has-value': changeTypeDeliveryPhone}" />
+            </div>
           </div>
-          <div class="dropdown flex-grow-1" style="min-width: 120px;">
-            <button class="btn btn-white border dropdown-toggle w-100 d-flex align-items-center justify-content-between py-2 rounded-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-              <span class="text-muted">{{ changeTypeDeliverySelectedCountry?.code || 'اختر الدولة' }}</span>
+          <div class="dropdown change-type-country-dropdown" style="min-width: 130px;">
+            <button class="change-type-country-btn dropdown-toggle text-muted w-100 h-100 d-flex align-items-center justify-content-between px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+              <span class="px-1">{{ changeTypeDeliverySelectedCountry?.code || 'اختر الدولة' }}</span>
               <img *ngIf="changeTypeDeliverySelectedCountry?.flag" [src]="changeTypeDeliverySelectedCountry.flag" class="flag-icon ms-1" style="width: 25px; height: 15px; object-fit: contain;" alt="" />
             </button>
             <ul class="dropdown-menu dropdown-list w-100 p-2">
               <li class="mb-2">
                 <input type="text" class="form-control form-control-sm" [(ngModel)]="changeTypeDeliveryCountrySearchTerm" (ngModelChange)="filterChangeTypeDeliveryCountries()" placeholder="ابحث" name="changeTypeCountrySearch" />
               </li>
-              <li *ngFor="let country of changeTypeDeliveryFilteredCountries" (click)="selectChangeTypeDeliveryCountry(country)" class="dropdown-item d-flex justify-content-between text-muted p-2 cursor-pointer">
+              <li *ngFor="let country of changeTypeDeliveryFilteredCountries" (click)="selectChangeTypeDeliveryCountry(country)" class="dropdown-item d-flex justify-content-between text-muted p-2">
                 <span>{{ country.code }}</span>
                 <img *ngIf="country.flag" [src]="country.flag" class="flag-icon" style="width: 25px; height: 15px; object-fit: contain;" alt="" />
               </li>
             </ul>
           </div>
-          <div class="flex-grow-1" style="min-width: 140px;">
-            <div class="input-group">
-              <span class="input-group-text" *ngIf="changeTypeDeliveryPhone">ادخل رقم العميل</span>
-              <input type="text" class="form-control text-end rounded-0 rounded-end" [(ngModel)]="changeTypeDeliveryPhone" name="changeTypeDeliveryPhoneModal" placeholder="ادخل رقم الهاتف" [ngClass]="{'has-value': changeTypeDeliveryPhone}" />
-            </div>
+          <div style="flex: 0 0 auto;">
+            <button type="button" class="btn btn-danger px-3 py-2 h-100" (click)="searchChangeTypeByPhone()" [disabled]="!changeTypeDeliverySearchPhoneIdle">
+              <span *ngIf="changeTypeDeliverySearchPhoneIdle">ابحث برقم الهاتف</span>
+              <span *ngIf="!changeTypeDeliverySearchPhoneIdle" class="d-flex align-items-center gap-2">
+                <span class="spinner-border spinner-border-sm" role="status"></span>
+                جاري البحث...
+              </span>
+            </button>
           </div>
         </div>
         <!-- هل هذا رقم واتساب؟ -->

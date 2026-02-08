@@ -686,13 +686,18 @@ items.forEach((item: any) => {
     const note = escapeHtml(item.note || '-');
     const quantity = escapeHtml(String(item.quantity || '-'));
     const size = item.size ? escapeHtml(String(item.size)) : null;
+    const size_en = item.size_en ? escapeHtml(String(item.size_en)) : null;
 
     let addonNames = '';
     if (item.addons && item.addons.length > 0) {
         const addons = item.addons;
         addonNames = addons
-            .map((a: any) => escapeHtml(a.name || ''))
-            .filter((name: string) => name)
+            .map((a: any) => {
+                const nameAr = escapeHtml(a.name || '');
+                const nameEn = a.name_en ? escapeHtml(a.name_en) : '';
+                return nameEn ? `${nameAr} (${nameEn})` : nameAr;
+            })
+            .filter((s: string) => s)
             .join(', ');
     }
 
@@ -714,9 +719,10 @@ items.forEach((item: any) => {
         html += `<span class="item-details">${name_en}</span>`;
     }
 
-    // إضافة الحجم إذا موجود
+    // إضافة الحجم إذا موجود (مع الإنجليزية إن وجدت)
     if (size && size !== '-') {
-        html += `<span class="size item-details">الحجم: ${size}</span>`;
+        const sizeText = size_en ? `${size} (${size_en})` : size;
+        html += `<span class="size item-details">الحجم: ${sizeText}</span>`;
     }
 
     // إضافة الإضافات إذا موجودة

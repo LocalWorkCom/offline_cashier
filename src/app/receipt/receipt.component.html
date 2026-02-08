@@ -148,9 +148,10 @@
         <ng-container *ngFor="let item of data.invoices[0]?.orderDetails; let i = index; let last = last">
           <tr>
             <td class="col-item">
-              <div class="item-name">{{ item.dish_name }}</div>
-              <div class="item-name" *ngIf="item.dish_name_en">{{ item.dish_name_en }}</div>
+              <div class="item-name">{{ item.dish_name || item.name }}</div>
+              <div class="item-name" *ngIf="getDishNameEn(item)">{{ getDishNameEn(item) }}</div>
               <div class="item-meta" *ngIf="getSize(item)">{{ getSize(item) }}</div>
+              <div class="item-meta" *ngIf="getSizeEn(item)">({{ getSizeEn(item) }})</div>
               <div class="item-meta" *ngFor="let addon of getAddons(item)">
                 + {{ addon.addon_name }}{{ addon.quantity > 1 ? ' × ' + addon.quantity : '' }}
                 <div class="item-meta" *ngIf="addon.addon_name_en">({{ addon.addon_name_en }})</div>
@@ -224,7 +225,7 @@
       <hr class="divider" />
       <!-- FOOTER -->
     <div class="footer-section">
-      <h6 class="item-count">عدد المنتجات: {{ data.orderDetails?.length || 0 }}</h6>
+      <h6 class="item-count">عدد المنتجات: {{ getTotalProductCount() }}</h6>
       <hr class="divider" />
       <h6 class="thank-you">شكراً لزيارتكم</h6>
     </div>

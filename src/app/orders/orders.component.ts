@@ -37,6 +37,7 @@ import { IndexeddbService } from '../services/indexeddb.service';
 import { timer } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { TablesService } from '../services/tables.service';
+import { AddAddressService } from '../services/add-address.service';
 @Component({
   selector: 'app-orders',
   standalone: true,
@@ -110,7 +111,8 @@ export class OrdersComponent implements OnDestroy {
     private productsService: ProductsService,
     private tablesService: TablesService, // private dbService: IndexeddbService
     private _OrderListDetailsService: OrderListDetailsService ,
-     private dbService: IndexeddbService
+     private dbService: IndexeddbService,
+    private addAddressService: AddAddressService
   ) {
     // const navigation = this.router.getCurrentNavigation();
     // this.orderDetails = navigation?.extras.state?.['orderData'];
@@ -3144,6 +3146,14 @@ export class OrdersComponent implements OnDestroy {
     }
   }
 
+  /** True when the user selected the same order type as the current order (no actual change). */
+  isSameOrderTypeSelected(): boolean {
+    const current = this.currentOrderForTypeChange?.order_details?.order_type;
+    if (!current || !this.selectedNewOrderType) return false;
+    const normalizedCurrent = current === 'reservation-table' ? 'dine-in' : current;
+    return normalizedCurrent === this.selectedNewOrderType;
+  }
+
   openChangeTypeConfirmModal(): void {
     const modalEl = document.getElementById('changeOrderTypeModal');
     if (modalEl) {
@@ -3260,6 +3270,39 @@ export class OrdersComponent implements OnDestroy {
   submitChangeOrderTypeFromDeliveryModal(): void {
     this.buildChangeTypeDeliveryAddressFromParts();
     this.submitChangeOrderType();
+  }
+
+  /**
+   * Build payload for api/cashier/add/address so the client is registered and findable
+   * when searching by phone from the Home delivery-details flow.
+   */
+  private buildAddAddressPayloadFromChangeTypeDelivery(): Record<string, unknown> | null {
+    const name = this.changeTypeDeliveryName?.trim();
+    const phone = this.changeTypeDeliveryPhone?.trim();
+    const countryCode = (this.changeTypeDeliverySelectedCountry?.code || this.changeTypeDeliveryCountryCode || '').trim();
+    const areaId = this.changeTypeDeliveryAreaId;
+    if (!phone || !name || !countryCode || !areaId) return null;
+    const address = (this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || 'عنوان التوصيل').trim();
+    const payload: Record<string, unknown> = {
+      client_name: name,
+      address_phone: phone,
+      country_code: countryCode,
+      whatsapp_number_code: (this.changeTypeDeliveryWhatsappCode || countryCode).trim(),
+      notes: this.changeTypeDeliveryNotes?.trim() || '',
+      area_id: parseInt(areaId, 10),
+      address_type: this.changeTypeDeliveryBuildingType || 'apartment',
+      building: this.changeTypeDeliveryBuilding?.trim() || null,
+      apartment_number: this.changeTypeDeliveryApartment?.trim() || null,
+      floor_number: this.changeTypeDeliveryFloor?.trim() || null,
+      address,
+    };
+    if (this.changeTypeDeliveryBuildingType === 'hotel' && this.changeTypeDeliveryHotelId) {
+      payload['hotel_id'] = parseInt(String(this.changeTypeDeliveryHotelId), 10);
+    }
+    if (this.changeTypeDeliveryWhatsapp?.trim()) {
+      payload['whatsapp_number'] = this.changeTypeDeliveryWhatsapp.trim();
+    }
+    return payload;
   }
 
   private buildChangeTypeDeliveryAddressFromParts(): void {
@@ -3493,6 +3536,17 @@ export class OrdersComponent implements OnDestroy {
           inst2?.hide();
         }
         if (res?.status) {
+          // Register client/address so they appear when searching by phone from Home (delivery-details)
+          const hadNewDeliveryAddress = !!(this.changeTypeDeliveryAreaId && this.changeTypeDeliveryPhone?.trim());
+          if (hadNewDeliveryAddress) {
+            const registerPayload = this.buildAddAddressPayloadFromChangeTypeDelivery();
+            if (registerPayload) {
+              this.addAddressService.submitForm(registerPayload).subscribe({
+                next: () => {},
+                error: () => {},
+              });
+            }
+          }
           this.changeTypeSuccessMessage = (res?.message && String(res.message).trim())
             ? res.message
             : 'تم تغيير نوع الطلب وإعادة حساب الرسوم والمجاميع بنجاح.';
@@ -3535,6 +3589,68 @@ export class OrdersComponent implements OnDestroy {
     });
   }
 
+  /**
+   * Get branch default delivery_fees from localStorage (dashboard "رسوم التوصيل").
+   * Used to fix wrong delivery fees returned after change-type-to-delivery when
+   * backend uses a different source (e.g. 25) than the branch default (2).
+   */
+  private getBranchDeliveryFees(): number | null {
+    try {
+      const raw = localStorage.getItem('branchData');
+      if (!raw) return null;
+      const branch = JSON.parse(raw);
+      const fee = branch?.delivery_fees;
+      if (fee === undefined || fee === null) return null;
+      const num = Number(fee);
+      return isNaN(num) ? null : num;
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * For delivery orders, override delivery_fees with branch default when set,
+   * and adjust total so invoice calculation is correct (fixes wrong fee after change-type).
+   */
+  private applyBranchDeliveryFeesToOrder(order: any): any {
+    const orderType = order?.order_details?.order_type || order?.details_order?.order_type;
+    if (orderType !== 'Delivery') return order;
+    const branchFee = this.getBranchDeliveryFees();
+    if (branchFee === null) return order;
+
+    const summary = order?.details_order?.order_summary || order?.order_summary;
+    const currentFee = summary != null ? Number(summary.delivery_fees) : NaN;
+    if (currentFee === branchFee || (isNaN(currentFee) && branchFee === 0)) return order;
+
+    const oldFee = isNaN(currentFee) ? 0 : currentFee;
+    const delta = branchFee - oldFee;
+
+    const out = { ...order };
+    if (out.details_order?.order_summary) {
+      const sum = out.details_order.order_summary;
+      out.details_order = {
+        ...out.details_order,
+        order_summary: {
+          ...sum,
+          delivery_fees: branchFee,
+          ...(typeof sum.total === 'number' && { total: sum.total + delta }),
+        },
+      };
+    }
+    if (out.order_summary) {
+      const sum = out.order_summary;
+      out.order_summary = {
+        ...sum,
+        delivery_fees: branchFee,
+        ...(typeof sum.total === 'number' && { total: sum.total + delta }),
+      };
+    }
+    if (typeof out.total_price === 'number') {
+      out.total_price = out.total_price + delta;
+    }
+    return out;
+  }
+
   // Refresh order data after cancellation to update calculations
   refreshOrderAfterCancel(orderId: number): void {
     this._OrderListDetailsService.NewgetOrderById(orderId)
@@ -3542,17 +3658,18 @@ export class OrdersComponent implements OnDestroy {
       .subscribe({
         next: (res: any) => {
           if (res?.data?.order) {
-            const updatedOrder = res.data.order;
+            let updatedOrder = res.data.order;
+            updatedOrder = this.applyBranchDeliveryFeesToOrder(updatedOrder);
             // Find and update the order in the orders array
             const orderIndex = this.orders.findIndex(
               (o: any) => o.order_details?.order_id === orderId
             );
             if (orderIndex !== -1) {
-              this.orders[orderIndex] = {
+              this.orders[orderIndex] = this.applyBranchDeliveryFeesToOrder({
                 ...this.orders[orderIndex],
                 ...updatedOrder,
                 currency_symbol: this.currencySymbol
-              };
+              });
               this.orders = [...this.orders];
               this.filterOrders();
               this.cdr.detectChanges();
