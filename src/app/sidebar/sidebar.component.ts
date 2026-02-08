@@ -56,6 +56,13 @@ export class SidebarComponent implements OnInit {
   alertError: any;
   reasonError: any;
   printingData: any;
+  /** الفرق = النقدية المتوقعة - النقدية الموجودة (لطباعة التقرير) */
+  get printingDeficitCash(): number {
+    if (!this.printingData) return 0;
+    const expected = Number(this.printingData?.cashTotalwithoutRefund) || 0;
+    const actual = Number(this.printingData?.actualAmount) || 0;
+    return expected - actual;
+  }
   reportData: {
     cashTotal: number;
     cashTotalLogout: number;

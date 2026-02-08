@@ -4592,6 +4592,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const note = escapeHtml(item.note || '-');
       const quantity = escapeHtml(String(item.quantity || '-'));
       const size = item.size ? escapeHtml(String(item.size)) : null;
+      const size_en = item.size_en ? escapeHtml(String(item.size_en)) : null;
 
       let addonNames = '';
       if (item.addons && item.addons.length > 0) {
@@ -4609,10 +4610,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       html += '<tr>';
       html += `<td class="item-number"></td>`;
       html += `<td class="item-name">${name}`;
-      html += `<span class="size item-details">${name_en}</span>`;
+      if (name_en && name_en !== '-') {
+        html += `<span class="item-details">${name_en}</span>`;
+      }
 
       if (size) {
-        html += `<span class="size item-details">الحجم: ${size}</span>`;
+        const sizeText = size_en ? `${size} (${size_en})` : size;
+        html += `<span class="size item-details">الحجم: ${sizeText}</span>`;
       }
 
       if (addonNames) {

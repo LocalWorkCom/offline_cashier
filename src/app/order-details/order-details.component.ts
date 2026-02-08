@@ -93,6 +93,35 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Branch default delivery_fees from dashboard (fixes wrong fee after change-type-to-delivery). */
+  private getBranchDeliveryFees(): number | null {
+    try {
+      const raw = localStorage.getItem('branchData');
+      if (!raw) return null;
+      const branch = JSON.parse(raw);
+      const fee = branch?.delivery_fees;
+      if (fee === undefined || fee === null) return null;
+      const num = Number(fee);
+      return isNaN(num) ? null : num;
+    } catch {
+      return null;
+    }
+  }
+
+  /** Apply branch delivery_fees override for delivery orders so invoice matches dashboard. */
+  private applyBranchDeliveryFees(summary: any, currentDeliveryFees: number): { deliveryFees: number; orderSummary: any } {
+    const branchFee = this.getBranchDeliveryFees();
+    if (branchFee === null || summary == null) return { deliveryFees: currentDeliveryFees, orderSummary: summary };
+    const oldFee = Number(summary.delivery_fees);
+    if (oldFee === branchFee) return { deliveryFees: currentDeliveryFees, orderSummary: summary };
+    const delta = branchFee - (isNaN(oldFee) ? 0 : oldFee);
+    const newTotal = typeof summary.total === 'number' ? summary.total + delta : summary.total;
+    return {
+      deliveryFees: branchFee,
+      orderSummary: { ...summary, delivery_fees: branchFee, total: newTotal },
+    };
+  }
+
   // Display order details from IndexedDB
   private displayOrderDetails(order: any): void {
 
@@ -103,12 +132,9 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
 
       this.paymenMethod = order.details_order.transactions[0].payment_method;
       this.deliveryData = order.details_order?.delivery_data || "";
-      this.deliveryFees = order.details_order.order_summary?.delivery_fees ||
+      const rawDeliveryFees = order.details_order.order_summary?.delivery_fees ||
         order.details_order.order_summary?.delivery_fees || 0;
-
-      // Set the main order details
-      this.orderDetails = order.details_order;
-      this.orderSummary = order.details_order?.order_summary || {
+      const summaryFromOrder = order.details_order?.order_summary || {
         total_dish_price: order.order_details?.total_dish_price || 0,
         total: order.total_price || 0,
         delivery_fees: order.delivery_fees_amount || 0,
@@ -116,6 +142,13 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         service_percentage: order.service_percentage || 0
         // يمكنك إضافة باقي الحقول هنا حسب الحاجة
       };
+      const isDelivery = order.details_order?.order_type === 'Delivery' || (order.details_order?.order_summary?.delivery_fees != null);
+      const applied = isDelivery ? this.applyBranchDeliveryFees(summaryFromOrder, Number(rawDeliveryFees)) : { deliveryFees: rawDeliveryFees, orderSummary: summaryFromOrder };
+
+      this.deliveryFees = applied.deliveryFees;
+      // Set the main order details
+      this.orderDetails = order.details_order;
+      this.orderSummary = applied.orderSummary;
 
       this.orderItems = order.details_order?.order_details || [];
 
@@ -178,11 +211,17 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     this.currencySymbol = order.currency_symbol;
     this.paymenMethod = order.transactions?.[0]?.payment_method || 'Unknown';
     this.deliveryData = order.delivery_data;
-    this.deliveryFees = order.order_summary?.delivery_fees || 0;
+    const rawFee = order.order_summary?.delivery_fees ?? 0;
+    const summary = order.order_summary || {};
+    const isDelivery = order.order_type === 'Delivery' || (summary.delivery_fees != null && Number(summary.delivery_fees) > 0);
+    const applied = isDelivery ? this.applyBranchDeliveryFees(summary, Number(rawFee)) : { deliveryFees: rawFee, orderSummary: summary };
 
+    this.deliveryFees = applied.deliveryFees;
     this.orderDetails = order;
-    this.orderSummary = order.order_summary || {};
+    this.orderSummary = applied.orderSummary;
     this.orderItems = order.order_details || [];
+    // Persist corrected summary so saveOrderToIndexedDB stores correct delivery_fees and total
+    if (applied.orderSummary !== summary) order.order_summary = applied.orderSummary;
 
     if (this.deliveryData?.delivery_name === ' ') {
       this.deliveryData.delivery_name = 'لا يوجد';
@@ -230,11 +269,15 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
             this.currencySymbol = order.currency_symbol;
             this.paymenMethod = order.transactions[0].payment_method;
             this.deliveryData = response.data.orderDetails[0].delivery_data;
-            this.deliveryFees = order.order_summary.delivery_fees;
+            const summary = order.order_summary || {};
+            const rawFee = summary.delivery_fees ?? 0;
+            const isDelivery = order.order_type === 'Delivery' || (summary.delivery_fees != null && Number(summary.delivery_fees) > 0);
+            const applied = isDelivery ? this.applyBranchDeliveryFees(summary, Number(rawFee)) : { deliveryFees: rawFee, orderSummary: summary };
+            this.deliveryFees = applied.deliveryFees;
 
             console.log(response.data, 'test');
             this.orderDetails = order;
-            this.orderSummary = order.order_summary;
+            this.orderSummary = applied.orderSummary;
             this.orderItems = order.order_details;
             if (this.deliveryData?.delivery_name == ' ') {
               this.deliveryData.delivery_name = 'لا يوجد';
