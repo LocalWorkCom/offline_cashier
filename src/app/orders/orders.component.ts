@@ -3660,7 +3660,7 @@ export class OrdersComponent implements OnDestroy {
     return out;
   }
 
-  // Refresh order data after cancellation to update calculations
+  // Refresh order data after cancellation / change-type to update list and IndexedDB
   refreshOrderAfterCancel(orderId: number): void {
     this._OrderListDetailsService.NewgetOrderById(orderId)
       .pipe(takeUntil(this.destroy$))
@@ -3669,13 +3669,12 @@ export class OrdersComponent implements OnDestroy {
           if (res?.data?.order) {
             let updatedOrder = res.data.order;
             updatedOrder = this.applyBranchDeliveryFeesToOrder(updatedOrder);
-            // Find and update the order in the orders array
             const orderIndex = this.orders.findIndex(
               (o: any) => o.order_details?.order_id === orderId
             );
             if (orderIndex !== -1) {
+              // Replace with API data so order type and delivery fields update immediately (no stale delivery info)
               this.orders[orderIndex] = this.applyBranchDeliveryFeesToOrder({
-                ...this.orders[orderIndex],
                 ...updatedOrder,
                 currency_symbol: this.currencySymbol
               });
@@ -3684,11 +3683,40 @@ export class OrdersComponent implements OnDestroy {
               this.cdr.detectChanges();
               console.log('✅ Order refreshed with updated calculations:', updatedOrder);
             }
+            // Update IndexedDB so order-details page shows correct data without manual refresh
+            this.refreshOrderDetailsInIndexedDB(orderId);
           }
         },
         error: (err) => {
           console.error('❌ Error refreshing order after cancel:', err);
         }
+      });
+  }
+
+  /** Fetch order in details format and save to IndexedDB so تفاصيل الطلب shows correct type/delivery state. */
+  private refreshOrderDetailsInIndexedDB(orderId: number): void {
+    this._OrderListDetailsService.getOrderById(String(orderId))
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (res: any) => {
+          const order = res?.data?.orderDetails?.[0];
+          if (!order) return;
+          const items = order.order_details && Array.isArray(order.order_details) ? order.order_details : [];
+          const toSave: any = {
+            ...order,
+            details_order: order,
+            order_items: items,
+            total_price: order.order_summary?.total ?? order.total_price ?? 0,
+            currency_symbol: order.currency_symbol || this.currencySymbol,
+            savedAt: new Date().toISOString(),
+            isSynced: true
+          };
+          toSave.order_details = typeof order.order_details === 'object' && !Array.isArray(order.order_details)
+            ? { ...order.order_details, order_id: orderId }
+            : { order_id: orderId };
+          this.dbService.saveOrder(toSave).catch(() => {});
+        },
+        error: () => {}
       });
   }
 
