@@ -15,7 +15,7 @@
         <!-- <p class="branch-phone">رقم الهاتف : {{ item.branch_phone }}</p> -->
 
       <br/>
-      <h6> جديد (New) </h6>
+      <h6> {{ data.invoices[0]?.order_status === 'cancelled' ? 'ملغي (Cancelled)' : 'جديد (New)' }} </h6>
 
         <!-- Divider -->
     <hr class="divider" />

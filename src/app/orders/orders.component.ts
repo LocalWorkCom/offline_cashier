@@ -626,7 +626,7 @@ export class OrdersComponent implements OnDestroy {
     // Do NOT call stopListening() on newOrder - it's managed globally in app.component.ts
     // this.newOrder.stopListening();
     this.orderChangeStatus.stopListeningOfOrderStatus();
-    this.orderChange.stopListening();
+    // this.orderChange.stopListening();
     // this.activeOrderChannels.forEach(orderId => {
     //   this.unsubscribeFromOrderStatusChannel(orderId);
     // });
@@ -1873,10 +1873,11 @@ export class OrdersComponent implements OnDestroy {
                 }
               }, 300);
 
-              // ✅ Refresh order data to get updated calculations (coupon, tax, total)
+              // Refresh order data to get updated calculations (coupon, tax, total)
               this.refreshOrderAfterCancel(order.order_details.order_id);
 
-              // NEW: Print Cancel Request to Kitchen
+              /* 
+              // Removed to prevent double printing (handled by global listener)
               this.dbService.getOrderFromPrintkitchenById(order.order_details.order_id).then((orderMetadata: any) => {
                 if (orderMetadata) {
                   this.processKitchenPrint(order.order_details.order_id, body.items, 'cancel');
@@ -1884,6 +1885,7 @@ export class OrdersComponent implements OnDestroy {
               }).catch((err) => {
                 console.error('error getting order from printkitchen indexeddb', err);
               });
+              */
 
             }
           },
@@ -2016,36 +2018,36 @@ export class OrdersComponent implements OnDestroy {
           this.successMessage = 'تم تحديث الطلب بنجاح';
           this.successMessageModal.show();
 
-          // get order from printkitchen indexeddb (This contains the OLD state)
-          console.log('🔍 [DEBUG] Fetching order from IndexedDB, orderId:', orderId);
-          this.dbService.getOrderFromPrintkitchenById(orderId).then((orderMetadata: any) => {
-            console.log('🔍 [DEBUG] Order from printkitchen indexeddb:', orderMetadata);
-            if (!orderMetadata || !orderMetadata.order_data) {
-              console.error('❌ [DEBUG] Order not found in printkitchen indexeddb or order_data is missing');
-              return;
-            }
+            /* 
+            // Removed to prevent double printing (handled by global listener)
+            this.dbService.getOrderFromPrintkitchenById(orderId).then((orderMetadata: any) => {
+              console.log('🔍 [DEBUG] Order from printkitchen indexeddb:', orderMetadata);
+              if (!orderMetadata || !orderMetadata.order_data) {
+                console.error('❌ [DEBUG] Order not found in printkitchen indexeddb or order_data is missing');
+                return;
+              }
 
-            // Filter to get ONLY the item that was edited
-            const editedItemOldState = orderMetadata.order_data.order_items.find(
-              (i: any) => i.order_detail_id === item.order_detail_id
-            );
+              const editedItemOldState = orderMetadata.order_data.order_items.find(
+                (i: any) => i.order_detail_id === item.order_detail_id
+              );
 
-            if (!editedItemOldState) {
-               console.error('❌ [DEBUG] Original item not found in old order state');
-               return;
-            }
+              if (!editedItemOldState) {
+                 console.error('❌ [DEBUG] Original item not found in old order state');
+                 return;
+              }
 
-            const oldItems = [{
-              item_id: editedItemOldState.order_detail_id,
-              quantity: editedItemOldState.quantity,
-              size: editedItemOldState.size,
-              dish_addons: editedItemOldState.dish_addons 
-            }];
+              const oldItems = [{
+                item_id: editedItemOldState.order_detail_id,
+                quantity: editedItemOldState.quantity,
+                size: editedItemOldState.size,
+                dish_addons: editedItemOldState.dish_addons 
+              }];
 
-            this.processKitchenPrint(orderId, oldItems, 'edit');
-          }).catch((err) => {
-            console.error('error getting order from printkitchen indexeddb', err);
-          });
+              this.processKitchenPrint(orderId, oldItems, 'edit');
+            }).catch((err) => {
+              console.error('error getting order from printkitchen indexeddb', err);
+            });
+            */
 
           setTimeout(() => {
             // Safe dismiss - only call if method exists
@@ -2147,14 +2149,16 @@ export class OrdersComponent implements OnDestroy {
 
 
 
-             // get order from printkitchen indexeddb
-          this.dbService.getOrderFromPrintkitchenById(order.order_details.order_id).then((orderMetadata: any) => {
-            if (orderMetadata) {
-              this.processKitchenPrint(order.order_details.order_id, body.items, 'cancel');
-            }
-          }).catch((err) => {
-            console.error('error getting order from printkitchen indexeddb', err);
-          });
+             /* 
+             // Removed to prevent double printing (handled by global listener)
+             this.dbService.getOrderFromPrintkitchenById(order.order_details.order_id).then((orderMetadata: any) => {
+               if (orderMetadata) {
+                 this.processKitchenPrint(order.order_details.order_id, body.items, 'cancel');
+               }
+             }).catch((err) => {
+               console.error('error getting order from printkitchen indexeddb', err);
+             });
+             */
 
 
           } else {
