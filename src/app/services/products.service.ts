@@ -123,10 +123,21 @@ export class ProductsService {
     return this.http.get<any>(url, { headers: authContext.headers });
   }
 
-  getMenuDishesAll(categoryId: number | string): Observable<any> {
+  getMenuDishesAll(categoryId: number | string | null = null, search: string = '', status: string = 'all'): Observable<any> {
     const authContext = this.buildAuthContext();
     if (!authContext) return throwError(() => new Error('Auth context missing'));
-    const url = `${this.apiUrl}/menu-dishes-all?categoryId=${categoryId}&branchId=${authContext.branchId}`;
+    
+    let url = `${this.apiUrl}/menu-dishes-all?branchId=${authContext.branchId}`;
+    if (categoryId && categoryId !== 'all') {
+      url += `&categoryId=${categoryId}`;
+    }
+    if (search) {
+      url += `&search=${encodeURIComponent(search)}`;
+    }
+    if (status && status !== 'all') {
+      url += `&status=${status}`;
+    }
+    
     return this.http.get<any>(url, { headers: authContext.headers });
   }
 
