@@ -3354,6 +3354,15 @@ export class OrdersComponent implements OnDestroy {
     return icons[type] || 'fa-solid fa-circle';
   }
 
+  /** الطاولات المتاحة فقط (للاختيار عند تغيير النوع إلى داخل المطعم). تشمل طاولة الطلب الحالي إن وُجدت. */
+  get availableTablesForTypeChange(): any[] {
+    if (!this.availableTables?.length) return [];
+    const currentTableId = this.currentOrderForTypeChange?.order_details?.table_id;
+    return this.availableTables.filter(
+      (t: any) => t.status === 1 || (currentTableId != null && Number(t.id) === Number(currentTableId))
+    );
+  }
+
   /** Table number for "to" box when changing to dine-in (e.g. "39") */
   getSelectedTableNumberForTypeChange(): string {
     if (this.selectedNewOrderType !== 'dine-in' || !this.selectedTableIdForTypeChange) return '';
@@ -3694,10 +3703,11 @@ export class OrdersComponent implements OnDestroy {
             const floorId = table.floor_id ?? table.floor?.id ?? null;
             const floorName = (table.floor_name ?? table.floor?.name ?? table.floor?.name_en ?? table.floor?.name_ar ?? '').toString().toLowerCase();
             const areaName = (table.floor_area_name ?? table.area_name ?? table.floor_partition?.name ?? table.floor_partition?.name_ar ?? table.floor_area ?? '').toString().toLowerCase();
+            const tableNumber = table.number ?? table.table_number ?? table.id;
             return {
               id: table.id,
-              name: table.name_ar || table.name || `طاولة ${table.number}`,
-              number: table.number,
+              name: table.name_ar || table.name || `طاولة ${tableNumber}`,
+              number: tableNumber,
               status: table.status || 1,
               seats: table.seats || table.seat_count,
               location: table.floor_partition_id ?? table.floor_id,
