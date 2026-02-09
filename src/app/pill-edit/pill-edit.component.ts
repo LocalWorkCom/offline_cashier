@@ -782,6 +782,15 @@ export class PillEditComponent {
               make_type: response.data.make_type
             };
 
+            // التأكد من ظهور "مدفوع" في طباعة الفاتورة بعد الدفع
+            if (this.paymentStatus === 'paid' && this.receiptData?.invoices?.[0]) {
+              if (!this.receiptData.invoices[0].transactions?.length) {
+                this.receiptData.invoices[0].transactions = [{ payment_status: 'paid', payment_method: this.selectedPaymentMethod || 'cash', paid: finalTotal }];
+              } else {
+                this.receiptData.invoices[0].transactions.forEach((t: any) => { t.payment_status = 'paid'; });
+              }
+            }
+
             // انتظار حتى يتم عرض مكون الإيصال
             // await new Promise((resolve) => setTimeout(resolve, 500));
             // this.cdr.detectChanges();

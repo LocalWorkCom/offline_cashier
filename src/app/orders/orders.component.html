@@ -1502,10 +1502,8 @@
             <label class="form-label fw-bold">اختر الطاولة</label>
             <select class="form-select" [(ngModel)]="selectedTableIdForTypeChange" name="tableIdForTypeChange">
               <option value="">اختر الطاولة...</option>
-              @for (table of availableTables; track table.id) {
-                <option [value]="table.id" [disabled]="table.status === 2">
-                  طاولة {{ table.number }} {{ table.status === 2 ? '(مشغول)' : '' }}
-                </option>
+              @for (table of availableTablesForTypeChange; track table.id) {
+                <option [value]="table.id">طاولة رقم {{ table.number }}</option>
               }
             </select>
           </div>
