@@ -38,6 +38,7 @@ import { timer } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 import { TablesService } from '../services/tables.service';
 import { AddAddressService } from '../services/add-address.service';
+import { PhoneCheckService } from '../services/phoneCheck';
 @Component({
   selector: 'app-orders',
   standalone: true,
@@ -112,7 +113,8 @@ export class OrdersComponent implements OnDestroy {
     private tablesService: TablesService, // private dbService: IndexeddbService
     private _OrderListDetailsService: OrderListDetailsService ,
      private dbService: IndexeddbService,
-    private addAddressService: AddAddressService
+    private addAddressService: AddAddressService,
+    private phoneCheckService: PhoneCheckService
   ) {
     // const navigation = this.router.getCurrentNavigation();
     // this.orderDetails = navigation?.extras.state?.['orderData'];
@@ -2449,6 +2451,11 @@ export class OrdersComponent implements OnDestroy {
   changeTypeDeliverySelectedCountry: { code: string; flag: string; phoneLength?: number } | null = null;
   changeTypeDeliveryCountrySearchTerm: string = '';
   changeTypeDeliverySearchPhoneIdle: boolean = true;
+  changeTypeDeliveryPhoneMessage: string = '';
+  changeTypeDeliveryPhoneTouched: boolean = false;
+  changeTypeDeliveryDeliveryFormSubmitted: boolean = false;
+  changeTypeDeliveryFoundAddresses: any[] = [];
+  changeTypeDeliverySelectedAddressId: string = '';
   isChangeTypeSubmitting: boolean = false;
   changeTypeSuccessMessage: string = '';
 
@@ -3188,6 +3195,11 @@ export class OrdersComponent implements OnDestroy {
 
   openChangeTypeDeliveryDetailsModal(): void {
     const o = this.currentOrderForTypeChange;
+    this.changeTypeDeliveryPhoneMessage = '';
+    this.changeTypeDeliveryPhoneTouched = false;
+    this.changeTypeDeliveryDeliveryFormSubmitted = false;
+    this.changeTypeDeliveryFoundAddresses = [];
+    this.changeTypeDeliverySelectedAddressId = '';
     if (o?.order_details) {
       this.changeTypeDeliveryName = this.changeTypeDeliveryName || o.order_details.client_name || '';
       this.changeTypeDeliveryPhone = this.changeTypeDeliveryPhone || o.order_details.client_phone || '';
@@ -3263,15 +3275,108 @@ export class OrdersComponent implements OnDestroy {
     this.cdr.detectChanges();
   }
 
+  getChangeTypeDeliveryPhoneError(): string | null {
+    const phone = (this.changeTypeDeliveryPhone || '').trim();
+    const country = this.changeTypeDeliverySelectedCountry;
+    const requiredLength = country?.phoneLength ?? 10;
+    if (!phone) return 'رقم الهاتف مطلوب';
+    if (!/^\d+$/.test(phone)) return 'رقم الهاتف يجب أن يحتوي على أرقام فقط';
+    if (phone.length !== requiredLength) return `رقم الهاتف يجب أن يحتوي على ${requiredLength} رقم فقط`;
+    return null;
+  }
+
   searchChangeTypeByPhone(): void {
-    this.changeTypeDeliverySearchPhoneIdle = false;
-    setTimeout(() => {
-      this.changeTypeDeliverySearchPhoneIdle = true;
+    this.changeTypeDeliveryPhoneTouched = true;
+    const phone = (this.changeTypeDeliveryPhone || '').trim();
+    const countryCode = this.changeTypeDeliverySelectedCountry?.code || this.changeTypeDeliveryCountryCode || '';
+    const phoneError = this.getChangeTypeDeliveryPhoneError();
+    this.changeTypeDeliveryPhoneMessage = '';
+    this.changeTypeDeliveryFoundAddresses = [];
+    this.changeTypeDeliverySelectedAddressId = '';
+    if (phoneError) {
+      this.changeTypeDeliveryPhoneMessage = phoneError;
       this.cdr.detectChanges();
-    }, 800);
+      return;
+    }
+    if (!countryCode) {
+      this.changeTypeDeliveryPhoneMessage = 'يرجى اختيار كود الدولة أولاً';
+      this.cdr.detectChanges();
+      return;
+    }
+    this.changeTypeDeliverySearchPhoneIdle = false;
+    const body = { country_code: countryCode.trim(), address_phone: phone };
+    this.phoneCheckService.checkPhone(body).pipe(
+      finalize(() => {
+        this.changeTypeDeliverySearchPhoneIdle = true;
+        this.cdr.detectChanges();
+      }),
+      takeUntil(this.destroy$)
+    ).subscribe({
+      next: (res: any) => {
+        if (res?.status === true && res?.data != null) {
+          const data = Array.isArray(res.data) ? res.data : [res.data];
+          if (data.length === 0) {
+            this.changeTypeDeliveryPhoneMessage = 'لا يوجد عميل مسجل بهذا الرقم';
+            return;
+          }
+          this.changeTypeDeliveryName = data[0].user_name || data[0].client_name || this.changeTypeDeliveryName || '';
+          this.changeTypeDeliveryFoundAddresses = data;
+          if (data.length === 1) {
+            this.applyChangeTypeAddressFromItem(data[0]);
+            this.changeTypeDeliverySelectedAddressId = String(data[0].id);
+          } else {
+            this.changeTypeDeliverySelectedAddressId = String(data[0].id);
+            this.applyChangeTypeAddressFromItem(data[0]);
+          }
+          this.changeTypeDeliveryPhoneMessage = `تم العثور على عميل (${data.length} عنوان)`;
+        } else {
+          this.changeTypeDeliveryPhoneMessage = (res?.message && String(res.message).trim()) || 'لا يوجد عميل مسجل بهذا الرقم';
+        }
+        this.cdr.detectChanges();
+      },
+      error: (err: any) => {
+        this.changeTypeDeliveryPhoneMessage = err?.error?.message || 'حدث خطأ أثناء البحث. تأكد من الرقم وكود الدولة.';
+        this.cdr.detectChanges();
+      }
+    });
+  }
+
+  /** Fill delivery form from a single address item returned by check-phone API */
+  private applyChangeTypeAddressFromItem(addr: any): void {
+    if (!addr) return;
+    this.changeTypeDeliveryAreaId = addr.area_id != null ? String(addr.area_id) : (addr.area?.id != null ? String(addr.area.id) : this.changeTypeDeliveryAreaId || '');
+    this.changeTypeDeliveryAddress = addr.address || addr.address_details || this.changeTypeDeliveryAddress || '';
+    this.changeTypeDeliveryBuilding = addr.building || this.changeTypeDeliveryBuilding || '';
+    this.changeTypeDeliveryApartment = addr.apartment_number || addr.apartment || this.changeTypeDeliveryApartment || '';
+    this.changeTypeDeliveryFloor = addr.floor_number || addr.floor || this.changeTypeDeliveryFloor || '';
+    this.changeTypeDeliveryNotes = addr.notes || this.changeTypeDeliveryNotes || '';
+    const at = (addr.address_type || '').toLowerCase();
+    if (at === 'apartment' || at === 'شقة') this.changeTypeDeliveryBuildingType = 'apartment';
+    else if (at === 'villa' || at === 'فيلا') this.changeTypeDeliveryBuildingType = 'villa';
+    else if (at === 'office' || at === 'مكتب') this.changeTypeDeliveryBuildingType = 'office';
+    else if (at === 'hotel' || at === 'فندق') {
+      this.changeTypeDeliveryBuildingType = 'hotel';
+      if (addr.hotel_id != null) this.changeTypeDeliveryHotelId = addr.hotel_id;
+      if (addr.hotels?.length) this.changeTypeDeliveryHotelName = addr.hotels[0].name || '';
+    }
+    this.cdr.detectChanges();
+  }
+
+  onChangeTypeDeliveryAddressSelect(): void {
+    const id = this.changeTypeDeliverySelectedAddressId;
+    const addr = this.changeTypeDeliveryFoundAddresses.find((a: any) => String(a.id) === String(id));
+    if (addr) this.applyChangeTypeAddressFromItem(addr);
   }
 
   submitChangeOrderTypeFromDeliveryModal(): void {
+    this.changeTypeDeliveryDeliveryFormSubmitted = true;
+    this.changeTypeDeliveryPhoneTouched = true;
+    const phoneError = this.getChangeTypeDeliveryPhoneError();
+    if (phoneError) {
+      this.changeTypeDeliveryPhoneMessage = phoneError;
+      this.cdr.detectChanges();
+      return;
+    }
     this.buildChangeTypeDeliveryAddressFromParts();
     this.submitChangeOrderType();
   }
