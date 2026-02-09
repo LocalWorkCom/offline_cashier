@@ -3377,7 +3377,6 @@ export class OrdersComponent implements OnDestroy {
       this.cdr.detectChanges();
       return;
     }
-    this.buildChangeTypeDeliveryAddressFromParts();
     this.submitChangeOrderType();
   }
 
@@ -3414,27 +3413,9 @@ export class OrdersComponent implements OnDestroy {
     return payload;
   }
 
+  /** لم نعد ندمج العنوان من الأجزاء — نستخدم عنوان التوصيل كما أدخله المستخدم (changeTypeDeliveryAddress) كما هو */
   private buildChangeTypeDeliveryAddressFromParts(): void {
-    const parts: string[] = [];
-    const typeLabels: Record<string, string> = { apartment: 'شقة', villa: 'فيلا', office: 'مكتب', hotel: 'فندق' };
-    if (this.changeTypeDeliveryBuildingType) parts.push(typeLabels[this.changeTypeDeliveryBuildingType] || this.changeTypeDeliveryBuildingType);
-    if (this.changeTypeDeliveryBuildingType === 'hotel' && this.changeTypeDeliveryHotelName?.trim()) {
-      parts.push(this.changeTypeDeliveryHotelName.trim());
-    } else if (this.changeTypeDeliveryBuilding?.trim()) {
-      parts.push(this.changeTypeDeliveryBuilding.trim());
-    }
-      if (this.changeTypeDeliveryApartment?.trim()) {
-      if (this.changeTypeDeliveryBuildingType === 'hotel') {
-        parts.push('غرفة ' + this.changeTypeDeliveryApartment.trim());
-      } else {
-        parts.push('شقة ' + this.changeTypeDeliveryApartment.trim());
-      }
-    }
-    if (this.changeTypeDeliveryFloor?.trim()) parts.push('الدور ' + this.changeTypeDeliveryFloor.trim());
-    let built = parts.join('، ');
-    if (this.changeTypeDeliveryAddress?.trim()) built = built ? built + ' - ' + this.changeTypeDeliveryAddress.trim() : this.changeTypeDeliveryAddress.trim();
-    if (this.changeTypeDeliveryNotes?.trim()) built = built ? built + ' - ' + this.changeTypeDeliveryNotes.trim() : this.changeTypeDeliveryNotes.trim();
-    if (built) this.changeTypeDeliveryAddress = built;
+    // لا شيء: العنوان يُؤخذ من المستخدم كما هو دون split أو بناء من أجزاء
   }
 
   getOrderTypeLabelForChange(type: string): string {
