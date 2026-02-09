@@ -6,6 +6,7 @@ import { baseUrl2, baseUrl } from '../../environment';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { PrintedInvoiceService } from '../printed-invoice.service';
 import { PrintTimeService } from '../print-time.service';
+import { IndexeddbService } from '../indexeddb.service';
 import html2canvas from 'html2canvas';
 
 
@@ -22,7 +23,8 @@ export class NewOrderService {
     private pusherService: PusherService,
     private http: HttpClient,
     private printedInvoiceService: PrintedInvoiceService,
-    private printTime: PrintTimeService
+    private printTime: PrintTimeService,
+    private dbService: IndexeddbService
   ) {}
 
   private isElectron(): boolean {
@@ -89,13 +91,15 @@ export class NewOrderService {
 
         // 2. Global Listener for Kitchen Prints (Silent Printing)
         this.pusherService.subscribe('dish-order-statuses-changed2', 'Dish-status2', (res: any) => {
+          console.log('🖨️ [Global Listener] Received event raw:', res);
           let payload = res;
           // Robustly unwrap the payload (Pusher can nest data in .data)
           while (payload && payload.data && !payload.printers && !payload.items_updated) {
+            console.log('🖨️ [Global Listener] Unwrapping data layer...');
             payload = payload.data;
           }
 
-          console.log('🖨️ [Global Listener] Received event:', payload);
+          console.log('🖨️ [Global Listener] Final payload to process:', payload);
 
           if (payload && payload.printers && payload.printers.length > 0) {
             console.log('🖨️ [Global Listener] Print data detected, triggering silent print...');
@@ -197,6 +201,9 @@ export class NewOrderService {
           console.log('🖨️ [Global Listener] Handling print results from API response.');
           this.handleGlobalPrint(res);
         }
+        
+        // Cleanup local indexeddb if it exists (for the station that triggered the edit)
+        this.dbService.deleteOrderFromPrintkitchenById(data.order_id).catch(() => {});
       },
       error: (err) => {
         console.error('❌ [Global Listener] Failed to request print details:', err);

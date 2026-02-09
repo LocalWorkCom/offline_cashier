@@ -12,6 +12,7 @@ import { PusherService } from './services/pusher/pusher.service';
 import { TranslationService } from './core/i18n';
 import { ConfirmDialog } from "primeng/confirmdialog";
 import { NewOrderService } from './services/pusher/newOrder';
+import { DishStatusService } from './services/pusher/dishStatus';
 
 
 // import {LoginComponent} from "./login/login.component";
@@ -30,11 +31,13 @@ export class AppComponent implements OnInit {
   private pusher = inject(PusherService);
   private translate = inject(TranslationService);
   private newOrderService = inject(NewOrderService);
+  private dishStatusService = inject(DishStatusService);
   ngOnInit(): void {
     this.dir = this.translate.getHtmlDirection();
     document.body.dir = this.dir;
 
     this.pusher.connect();
     this.newOrderService.listenToNewOrder();
+    this.dishStatusService.listenToDishStatusInOrder();
   }
 }

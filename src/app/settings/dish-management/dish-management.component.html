@@ -33,7 +33,6 @@
                 <tr>
                     <th class="text-center" width="80">الصورة</th>
                     <th class="text-end">اسم المنتج</th>
-                    <th class="text-center">السعر</th>
                     <th class="text-center">الحالة</th>
                 </tr>
             </thead>
@@ -45,7 +44,6 @@
                              (error)="dish.image = 'assets/images/dish-placeholder.png'">
                     </td>
                     <td class="text-end fw-medium">{{ dish.name }}</td>
-                    <td class="text-center">{{ dish.price | number:'1.2-2' }} {{ dish.currency_symbol }}</td>
                     <td class="text-center">
                         <div class="form-check form-switch d-flex justify-content-center">
                             <input class="form-check-input custom-switch" type="checkbox" 
