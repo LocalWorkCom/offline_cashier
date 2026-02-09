@@ -183,7 +183,7 @@
         <span>- {{ orderSummary.coupon_value }}</span> {{ currencySymbol }}
       </h6>
     </div>
-    <div class="d-flex justify-content-between px-2 mb-1 " *ngIf="orderSummary.delivery_fees">
+    <div class="d-flex justify-content-between px-2 mb-1 " *ngIf="orderDetails?.order_type === 'Delivery' && orderSummary.delivery_fees">
       <h6> رسوم التوصيل</h6>
       <h6>
         <span>{{ orderSummary.delivery_fees }}</span> {{ currencySymbol }}
