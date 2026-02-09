@@ -188,9 +188,12 @@
       </div>
 
 
-      <div class="summary-row" *ngIf="summary.tax_value && summary.tax_value > 0">
-        <span class="d-label">ضريبة  ({{ summary.tax_percentage }}%)</span>
-        <span class="d-value">{{ summary.tax_value }} {{ summary.currency_symbol }}</span>
+      <div class="summary-row" *ngIf="!summary.tax_application && (summary.tax_percentage != null && summary.tax_percentage !== '')">
+        <span class="d-label">ضريبة القيمة المضافة ({{ summary.tax_percentage }}%)</span>
+        <span class="d-value">{{ summary.tax_value ?? 0 }} {{ summary.currency_symbol }}</span>
+      </div>
+      <div class="summary-row" *ngIf="summary.tax_application">
+        <span class="d-label">سعر الوجبات يشتمل على ضريبة القيمة المضافة</span>
       </div>
 
       <div class="summary-row" *ngIf="summary.coupon_value && summary.coupon_value > 0">
