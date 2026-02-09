@@ -1832,6 +1832,12 @@
                      name="changeTypeDeliveryHotelName" placeholder="اسم الفندق (إذا لم تظهر القائمة)"
                      [ngClass]="{'has-value': changeTypeDeliveryHotelName}">
             </div>
+            <div class="mb-3 input-group">
+                <span class="input-group-text text-muted" *ngIf="changeTypeDeliveryApartment">رقم الغرفة</span>
+                <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryApartment"
+                       name="changeTypeDeliveryRoomHotel" placeholder="رقم الغرفة"
+                       [ngClass]="{'has-value': changeTypeDeliveryApartment}">
+              </div>
           </div>
         </div>
       </div>
