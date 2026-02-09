@@ -1,12 +1,28 @@
-<div class="dish-management p-3 text-end" dir="rtl">
-    <h5 class="fw-bold mb-4"> إدارة المنتجات</h5>
+<div class="dish-management p-4 text-end" dir="rtl">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h5 class="fw-bold m-0"><i class="fas fa-utensils me-2"></i> إدارة المنتجات</h5>
+    </div>
 
-    <div class="row mb-4">
-        <div class="col-md-6">
-            <label class="form-label">اختر التصنيف</label>
+    <!-- Filters Section -->
+    <div class="row g-3 mb-4 p-3 bg-light rounded-3 shadow-sm border">
+        <div class="col-md-4">
+            <label class="form-label fw-medium"><i class="fas fa-search me-1"></i> بحث باسم المنتج</label>
+            <input type="text" class="form-control text-end" placeholder="ادخل اسم المنتج للبحث..." 
+                   [(ngModel)]="searchTerm" (input)="onFilterChange()">
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-medium"><i class="fas fa-filter me-1"></i> التصنيف</label>
             <select class="form-select text-end" [(ngModel)]="selectedCategoryId" (change)="onCategoryChange()">
-                <option [value]="null" disabled selected>اختر تصنيف</option>
-                <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }} ({{ cat.dishes_count }})</option>
+                <option [ngValue]="null" disabled selected>اختر التصنيف لعرض المنتجات</option>
+                <option *ngFor="let cat of categories" [value]="cat.id">{{ cat.name }}</option>
+            </select>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-medium"><i class="fas fa-eye me-1"></i> الحالة</label>
+            <select class="form-select text-end" [(ngModel)]="statusFilter" (change)="onStatusChange()">
+                <option value="all">الكل</option>
+                <option value="active">نشط</option>
+                <option value="inactive">غير نشط</option>
             </select>
         </div>
     </div>
@@ -19,7 +35,7 @@
         {{ errorMessage }}
     </div>
 
-    <!-- Loading Spinner for Disher -->
+    <!-- Loading Spinner -->
     <div *ngIf="dishesLoading" class="text-center my-5">
         <div class="spinner-border main-color" role="status">
             <span class="visually-hidden">Loading...</span>
@@ -27,23 +43,35 @@
     </div>
 
     <!-- Dishes Table -->
-    <div *ngIf="!dishesLoading && selectedCategoryId && dishes.length > 0" class="table-responsive mt-3">
-        <table class="table table-hover align-middle border">
-            <thead class="bg-light">
+    <div *ngIf="!dishesLoading && filteredDishes.length > 0" class="table-responsive">
+        <table class="table table-hover align-middle border shadow-sm">
+            <thead class="bg-primary text-white">
                 <tr>
                     <th class="text-center" width="80">الصورة</th>
                     <th class="text-end">اسم المنتج</th>
+                    <th class="text-end">التصنيف</th>
                     <th class="text-center">الحالة</th>
+                    <th class="text-center">تغيير الحالة</th>
                 </tr>
             </thead>
             <tbody>
-                <tr *ngFor="let dish of dishes">
+                <tr *ngFor="let dish of filteredDishes">
                     <td class="text-center">
                         <img [src]="dish.image || 'assets/images/dish-placeholder.png'" 
-                             class="rounded shadow-sm" style="width: 50px; height: 50px; object-fit: cover;"
+                             class="rounded shadow-sm border" style="width: 50px; height: 50px; object-fit: cover;"
                              (error)="dish.image = 'assets/images/dish-placeholder.png'">
                     </td>
                     <td class="text-end fw-medium">{{ dish.name }}</td>
+                    <td class="text-end">
+                        <span class="badge bg-secondary-subtle text-secondary border px-3 py-2 rounded-pill">
+                            {{ dish.category_name || 'غير محدد' }}
+                        </span>
+                    </td>
+                    <td class="text-center">
+                        <span [ngClass]="dish.is_active ? 'badge bg-success' : 'badge bg-danger'" class="px-3 py-2">
+                            {{ dish.is_active ? 'نشط' : 'غير نشط' }}
+                        </span>
+                    </td>
                     <td class="text-center">
                         <div class="form-check form-switch d-flex justify-content-center">
                             <input class="form-check-input custom-switch" type="checkbox" 
@@ -56,14 +84,15 @@
         </table>
     </div>
 
-    <!-- No Dishes Found -->
-    <div *ngIf="!dishesLoading && selectedCategoryId && dishes.length === 0" class="text-center my-5 text-muted">
-        لا يوجد منتجات في هذا التصنيف.
+    <!-- No Category Selected Message -->
+    <div *ngIf="!selectedCategoryId" class="text-center my-5 text-muted bg-light p-5 rounded-4 border">
+        <i class="fas fa-utensils fs-1 mb-3 text-secondary opacity-50"></i>
+        <h5>الرجاء اختيار تصنيف لعرض المنتجات</h5>
     </div>
 
-    <!-- No Category Selected -->
-    <div *ngIf="!selectedCategoryId && !loading" class="text-center my-5 text-muted bg-light p-5 rounded-4 border border-dashed">
-        <i class="fas fa-arrow-up fs-2 mb-3"></i>
-        <h5>الرجاء اختيار تصنيف لعرض المنتجات</h5>
+    <!-- No Dishes Found -->
+    <div *ngIf="selectedCategoryId && !dishesLoading && filteredDishes.length === 0" class="text-center my-5 text-muted bg-light p-5 rounded-4 border">
+        <i class="fas fa-search fs-1 mb-3 text-secondary opacity-50"></i>
+        <h5>لم يتم العثور على أي منتجات في هذا التصنيف</h5>
     </div>
 </div>

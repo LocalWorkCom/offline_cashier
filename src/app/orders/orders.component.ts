@@ -3318,7 +3318,13 @@ export class OrdersComponent implements OnDestroy {
     } else if (this.changeTypeDeliveryBuilding?.trim()) {
       parts.push(this.changeTypeDeliveryBuilding.trim());
     }
-    if (this.changeTypeDeliveryApartment?.trim()) parts.push('شقة ' + this.changeTypeDeliveryApartment.trim());
+      if (this.changeTypeDeliveryApartment?.trim()) {
+      if (this.changeTypeDeliveryBuildingType === 'hotel') {
+        parts.push('غرفة ' + this.changeTypeDeliveryApartment.trim());
+      } else {
+        parts.push('شقة ' + this.changeTypeDeliveryApartment.trim());
+      }
+    }
     if (this.changeTypeDeliveryFloor?.trim()) parts.push('الدور ' + this.changeTypeDeliveryFloor.trim());
     let built = parts.join('، ');
     if (this.changeTypeDeliveryAddress?.trim()) built = built ? built + ' - ' + this.changeTypeDeliveryAddress.trim() : this.changeTypeDeliveryAddress.trim();

@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ProductsService } from '../../services/products.service';
+import { Subject, debounceTime, distinctUntilChanged } from 'rxjs';
 
 @Component({
   selector: 'app-dish-management',
@@ -10,19 +11,40 @@ import { ProductsService } from '../../services/products.service';
   templateUrl: './dish-management.component.html',
   styleUrls: ['./dish-management.component.css']
 })
-export class DishManagementComponent implements OnInit {
+export class DishManagementComponent implements OnInit, OnDestroy {
   categories: any[] = [];
-  selectedCategoryId: number | null = null;
   dishes: any[] = [];
+  filteredDishes: any[] = [];
   loading = false;
   dishesLoading = false;
   successMessage: string = '';
   errorMessage: string = '';
+  
+  // Search and Filters
+  searchTerm: string = '';
+  statusFilter: string = 'all'; // 'all', 'active', 'inactive'
+  selectedCategoryId: any = null;
+
+  private searchSubject = new Subject<string>();
 
   constructor(private productsService: ProductsService) {}
 
   ngOnInit(): void {
     this.loadCategories();
+    // Do not load dishes initialy - satisfy user requirement
+    // this.loadDishes();
+
+    // Setup search debouncing
+    this.searchSubject.pipe(
+      debounceTime(500),
+      distinctUntilChanged()
+    ).subscribe(() => {
+      this.loadDishes();
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.searchSubject.complete();
   }
 
   loadCategories(): void {
@@ -41,21 +63,27 @@ export class DishManagementComponent implements OnInit {
     });
   }
 
-  onCategoryChange(): void {
+  loadDishes(): void {
     if (!this.selectedCategoryId) {
       this.dishes = [];
+      this.filteredDishes = [];
       return;
     }
-    this.loadDishes();
-  }
 
-  loadDishes(): void {
-    if (!this.selectedCategoryId) return;
     this.dishesLoading = true;
-    this.productsService.getMenuDishesAll(this.selectedCategoryId).subscribe({
+    
+    this.productsService.getMenuDishesAll(
+      this.selectedCategoryId, 
+      this.searchTerm, 
+      this.statusFilter
+    ).subscribe({
       next: (res: any) => {
         if (res.status && res.data) {
-          this.dishes = res.data.dishes || [];
+          this.dishes = res.data.dishes || []; // Using non-paginated data structure
+          this.filteredDishes = [...this.dishes];
+        } else {
+          this.dishes = [];
+          this.filteredDishes = [];
         }
         this.dishesLoading = false;
       },
@@ -64,6 +92,19 @@ export class DishManagementComponent implements OnInit {
         this.dishesLoading = false;
       }
     });
+  }
+
+  onCategoryChange(): void {
+    this.loadDishes();
+  }
+
+  onFilterChange(): void {
+    if (this.searchTerm.length > 0 && this.searchTerm.length < 2) return;
+    this.searchSubject.next(this.searchTerm);
+  }
+
+  onStatusChange(): void {
+    this.loadDishes();
   }
 
   toggleStatus(dish: any): void {
