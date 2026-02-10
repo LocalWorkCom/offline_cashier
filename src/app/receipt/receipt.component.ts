@@ -38,16 +38,17 @@ export class ReceiptComponent {
     return '';
   }
 
-  getPaymentMethod(): string {
-    if (this.data?.invoices?.[0]?.transactions?.[0]?.payment_method) {
-      const method = this.data.invoices[0].transactions[0].payment_method;
+  getPaymentMethod(method?: string): string {
+    const targetMethod = method || this.data?.invoices?.[0]?.transactions?.[0]?.payment_method;
+    
+    if (targetMethod) {
       const methodMap: any = {
         'cash': 'نقدي',
         'card': 'بطاقة',
         'deferred': 'آجل',
         'online': 'أونلاين'
       };
-      return methodMap[method] || method;
+      return methodMap[targetMethod] || targetMethod;
     }
     return 'غير محدد';
   }

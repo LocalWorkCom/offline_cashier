@@ -1864,8 +1864,8 @@
           
           <!-- Delivery Driver -->
           <div class="mb-3 border-top pt-3">
-             <label class="form-label fw-bold">مندوب التوصيل (اختياري)</label>
-             <select class="form-select styled-select" [(ngModel)]="changeTypeDeliveryDriverId" name="deliveryDriver">
+             <label class="form-label fw-bold">مندوب التوصيل <span class="text-danger">*</span></label>
+             <select class="form-select styled-select" [(ngModel)]="changeTypeDeliveryDriverId" name="deliveryDriver" required>
                <option [ngValue]="null">-- اختر مندوب التوصيل --</option>
                @for (driver of drivers; track driver.id) {
                  <option [ngValue]="driver.id">{{ driver.first_name }} {{ driver.last_name }}</option>

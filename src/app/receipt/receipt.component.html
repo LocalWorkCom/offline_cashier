@@ -219,9 +219,9 @@
         <span class="d-value">{{ (data.invoices[0]?.transactions[0]?.payment_status === "paid") ? "مدفوع" : "غير مدفوع" }}</span>
       </div>
 
-      <div class="summary-row" *ngIf="data.invoices[0]?.transactions[0]?.payment_status === 'paid'">
-        <span class="d-label">طريقة الدفع</span>
-        <span class="d-value">{{ getPaymentMethod() }}</span>
+      <div class="summary-row" *ngFor="let transaction of data.invoices[0]?.transactions">
+        <span class="d-label">الدفع - {{ getPaymentMethod(transaction.payment_method) }}</span>
+        <span class="d-value">{{ transaction.paid }} {{ getCurrencySymbol() }}</span>
       </div>
       </div>
 

@@ -251,7 +251,7 @@
         </div>
       </div>
       <!-- Cash - visa -->
-      <div *ngIf="invoices?.length > 0 && invoices[0]?.transactions?.length > 1">
+      <div *ngIf="invoices?.length > 0 && invoices[0]?.transactions?.length">
         <div *ngFor="let inv of invoices[0].transactions">
           <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
             *ngIf="invoices[0].transactions[0]?.payment_status == 'paid'">
