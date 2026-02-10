@@ -125,11 +125,14 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     return sub - coupon + service + tax + delivery;
   }
 
-  /** Apply branch delivery_fees override for delivery orders so invoice matches dashboard. */
+  /** Apply branch delivery_fees only when order has no valid fee (e.g. after change-type-to-delivery). Do not override when order already has a valid delivery_fees (e.g. 25) so paid/correct orders show the same as printed invoice. */
   private applyBranchDeliveryFees(summary: any, currentDeliveryFees: number): { deliveryFees: number; orderSummary: any } {
     const branchFee = this.getBranchDeliveryFees();
-    if (branchFee === null || summary == null) return { deliveryFees: currentDeliveryFees, orderSummary: summary };
+    if (summary == null) return { deliveryFees: currentDeliveryFees, orderSummary: summary };
     const oldFee = this.safeNum(summary.delivery_fees);
+    // If order already has a valid delivery fee (e.g. from area or paid invoice), keep it — do not replace with branch default.
+    if (oldFee > 0) return { deliveryFees: oldFee, orderSummary: summary };
+    if (branchFee === null) return { deliveryFees: currentDeliveryFees, orderSummary: summary };
     if (oldFee === branchFee) return { deliveryFees: currentDeliveryFees, orderSummary: summary };
     const delta = branchFee - oldFee;
     const currentTotal = this.safeNum(summary.total) || this.safeNum(summary.total_price) || this.computeTotalFromSummary(summary, this.safeNum(summary.delivery_fees));
