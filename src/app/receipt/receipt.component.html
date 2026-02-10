@@ -122,10 +122,10 @@
         <span class="d-label">رقم العميل:</span>
         <span class="d-value">{{ getCustomerPhone() }}</span>
       </div>
-      <div class="summary-row" *ngIf="data.invoices[0]?.order_type !== 'dine-in'">
+      <div class="summary-row" *ngIf="data.invoices[0]['order_type'] == 'Delivery'" >
         <span class="d-label">عنوان التوصيل:</span>
       </div>
-      <div class="summary-row" *ngIf="data.invoices[0]?.order_type !== 'dine-in'">
+      <div class="summary-row" *ngIf="data.invoices[0]['order_type'] == 'Delivery'" >
        {{ getDeliveryAddress() }}
       </div>
 
