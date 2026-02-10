@@ -1587,21 +1587,21 @@
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content p-3">
       <div class="modal-header border-0 d-flex justify-content-between align-items-center" dir="rtl">
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
         <div class="d-flex align-items-center gap-2">
           <span class="rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="background-color: #e8e0f0;">
             <i class="fa-solid fa-truck" style="color: #9c27b0;"></i>
           </span>
           <h5 class="modal-title fw-bold mb-0" id="changeTypeDeliveryDetailsModalLabel">بيانات التوصيل</h5>
         </div>
+        <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="إغلاق"></button>
       </div>
       <div class="modal-body">
         <p class="small text-muted mb-3">أدخل بيانات العميل والعنوان لتحديد رسوم التوصيل حسب المنطقة.</p>
         <h6 class="fw-bold mb-3">معلومات العميل</h6>
         <div class="mb-3">
-          <div class="mb-3 input-group">
+          <div class="mb-3 input-group border rounded">
             <span class="input-group-text" *ngIf="changeTypeDeliveryName">ادخل اسم العميل</span>
-            <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryName"
+            <input type="text" class="form-control border-0" [(ngModel)]="changeTypeDeliveryName"
                    name="changeTypeDeliveryNameModal" placeholder="اسم العميل"
                    [ngClass]="{'has-value': changeTypeDeliveryName}">
           </div>
@@ -1609,9 +1609,9 @@
         <!-- رقم الهاتف + كود الدولة + ابحث برقم الهاتف (مثل تنفيذ الطلب: حقل الهاتف | اختر الدولة أبيض | زر البحث أحمر) -->
         <div class="d-flex gap-2 align-items-stretch mb-3 flex-wrap" dir="rtl">
           <div class="flex-grow-1" style="min-width: 140px;">
-            <div class="input-group h-100">
+            <div class="input-group h-100 border rounded">
               <span class="input-group-text" *ngIf="changeTypeDeliveryPhone">ادخل رقم العميل</span>
-              <input type="text" class="form-control text-end" [(ngModel)]="changeTypeDeliveryPhone" name="changeTypeDeliveryPhoneModal" placeholder="ادخل رقم الهاتف"
+              <input type="text" class="form-control text-end border-0" [(ngModel)]="changeTypeDeliveryPhone" name="changeTypeDeliveryPhoneModal" placeholder="ادخل رقم الهاتف"
                      [ngClass]="{'has-value': changeTypeDeliveryPhone, 'is-invalid': (changeTypeDeliveryPhoneTouched || changeTypeDeliveryDeliveryFormSubmitted) && getChangeTypeDeliveryPhoneError()}"
                      (blur)="changeTypeDeliveryPhoneTouched = true" />
             </div>
@@ -1691,7 +1691,7 @@
         <h6 class="fw-bold mb-3">اضف عنوان التوصيل</h6>
         <div class="mb-3">
           <label for="changeTypeArea" class="form-label fw-bold">اختر المنطقة</label>
-          <select id="changeTypeArea" class="form-select styled-select" [(ngModel)]="changeTypeDeliveryAreaId"
+          <select id="changeTypeArea" class="form-select styled-select border rounded" [(ngModel)]="changeTypeDeliveryAreaId"
                   name="changeTypeDeliveryAreaIdModal">
             <option value="">اختر المنطقة...</option>
             @for (area of deliveryAreas; track area.id) {
@@ -1874,13 +1874,13 @@
           </div>
         </div>
       </div>
-      <div class="modal-footer border-0 d-flex justify-content-between flex-row-reverse">
-        <button type="button" class="btn btn-danger" (click)="submitChangeOrderTypeFromDeliveryModal()" [disabled]="!isDeliveryInfoComplete() || isChangeTypeSubmitting">
+      <div class="modal-footer border-0 d-flex gap-2 px-4 pb-4 pt-2" style="flex-wrap: nowrap;" dir="rtl">
+        <button type="button" class="btn btn-danger rounded-3 py-2 text-center" style="flex: 0 0 calc(50% - 4px); min-height: 44px;" (click)="submitChangeOrderTypeFromDeliveryModal()" [disabled]="!isDeliveryInfoComplete() || isChangeTypeSubmitting">
           <span *ngIf="isChangeTypeSubmitting" class="spinner-border spinner-border-sm me-2"></span>
           <i *ngIf="!isChangeTypeSubmitting" class="fa-solid fa-check me-2"></i>
           تأكيد البيانات
         </button>
-        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <button type="button" class="btn btn-outline-secondary rounded-3 py-2 text-center border" style="flex: 0 0 calc(50% - 4px); min-height: 44px; background-color: #fff; color: #495057;" data-bs-dismiss="modal">إلغاء</button>
       </div>
     </div>
   </div>

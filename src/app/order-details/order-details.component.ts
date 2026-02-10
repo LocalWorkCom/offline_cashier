@@ -108,17 +108,35 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     }
   }
 
+  /** Ensure a numeric value for display (avoid NaN). */
+  private safeNum(v: any): number {
+    const n = Number(v);
+    return v != null && !isNaN(n) ? n : 0;
+  }
+
+  /** Compute grand total from summary parts when total/total_price are missing or invalid. */
+  private computeTotalFromSummary(s: any, deliveryFees: number): number {
+    if (!s) return 0;
+    const sub = this.safeNum(s.subtotal_price_before_coupon ?? s.subtotal ?? s.total_dish_price);
+    const coupon = this.safeNum(s.coupon_value);
+    const service = this.safeNum(s.service_fees);
+    const tax = this.safeNum(s.tax_value);
+    const delivery = this.safeNum(deliveryFees);
+    return sub - coupon + service + tax + delivery;
+  }
+
   /** Apply branch delivery_fees override for delivery orders so invoice matches dashboard. */
   private applyBranchDeliveryFees(summary: any, currentDeliveryFees: number): { deliveryFees: number; orderSummary: any } {
     const branchFee = this.getBranchDeliveryFees();
     if (branchFee === null || summary == null) return { deliveryFees: currentDeliveryFees, orderSummary: summary };
-    const oldFee = Number(summary.delivery_fees);
+    const oldFee = this.safeNum(summary.delivery_fees);
     if (oldFee === branchFee) return { deliveryFees: currentDeliveryFees, orderSummary: summary };
-    const delta = branchFee - (isNaN(oldFee) ? 0 : oldFee);
-    const newTotal = typeof summary.total === 'number' ? summary.total + delta : summary.total;
+    const delta = branchFee - oldFee;
+    const currentTotal = this.safeNum(summary.total) || this.safeNum(summary.total_price) || this.computeTotalFromSummary(summary, this.safeNum(summary.delivery_fees));
+    const newTotal = currentTotal + delta;
     return {
       deliveryFees: branchFee,
-      orderSummary: { ...summary, delivery_fees: branchFee, total: newTotal },
+      orderSummary: { ...summary, delivery_fees: branchFee, total: newTotal, total_price: newTotal },
     };
   }
 
@@ -128,9 +146,12 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     if (isDelivery) {
       return this.applyBranchDeliveryFees(summary, currentDeliveryFees);
     }
-    const oldFee = Number(summary?.delivery_fees) || 0;
-    const newTotal = (Number(summary?.total) ?? Number(summary?.total_price) ?? 0) - oldFee;
-    const normalizedSummary = summary ? { ...summary, delivery_fees: 0, total: newTotal, total_price: newTotal } : summary;
+    const oldFee = this.safeNum(summary?.delivery_fees);
+    const rawTotal = this.safeNum(summary?.total) || this.safeNum(summary?.total_price);
+    const fallbackTotal = this.computeTotalFromSummary(summary, 0);
+    const newTotal = (rawTotal || fallbackTotal) - oldFee;
+    const safeTotal = typeof newTotal === 'number' && !isNaN(newTotal) ? newTotal : fallbackTotal;
+    const normalizedSummary = summary ? { ...summary, delivery_fees: 0, total: safeTotal, total_price: safeTotal } : summary;
     return { deliveryFees: 0, orderSummary: normalizedSummary };
   }
 
@@ -314,6 +335,13 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   }
   get hasServiceFees(): boolean {
     return Number(this.orderSummary.service_percentage) > 0;
+  }
+
+  /** Safe grand total for display (never NaN). */
+  get displayTotalPrice(): number {
+    const v = this.orderSummary?.total_price ?? this.orderSummary?.total;
+    const n = Number(v);
+    return v != null && !isNaN(n) ? n : 0;
   }
 
   ngOnDestroy(): void {
