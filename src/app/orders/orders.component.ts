@@ -2476,6 +2476,8 @@ export class OrdersComponent implements OnDestroy {
   changeTypeDeliverySelectedAddressId: string = '';
   isChangeTypeSubmitting: boolean = false;
   changeTypeSuccessMessage: string = '';
+  /** عند تعديل طلب توصيل أرسلنا delivery_fees للمحافظة عليها؛ لا نستبدلها برسوم الفرع بعد التحديث */
+  private lastChangeTypePreservedDeliveryFees: number | null = null;
 
   // Check if order can be split
   canSplitOrder(order: any): boolean {
@@ -3616,10 +3618,21 @@ export class OrdersComponent implements OnDestroy {
     }
     // When changing to Delivery: send existing order client data or cashier-entered delivery info
     if (newOrderType === 'Delivery') {
+      this.lastChangeTypePreservedDeliveryFees = null;
       const o = this.currentOrderForTypeChange;
       const od = o?.order_details;
       const details = (o as any)?.details_order;
       const addressId = details?.client_address_id ?? od?.client_address_id ?? (o as any)?.client_address_id;
+      // عند تعديل طلب كان أصلاً توصيل: الإبقاء على نفس رسوم التوصيل التي تم تحديدها عند تنفيذ الطلب
+      const isAlreadyDelivery = od?.order_type === 'Delivery';
+      if (isAlreadyDelivery) {
+        const summary = details?.order_summary || (o as any)?.order_summary;
+        const currentFees = summary != null ? Number(summary.delivery_fees) : NaN;
+        if (!isNaN(currentFees) && currentFees >= 0) {
+          body['delivery_fees'] = currentFees;
+          this.lastChangeTypePreservedDeliveryFees = currentFees;
+        }
+      }
       if (addressId != null && !this.changeTypeDeliveryAreaId) {
         body['client_address'] = addressId;
       }
@@ -3780,31 +3793,77 @@ export class OrdersComponent implements OnDestroy {
     return out;
   }
 
+  /**
+   * عند تعديل طلب توصيل: فرض رسوم التوصيل المحفوظة (التي كانت عند تنفيذ الطلب) على الطلب
+   * لأن الباكند قد يعيد رسوماً مختلفة (مثلاً 5) فيتم تصحيحها هنا لتبقى 25.
+   */
+  private applyPreservedDeliveryFeesToOrder(order: any, preservedFee: number): any {
+    const orderType = order?.order_details?.order_type || order?.details_order?.order_type;
+    if (orderType !== 'Delivery') return order;
+
+    const summary = order?.details_order?.order_summary || order?.order_summary;
+    const currentFee = summary != null ? Number(summary.delivery_fees) : NaN;
+    if (currentFee === preservedFee) return order;
+
+    const oldFee = isNaN(currentFee) ? 0 : currentFee;
+    const delta = preservedFee - oldFee;
+
+    const out = { ...order };
+    if (out.details_order?.order_summary) {
+      const sum = out.details_order.order_summary;
+      out.details_order = {
+        ...out.details_order,
+        order_summary: {
+          ...sum,
+          delivery_fees: preservedFee,
+          ...(typeof sum.total === 'number' && { total: sum.total + delta }),
+        },
+      };
+    }
+    if (out.order_summary) {
+      const sum = out.order_summary;
+      out.order_summary = {
+        ...sum,
+        delivery_fees: preservedFee,
+        ...(typeof sum.total === 'number' && { total: sum.total + delta }),
+      };
+    }
+    if (typeof out.total_price === 'number') {
+      out.total_price = out.total_price + delta;
+    }
+    return out;
+  }
+
   // Refresh order data after cancellation / change-type to update list and IndexedDB
   refreshOrderAfterCancel(orderId: number): void {
+    const preservedFees = this.lastChangeTypePreservedDeliveryFees;
+    this.lastChangeTypePreservedDeliveryFees = null;
+
     this._OrderListDetailsService.NewgetOrderById(orderId)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res: any) => {
           if (res?.data?.order) {
             let updatedOrder = res.data.order;
-            updatedOrder = this.applyBranchDeliveryFeesToOrder(updatedOrder);
+            if (preservedFees !== null) {
+              updatedOrder = this.applyPreservedDeliveryFeesToOrder(updatedOrder, preservedFees);
+            } else {
+              updatedOrder = this.applyBranchDeliveryFeesToOrder(updatedOrder);
+            }
             const orderIndex = this.orders.findIndex(
               (o: any) => o.order_details?.order_id === orderId
             );
             if (orderIndex !== -1) {
-              // Replace with API data so order type and delivery fields update immediately (no stale delivery info)
-              this.orders[orderIndex] = this.applyBranchDeliveryFeesToOrder({
+              this.orders[orderIndex] = {
                 ...updatedOrder,
                 currency_symbol: this.currencySymbol
-              });
+              };
               this.orders = [...this.orders];
               this.filterOrders();
               this.cdr.detectChanges();
               console.log('✅ Order refreshed with updated calculations:', updatedOrder);
             }
-            // Update IndexedDB so order-details page shows correct data without manual refresh
-            this.refreshOrderDetailsInIndexedDB(orderId);
+            this.refreshOrderDetailsInIndexedDB(orderId, preservedFees);
           }
         },
         error: (err) => {
@@ -3814,13 +3873,16 @@ export class OrdersComponent implements OnDestroy {
   }
 
   /** Fetch order in details format and save to IndexedDB so تفاصيل الطلب shows correct type/delivery state. */
-  private refreshOrderDetailsInIndexedDB(orderId: number): void {
+  private refreshOrderDetailsInIndexedDB(orderId: number, preservedDeliveryFees: number | null = null): void {
     this._OrderListDetailsService.getOrderById(String(orderId))
       .pipe(takeUntil(this.destroy$))
       .subscribe({
         next: (res: any) => {
-          const order = res?.data?.orderDetails?.[0];
+          let order = res?.data?.orderDetails?.[0];
           if (!order) return;
+          if (preservedDeliveryFees !== null) {
+            order = this.applyPreservedDeliveryFeesToOrder(order, preservedDeliveryFees);
+          }
           const items = order.order_details && Array.isArray(order.order_details) ? order.order_details : [];
           const toSave: any = {
             ...order,
