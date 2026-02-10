@@ -2812,6 +2812,16 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       return;
     }
 
+    if ((this.selectedOrderType === 'Delivery' || this.selectedOrderType === 'توصيل') && !this.selectedDriverId) {
+      this.isLoading = false;
+      this.loading = false;
+      this.falseMessage = 'يرجى اختيار مندوب التوصيل';
+      setTimeout(() => {
+        this.falseMessage = '';
+      }, 1500);
+      return;
+    }
+
     // جلب البيانات الأساسية
     const branchId = Number(localStorage.getItem('branch_id')) || null;
     const tableId = Number(localStorage.getItem('table_id')) || this.table_id || this.currentOrderData?.order_details?.table_number || null;

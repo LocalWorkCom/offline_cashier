@@ -870,7 +870,7 @@
       <!-- Delivery Driver Dropdown -->
       <div *ngIf="selectedOrderType === 'Delivery' || selectedOrderType === 'توصيل'" class="mb-3">
         <label class="form-label fw-bold">مندوب التوصيل</label>
-        <select class="form-select" [(ngModel)]="selectedDriverId" name="deliveryDriver">
+        <select class="form-select" [(ngModel)]="selectedDriverId" name="deliveryDriver" required>
           <option [ngValue]="null">اختر مندوب التوصيل</option>
           <option *ngFor="let driver of drivers" [ngValue]="driver.id">
             {{ driver.first_name }} {{ driver.last_name }}
