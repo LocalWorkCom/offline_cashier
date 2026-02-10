@@ -137,8 +137,9 @@ export class OrdersComponent implements OnDestroy {
 
     this.loadCartItems();
     this.filterCartItems();
-    // this.fetchOrdersData();
-    this.fetchOrderDetails();
+    this.loadDrivers();
+
+    // Subscribe to query params to detect 'openOrder'Details();
     // this.setupPusherListeners();
     this.listenToDishChange();
     // this.listenToOrderChange();
@@ -175,7 +176,7 @@ export class OrdersComponent implements OnDestroy {
 
   //       this.processOrders(orders);
 
-  //       // Check if data is stale (older than 5 minutes)
+  // Check if data is stale (older than 5 minutes)
   //       this.dbService.getOrdersLastSync().then(lastSync => {
   //         const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
   //         if (this.isOnline && lastSync < fiveMinutesAgo) {
@@ -291,6 +292,19 @@ export class OrdersComponent implements OnDestroy {
 
     this.filterOrders();
     this.loading = true;
+  }
+
+  loadDrivers() {
+    this.ordersService.getDrivers().subscribe({
+      next: (response: any) => {
+        if (response && response.status && response.data) {
+          this.drivers = response.data;
+        }
+      },
+      error: (error: any) => {
+        console.error('Error fetching drivers:', error);
+      }
+    });
   }
   //end dalia
   newOrderFromPusher: any;
@@ -946,7 +960,7 @@ export class OrdersComponent implements OnDestroy {
 
     if (this.selectedStatus === 'static') {
       return (
-        this.cartItems?.filter((item: any) => item.type === orderType)
+        this.cartItems?.filter((item: { type: string }) => item.type === orderType)
           ?.length || 0
       );
     }
@@ -2451,6 +2465,10 @@ export class OrdersComponent implements OnDestroy {
   changeTypeDeliverySelectedCountry: { code: string; flag: string; phoneLength?: number } | null = null;
   changeTypeDeliveryCountrySearchTerm: string = '';
   changeTypeDeliverySearchPhoneIdle: boolean = true;
+  
+  drivers: any[] = [];
+  changeTypeDeliveryDriverId: number | null = null;
+
   changeTypeDeliveryPhoneMessage: string = '';
   changeTypeDeliveryPhoneTouched: boolean = false;
   changeTypeDeliveryDeliveryFormSubmitted: boolean = false;
@@ -3198,6 +3216,7 @@ export class OrdersComponent implements OnDestroy {
     this.changeTypeDeliveryPhoneMessage = '';
     this.changeTypeDeliveryPhoneTouched = false;
     this.changeTypeDeliveryDeliveryFormSubmitted = false;
+    this.changeTypeDeliveryDriverId = null;
     this.changeTypeDeliveryFoundAddresses = [];
     this.changeTypeDeliverySelectedAddressId = '';
     if (o?.order_details) {
@@ -3208,6 +3227,7 @@ export class OrdersComponent implements OnDestroy {
     this.loadDeliveryAreas();
     this.loadChangeTypeHotels();
     this.loadChangeTypeDeliveryCountries();
+    this.loadDrivers();
     const modalEl = document.getElementById('changeTypeDeliveryDetailsModal');
     if (modalEl) {
       const modal = new bootstrap.Modal(modalEl);
@@ -3644,6 +3664,9 @@ export class OrdersComponent implements OnDestroy {
       if (addressId != null && !this.changeTypeDeliveryAreaId) {
         body['client_address'] = addressId;
       }
+      if (this.changeTypeDeliveryDriverId) {
+        body['delivery_id'] = this.changeTypeDeliveryDriverId;
+      }
     }
 
     this.http.post(`${baseUrl}api/orders/changeOrderType`, body, { headers }).subscribe({
@@ -3680,6 +3703,7 @@ export class OrdersComponent implements OnDestroy {
           this.currentOrderForTypeChange = null;
           this.selectedNewOrderType = '';
           this.selectedTableIdForTypeChange = '';
+          this.changeTypeDeliveryDriverId = null;
           this.changeTypeDeliveryName = '';
           this.changeTypeDeliveryPhone = '';
           this.changeTypeDeliveryCountryCode = '';
