@@ -112,20 +112,20 @@
         <span class="d-label">تليفون الطيار :</span>
         <span class="d-value">{{ getDriverPhone() }}</span>
       </div> -->
-      <hr class="divider" />
+      <hr class="divider" *ngIf="data.invoices[0]?.order_type !== 'dine-in'" />
       <!-- Customer Info -->
-      <div class="summary-row">
+      <div class="summary-row" *ngIf="data.invoices[0]?.order_type !== 'dine-in'">
         <span class="d-label">اسم العميل:</span>
         <span class="d-value">{{ getCustomerName() }}</span>
       </div>
-      <div class="summary-row">
+      <div class="summary-row" *ngIf="data.invoices[0]?.order_type !== 'dine-in'">
         <span class="d-label">رقم العميل:</span>
         <span class="d-value">{{ getCustomerPhone() }}</span>
       </div>
-      <div class="summary-row" *ngIf="isDelivery()">
+      <div class="summary-row" *ngIf="data.invoices[0]?.order_type !== 'dine-in'">
         <span class="d-label">عنوان التوصيل:</span>
       </div>
-      <div class="summary-row" *ngIf="isDelivery()">
+      <div class="summary-row" *ngIf="data.invoices[0]?.order_type !== 'dine-in'">
        {{ getDeliveryAddress() }}
       </div>
 
@@ -201,7 +201,7 @@
         <span class="d-value">-{{ summary.coupon_value }} {{ summary.currency_symbol }}</span>
       </div>
 
-      <div class="summary-row" *ngIf="isDelivery() && summary.delivery_fees && summary.delivery_fees > 0">
+      <div class="summary-row" *ngIf="isDelivery()">
         <span class="d-label">رسوم التوصيل</span>
         <span class="d-value">{{ summary.delivery_fees }} {{ summary.currency_symbol }}</span>
       </div>
