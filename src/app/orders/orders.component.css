@@ -297,3 +297,25 @@ button.dropdown-item {
     height: 15px;
     object-fit: contain;
 }
+
+/* Complete borders for all inputs in Delivery Details modal */
+#changeTypeDeliveryDetailsModal .input-group {
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+    overflow: hidden;
+}
+#changeTypeDeliveryDetailsModal .input-group .form-control {
+    border: none;
+}
+#changeTypeDeliveryDetailsModal .input-group .input-group-text {
+    border: none;
+    background: #f8f9fa;
+}
+#changeTypeDeliveryDetailsModal .form-select.styled-select,
+#changeTypeDeliveryDetailsModal .form-select {
+    border: 1px solid #ced4da;
+    border-radius: 0.375rem;
+}
+#changeTypeDeliveryDetailsModal .delivery-places .nav-link {
+    border: 1px solid #dee2e6;
+}
