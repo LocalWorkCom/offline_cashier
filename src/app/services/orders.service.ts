@@ -23,4 +23,13 @@ export class OrdersService {
 
     return this.http.get(`${this.apiUrl}/orders`, { headers });
   }
+
+  getDrivers(): Observable<any> {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    return this.http.get(`${this.apiUrl}/deliveries`, { headers });
+  }
 }

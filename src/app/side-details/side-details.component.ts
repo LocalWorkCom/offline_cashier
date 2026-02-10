@@ -35,6 +35,7 @@ import { Router } from '@angular/router';
 import { log } from 'node:console';
 import { stringify } from 'node:querystring';
 import { AddAddressService } from '../services/add-address.service';
+import { OrdersService } from '../services/orders.service';
 import { AuthService } from '../services/auth.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { NgxCountriesDropdownModule } from 'ngx-countries-dropdown';
@@ -214,6 +215,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   tipModalTimeoutDuration: number = 30; // 30 seconds timeout
   tipModalWarningTime: number = 10; // Show warning at 10 seconds remaining
   tipModalWarningShown: boolean = false;
+  
+  drivers: any[] = [];
+  selectedDriverId: number | null = null;
+
   tipModalRef: any = null;
 
   // Additional Payment Modal variables
@@ -238,6 +243,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     private router: Router,
     private formDataService: AddAddressService,
     public authService: AuthService,
+    private ordersService: OrdersService,
     // start hanan
     private dbService: IndexeddbService,
     private syncService: SyncService,
@@ -482,7 +488,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // this.applyAdditionalNote();
     // this.loadCouponFromLocalStorage();
     this.loadFormData();
-    this.loadOrderType();
+    // this.checkIfTableIsAvaliable();
+    this.loadDrivers();
     this.loadTableNumber();
     this.fetchCountries();
     this.loadAdditionalNote();
@@ -629,6 +636,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
   }
   // start hanan
+  // start hanan
   private initializePaymentAmount(): void {
     const cartTotal = this.getCartTotal();
 
@@ -647,6 +655,18 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     console.log('💰 تم تعيين مبلغ الدفع تلقائياً:', cartTotal);
   }
 
+  loadDrivers() {
+    this.ordersService.getDrivers().subscribe({
+      next: (response: any) => {
+        if (response && response.status && response.data) {
+          this.drivers = response.data;
+        }
+      },
+      error: (error: any) => {
+        console.error('Error fetching drivers:', error);
+      }
+    });
+  }
   private setupNetworkListeners(): void {
     window.addEventListener('online', () => {
       this.isOnline = true;
@@ -785,10 +805,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     //       // if (attempts > 3) {
     //       //   // Mark as failed if too many attempts
     //       //   await this.dbService.savePendingOrder({
-    //       //     ...order,
-    //       //     status: 'failed',
-    //       //     attempts,
-    //       //     updatedAt: new Date().toISOString()
+    //       //   ...order,
+    //       //   status: 'failed',
+    //       //   attempts,
+    //       //   updatedAt: new Date().toISOString()
     //       //   });
     //       //   console.warn(`Offline order ${order.orderId} marked as failed after 3 attempts`);
     //       //   continue;
@@ -1438,6 +1458,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.errorMessage = ''; // Clear error message
     this.removeCouponFromLocalStorage(); // Remove coupon from localStorage
     this.saveCart(); // Update localStorage
+    this.selectedDriverId = null;
     // this.clearSelectedCourier(); // Clear selected courier
     this.clearOrderType(); // Clear selected order type
   }
@@ -2553,6 +2574,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       table_number: table_number ?? null,
       table_id: table_number ?? null,
       type: this.selectedOrderType,
+      delivery_id: this.selectedDriverId || null,
       branch_id: branchId,
       payment_method: this.selectedPaymentMethod ?? 'cash',
       payment_status: this.selectedPaymentStatus,
@@ -3032,6 +3054,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     console.log(this.selectedPaymentMethod, 'selectedPaymentMethod');
 
     const orderData: any = await this.prepareOrderData();
+    if (this.selectedDriverId) {
+      orderData.delivery_id = this.selectedDriverId;
+    }
 
     // معالجة عنوان التوصيل
     // let addressId = null;
