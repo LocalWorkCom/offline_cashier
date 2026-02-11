@@ -297,9 +297,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       }
     }
 
-    // Fallback to direct localStorage
     const directId = localStorage.getItem('cashier_machine_id');
     return directId ? Number(directId) : 0;
+  }
+
+  get hasCurrentOrderId(): boolean {
+    return localStorage.getItem('currentOrderId') !== null;
   }
   ngAfterViewInit() {
     this.successModal = new bootstrap.Modal(
