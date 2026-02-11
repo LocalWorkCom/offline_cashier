@@ -219,10 +219,12 @@
         <span class="d-value">{{ (data.invoices[0]?.transactions[0]?.payment_status === "paid") ? "مدفوع" : "غير مدفوع" }}</span>
       </div>
 
-      <div class="summary-row" *ngFor="let transaction of data.invoices[0]?.transactions">
-        <span class="d-label">الدفع - {{ getPaymentMethod(transaction.payment_method) }}</span>
-        <span class="d-value">{{ transaction.paid }} {{ getCurrencySymbol() }}</span>
-      </div>
+      <ng-container *ngIf="data.invoices[0]?.transactions[0]?.payment_status === 'paid'">
+        <div class="summary-row" *ngFor="let transaction of data.invoices[0]?.transactions">
+          <span class="d-label">الدفع - {{ getPaymentMethod(transaction.payment_method) }}</span>
+          <span class="d-value">{{ transaction.paid }} {{ getCurrencySymbol() }}</span>
+        </div>
+      </ng-container>
       </div>
 
       <hr class="divider" />
