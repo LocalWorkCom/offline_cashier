@@ -2425,7 +2425,9 @@ export class OrdersComponent implements OnDestroy {
   splitSuccessMessage: string = '';
   availableTables: any[] = [];
   filteredTablesForSplit: any[] = [];
-  selectedLocationFilter: string = 'all';
+  selectedLocationFilter: string = 'main';
+  /** فلتر حالة الطاولة في مودال التجزئة: الكل | متاحة | مشغولة */
+  splitTableStatusFilter: 'all' | 'available' | 'occupied' = 'all';
 
   // Merge Order Properties
   currentMergeOrder: any = null;
@@ -2585,6 +2587,7 @@ export class OrdersComponent implements OnDestroy {
     this.splitErrorMessage = '';
     this.splitSuccessMessage = '';
     this.newSplitOrderNumber = 'CS-' + Math.floor(Math.random() * 100000);
+    this.splitTableStatusFilter = 'all';
 
     // Fetch available tables
     this.fetchAvailableTables();
@@ -3931,7 +3934,7 @@ export class OrdersComponent implements OnDestroy {
               areaName,
             };
           });
-          this.filterTablesByLocation('all');
+          this.applySplitTableStatusFilter(this.availableTables);
         }
       },
       error: (err) => {
@@ -3968,26 +3971,56 @@ export class OrdersComponent implements OnDestroy {
   }
 
   // Filter tables by location: Main = internal, Terrace = external, Upper = upper floor, Family = family area
+  // إذا الفلتر رجع قائمة فاضية نعرض كل الطاولات عشان الطاولات تظهر
   filterTablesByLocation(location: string): void {
     this.selectedLocationFilter = location;
-    if (location === 'all') {
-      this.filteredTablesForSplit = [...this.availableTables];
+    const byLocation = location === 'all'
+      ? [...this.availableTables]
+      : this.availableTables.filter((table: any) => {
+          switch (location) {
+            case 'main': return this.isTableInternal(table);
+            case 'terrace': return this.isTableExternal(table);
+            case 'upper': return this.isTableUpperFloor(table);
+            case 'family': return this.isTableFamily(table);
+            default: return false;
+          }
+        });
+    const locationList = byLocation.length > 0 ? byLocation : [...this.availableTables];
+    this.applySplitTableStatusFilter(locationList);
+  }
+
+  /** تطبيق فلتر الحالة (الكل / متاحة / مشغولة) على قائمة الطاولات */
+  applySplitTableStatusFilter(tables: any[]): void {
+    if (this.splitTableStatusFilter === 'all') {
+      this.filteredTablesForSplit = [...tables];
+    } else if (this.splitTableStatusFilter === 'available') {
+      this.filteredTablesForSplit = tables.filter((t: any) => t.status === 1);
     } else {
-      this.filteredTablesForSplit = this.availableTables.filter((table: any) => {
-        switch (location) {
-          case 'main':
-            return this.isTableInternal(table);
-          case 'terrace':
-            return this.isTableExternal(table);
-          case 'upper':
-            return this.isTableUpperFloor(table);
-          case 'family':
-            return this.isTableFamily(table);
-          default:
-            return false;
-        }
-      });
+      this.filteredTablesForSplit = tables.filter((t: any) => t.status === 2);
     }
+  }
+
+  /** تغيير فلتر حالة الطاولة في مودال التجزئة (الكل | متاحة | مشغولة) – بدون فلتر موقع */
+  setSplitTableStatusFilter(status: 'all' | 'available' | 'occupied'): void {
+    this.splitTableStatusFilter = status;
+    this.applySplitTableStatusFilter(this.availableTables);
+  }
+
+  /** طاولات داخلية (داخلي - لا يسمح بالتدخين) بعد تطبيق فلتر الحالة */
+  getSplitTablesIndoor(): any[] {
+    return this.filteredTablesForSplit.filter((t: any) => this.isTableInternal(t));
+  }
+
+  /** طاولات خارجية (خارجي - يسمح بالتدخين) بعد تطبيق فلتر الحالة */
+  getSplitTablesOutdoor(): any[] {
+    return this.filteredTablesForSplit.filter((t: any) => this.isTableExternal(t));
+  }
+
+  /** طاولات غير مصنّفة كداخلي أو خارجي – نعرضها ضمن قسم "داخلي" */
+  getSplitTablesIndoorWithOther(): any[] {
+    return this.filteredTablesForSplit.filter(
+      (t: any) => this.isTableInternal(t) || (!this.isTableInternal(t) && !this.isTableExternal(t))
+    );
   }
 
   // Get merge order items (from both orders)
