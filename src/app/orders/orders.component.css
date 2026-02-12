@@ -319,3 +319,208 @@ button.dropdown-item {
 #changeTypeDeliveryDetailsModal .delivery-places .nav-link {
     border: 1px solid #dee2e6;
 }
+
+/* Split Order Modal – أيقونات وعناوين الأقسام مثل الشاشة */
+#splitOrderModal .split-section-icon-wrap {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    flex-shrink: 0;
+}
+#splitOrderModal .split-section-icon-indoor {
+    background-color: #e8e0f0;
+    color: #6b5b7a;
+}
+#splitOrderModal .split-section-icon-outdoor {
+    background-color: #e0f0e8;
+    color: #5a7a6b;
+}
+#splitOrderModal .split-badge-no-smoking {
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+}
+#splitOrderModal .split-badge-no-smoking i {
+    color: #fff;
+}
+#splitOrderModal .split-badge-smoking {
+    background-color: #e9ecef;
+    color: #495057;
+    border: 1px solid #dee2e6;
+}
+#splitOrderModal .split-badge-smoking i {
+    color: #6c757d;
+}
+
+/* Split Order Modal – Figma table card colors and layout */
+#splitOrderModal .split-table-card {
+    border: 1px solid #dee2e6;
+}
+#splitOrderModal .split-table-card-available {
+    background-color: #d4edda !important;
+}
+#splitOrderModal .split-table-card-available .split-table-icon,
+#splitOrderModal .split-table-card-available .split-table-name,
+#splitOrderModal .split-table-card-available .split-table-status-available,
+#splitOrderModal .split-table-card-available .split-table-seats-icon,
+#splitOrderModal .split-table-card-available .split-table-seats-num {
+    color: #28a745 !important;
+}
+#splitOrderModal .split-table-card-available .split-table-serial {
+    color: #6c757d;
+}
+#splitOrderModal .split-table-card-occupied {
+    background-color: #fff0f5 !important;
+}
+#splitOrderModal .split-table-card-occupied .split-table-icon,
+#splitOrderModal .split-table-card-occupied .split-table-name,
+#splitOrderModal .split-table-card-occupied .split-table-status-occupied {
+    color: #dc3545 !important;
+}
+#splitOrderModal .split-table-card-occupied .split-table-serial {
+    color: #6c757d;
+}
+#splitOrderModal .split-table-card-selected {
+    background-color: #ffffff !important;
+    border-width: 2px !important;
+    border-color: #dc3545 !important;
+}
+#splitOrderModal .split-table-card-selected .split-table-icon,
+#splitOrderModal .split-table-card-selected .split-table-name,
+#splitOrderModal .split-table-card-selected .split-table-status-selected,
+#splitOrderModal .split-table-card-selected .split-table-serial {
+    color: #dc3545 !important;
+}
+#splitOrderModal .split-table-center {
+    min-height: 4rem;
+}
+
+/* Status filter pills – تصميم الصورة: الكل (أبيض/رمادي)، متاحة (أخضر)، مشغولة (وردي/أحمر) */
+#splitOrderModal .split-status-pill {
+    font-size: 0.9rem;
+    font-weight: 500;
+    transition: all 0.2s;
+}
+#splitOrderModal .split-status-pill-all {
+    background-color: #fff;
+    color: #6c757d;
+    border-color: #dee2e6 !important;
+}
+#splitOrderModal .split-status-pill-all:hover,
+#splitOrderModal .split-status-pill-all.split-status-pill-active {
+    background-color: #f8f9fa;
+    color: #495057;
+}
+#splitOrderModal .split-status-pill-available {
+    background-color: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+#splitOrderModal .split-status-pill-available:hover,
+#splitOrderModal .split-status-pill-available.split-status-pill-active {
+    background-color: #c3e6cb;
+    color: #155724;
+}
+#splitOrderModal .split-status-pill-occupied {
+    background-color: #fff0f5;
+    color: #721c24;
+    border: 1px solid #f8d7da;
+}
+#splitOrderModal .split-status-pill-occupied:hover,
+#splitOrderModal .split-status-pill-occupied.split-status-pill-active {
+    background-color: #ffc0cb;
+    color: #721c24;
+}
+
+/* Split Confirmation Modal – Figma: colors, item cards, table pills, note, buttons */
+#splitOrderConfirmationModal .split-confirm-close {
+    margin-left: 0.5rem;
+}
+#splitOrderConfirmationModal .modal-header {
+    padding-inline-start: 2.5rem;
+}
+#splitOrderConfirmationModal .split-confirm-original {
+    background-color: #fff;
+    border-color: #dee2e6 !important;
+}
+#splitOrderConfirmationModal .split-confirm-new {
+    background-color: #fff;
+    border-color: #b3d7ff !important;
+    border-width: 1.5px !important;
+}
+#splitOrderConfirmationModal .split-confirm-new-badge {
+    background-color: #b3d7ff;
+    color: #0d6efd;
+    font-size: 0.8rem;
+}
+#splitOrderConfirmationModal .split-confirm-table-pill {
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+#splitOrderConfirmationModal .split-confirm-table-blue {
+    background-color: #cce5ff;
+    color: #0d6efd;
+    border: none;
+}
+#splitOrderConfirmationModal .split-confirm-table-orange {
+    background-color: #ffe0b8;
+    color: #e65100;
+    border: none;
+}
+#splitOrderConfirmationModal .split-confirm-table-icon {
+    flex-shrink: 0;
+}
+#splitOrderConfirmationModal .split-confirm-item-card {
+    background-color: #fff;
+    border-color: #dee2e6 !important;
+}
+#splitOrderConfirmationModal .split-confirm-transferred {
+    background-color: #f8f9fa;
+}
+#splitOrderConfirmationModal .split-confirm-transferred .text-muted {
+    color: #adb5bd !important;
+}
+#splitOrderConfirmationModal .split-confirm-qty-pill {
+    background-color: #e9ecef;
+    color: #495057;
+    font-size: 0.8rem;
+}
+#splitOrderConfirmationModal .split-confirm-qty-blue {
+    background-color: #cce5ff;
+    color: #0d6efd;
+}
+#splitOrderConfirmationModal .split-confirm-transfer-btn {
+    width: 40px;
+    height: 40px;
+    background-color: #dc3545;
+    color: #fff;
+    flex-shrink: 0;
+}
+#splitOrderConfirmationModal .split-confirm-note {
+    background-color: #fff9e6;
+    border: 1px solid #ff9800;
+    color: #8b6914;
+}
+#splitOrderConfirmationModal .split-confirm-note i {
+    color: #ff9800;
+}
+#splitOrderConfirmationModal .split-confirm-btn-cancel {
+    background-color: #fff;
+    border: 1px solid #dc3545;
+    color: #dc3545;
+}
+#splitOrderConfirmationModal .split-confirm-btn-cancel:hover {
+    background-color: #fff5f5;
+    border-color: #dc3545;
+    color: #dc3545;
+}
+#splitOrderConfirmationModal .split-confirm-btn-submit {
+    background-color: #dc3545;
+    border-color: #dc3545;
+    color: #fff;
+}
+#splitOrderConfirmationModal .split-confirm-btn-submit:hover:not(:disabled) {
+    background-color: #bb2d3b;
+    border-color: #bb2d3b;
+    color: #fff;
+}

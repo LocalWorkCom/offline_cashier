@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+  <!-- سطح الطاولة (مستطيل مدور) -->
+  <rect x="4" y="8" width="24" height="6" rx="2" fill="currentColor"/>
+  <!-- الرجل اليسرى -->
+  <rect x="8" y="14" width="3" height="10" rx="1" fill="currentColor"/>
+  <!-- الرجل اليمنى -->
+  <rect x="21" y="14" width="3" height="10" rx="1" fill="currentColor"/>
+</svg>
