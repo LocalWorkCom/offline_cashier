@@ -20,6 +20,7 @@ import { ConfirmDialogComponent } from "../shared/ui/component/confirm-dialog/co
 import { IndexeddbService } from '../services/indexeddb.service';
 import { PrintTimeService } from '../services/print-time.service';
 import { ReceiptComponent } from '../receipt/receipt.component';
+import html2canvas from 'html2canvas';
 
 @Component({
   selector: 'app-pill-details',
@@ -444,7 +445,6 @@ private processPillDetails(data: any): void {
   isFinal = false;
   order_id: any
   async printInvoice(isFinal: boolean = false) {
-
     this.isFinal = isFinal;
     this.isPrinting = true;
 
@@ -460,13 +460,125 @@ private processPillDetails(data: any): void {
     }
 
     try {
-      // Backend API call removed as per request
-      /*
-      const response = await this.printedInvoiceService
-        .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
-        .toPromise();
-      console.log('Print invoice response:', response);
-      */
+      
+    console.log('Printing invoice...........');
+
+this.cdr.detectChanges();
+// Allow time for view to update
+await new Promise((resolve) => setTimeout(resolve, 100));
+
+// Check if running in Electron with deviceAPI available
+if ((window as any).deviceAPI) {
+  console.log('Detected Electron environment. Attempting silent print via deviceAPI.');
+
+  const printContent = document.getElementById('printSection');
+  if (!printContent) {
+    console.error('Print section not found.');
+    this.isPrinting = false;
+    return;
+  }
+
+  // Clone the content to control dimensions for the printer
+  const clone = printContent.cloneNode(true) as HTMLElement;
+
+  // Ensure the clone is visible by removing d-none class
+  clone.classList.remove('d-none');
+
+  const printerWidth = 576; // Standard 80mm printer width
+
+  // Reset styles for capture to ensure no inherited margins/padding affect layout
+  clone.style.margin = '0';
+  clone.style.padding = '0';
+  clone.style.position = 'absolute';
+  clone.style.top = '0';
+  clone.style.left = '-1000px'; // position off-screen
+  clone.style.zIndex = '-1000';
+  clone.style.backgroundColor = 'white';
+
+  // Override max-width on inner elements
+  const innerPrintSection = clone.querySelector('.printSection') as HTMLElement;
+  if (innerPrintSection) {
+    innerPrintSection.style.setProperty('max-width', 'none', 'important');
+    innerPrintSection.style.setProperty('width', '100%', 'important');
+  }
+
+  const innerReceiptContent = clone.querySelector('.receipt-content') as HTMLElement;
+  if (innerReceiptContent) {
+    innerReceiptContent.style.setProperty('max-width', 'none', 'important');
+    innerReceiptContent.style.setProperty('width', '100%', 'important');
+  }
+
+  // KEY: captureWidth = printerWidth / scale = 576 / 2 = 288
+  // This means: canvas width = 288 * 2 = 576px = exact printer width
+  // Result: 1:1 mapping, NO compression, NO stretching. Text looks natural.
+  // To make text bigger/smaller, adjust fontSize above (not captureWidth).
+  const captureWidth = 288;
+  clone.style.width = `${captureWidth}px`;
+  clone.style.maxWidth = 'none';
+
+  // Append to body to ensure styles are applied
+  document.body.appendChild(clone);
+
+  // Wait for layout and potential image loading
+  await new Promise((resolve) => setTimeout(resolve, 500));
+
+  try {
+    // Capture with scale 2 for sharpness (288 * 2 = 576px = printerWidth)
+    const canvas = await html2canvas(clone, {
+      scale: 2,
+      useCORS: true,
+      logging: false,
+      backgroundColor: '#ffffff',
+      width: captureWidth,
+      windowWidth: captureWidth,
+    });
+
+    // Create final canvas — same size as captured canvas (1:1, no scaling)
+    const finalCanvas = document.createElement("canvas");
+    finalCanvas.width = printerWidth; // 576
+    finalCanvas.height = canvas.height; // already correct because canvas.width == printerWidth
+
+    const ctx = finalCanvas.getContext("2d");
+
+    if (ctx && canvas.width > 0 && canvas.height > 0) {
+      ctx.fillStyle = "#fff";
+      ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
+      
+      // Draw 1:1 — no stretching or compression
+      ctx.drawImage(canvas, 0, 0);
+    } else {
+      console.warn('Silent Print: Canvas is empty or invalid dimensions', canvas.width, canvas.height);
+    }
+
+    const pngDataUrl = finalCanvas.toDataURL("image/png");
+    const base64Image = pngDataUrl.replace(/^data:image\/png;base64,/, "");
+
+    // Printer settings
+    const printerIP = "192.168.11.187"; 
+    const port = 9100;
+
+    console.log(`Sending silent print request to ${printerIP}:${port}!`);
+    const result = await (window as any).deviceAPI.testPrinterConnection(printerIP, port, base64Image);
+
+    if (result.success) {
+      console.log("Silent print successful");
+      location.reload(); // optional post-print action
+    } else {
+      console.error("Silent print failed:", result);
+      alert(`فشلت الطباعة الصامتة: ${result.message || 'خطأ غير معروف'}`);
+    }
+
+  } catch (captureError) {
+    console.error('Error capturing invoice for silent print:', captureError);
+  } finally {
+    // Clean up
+    if (document.body.contains(clone)) {
+      document.body.removeChild(clone);
+    }
+  }
+
+  return; // Exit method, preventing fallback to window.print
+}
 
       const printContent = document.getElementById('printSection');
       if (!printContent) {
