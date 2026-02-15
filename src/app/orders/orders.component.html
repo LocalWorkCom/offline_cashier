@@ -515,12 +515,12 @@
                   }
                   @else
                   {
-                    @if (order.order_details.order_type != "talabat")
-                      {
+                    <!-- @if (order.order_details.order_type != "talabat")
+                      { -->
                         <div class="btn btn-transparent w-100 py-2 text-danger">
                           <span>للمرتجع لا يوجد رصيد كافى فى الخزنة</span>
                         </div>
-                      }
+                      <!-- } -->
 
                   }
                 }
@@ -1913,7 +1913,7 @@
                        [ngClass]="{'has-value': changeTypeDeliveryApartment}">
               </div>
           </div>
-          
+
           <!-- Delivery Driver -->
           <div class="mb-3 border-top pt-3">
              <label class="form-label fw-bold">مندوب التوصيل <span class="text-danger">*</span></label>
