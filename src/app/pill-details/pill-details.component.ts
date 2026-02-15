@@ -1,6 +1,7 @@
 import {
   Component,
   OnInit,
+  OnDestroy,
   ViewChild,
   ElementRef,
   ChangeDetectorRef,
@@ -13,7 +14,7 @@ import { PrintedInvoiceService } from '../services/printed-invoice.service';
 import { Router } from '@angular/router';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
-import { finalize } from 'rxjs';
+import { finalize, Subject, takeUntil } from 'rxjs';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogComponent } from "../shared/ui/component/confirm-dialog/confirm-dialog.component";
@@ -30,7 +31,8 @@ import html2canvas from 'html2canvas';
   styleUrls: ['./pill-details.component.css'],
   providers: [DatePipe],
 })
-export class PillDetailsComponent implements OnInit {
+export class PillDetailsComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
     printOptions = [
       { name: 'طباعة نهائية', id: 0 },
       { name: 'معاينة فقط', id: 1 },
@@ -77,6 +79,11 @@ export class PillDetailsComponent implements OnInit {
     private printedInvoiceService: PrintedInvoiceService,
     private router: Router,
     private printTime: PrintTimeService) { }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
   private extractDateAndTime(branch: any): void {
     const { created_at } = branch;
 
@@ -554,8 +561,8 @@ if ((window as any).deviceAPI) {
     const base64Image = pngDataUrl.replace(/^data:image\/png;base64,/, "");
 
     // Printer settings
-    const printerIP = "192.168.11.187"; 
-    const port = 9100;
+    const printerIP = this.pillsDetails.invoices[0].branch_details.printer_ip; 
+    const port = this.pillsDetails.invoices[0].branch_details.printer_port;
 
     console.log(`Sending silent print request to ${printerIP}:${port}!`);
     const result = await (window as any).deviceAPI.testPrinterConnection(printerIP, port, base64Image);
