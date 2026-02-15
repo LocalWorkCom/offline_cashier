@@ -44,6 +44,13 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         // console.log(params,'params order details')
         this.orderId = params.get('id');
         if (this.orderId) {
+          const forceRefresh = this.route.snapshot.queryParamMap.get('refresh') === 'true';
+          if (forceRefresh && navigator.onLine) {
+            // After merge (or similar): force fetch from API so merged items are shown, then update IndexedDB
+            console.log("🔄 Refresh requested - fetching order from API");
+            this.fetchOrderDetailsFromAPI();
+            return;
+          }
           if (navigator.onLine) {
             // 🌐 Online → استخدم الـ id الحقيقي من السيرفر
             console.log("✅ Online mode - using actual orderId from route");
@@ -185,7 +192,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       this.orderDetails = order.details_order;
       this.orderSummary = applied.orderSummary;
 
-      this.orderItems = order.details_order?.order_details || [];
+      this.orderItems = this.filterMovedOrderItems(order.details_order?.order_details || []);
 
 
 
@@ -241,6 +248,12 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       });
   }
 
+  /** Exclude moved (split) items: only show items with quantity > 0 so original order shows remaining items only. */
+  private filterMovedOrderItems(items: any[]): any[] {
+    if (!items || !Array.isArray(items)) return [];
+    return items.filter((item: any) => (Number(item.quantity) || 0) > 0);
+  }
+
   // Process order data from API
   private processOrderData(order: any): void {
     this.currencySymbol = order.currency_symbol;
@@ -254,7 +267,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     this.deliveryFees = applied.deliveryFees;
     this.orderDetails = order;
     this.orderSummary = applied.orderSummary;
-    this.orderItems = order.order_details || [];
+    this.orderItems = this.filterMovedOrderItems(order.order_details || []);
     // Persist corrected summary so saveOrderToIndexedDB stores correct delivery_fees and total
     if (applied.orderSummary !== summary) order.order_summary = applied.orderSummary;
 
@@ -313,7 +326,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
             console.log(response.data, 'test');
             this.orderDetails = order;
             this.orderSummary = applied.orderSummary;
-            this.orderItems = order.order_details;
+            this.orderItems = this.filterMovedOrderItems(order.order_details || []);
             if (this.deliveryData?.delivery_name == ' ') {
               this.deliveryData.delivery_name = 'لا يوجد';
             }
