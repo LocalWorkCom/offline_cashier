@@ -367,14 +367,14 @@
               <div class="num-items d-flex justify-content-between mb-1 border-bottom">
                 <h6 class="text-muted"><small>عدد العناصر</small></h6>
                 <h6 class="text-muted">
-                  <small>{{ order.order_details.order_items_count }}</small>
+                  <small>{{ getDisplayOrderItems(order).length }}</small>
                 </h6>
               </div>
 
               <div class="order-items border-bottom py-1 mb-1 flex-grow-1"
-                [ngClass]="order.order_items.length > 2 ? 'overflow-scroll' :'overflow-visible'">
+                [ngClass]="getDisplayOrderItems(order).length > 2 ? 'overflow-scroll' :'overflow-visible'">
                 <div class="d-flex justify-content-between align-items-center align-items-md-center gap-1 px-1 mb-2"
-                  *ngFor="let item of order.order_items">
+                  *ngFor="let item of getDisplayOrderItems(order)">
                   <!-- Item Name & Quantity -->
 
                   <h6 class="mb-0 fs-6 text-break">
@@ -596,7 +596,7 @@
                                   <p>رقم الطلب</p>
                                   <p class="text-muted">{{order.order_details.order_number}}</p>
                                 </div>
-                                @for (item of order.order_items; track $index; let i = $index;) {
+                                @for (item of getDisplayOrderItems(order); track $index; let i = $index;) {
                                 <div class="my-2" *ngIf="item.dish_status !== 'cancel'">
                                   <div class="d-flex justify-content-between align-items-center">
                                     <div>
@@ -861,7 +861,8 @@
                     <rect x="8" y="14" width="3" height="10" rx="1" fill="currentColor"/>
                     <rect x="21" y="14" width="3" height="10" rx="1" fill="currentColor"/>
                   </svg>
-                  <strong class="split-table-name mb-1" style="font-size: 0.95rem;">طاولة {{ table.number }}</strong>
+                  <strong class="split-table-name mb-1" style="font-size: 0.95rem;">#{{ table.number }}</strong>
+                  <small class="text-muted d-block" style="font-size: 0.75rem;">{{ table.name || ('طاولة ' + table.number) }}</small>
                   <small *ngIf="table.status === 2 && selectedTableIdForSplit != table.id" class="fw-bold split-table-status-occupied">مشغولة</small>
                   <small *ngIf="table.status === 1 && selectedTableIdForSplit != table.id" class="fw-bold split-table-status-available">متاحة</small>
                   <small *ngIf="selectedTableIdForSplit == table.id" class="fw-bold split-table-status-selected">محدد</small>
@@ -872,7 +873,7 @@
         </div>
 
         <!-- خارجي - يسمح بالتدخين (مثل Figma) -->
-        <div class="split-section">
+        <div class="split-section mb-4">
           <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
             <h6 class="fw-bold mb-0 d-flex align-items-center gap-2">
               <span class="split-section-icon-wrap split-section-icon-outdoor d-inline-flex align-items-center justify-content-center">
@@ -917,7 +918,8 @@
                     <rect x="8" y="14" width="3" height="10" rx="1" fill="currentColor"/>
                     <rect x="21" y="14" width="3" height="10" rx="1" fill="currentColor"/>
                   </svg>
-                  <strong class="split-table-name mb-1" style="font-size: 0.95rem;">طاولة {{ table.number }}</strong>
+                  <strong class="split-table-name mb-1" style="font-size: 0.95rem;">#{{ table.number }}</strong>
+                  <small class="text-muted d-block" style="font-size: 0.75rem;">{{ table.name || ('طاولة ' + table.number) }}</small>
                   <small *ngIf="table.status === 2 && selectedTableIdForSplit != table.id" class="fw-bold split-table-status-occupied">مشغولة</small>
                   <small *ngIf="table.status === 1 && selectedTableIdForSplit != table.id" class="fw-bold split-table-status-available">متاحة</small>
                   <small *ngIf="selectedTableIdForSplit == table.id" class="fw-bold split-table-status-selected">محدد</small>
@@ -927,11 +929,65 @@
           </div>
         </div>
 
-        <!-- Selected Table Info -->
+        <!-- الطابق العلوي (Upper floor) -->
+        <div class="split-section" *ngIf="getSplitTablesUpperFloor().length > 0">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <h6 class="fw-bold mb-0 d-flex align-items-center gap-2">
+              <span class="split-section-icon-wrap split-section-icon-indoor d-inline-flex align-items-center justify-content-center">
+                <i class="fa-solid fa-layer-group" style="font-size: 0.95rem;"></i>
+              </span>
+              الطابق العلوي
+            </h6>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <span class="badge rounded-pill bg-light text-dark border">{{ getSplitTablesUpperFloor().length }} طاولات</span>
+            </div>
+          </div>
+          <div class="row g-3" style="max-height: 280px; overflow-y: auto;">
+            <div class="col-6 col-md-4 col-lg-3" *ngFor="let table of getSplitTablesUpperFloor()">
+              <div class="card p-3 text-center position-relative split-table-card"
+                   [class.split-table-card-selected]="selectedTableIdForSplit == table.id"
+                   [class.split-table-card-occupied]="table.status === 2 && selectedTableIdForSplit != table.id"
+                   [class.split-table-card-available]="table.status === 1 && selectedTableIdForSplit != table.id"
+                   (click)="selectTableForSplit(table.id)"
+                   style="cursor: pointer; min-height: 140px; display: flex; flex-direction: column; justify-content: center; border-radius: 12px; transition: all 0.2s;">
+                <div class="position-absolute top-0 start-0 m-2">
+                  <ng-container *ngIf="selectedTableIdForSplit == table.id">
+                    <i class="fa-solid fa-check-circle text-danger" style="font-size: 1rem;"></i>
+                  </ng-container>
+                  <ng-container *ngIf="table.status === 2 && selectedTableIdForSplit != table.id">
+                    <i class="fa-solid fa-lock text-danger" style="font-size: 0.9rem;"></i>
+                  </ng-container>
+                  <span *ngIf="table.status !== 2 && selectedTableIdForSplit != table.id" class="d-flex align-items-center gap-1">
+                    <i class="fa-solid fa-user split-table-seats-icon" style="font-size: 0.7rem;"></i>
+                    <small class="fw-bold split-table-seats-num" style="font-size: 0.75rem;">{{ table.seats ?? table.seat_count ?? '-' }}</small>
+                  </span>
+                </div>
+                <div class="position-absolute top-0 end-0 m-2">
+                  <small class="fw-bold split-table-serial">#{{ table.number }}</small>
+                </div>
+                <div class="split-table-center d-flex flex-column align-items-center justify-content-center flex-grow-1 pt-4 pb-2">
+                  <svg class="split-table-icon mb-2" style="width: 2rem; height: 2rem;" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <rect x="4" y="8" width="24" height="6" rx="2" fill="currentColor"/>
+                    <rect x="8" y="14" width="3" height="10" rx="1" fill="currentColor"/>
+                    <rect x="21" y="14" width="3" height="10" rx="1" fill="currentColor"/>
+                  </svg>
+                  <strong class="split-table-name mb-1" style="font-size: 0.95rem;">#{{ table.number }}</strong>
+                  <small class="text-muted d-block" style="font-size: 0.75rem;">{{ table.name || ('طاولة ' + table.number) }}</small>
+                  <small *ngIf="table.status === 2 && selectedTableIdForSplit != table.id" class="fw-bold split-table-status-occupied">مشغولة</small>
+                  <small *ngIf="table.status === 1 && selectedTableIdForSplit != table.id" class="fw-bold split-table-status-available">متاحة</small>
+                  <small *ngIf="selectedTableIdForSplit == table.id" class="fw-bold split-table-status-selected">محدد</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Selected Table Info: Arabic name + table number + seats -->
         <div *ngIf="selectedTableIdForSplit" class="alert alert-light border-0 d-flex justify-content-between align-items-center mb-0" style="background-color: #f8f9fa;">
           <div class="d-flex align-items-center gap-2">
             <i class="fa-solid fa-chair text-muted"></i>
             <span class="text-muted">الطاولة المحددة: <strong class="text-dark">{{ getSelectedTableName() }}</strong></span>
+            <span *ngIf="getSelectedTableSeats() != null" class="text-muted small">(السعة: {{ getSelectedTableSeats() }})</span>
           </div>
         </div>
       </div>
@@ -945,16 +1001,16 @@
   </div>
 </div>
 
-<!-- Split Order Modal - Step 2: Select Items -->
-<div class="modal fade" id="splitOrderItemsModal" tabindex="-1" aria-labelledby="splitOrderItemsModalLabel" aria-hidden="true">
+<!-- Split Order Modal - Step 2: Select Items (X left, count in original list) -->
+<div class="modal fade" id="splitOrderItemsModal" tabindex="-1" aria-labelledby="splitOrderItemsModalLabel" aria-hidden="true" dir="rtl">
   <div class="modal-dialog modal-dialog-centered modal-xl">
     <div class="modal-content p-3">
-      <div class="modal-header border-0 d-flex justify-content-between align-items-center">
+      <div class="modal-header border-0 position-relative d-flex justify-content-start align-items-center">
+        <button type="button" class="btn-close position-absolute" style="left: 0; top: 50%; transform: translateY(-50%);" data-bs-dismiss="modal" aria-label="إغلاق"></button>
         <div class="d-flex align-items-center gap-2">
           <i class="fa-solid fa-code-branch text-danger fs-4"></i>
           <h5 class="modal-title fw-bold mb-0" id="splitOrderItemsModalLabel">تجزئة الطلب: تحديد الأصناف</h5>
         </div>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
       </div>
       <div class="modal-body">
         <div class="alert alert-info mb-3">
@@ -962,32 +1018,61 @@
           حدد الكمية المراد نقلها لطلب جديد
         </div>
 
-        <div class="row">
-          <!-- Left: Original Order Items -->
-          <div class="col-md-6 mb-3">
+        <div class="row g-3">
+          <!-- قائمة الأصناف: بوكس أكبر، عداد الكمية جنب الصنف في نفس الصف (مثل Figma) -->
+          <div class="col-12 col-md-7 mb-3">
             <h6 class="fw-bold mb-3">قائمة الأصناف</h6>
-            <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
-              <div *ngFor="let item of splitOrderItems" class="mb-3 pb-3 border-bottom">
-                <div class="d-flex align-items-center gap-2 mb-2">
-                  <i class="fa-solid fa-utensils text-warning"></i>
-                  <div class="flex-grow-1">
-                    <strong>{{ item.dish_name }}</strong>
-                    <div class="text-muted small">
-                      {{ item.total_dish_price }} {{ splitOrderCurrency }} - الكمية الأصلية: {{ item.quantity }}
-                    </div>
-                  </div>
+            <div class="border rounded p-3" style="min-height: 320px; max-height: 420px; overflow-y: auto;">
+              <div *ngFor="let item of splitOrderItems" class="d-flex align-items-center gap-2 py-2 border-bottom flex-wrap">
+                <i class="fa-solid fa-utensils text-warning flex-shrink-0" style="font-size: 0.9rem;"></i>
+                <div class="flex-grow-1 min-width-0">
+                  <strong class="d-block">{{ item.dish_name }}</strong>
+                  <span class="text-muted small">{{ item.total_dish_price }} {{ splitOrderCurrency }} - الكمية الأصلية: {{ item.quantity }}</span>
                 </div>
-                <button class="btn btn-sm btn-outline-secondary" disabled>
-                  نقل
-                </button>
+                <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                  <button type="button" class="btn btn-sm rounded-circle p-1"
+                          [class.btn-danger]="item.selectedQuantity > 0"
+                          [class.btn-outline-secondary]="item.selectedQuantity === 0"
+                          (click)="decreaseSplitQuantity(item)"
+                          [disabled]="item.selectedQuantity === 0"
+                          style="width: 32px; height: 32px;">
+                    <i class="fa-solid fa-minus" style="font-size: 0.7rem;"></i>
+                  </button>
+                  <input type="number" class="form-control form-control-sm text-center mx-1"
+                         [ngModel]="item.selectedQuantity"
+                         (ngModelChange)="onSplitQuantityChange(item, $event)"
+                         (input)="onSplitQuantityInput(item, $event)"
+                         (blur)="onSplitQuantityBlur(item, $event)"
+                         (keydown)="onSplitQuantityKeydown(item, $event)"
+                         (paste)="onSplitQuantityPaste(item, $event)"
+                         [min]="0"
+                         [max]="item.quantity"
+                         style="width: 48px;"
+                         [class.is-invalid]="(item.selectedQuantity || 0) < 0 || (item.selectedQuantity || 0) > item.quantity">
+                  <button type="button" class="btn btn-sm rounded-circle p-1"
+                          [class.btn-danger]="item.selectedQuantity > 0"
+                          [class.btn-outline-secondary]="item.selectedQuantity === 0"
+                          (click)="increaseSplitQuantity(item)"
+                          [disabled]="item.selectedQuantity >= item.quantity"
+                          style="width: 32px; height: 32px;">
+                    <i class="fa-solid fa-plus" style="font-size: 0.7rem;"></i>
+                  </button>
+                  <span class="small text-muted me-1">نقل</span>
+                </div>
+              </div>
+              <div class="border-top pt-2 mt-2">
+                <div class="d-flex justify-content-between align-items-center">
+                  <span class="small text-muted">إجمالي الكمية المختارة للنقل:</span>
+                  <strong>{{ getSelectedSplitItemsCount() }}</strong>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Right: New Order Items -->
-          <div class="col-md-6 mb-3">
+          <!-- الطلب الجديد: بوكس أصغر، الأزرار بداخله فوق بعض (مثل Figma) -->
+          <div class="col-12 col-md-5 mb-3">
             <h6 class="fw-bold mb-3">الطلب الجديد</h6>
-            <div class="border rounded p-3">
+            <div class="border rounded p-3 d-flex flex-column" style="min-height: 320px;">
               <div class="mb-3">
                 <label class="form-label small fw-bold">نقل إلى</label>
                 <div class="d-flex align-items-center gap-2 p-2 bg-light rounded">
@@ -996,62 +1081,46 @@
                 </div>
               </div>
 
-              <div class="mb-3" style="max-height: 300px; overflow-y: auto;">
-                <div *ngFor="let item of splitOrderItems" class="mb-3 pb-3 border-bottom">
-                  <div class="d-flex justify-content-between align-items-center mb-2">
-                    <strong>{{ item.dish_name }}</strong>
-                    <span *ngIf="item.selectedQuantity > 0" class="fw-bold">{{ (item.total_dish_price / item.quantity * item.selectedQuantity).toFixed(2) }}</span>
+              <div class="mb-3 flex-grow-1" style="max-height: 220px; overflow-y: auto;">
+                <ng-container *ngFor="let item of getSelectedSplitItems()">
+                  <div class="mb-3 pb-3 border-bottom">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                      <strong>{{ item.dish_name }}</strong>
+                      <span class="badge bg-light text-dark">الكمية: {{ item.selectedQuantity }}</span>
+                    </div>
+                    <div class="d-flex justify-content-end">
+                      <span class="text-muted small">المبلغ: {{ getSplitItemPriceForQuantity(item, item.selectedQuantity) }} {{ splitOrderCurrency }}</span>
+                    </div>
                   </div>
-                  <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-sm"
-                            [class.btn-danger]="item.selectedQuantity > 0"
-                            [class.btn-outline-secondary]="item.selectedQuantity === 0"
-                            (click)="decreaseSplitQuantity(item)"
-                            [disabled]="item.selectedQuantity === 0">
-                      <i class="fa-solid fa-minus"></i>
-                    </button>
-                    <input type="number" class="form-control form-control-sm text-center"
-                           [ngModel]="item.selectedQuantity"
-                           (ngModelChange)="onSplitQuantityChange(item, $event)"
-                           (input)="onSplitQuantityInput(item, $event)"
-                           (blur)="onSplitQuantityBlur(item, $event)"
-                           (keydown)="onSplitQuantityKeydown(item, $event)"
-                           (paste)="onSplitQuantityPaste(item, $event)"
-                           [min]="0"
-                           [max]="item.quantity"
-                           style="width: 60px;"
-                           [class.is-invalid]="(item.selectedQuantity || 0) < 0 || (item.selectedQuantity || 0) > item.quantity">
-                    <button class="btn btn-sm"
-                            [class.btn-danger]="item.selectedQuantity > 0"
-                            [class.btn-outline-secondary]="item.selectedQuantity === 0"
-                            (click)="increaseSplitQuantity(item)"
-                            [disabled]="item.selectedQuantity >= item.quantity">
-                      <i class="fa-solid fa-plus"></i>
-                    </button>
-                  </div>
+                </ng-container>
+                <div *ngIf="getSelectedSplitItems().length === 0" class="text-muted small">
+                  حدد الكميات من قائمة الأصناف
                 </div>
               </div>
 
-              <div class="border-top pt-3">
+              <div class="border-top pt-3 mb-3">
                 <div class="d-flex justify-content-between align-items-center">
                   <strong>المجموع</strong>
                   <strong class="text-danger">{{ getSplitNewOrderTotal() }} {{ splitOrderCurrency }}</strong>
                 </div>
               </div>
+
+              <!-- أزرار التأكيد والإلغاء داخل البوكس، فوق بعض، نفس الحجم (مثل Figma) -->
+              <div class="d-flex flex-column gap-2 mt-auto">
+                <button type="button" class="btn btn-danger w-100 py-2" (click)="showSplitConfirmation()" [disabled]="getSplitNewOrderTotal() === 0 || !areSplitQuantitiesValid()">
+                  <i class="fa-solid fa-check me-2"></i>
+                  تأكيد التجزئة
+                </button>
+                <button type="button" class="btn btn-outline-secondary w-100 py-2" (click)="goBackToSplitStep1()">إلغاء</button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <div class="modal-footer border-0 d-flex justify-content-between">
-        <button type="button" class="btn btn-outline-secondary" (click)="goBackToSplitStep1()">رجوع</button>
-        <div *ngIf="splitErrorMessage" class="alert alert-danger text-center mb-2">
-          {{ splitErrorMessage }}
-        </div>
-        <button type="button" class="btn btn-danger" (click)="showSplitConfirmation()" [disabled]="getSplitNewOrderTotal() === 0 || !areSplitQuantitiesValid()">
-          <i class="fa-solid fa-check me-2"></i>
-          تأكيد التجزئة
-        </button>
+      <div *ngIf="splitErrorMessage" class="alert alert-danger text-center mx-3 mb-0">
+        {{ splitErrorMessage }}
       </div>
+      <div class="modal-footer border-0 py-2"></div>
     </div>
   </div>
 </div>
@@ -1081,22 +1150,22 @@
                 <h6 class="fw-bold mb-0">الطلب الأصلي</h6>
                 <span class="split-confirm-table-pill split-confirm-table-orange rounded-pill px-3 py-1 d-inline-flex align-items-center gap-1 ms-auto">
                   <svg class="split-confirm-table-icon" style="width: 14px; height: 14px;" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><rect x="4" y="8" width="24" height="6" rx="2"/><rect x="8" y="14" width="3" height="10" rx="1"/><rect x="21" y="14" width="3" height="10" rx="1"/></svg>
-                  طاولة {{ currentSplitOrder?.order_details?.table_number }}
+                  طاولة {{ currentSplitOrder?.order_details?.table_number ?? '—' }}
                 </span>
               </div>
               <div class="mb-3"><strong>{{ currentSplitOrder?.order_details?.order_number }}</strong></div>
               <div class="split-confirm-items d-flex flex-column gap-2">
                 <div *ngFor="let item of getRemainingSplitItems()" class="split-confirm-item-card border rounded p-2">
                   <div class="d-flex justify-content-between align-items-center">
-                    <span class="text-muted small me-2">{{ (item.total_dish_price / item.quantity * item.remainingQuantity).toFixed(2) }}</span>
+                    <span class="text-muted small me-2">{{ getSplitItemPriceForQuantity(item, item.remainingQuantity) }}</span>
                     <span>{{ item.dish_name }}</span>
                     <span class="badge rounded-pill split-confirm-qty-pill">{{ item.remainingQuantity }}x</span>
                   </div>
                 </div>
                 <div *ngFor="let item of getSelectedSplitItems()" class="split-confirm-item-card split-confirm-transferred border rounded p-2">
                   <div class="d-flex justify-content-between align-items-center">
-                    <span class="text-muted small me-2">{{ (item.total_dish_price / item.quantity * item.selectedQuantity).toFixed(2) }}</span>
-                    <span class="text-muted">{{ item.dish_name }}</span>
+<span class="text-muted small me-2">{{ getSplitItemPriceForQuantity(item, item.selectedQuantity) }}</span>
+                  <span class="text-muted">{{ item.dish_name }}</span>
                     <span class="badge rounded-pill bg-secondary text-white">0x</span>
                   </div>
                   <small class="text-muted">منقول</small>
@@ -1123,14 +1192,14 @@
                 <span class="badge rounded-pill split-confirm-new-badge">جديد</span>
                 <span class="split-confirm-table-pill split-confirm-table-blue rounded-pill px-3 py-1 d-inline-flex align-items-center gap-1 ms-auto">
                   <svg class="split-confirm-table-icon" style="width: 14px; height: 14px;" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><rect x="4" y="8" width="24" height="6" rx="2"/><rect x="8" y="14" width="3" height="10" rx="1"/><rect x="21" y="14" width="3" height="10" rx="1"/></svg>
-                  {{ getSelectedTableName() }}
+                  طاولة {{ getSelectedTableNumberOrName() }}
                 </span>
               </div>
               <div class="mb-3"><strong>{{ getNewSplitOrderNumber() }}</strong></div>
               <div class="split-confirm-items d-flex flex-column gap-2">
                 <div *ngFor="let item of getSelectedSplitItems()" class="split-confirm-item-card border rounded p-2">
                   <div class="d-flex justify-content-between align-items-center">
-                    <span class="text-muted small me-2">{{ (item.total_dish_price / item.quantity * item.selectedQuantity).toFixed(2) }}</span>
+                    <span class="text-muted small me-2">{{ getSplitItemPriceForQuantity(item, item.selectedQuantity) }}</span>
                     <span>{{ item.dish_name }}</span>
                     <span class="badge rounded-pill split-confirm-qty-pill split-confirm-qty-blue">{{ item.selectedQuantity }}x</span>
                   </div>
@@ -1189,9 +1258,9 @@
             <div class="d-flex align-items-start justify-content-between w-100">
               <!-- Left Side: Order Details with Table Badge spanning 2 rows -->
               <div class="d-flex align-items-center gap-3">
-                <!-- First Column: Table Badge (spans 2 rows) - Figma: red text, red-tinted background -->
+                <!-- First Column: Table Badge (spans 2 rows) - text inside box in red -->
                 <div class="badge rounded px-3 py-2 d-inline-flex align-items-center justify-content-center"
-                     style="background-color: #dc3545; color: #fff; border: none; font-size: 0.85rem; min-height: 60px; align-self: stretch; border-radius: 8px !important;">
+                     style="background-color: #fff5f5; color: #dc3545; border: 1px solid #dc3545; font-size: 0.85rem; min-height: 60px; align-self: stretch; border-radius: 8px !important;">
                   <div class="d-flex flex-column align-items-center">
                     <span>طاولة</span>
                     <span>{{ order.order_details.table_number }}</span>
@@ -1390,42 +1459,48 @@
   </div>
 </div>
 
-<!-- Merge Success Modal -->
+<!-- Merge Success Modal - Figma: rectangular cards -->
 <div class="modal fade" id="mergeSuccessModal" tabindex="-1" aria-labelledby="mergeSuccessModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-md">
     <div class="modal-content p-4">
       <div class="modal-body text-center">
         <div class="mb-3">
-          <i class="fa-solid fa-check-circle text-success" style="font-size: 4rem;"></i>
+          <span class="d-inline-flex align-items-center justify-content-center rounded-3 bg-success text-white" style="width: 64px; height: 48px;">
+            <i class="fa-solid fa-check" style="font-size: 1.5rem;"></i>
+          </span>
         </div>
         <h4 class="fw-bold mb-3">تم دمج الطلبات بنجاح</h4>
         <p class="text-muted mb-4">
           تم دمج الطلب الثانوي وإغلاقه. تم تحديث الطلب الرئيسي بالعناصر الجديدة بنجاح.
         </p>
 
-        <div class="row mb-4">
-          <div class="col-6">
-            <div class="border rounded p-2">
-              <small class="text-muted d-block">الطلب الرئيسي المحدث</small>
-              <strong>{{ currentMergeOrder?.order_details?.order_number }}</strong>
-              <div class="mt-1">
-                <i class="fa-solid fa-check-circle text-success"></i>
+        <div class="row g-3 mb-4">
+          <div class="col-12">
+            <div class="border rounded-3 p-3 d-flex align-items-center justify-content-between gap-2 text-start" style="min-height: 56px;">
+              <div>
+                <small class="text-muted d-block">الطلب الرئيسي المحدث</small>
+                <strong>{{ currentMergeOrder?.order_details?.order_number }}</strong>
               </div>
+              <span class="d-inline-flex align-items-center justify-content-center rounded-2 bg-success text-white flex-shrink-0" style="width: 36px; height: 28px;">
+                <i class="fa-solid fa-check" style="font-size: 0.85rem;"></i>
+              </span>
             </div>
           </div>
-          <div class="col-6">
-            <div class="border rounded p-2">
-              <small class="text-muted d-block">الطلب الثانوي (مغلق)</small>
-              <strong>{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong>
-              <div class="mt-1">
-                <i class="fa-solid fa-circle text-muted"></i>
+          <div class="col-12">
+            <div class="border rounded-3 p-3 d-flex align-items-center justify-content-between gap-2 text-start" style="min-height: 56px;">
+              <div>
+                <small class="text-muted d-block">الطلب الثانوي (مغلق)</small>
+                <strong>{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong>
               </div>
+              <span class="d-inline-flex align-items-center justify-content-center rounded-2 bg-secondary text-white flex-shrink-0" style="width: 36px; height: 28px;">
+                <i class="fa-solid fa-circle" style="font-size: 0.5rem;"></i>
+              </span>
             </div>
           </div>
         </div>
 
         <div class="d-flex flex-column gap-2">
-          <button type="button" class="btn btn-danger" (click)="viewMergedOrder()">
+          <button type="button" class="btn btn-danger rounded-3" (click)="viewMergedOrder()">
             <i class="fa-solid fa-arrow-left me-2"></i>
             عرض الطلب المدمج
           </button>
