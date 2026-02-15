@@ -1122,6 +1122,12 @@ export class OrdersComponent implements OnDestroy {
     return '/order-details/' + orderId;
   }
 
+  /** Items to display on the order card: exclude moved (split) items so only remaining items show. */
+  getDisplayOrderItems(order: any): any[] {
+    const items = order?.order_items ?? [];
+    return items.filter((item: any) => (Number(item.quantity) || 0) > 0);
+  }
+
   selectOrderType(orderType: string): void {
     console.log('fatema', orderType, this.selectedOrderTypeStatus);
 
@@ -2608,10 +2614,29 @@ export class OrdersComponent implements OnDestroy {
     }
   }
 
-  // Get selected table name
+  // Get selected table name (Arabic name + table number for bottom bar, matches dashboard)
   getSelectedTableName(): string {
     const table = this.availableTables.find(t => t.id == this.selectedTableIdForSplit);
-    return table ? (table.name || `طاولة ${table.number}`) : '';
+    if (!table) return '';
+    const num = table.number ?? table.id;
+    const name = table.name?.trim();
+    return name ? `${name} (#${num})` : `طاولة ${num}`;
+  }
+
+  /** رقم أو اسم الطاولة للعرض في تأكيد التجزئة (بجانب الطلب الجديد) – دائماً بصيغة "طاولة X". */
+  getSelectedTableNumberOrName(): string {
+    const table = this.availableTables.find(t => t.id == this.selectedTableIdForSplit);
+    if (!table) return '—';
+    return String(table.number ?? table.name ?? table.id ?? '—').trim();
+  }
+
+  /** عدد المقاعد للطاولة المحددة (يظهر في شريط الأسفل). */
+  getSelectedTableSeats(): number | null {
+    const table = this.availableTables.find(t => t.id == this.selectedTableIdForSplit);
+    if (!table) return null;
+    const s = table.seats ?? table.seat_count;
+    const n = s != null ? Number(s) : NaN;
+    return Number.isNaN(n) ? null : n;
   }
 
   // Go to split step 2 (select items)
@@ -2788,14 +2813,29 @@ export class OrdersComponent implements OnDestroy {
     }
   }
 
-  // Get split new order total
+  /** سعر عنصر التجزئة لكمية معينة (يتجنب القسمة على صفر و NaN). */
+  getSplitItemPriceForQuantity(item: any, quantity: number): number {
+    const q = Number(quantity) || 0;
+    if (q <= 0) return 0;
+    const total = Number(item?.total_dish_price) || 0;
+    const itemQty = Number(item?.quantity) || 1;
+    const unit = itemQty > 0 ? total / itemQty : 0;
+    const value = unit * q;
+    return Number.isFinite(value) ? parseFloat(value.toFixed(2)) : 0;
+  }
+
+  // Get split new order total (avoid NaN: safe division and number coercion)
   getSplitNewOrderTotal(): number {
-    const total = this.splitOrderItems.reduce((total, item) => {
-      const quantity = item.selectedQuantity || 0;
-      const unitPrice = item.total_dish_price / item.quantity;
-      return total + (unitPrice * quantity);
+    const total = this.splitOrderItems.reduce((sum, item) => {
+      const q = Number(item.selectedQuantity) || 0;
+      if (q <= 0) return sum;
+      const totalPrice = Number(item.total_dish_price) || 0;
+      const itemQty = Number(item.quantity) || 1;
+      const unitPrice = itemQty > 0 ? totalPrice / itemQty : 0;
+      return sum + (unitPrice * q);
     }, 0);
-    return parseFloat(total.toFixed(2));
+    const value = Number.isFinite(total) ? total : 0;
+    return parseFloat(value.toFixed(2));
   }
 
   // Get selected split items
@@ -2811,14 +2851,19 @@ export class OrdersComponent implements OnDestroy {
     })).filter(item => item.remainingQuantity > 0);
   }
 
-  // Get split remaining total
+  // Get split remaining total (avoid NaN: safe division and number coercion)
   getSplitRemainingTotal(): number {
-    const total = this.splitOrderItems.reduce((total, item) => {
-      const remaining = item.quantity - (item.selectedQuantity || 0);
-      const unitPrice = item.total_dish_price / item.quantity;
-      return total + (unitPrice * remaining);
+    const total = this.splitOrderItems.reduce((sum, item) => {
+      const itemQty = Number(item.quantity) || 0;
+      const selected = Number(item.selectedQuantity) || 0;
+      const remaining = itemQty - selected;
+      if (remaining <= 0) return sum;
+      const totalPrice = Number(item.total_dish_price) || 0;
+      const unitPrice = itemQty > 0 ? totalPrice / itemQty : 0;
+      return sum + (unitPrice * remaining);
     }, 0);
-    return parseFloat(total.toFixed(2));
+    const value = Number.isFinite(total) ? total : 0;
+    return parseFloat(value.toFixed(2));
   }
 
   // Get new split order number (placeholder)
@@ -3019,13 +3064,12 @@ export class OrdersComponent implements OnDestroy {
     this.fetchOrdersData();
   }
 
-  // View original split order
+  // View original split order (مع تحديث من API ليعرض الطلب بعد حذف العناصر المنقولة)
   viewOriginalSplitOrder(): void {
     this.closeSplitSuccessModal();
-    // Navigate to original order details
     if (this.currentSplitOrder && this.currentSplitOrder.order_details?.order_id) {
       const orderId = this.currentSplitOrder.order_details.order_id;
-      this.router.navigate(['/order-details', orderId]);
+      this.router.navigate(['/order-details', orderId], { queryParams: { refresh: 'true' } });
     }
   }
 
@@ -3123,13 +3167,13 @@ export class OrdersComponent implements OnDestroy {
     return parseFloat(total.toFixed(2));
   }
 
-  // View merged order
+  // View merged order (force refresh from API so merged items are shown)
   viewMergedOrder(): void {
     this.closeMergeSuccessModal();
-    // Navigate to order details - currentMergeOrder is the primary order that received the merged items
+    // Navigate to order details with refresh=true so order-details fetches from API, not stale IndexedDB
     if (this.currentMergeOrder && this.currentMergeOrder.order_details?.order_id) {
       const orderId = this.currentMergeOrder.order_details.order_id;
-      this.router.navigate(['/order-details', orderId]);
+      this.router.navigate(['/order-details', orderId], { queryParams: { refresh: 'true' } });
     }
   }
 
@@ -3907,33 +3951,42 @@ export class OrdersComponent implements OnDestroy {
       });
   }
 
-  // Fetch available tables (preserve type, floor, area from API for correct tab filtering)
+  // Fetch available tables (preserve type, floor, area from API; filter by same branch; classification matches dashboard النوع)
   fetchAvailableTables(): void {
+    const currentBranchId = localStorage.getItem('branch_id');
     this.tablesService.getTables().subscribe({
       next: (response: any) => {
         if (response.status && response.data) {
-          this.availableTables = response.data.map((table: any) => {
-            const typeRaw = (table.type ?? table.table_type ?? table.type_ar ?? table.type_en ?? '').toString().toLowerCase().trim();
-            const typeAr = (table.type_ar ?? table.type ?? '').toString().trim();
+          const mapped = response.data.map((table: any) => {
+            const typeRaw = (table.type ?? table.table_type?.name_en ?? table.table_type?.name_ar ?? table.table_type ?? table.type_ar ?? table.type_en ?? '').toString().toLowerCase().trim();
+            const typeAr = (table.type_ar ?? table.table_type?.name_ar ?? table.table_type?.name ?? table.type ?? '').toString().trim();
             const floorId = table.floor_id ?? table.floor?.id ?? null;
             const floorName = (table.floor_name ?? table.floor?.name ?? table.floor?.name_en ?? table.floor?.name_ar ?? '').toString().toLowerCase();
             const areaName = (table.floor_area_name ?? table.area_name ?? table.floor_partition?.name ?? table.floor_partition?.name_ar ?? table.floor_area ?? '').toString().toLowerCase();
             const tableNumber = table.number ?? table.table_number ?? table.id;
+            const typeId = table.type_id ?? table.table_type_id ?? table.table_type?.id ?? null;
+            const seats = table.seats ?? table.seat_count ?? table.capacity ?? table.seats_count ?? table.number_of_seats ?? null;
             return {
               id: table.id,
               name: table.name_ar || table.name || `طاولة ${tableNumber}`,
               number: tableNumber,
-              status: table.status || 1,
-              seats: table.seats || table.seat_count,
+              status: table.status ?? 1,
+              seats,
+              seat_count: seats,
               location: table.floor_partition_id ?? table.floor_id,
               tableType: typeRaw || typeAr,
               tableTypeAr: typeAr,
-              type_id: table.type_id ?? table.table_type_id,
+              type_id: typeId,
               floorId,
               floorName,
               areaName,
+              branch_id: table.branch_id ?? null,
             };
           });
+          // Same branch only: من نفس الـ branch
+          this.availableTables = currentBranchId
+            ? mapped.filter((t: any) => t.branch_id == null || String(t.branch_id) === String(currentBranchId))
+            : mapped;
           this.applySplitTableStatusFilter(this.availableTables);
         }
       },
@@ -3943,18 +3996,24 @@ export class OrdersComponent implements OnDestroy {
     });
   }
 
-  /** هل الطاولة مصنفة كـ "داخلية" (الصالة الرئيسية). */
+  /** هل الطاولة مصنفة كـ "داخلية" (الصالة الرئيسية) – نفس تصنيف لوحة التحكم "النوع: داخلي". */
   private isTableInternal(table: any): boolean {
+    const typeId = table.type_id != null ? Number(table.type_id) : null;
+    if (typeId === 1) return true;
+    if (typeId === 2) return false;
     const t = (table.tableType ?? table.tableTypeAr ?? '').toString().toLowerCase();
     const ar = (table.tableTypeAr ?? '').toString().trim();
-    return t === 'internal' || ar === 'داخلي' || t === 'داخلي' || table.type_id === 1;
+    return ar === 'داخلي' || t === 'internal' || t === 'داخلي';
   }
 
-  /** هل الطاولة مصنفة كـ "خارجية" (التراس الخارجي). */
+  /** هل الطاولة مصنفة كـ "خارجية" (التراس الخارجي) – نفس تصنيف لوحة التحكم "النوع: خارجي". */
   private isTableExternal(table: any): boolean {
+    const typeId = table.type_id != null ? Number(table.type_id) : null;
+    if (typeId === 2) return true;
+    if (typeId === 1) return false;
     const t = (table.tableType ?? table.tableTypeAr ?? '').toString().toLowerCase();
     const ar = (table.tableTypeAr ?? '').toString().trim();
-    return t === 'external' || ar === 'خارجي' || t === 'خارجي' || table.type_id === 2;
+    return ar === 'خارجي' || t === 'external' || t === 'خارجي';
   }
 
   /** هل الطاولة في الطابق العلوي. */
@@ -4016,10 +4075,15 @@ export class OrdersComponent implements OnDestroy {
     return this.filteredTablesForSplit.filter((t: any) => this.isTableExternal(t));
   }
 
-  /** طاولات غير مصنّفة كداخلي أو خارجي – نعرضها ضمن قسم "داخلي" */
+  /** طاولات الطابق العلوي بعد تطبيق فلتر الحالة */
+  getSplitTablesUpperFloor(): any[] {
+    return this.filteredTablesForSplit.filter((t: any) => this.isTableUpperFloor(t));
+  }
+
+  /** طاولات غير مصنّفة كداخلي أو خارجي – نعرضها ضمن قسم "داخلي" (المنطقة الرئيسية) */
   getSplitTablesIndoorWithOther(): any[] {
     return this.filteredTablesForSplit.filter(
-      (t: any) => this.isTableInternal(t) || (!this.isTableInternal(t) && !this.isTableExternal(t))
+      (t: any) => (this.isTableInternal(t) || (!this.isTableInternal(t) && !this.isTableExternal(t))) && !this.isTableUpperFloor(t)
     );
   }
 
