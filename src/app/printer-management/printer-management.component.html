@@ -1,3 +1,35 @@
+<!-- Default Printer Configuration Card -->
+<div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+  <div class="card-body p-4 bg-white">
+    <div class="row align-items-center">
+      <div class="col-md-auto mb-3 mb-md-0">
+        <div class="p-3 bg-danger bg-opacity-10 rounded-4 text-danger d-inline-block">
+          <i class="fas fa-print fa-2x"></i>
+        </div>
+      </div>
+      <div class="col-md">
+        <h5 class="fw-bold mb-1">إعدادات الطابعة الافتراضية</h5>
+        <p class="text-muted small mb-0">اختر الطابعة التي يتم استخدامها لطباعة الفواتير تلقائياً</p>
+      </div>
+      <div class="col-md-5">
+        <div class="d-flex gap-2">
+          <select class="form-select rounded-3 shadow-none border-light-subtle py-2" [(ngModel)]="defaultPrinterId">
+            <option [value]="null" disabled>اختر الطابعة الافتراضية...</option>
+            <option *ngFor="let p of printers" [value]="p.id">{{ p.machine_name }} ({{ p.ip }})</option>
+          </select>
+          <button class="btn btn-danger px-4 rounded-3 d-flex align-items-center gap-2 h-100" 
+                  [disabled]="!defaultPrinterId || isPrinterLoading" 
+                  (click)="saveDefaultPrinter()">
+            <span *ngIf="isPrinterLoading" class="spinner-border spinner-border-sm"></span>
+            <i *ngIf="!isPrinterLoading" class="fas fa-save"></i>
+            <span>حفظ</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="d-flex justify-content-between align-items-center mb-4">
   <h5 class="fw-bold m-0">قائمة الطابعات والأجهزة</h5>
   <button class="btn btn-danger rounded-3" (click)="addPrinter()">
@@ -130,7 +162,10 @@
       </div>
       <div class="modal-footer border-0 pt-0 p-4">
         <button type="button" class="btn btn-light px-4 rounded-3" data-bs-dismiss="modal">إلغاء</button>
-        <button type="button" class="btn btn-danger px-4 rounded-3" (click)="savePrinter()">
+        <button type="button" class="btn btn-danger px-4 rounded-3 d-flex align-items-center gap-2" 
+                [disabled]="isPrinterLoading"
+                (click)="savePrinter()">
+          <span *ngIf="isPrinterLoading" class="spinner-border spinner-border-sm"></span>
           {{ isEditingPrinter ? 'تحديث' : 'حفظ' }}
         </button>
       </div>
