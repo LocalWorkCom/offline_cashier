@@ -21,6 +21,7 @@ import { baseUrl } from '../environment';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { PrintTimeService } from '../services/print-time.service';
 import { ReceiptComponent } from '../receipt/receipt.component';
+import { SilentPrintService } from '../services/silent-print.service';
 
 
 @Component({
@@ -37,6 +38,7 @@ export class PillEditComponent {
 
   loading: boolean = false;
   receiptData: any;
+  isPrinting = false;
   // @ViewChild('deliveredButton', { static: false }) deliveredButton!: ElementRef;
   invoices: any[] = [];
   pillDetails: any;
@@ -122,7 +124,8 @@ export class PillEditComponent {
     private router: Router,
     private http: HttpClient,
     private modalService: NgbModal,
-    private printTime: PrintTimeService
+    private printTime: PrintTimeService,
+    private silentPrint: SilentPrintService
   ) {
     this.currencySymbol = localStorage.getItem('currency_symbol') || 'ج.م';
   }
@@ -791,63 +794,12 @@ export class PillEditComponent {
               }
             }
 
-            // انتظار حتى يتم عرض مكون الإيصال
-            // await new Promise((resolve) => setTimeout(resolve, 500));
-            // this.cdr.detectChanges();
-
-            const printContent = document.getElementById('printSection');
-            if (!printContent) {
-              console.error('Print section not found.');
-              return;
-            }
-
-            const originalHTML = document.body.innerHTML;
-
-           // const copies = this.isDeliveryOrder
-            //   ? [
-            //     { showPrices: true, test: true },
-            //     { showPrices: false, test: false },
-            //     { showPrices: true, test: true },
-            //   ]
-            //   : [
-            //     { showPrices: true, test: true },
-            //     { showPrices: false, test: false },
-            //   ];
-            const copies = [
-              { showPrices: true, test: true },
-            ];
-
-            for (let i = 0; i < copies.length; i++) {
-              this.showPrices = copies[i].showPrices;
-              this.test = copies[i].test;
-              await new Promise((resolve) => setTimeout(resolve, 300));
-
-              const singlePageHTML = `
-              <div>
-                ${printContent.innerHTML}
-              </div>
-            `;
-
-              document.body.innerHTML = singlePageHTML;
-
-              await new Promise((resolve) =>
-                setTimeout(() => {
-                  window.print();
-                  resolve(true);
-                }, 200)
-              );
-            }
-
-            document.body.innerHTML = originalHTML;
-
-            // انتظار قليل قبل إعادة التحميل للتأكد من اكتمال الطباعة
+            // انتظار قليل لشحن البيانات في المكون
+            this.cdr.detectChanges();
             await new Promise((resolve) => setTimeout(resolve, 500));
-            location.reload();
 
-
-
-
-
+            // استدعاء وظيفة الطباعة (ستتعامل مع الطباعة الصامتة إذا كان في Electron)
+            await this.printInvoice(true);
           },
           error: (err) => {
             console.error('خطأ في حفظ الطلب:', err);
@@ -1213,11 +1165,25 @@ export class PillEditComponent {
     }
 
     try {
-      /* Backend call removed
-      const response = await this.printedInvoiceService
-        .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
-        .toPromise();
-      */
+      if ((window as any).deviceAPI) {
+        console.log('Detected Electron environment. Attempting silent print via SilentPrintService.');
+
+        const printerIP = this.invoices[0]?.branch_details?.printer_ip || "192.168.11.187"; 
+        const port = this.invoices[0]?.branch_details?.printer_port || 9100;
+
+        const result = await this.silentPrint.printElement('printSection', printerIP, port);
+
+        if (result.success) {
+          console.log("Silent print successful");
+          location.reload();
+        } else {
+          console.error("Silent print failed:", result);
+          alert(`فشلت الطباعة الصامتة: ${result.message || 'خطأ غير معروف'}`);
+        }
+
+        return; 
+      }
+
       const printContent = document.getElementById('printSection');
       if (!printContent) {
         console.error('Print section not found.');
