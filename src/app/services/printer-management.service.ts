@@ -44,4 +44,8 @@ export class PrinterManagementService {
   deletePrinter(id: number): Observable<PrinterResponse> {
     return this.http.delete<PrinterResponse>(`${this.apiUrl}/printers/${id}`, { headers: this.getHeaders() });
   }
+
+  setDefaultPrinter(id: number): Observable<PrinterResponse> {
+    return this.http.post<PrinterResponse>(`${this.apiUrl}/printers/set-default/${id}`, {}, { headers: this.getHeaders() });
+  }
 }
