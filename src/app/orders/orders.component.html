@@ -1189,9 +1189,9 @@
             <div class="d-flex align-items-start justify-content-between w-100">
               <!-- Left Side: Order Details with Table Badge spanning 2 rows -->
               <div class="d-flex align-items-center gap-3">
-                <!-- First Column: Table Badge (spans 2 rows) -->
+                <!-- First Column: Table Badge (spans 2 rows) - Figma: red text, red-tinted background -->
                 <div class="badge rounded px-3 py-2 d-inline-flex align-items-center justify-content-center"
-                     style="background-color: #ff9800; color: #000; border: none; font-size: 0.85rem; min-height: 60px; align-self: stretch; border-radius: 8px !important;">
+                     style="background-color: #dc3545; color: #fff; border: none; font-size: 0.85rem; min-height: 60px; align-self: stretch; border-radius: 8px !important;">
                   <div class="d-flex flex-column align-items-center">
                     <span>طاولة</span>
                     <span>{{ order.order_details.table_number }}</span>
@@ -1262,12 +1262,11 @@
           <!-- Primary Order (Original) - Left Side -->
           <div class="col-md-5">
             <div class="border rounded p-3 h-100" style="background-color: #fff5f5; border-color: #dc3545 !important;">
-              <h6 class="fw-bold mb-3 text-success">الطلب الأساسي (المستلم)</h6>
+              <h6 class="fw-bold mb-3 text-danger">الطلب الأساسي (المستلم)</h6>
               <div class="mb-2 d-flex align-items-center justify-content-between">
                 <strong>{{ currentMergeOrder?.order_details?.order_number }}</strong>
                 <div class="d-flex flex-column align-items-end">
-                  <span>طاولة</span>
-                  <span>{{ currentMergeOrder?.order_details?.table_number }}</span>
+                  <span>طاولة {{ currentMergeOrder?.order_details?.table_number }}</span>
                 </div>
               </div>
               <div class="mb-2 d-flex justify-content-between align-items-center">
@@ -1293,8 +1292,7 @@
               <div class="mb-2 d-flex align-items-center justify-content-between">
                 <strong>{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong>
                 <div class="d-flex flex-column align-items-end">
-                  <span>{{ getSecondaryMergeOrder()?.order_details?.order_type === 'dine-in' ? 'طاولة' : 'إستلام' }}</span>
-                  <span *ngIf="getSecondaryMergeOrder()?.order_details?.order_type === 'dine-in'">{{ getSecondaryMergeOrder()?.order_details?.table_number }}</span>
+                  <span>{{ getSecondaryMergeOrder()?.order_details?.order_type === 'dine-in' ? ('طاولة ' + (getSecondaryMergeOrder()?.order_details?.table_number ?? '')) : 'إستلام' }}</span>
                 </div>
               </div>
               <div class="mb-2 d-flex justify-content-between align-items-center">
@@ -1324,13 +1322,13 @@
           </div>
         </div>
       </div>
-      <div class="modal-footer border-0 d-flex justify-content-between">
-        <button type="button" class="btn btn-danger" (click)="submitMergeRequest()" [disabled]="isMergeSubmitting">
+      <div class="modal-footer border-0 d-flex gap-2">
+        <button type="button" class="btn btn-danger flex-fill" (click)="submitMergeRequest()" [disabled]="isMergeSubmitting">
           <span *ngIf="isMergeSubmitting" class="spinner-border spinner-border-sm me-2"></span>
           <i *ngIf="!isMergeSubmitting" class="fa-solid fa-check me-2"></i>
           {{ isMergeSubmitting ? 'جاري الإرسال...' : 'تأكيد الدمج' }}
         </button>
-        <button type="button" class="btn btn-danger" (click)="goBackToMergeStep1()">إلغاء</button>
+        <button type="button" class="btn btn-danger flex-fill" (click)="goBackToMergeStep1()">إلغاء</button>
       </div>
     </div>
   </div>
