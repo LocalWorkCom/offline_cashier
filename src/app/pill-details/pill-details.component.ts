@@ -561,8 +561,9 @@ if ((window as any).deviceAPI) {
     const base64Image = pngDataUrl.replace(/^data:image\/png;base64,/, "");
 
     // Printer settings
-    const printerIP = this.pillsDetails.invoices[0].branch_details.printer_ip; 
-    const port = this.pillsDetails.invoices[0].branch_details.printer_port;
+    // Printer settings
+    const printerIP = this.invoices[0]?.branch_details?.printer_ip || "192.168.11.187"; 
+    const port = this.invoices[0]?.branch_details?.printer_port || 9100;
 
     console.log(`Sending silent print request to ${printerIP}:${port}!`);
     const result = await (window as any).deviceAPI.testPrinterConnection(printerIP, port, base64Image);

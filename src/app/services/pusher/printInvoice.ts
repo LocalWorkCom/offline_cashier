@@ -118,7 +118,11 @@ export class PrintInvoiceService {
       await new Promise(resolve => setTimeout(resolve, 400));
 
       // Now capture with html2canvas and send to printer
-      await this.executeSilentPrint(hostElement);
+      await this.executeSilentPrint(
+        hostElement, 
+        invoiceData.branch_details?.printer_ip, 
+        invoiceData.branch_details?.printer_port
+      );
 
       // Clean up
       this.appRef.detachView(componentRef.hostView);
@@ -137,7 +141,7 @@ export class PrintInvoiceService {
    * Capture an HTML element and send it to the thermal printer.
    * Same logic as pill-details printInvoice but reusable.
    */
-  private async executeSilentPrint(element: HTMLElement): Promise<void> {
+  private async executeSilentPrint(element: HTMLElement, printerIP?: string, port?: any): Promise<void> {
     const printerWidth = 576; // Standard 80mm printer width
     const captureWidth = 288; // printerWidth / scale(2) = 1:1 mapping
 
@@ -173,11 +177,11 @@ export class PrintInvoiceService {
     const base64Image = pngDataUrl.replace(/^data:image\/png;base64,/, '');
 
     // Printer settings
-    const printerIP = '192.168.11.187';
-    const port = 9100;
+    const finalIP = printerIP || '192.168.11.187';
+    const finalPort = port ? parseInt(String(port), 10) : 9100;
 
-    console.log(`Sending silent print request to ${printerIP}:${port}!`);
-    const result = await (window as any).deviceAPI.testPrinterConnection(printerIP, port, base64Image);
+    console.log(`Sending silent print request to ${finalIP}:${finalPort}!`);
+    const result = await (window as any).deviceAPI.testPrinterConnection(finalIP, finalPort, base64Image);
 
     if (result.success) {
       console.log('Silent print successful (Pusher event)');
