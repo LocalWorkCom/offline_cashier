@@ -41,6 +41,8 @@ export class PrinterManagementComponent implements OnInit {
   printerModalMessage: string = '';
   isPrinterLoading: boolean = false;
   defaultPrinterId: number | null = null;
+  successMessage: string = '';
+  pendingDeleteId: number | null = null;
 
   constructor(
     private printerService: PrinterManagementService,
@@ -122,6 +124,7 @@ export class PrinterManagementComponent implements OnInit {
         this.isPrinterLoading = false;
         if (response.status) {
           this.fetchPrinters(); // Reload table
+          this.showToast(this.isEditingPrinter ? 'تم تحديث الطابعة بنجاح' : 'تم إضافة الطابعة بنجاح');
           this.closePrinterModal();
           this.success.emit(this.isEditingPrinter ? 'تم تحديث الطابعة بنجاح' : 'تم إضافة الطابعة بنجاح');
         } else {
@@ -148,23 +151,34 @@ export class PrinterManagementComponent implements OnInit {
     });
   }
 
-  deletePrinter(id: number) {
-    if (confirm('هل أنت متأكد من حذف هذه الطابعة؟')) {
-      this.printerService.deletePrinter(id).subscribe({
-        next: (response) => {
-          if (response.status) {
-             this.fetchPrinters(); // Reload table
-             this.success.emit('تم حذف الطابعة بنجاح');
-          } else {
-            alert(response.message || 'Error deleting printer');
-          }
-        },
-        error: (error) => {
-          console.error('Error deleting printer:', error);
-          alert('Server error while deleting printer');
+  confirmDeletePrinter(id: number) {
+    this.pendingDeleteId = id;
+    this.openDeleteModal();
+  }
+
+  executeDelete() {
+    if (!this.pendingDeleteId) return;
+    
+    this.isPrinterLoading = true;
+    this.printerService.deletePrinter(this.pendingDeleteId).subscribe({
+      next: (response) => {
+        this.isPrinterLoading = false;
+        if (response.status) {
+          this.fetchPrinters();
+          this.showToast('تم حذف الطابعة بنجاح');
+          this.closeDeleteModal();
+          this.success.emit('تم حذف الطابعة بنجاح');
+        } else {
+          this.printerModalMessage = response.message || 'Error deleting printer';
+          this.showToast(this.printerModalMessage, 'error');
         }
-      });
-    }
+      },
+      error: (error) => {
+        this.isPrinterLoading = false;
+        console.error('Error deleting printer:', error);
+        this.showToast('Server error while deleting printer', 'error');
+      }
+    });
   }
 
   saveDefaultPrinter() {
@@ -175,16 +189,17 @@ export class PrinterManagementComponent implements OnInit {
       next: (response) => {
         if (response.status) {
           this.fetchPrinters();
+          this.showToast('تم تعيين الطابعة الافتراضية بنجاح');
           this.success.emit('تم تعيين الطابعة الافتراضية بنجاح');
         } else {
-          alert(response.message || 'Error setting default printer');
+          this.showToast(response.message || 'Error setting default printer', 'error');
         }
         this.isPrinterLoading = false;
       },
       error: (error) => {
         console.error('Error setting default printer:', error);
         this.isPrinterLoading = false;
-        alert('Server error while setting default printer');
+        this.showToast('Server error while setting default printer', 'error');
       }
     });
   }
@@ -227,6 +242,40 @@ export class PrinterManagementComponent implements OnInit {
       case 2: return 'badge bg-danger';
       case 3: return 'badge bg-warning text-dark';
       default: return 'badge bg-secondary';
+    }
+  }
+
+  showToast(message: string, type: 'success' | 'error' = 'success') {
+    this.successMessage = message;
+    // You can implement different styles based on 'type' if needed
+    setTimeout(() => {
+      this.successMessage = '';
+    }, 3000);
+  }
+
+  openDeleteModal() {
+    if (isPlatformBrowser(this.platformId)) {
+      import('bootstrap').then(({ Modal }) => {
+        const modalElement = document.getElementById('deleteConfirmModal');
+        if (modalElement) {
+          const modal = new Modal(modalElement);
+          modal.show();
+        }
+      });
+    }
+  }
+
+  closeDeleteModal() {
+    if (isPlatformBrowser(this.platformId)) {
+      const modalElement = document.getElementById('deleteConfirmModal');
+      if (modalElement) {
+        // @ts-ignore
+        import('bootstrap').then(({ Modal }) => {
+            const modalInstance = Modal.getInstance(modalElement);
+            modalInstance?.hide();
+            this.pendingDeleteId = null;
+        });
+      }
     }
   }
 
