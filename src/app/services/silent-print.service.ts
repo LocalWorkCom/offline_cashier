@@ -58,30 +58,113 @@ export class SilentPrintService {
     document.body.appendChild(clone);
 
     try {
-      // Wait for layout and potential image loading (fonts, etc.)
-      await new Promise((resolve) => setTimeout(resolve, 500));
+      // Small wait for initial layout
+      await new Promise((resolve) => setTimeout(resolve, 300));
 
-      // Capture with scale 2 for sharpness (288 * 2 = 576px = printerWidth)
-      const canvas = await html2canvas(clone, {
+      const elementHeight = clone.offsetHeight || clone.scrollHeight;
+      
+      // Create a hidden iframe to isolate the print content for html2canvas
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.left = '0';
+      iframe.style.top = '0';
+      iframe.style.width = '100vw';
+      iframe.style.height = '100vh';
+      iframe.style.border = 'none';
+      iframe.style.opacity = '0';
+      iframe.style.zIndex = '-9999';
+      iframe.style.pointerEvents = 'none';
+      document.body.appendChild(iframe);
+
+      const iframeDoc = iframe.contentDocument!;
+      
+      // Copy all styles from the main document
+      let styles = '';
+      document.querySelectorAll('style, link[rel="stylesheet"]').forEach(s => {
+        styles += s.outerHTML;
+      });
+
+      iframeDoc.open();
+      iframeDoc.write(`
+        <!DOCTYPE html>
+        <html dir="rtl">
+          <head>
+            <meta charset="UTF-8">
+            ${styles}
+            <style>
+              body { 
+                margin: 0; 
+                padding: 0; 
+                background: white; 
+                width: ${captureWidth}px !important;
+                overflow: visible !important;
+              }
+              #print-container {
+                width: ${captureWidth}px !important;
+                background: white;
+                position: relative;
+              }
+              * { 
+                color: black !important;
+                print-color-adjust: exact !important;
+                -webkit-print-color-adjust: exact !important;
+              }
+            </style>
+          </head>
+          <body>
+            <div id="print-container"></div>
+          </body>
+        </html>
+      `);
+      iframeDoc.close();
+
+      // Clone the content into the iframe
+      const printContainer = iframeDoc.getElementById('print-container')!;
+      const finalClone = clone.cloneNode(true) as HTMLElement;
+      
+      // Reset properties
+      finalClone.style.position = 'static';
+      finalClone.style.visibility = 'visible';
+      finalClone.style.opacity = '1';
+      finalClone.style.width = '100%';
+
+      printContainer.appendChild(finalClone);
+
+      console.log(`Silent Print: Capturing isolated iframe ${captureWidth}x${elementHeight}`);
+
+      // Wait for rendering
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      // Capture the iframe doc's body
+      const canvas = await html2canvas(printContainer, {
         scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
         width: captureWidth,
+        height: elementHeight,
         windowWidth: captureWidth,
+        windowHeight: elementHeight,
+        scrollX: 0,
+        scrollY: 0,
+        x: 0,
+        y: 0
       });
+
+      // Cleanup iframe
+      document.body.removeChild(iframe);
 
       // Create final canvas sized exactly for the printer
       const finalCanvas = document.createElement("canvas");
       finalCanvas.width = printerWidth; 
       finalCanvas.height = canvas.height; 
 
-      const ctx = finalCanvas.getContext("2d");
+      const ctx = finalCanvas.getContext("2d", { alpha: false });
       if (ctx && canvas.width > 0 && canvas.height > 0) {
-        ctx.fillStyle = "#fff";
+        ctx.fillStyle = "#ffffff";
         ctx.fillRect(0, 0, finalCanvas.width, finalCanvas.height);
         
-        // Draw 1:1 since the canvas width is already 576
+        // Draw 1:1 since the canvas width is already 576 (scale 2 on 288)
         ctx.drawImage(canvas, 0, 0);
       } else {
         console.warn('Silent Print: Captured canvas is empty or invalid dimensions', canvas.width, canvas.height);
@@ -98,7 +181,7 @@ export class SilentPrintService {
       console.error('Error capturing invoice for silent print:', captureError);
       return { success: false, message: String(captureError) };
     } finally {
-      // Clean up the clone
+      // Clean up the main document clone
       if (document.body.contains(clone)) {
         document.body.removeChild(clone);
       }
