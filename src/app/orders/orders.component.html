@@ -1001,99 +1001,95 @@
   </div>
 </div>
 
-<!-- Split Order Modal - Step 2: Select Items (X left, count in original list) -->
+<!-- Split Order Modal - Step 2: Select Items (Figma: order+table in header, count, instruction, card items, نقل before -, table no only, cancel light blue) -->
 <div class="modal fade" id="splitOrderItemsModal" tabindex="-1" aria-labelledby="splitOrderItemsModalLabel" aria-hidden="true" dir="rtl">
   <div class="modal-dialog modal-dialog-centered modal-xl">
-    <div class="modal-content p-3">
-      <div class="modal-header border-0 position-relative d-flex justify-content-start align-items-center">
+    <div class="modal-content p-3 split-items-modal">
+      <div class="modal-header border-0 position-relative d-flex justify-content-between align-items-center flex-wrap gap-2">
         <button type="button" class="btn-close position-absolute" style="left: 0; top: 50%; transform: translateY(-50%);" data-bs-dismiss="modal" aria-label="إغلاق"></button>
-        <div class="d-flex align-items-center gap-2">
-          <i class="fa-solid fa-code-branch text-danger fs-4"></i>
-          <h5 class="modal-title fw-bold mb-0" id="splitOrderItemsModalLabel">تجزئة الطلب: تحديد الأصناف</h5>
+        <div class="d-flex flex-column align-items-start gap-1">
+          <div class="d-flex align-items-center gap-2">
+            <i class="fa-solid fa-code-branch text-danger fs-4"></i>
+            <h5 class="modal-title fw-bold mb-0" id="splitOrderItemsModalLabel">تجزئة الطلب: تحديد الأصناف</h5>
+          </div>
+          <p class="text-muted small mb-0" *ngIf="currentSplitOrder">
+            الطلب {{ currentSplitOrder?.order_details?.order_number }} — طاولة {{ currentSplitOrder?.order_details?.table_number ?? '—' }}
+          </p>
+        </div>
+        <div class="split-items-instruction d-flex align-items-center gap-2 mb-3">
+          <i class="fa-solid fa-circle-info split-items-instruction-icon"></i>
+          <span>حدد الكمية المراد نقلها لطلب جديد</span>
         </div>
       </div>
       <div class="modal-body">
-        <div class="alert alert-info mb-3">
-          <i class="fa-solid fa-info-circle me-2"></i>
-          حدد الكمية المراد نقلها لطلب جديد
-        </div>
-
         <div class="row g-3">
-          <!-- قائمة الأصناف: بوكس أكبر، عداد الكمية جنب الصنف في نفس الصف (مثل Figma) -->
           <div class="col-12 col-md-7 mb-3">
-            <h6 class="fw-bold mb-3">قائمة الأصناف</h6>
-            <div class="border rounded p-3" style="min-height: 320px; max-height: 420px; overflow-y: auto;">
-              <div *ngFor="let item of splitOrderItems" class="d-flex align-items-center gap-2 py-2 border-bottom flex-wrap">
-                <i class="fa-solid fa-utensils text-warning flex-shrink-0" style="font-size: 0.9rem;"></i>
-                <div class="flex-grow-1 min-width-0">
-                  <strong class="d-block">{{ item.dish_name }}</strong>
-                  <span class="text-muted small">{{ item.total_dish_price }} {{ splitOrderCurrency }} - الكمية الأصلية: {{ item.quantity }}</span>
-                </div>
-                <div class="d-flex align-items-center gap-1 flex-shrink-0">
-                  <button type="button" class="btn btn-sm rounded-circle p-1"
-                          [class.btn-danger]="item.selectedQuantity > 0"
-                          [class.btn-outline-secondary]="item.selectedQuantity === 0"
-                          (click)="decreaseSplitQuantity(item)"
-                          [disabled]="item.selectedQuantity === 0"
-                          style="width: 32px; height: 32px;">
-                    <i class="fa-solid fa-minus" style="font-size: 0.7rem;"></i>
-                  </button>
-                  <input type="number" class="form-control form-control-sm text-center mx-1"
-                         [ngModel]="item.selectedQuantity"
-                         (ngModelChange)="onSplitQuantityChange(item, $event)"
-                         (input)="onSplitQuantityInput(item, $event)"
-                         (blur)="onSplitQuantityBlur(item, $event)"
-                         (keydown)="onSplitQuantityKeydown(item, $event)"
-                         (paste)="onSplitQuantityPaste(item, $event)"
-                         [min]="0"
-                         [max]="item.quantity"
-                         style="width: 48px;"
-                         [class.is-invalid]="(item.selectedQuantity || 0) < 0 || (item.selectedQuantity || 0) > item.quantity">
-                  <button type="button" class="btn btn-sm rounded-circle p-1"
-                          [class.btn-danger]="item.selectedQuantity > 0"
-                          [class.btn-outline-secondary]="item.selectedQuantity === 0"
-                          (click)="increaseSplitQuantity(item)"
-                          [disabled]="item.selectedQuantity >= item.quantity"
-                          style="width: 32px; height: 32px;">
-                    <i class="fa-solid fa-plus" style="font-size: 0.7rem;"></i>
-                  </button>
-                  <span class="small text-muted me-1">نقل</span>
-                </div>
-              </div>
-              <div class="border-top pt-2 mt-2">
-                <div class="d-flex justify-content-between align-items-center">
-                  <span class="small text-muted">إجمالي الكمية المختارة للنقل:</span>
-                  <strong>{{ getSelectedSplitItemsCount() }}</strong>
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="fw-bold mb-0">قائمة الأصناف</h6>
+              <span class="text-muted small">{{ splitOrderItems?.length ?? 0 }} أصناف</span>
+            </div>
+            <div class="split-items-list border rounded-3 p-3" style="min-height: 320px; max-height: 420px; overflow-y: auto;">
+              <div *ngFor="let item of splitOrderItems" class="split-item-card rounded-3 p-2 mb-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <i class="fa-solid fa-utensils text-warning flex-shrink-0" style="font-size: 0.9rem;"></i>
+                  <div class="flex-grow-1 min-width-0">
+                    <strong class="d-block">{{ item.dish_name }}</strong>
+                    <span class="text-muted small">{{ item.total_dish_price }} {{ splitOrderCurrency }} — الكمية الأصلية: {{ item.quantity }}</span>
+                  </div>
+                  <div class="d-flex align-items-center gap-1 flex-shrink-0 split-qty-wrap">
+                    <span class="small text-muted ms-1">نقل</span>
+                    <button type="button" class="btn btn-sm rounded-circle p-1"
+                            [class.btn-danger]="item.selectedQuantity > 0"
+                            [class.btn-outline-secondary]="item.selectedQuantity === 0"
+                            (click)="decreaseSplitQuantity(item)"
+                            [disabled]="item.selectedQuantity === 0"
+                            style="width: 32px; height: 32px;">
+                      <i class="fa-solid fa-minus" style="font-size: 0.7rem;"></i>
+                    </button>
+                    <input type="number" class="form-control form-control-sm text-center mx-1"
+                           [ngModel]="item.selectedQuantity"
+                           (ngModelChange)="onSplitQuantityChange(item, $event)"
+                           (input)="onSplitQuantityInput(item, $event)"
+                           (blur)="onSplitQuantityBlur(item, $event)"
+                           (keydown)="onSplitQuantityKeydown(item, $event)"
+                           (paste)="onSplitQuantityPaste(item, $event)"
+                           [min]="0"
+                           [max]="item.quantity"
+                           style="width: 48px;"
+                           [class.is-invalid]="(item.selectedQuantity || 0) < 0 || (item.selectedQuantity || 0) > item.quantity">
+                    <button type="button" class="btn btn-sm rounded-circle p-1"
+                            [class.btn-danger]="item.selectedQuantity > 0"
+                            [class.btn-outline-secondary]="item.selectedQuantity === 0"
+                            (click)="increaseSplitQuantity(item)"
+                            [disabled]="item.selectedQuantity >= item.quantity"
+                            style="width: 32px; height: 32px;">
+                      <i class="fa-solid fa-plus" style="font-size: 0.7rem;"></i>
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          <!-- الطلب الجديد: بوكس أصغر، الأزرار بداخله فوق بعض (مثل Figma) -->
           <div class="col-12 col-md-5 mb-3">
             <h6 class="fw-bold mb-3">الطلب الجديد</h6>
-            <div class="border rounded p-3 d-flex flex-column" style="min-height: 320px;">
+            <div class="border rounded-3 p-3 d-flex flex-column split-items-new-box" style="min-height: 320px;">
               <div class="mb-3">
                 <label class="form-label small fw-bold">نقل إلى</label>
-                <div class="d-flex align-items-center gap-2 p-2 bg-light rounded">
+                <div class="d-flex align-items-center gap-2 p-2 bg-light rounded-3">
                   <i class="fa-solid fa-chair"></i>
-                  <span>{{ getSelectedTableName() }}</span>
+                  <span>طاولة {{ getSelectedTableNumberOrName() }}</span>
                 </div>
               </div>
 
-              <div class="mb-3 flex-grow-1" style="max-height: 220px; overflow-y: auto;">
+              <div class="mb-3 flex-grow-1 split-new-order-items" style="max-height: 220px; overflow-y: auto;">
                 <ng-container *ngFor="let item of getSelectedSplitItems()">
-                  <div class="mb-3 pb-3 border-bottom">
-                    <div class="d-flex justify-content-between align-items-center mb-1">
-                      <strong>{{ item.dish_name }}</strong>
-                      <span class="badge bg-light text-dark">الكمية: {{ item.selectedQuantity }}</span>
-                    </div>
-                    <div class="d-flex justify-content-end">
-                      <span class="text-muted small">المبلغ: {{ getSplitItemPriceForQuantity(item, item.selectedQuantity) }} {{ splitOrderCurrency }}</span>
-                    </div>
+                  <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-light">
+                    <span class="text-nowrap"><strong>{{ item.selectedQuantity }}</strong> x {{ item.dish_name }}</span>
+                    <span class="text-muted small ms-2">{{ getSplitItemPriceForQuantity(item, item.selectedQuantity) }} {{ splitOrderCurrency }}</span>
                   </div>
                 </ng-container>
-                <div *ngIf="getSelectedSplitItems().length === 0" class="text-muted small">
+                <div *ngIf="getSelectedSplitItems().length === 0" class="text-muted small py-2">
                   حدد الكميات من قائمة الأصناف
                 </div>
               </div>
@@ -1105,13 +1101,12 @@
                 </div>
               </div>
 
-              <!-- أزرار التأكيد والإلغاء داخل البوكس، فوق بعض، نفس الحجم (مثل Figma) -->
               <div class="d-flex flex-column gap-2 mt-auto">
                 <button type="button" class="btn btn-danger w-100 py-2" (click)="showSplitConfirmation()" [disabled]="getSplitNewOrderTotal() === 0 || !areSplitQuantitiesValid()">
                   <i class="fa-solid fa-check me-2"></i>
                   تأكيد التجزئة
                 </button>
-                <button type="button" class="btn btn-outline-secondary w-100 py-2" (click)="goBackToSplitStep1()">إلغاء</button>
+                <button type="button" class="btn split-items-btn-cancel w-100 py-2" (click)="goBackToSplitStep1()">إلغاء</button>
               </div>
             </div>
           </div>

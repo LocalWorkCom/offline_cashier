@@ -2399,7 +2399,7 @@ export class OrdersComponent implements OnDestroy {
   private clearCouponData(): void {
     const couponKeys = [
       'appliedCoupon', 'validCoupon', 'couponTitle',
-      'couponCode', 'discountAmount'
+      'couponCode', 'discountAmount', 'couponType', 'couponValue'
     ];
 
     couponKeys.forEach(key => {
@@ -3088,7 +3088,7 @@ export class OrdersComponent implements OnDestroy {
     this.closeSplitSuccessModal();
     if (this.currentSplitOrder && this.currentSplitOrder.order_details?.order_id) {
       const orderId = this.currentSplitOrder.order_details.order_id;
-      this.router.navigate(['/order-details', orderId], { queryParams: { refresh: 'true' } });
+      this.router.navigate(['/order-details', orderId], { queryParams: { refresh: 'true', clearCoupon: '1' } });
     }
   }
 
@@ -3186,13 +3186,13 @@ export class OrdersComponent implements OnDestroy {
     return parseFloat(total.toFixed(2));
   }
 
-  // View merged order (force refresh from API so merged items are shown)
+  // View merged order (force refresh from API so merged items are shown; clear coupon as after merge no coupon applies)
   viewMergedOrder(): void {
     this.closeMergeSuccessModal();
-    // Navigate to order details with refresh=true so order-details fetches from API, not stale IndexedDB
+    // Navigate to order details with refresh + clearCoupon so order-details fetches from API and shows no coupon
     if (this.currentMergeOrder && this.currentMergeOrder.order_details?.order_id) {
       const orderId = this.currentMergeOrder.order_details.order_id;
-      this.router.navigate(['/order-details', orderId], { queryParams: { refresh: 'true' } });
+      this.router.navigate(['/order-details', orderId], { queryParams: { refresh: 'true', clearCoupon: '1' } });
     }
   }
 
@@ -4196,6 +4196,7 @@ export class OrdersComponent implements OnDestroy {
       order_id: this.currentSplitOrder.order_details.order_id,
       new_table_id: parseInt(this.selectedTableIdForSplit),
       items: items,
+      clear_coupon: true, // Ask backend to remove coupon from primary order; coupon must not apply to either order after split
     };
 
     this.http
@@ -4204,6 +4205,19 @@ export class OrdersComponent implements OnDestroy {
         next: (response: any) => {
           this.isSplitSubmitting = false;
           if (response.status) {
+            // Coupon must be removed from both orders after split; clear local coupon data so it is not reapplied
+            this.clearCouponData();
+            // Mark primary order so pill-edit can remove coupon from invoice display when opened
+            const primaryOrderId = String(this.currentSplitOrder?.order_details?.order_id ?? '');
+            if (primaryOrderId) {
+              try {
+                const raw = sessionStorage.getItem('splitPrimaryOrderIds') || '[]';
+                const ids: string[] = JSON.parse(raw);
+                if (!ids.includes(primaryOrderId)) ids.push(primaryOrderId);
+                sessionStorage.setItem('splitPrimaryOrderIds', JSON.stringify(ids));
+              } catch (_) {}
+            }
+
             // Save new order ID from response
             if (response.data?.new_order_id) {
               this.newSplitOrderId = response.data.new_order_id;
