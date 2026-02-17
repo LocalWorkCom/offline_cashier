@@ -270,7 +270,7 @@ private processPillDetails(data: any): void {
       next: (response: any) => {
         this.order_id = response.data.order_id;
         this.invoices = response.data.invoices || [];
-        
+
         if (this.invoices.length === 0) {
           console.warn('No invoices found in response');
           return;
@@ -461,12 +461,12 @@ private processPillDetails(data: any): void {
 
     try {
       // Backend API call removed as per request
-      /*
+      
       const response = await this.printedInvoiceService
         .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
         .toPromise();
       console.log('Print invoice response:', response);
-      */
+
 
       const printContent = document.getElementById('printSection');
       if (!printContent) {

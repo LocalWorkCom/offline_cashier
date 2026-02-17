@@ -413,7 +413,7 @@
                       {{ getStatusText(item.dish_status) }}
 
                     </span>
-                    @if (order.order_details.payment_status == 'unpaid' && order.order_details.order_type != "talabat")
+                    @if (order.order_details.payment_status == 'unpaid')
                     {
                     @if(item?.dish_status == 'pending' || item?.dish_status == 'inprogress' ){
                     <div class="dropdown">
