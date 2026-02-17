@@ -524,3 +524,387 @@ button.dropdown-item {
     border-color: #bb2d3b;
     color: #fff;
 }
+
+/* Split Order Items Modal (Step 2) – space for X, instruction in header */
+#splitOrderItemsModal .modal-header {
+    padding-top: 1.25rem;
+}
+#splitOrderItemsModal .split-items-instruction-inline {
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+#splitOrderItemsModal .split-items-instruction-small {
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+#splitOrderItemsModal .split-items-instruction {
+    background-color: #e3f2fd;
+    color: #0d47a1;
+    padding: 0.3rem 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid #bbdefb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    margin-top: 4rem !important;
+}
+#splitOrderItemsModal .split-items-instruction-icon {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+#splitOrderItemsModal .split-item-card {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+#splitOrderItemsModal .split-item-card:last-of-type {
+    margin-bottom: 0 !important;
+}
+#splitOrderItemsModal .split-qty-wrap {
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.35rem;
+}
+#splitOrderItemsModal .split-items-list .border-top {
+    border-color: #dee2e6 !important;
+}
+#splitOrderItemsModal .split-new-item-card {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+#splitOrderItemsModal .split-new-item-card:last-of-type {
+    margin-bottom: 0 !important;
+}
+#splitOrderItemsModal .split-items-btn-cancel {
+    background-color: transparent;
+    border: 1px solid #dee2e6;
+    color: #495057;
+}
+#splitOrderItemsModal .split-items-btn-cancel:hover {
+    background-color: #f8f9fa;
+    border-color: #adb5bd;
+    color: #212529;
+}
+
+/* Merge Order Confirmation Modal – تصميم بالظبط: أيقونة هيدر، تاب بارز، بطاقات رمادية، ظل وزوايا */
+#mergeOrderConfirmationModal.modal { direction: rtl; }
+#mergeOrderConfirmationModal .merge-confirm-content {
+    border-radius: 0.75rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+}
+#mergeOrderConfirmationModal .merge-confirm-header { padding-inline-end: 0; padding-inline-start: 2.5rem; }
+#mergeOrderConfirmationModal .merge-confirm-close {
+    left: 0;
+    right: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    margin: 0;
+}
+/* أيقونة الهيدر: مربع مدور، خلفية حمراء فاتحة، أيقونة بيضاء */
+#mergeOrderConfirmationModal .merge-confirm-header-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background-color: #dc3545;
+    border-radius: 0.5rem;
+    font-size: 1.1rem;
+}
+/* تاب البطاقة: ملصق على الزاوية العليا، يبرز قليلاً خارج البطاقة */
+#mergeOrderConfirmationModal .merge-confirm-card-wrap { min-height: 200px; }
+/* تاب ثابت في الزاوية العليا لليسار (في RTL) = inset-inline-end: 0 */
+#mergeOrderConfirmationModal .merge-confirm-tab {
+    position: absolute;
+    top: 0;
+    inset-inline-start: auto;
+    inset-inline-end: auto;
+    padding: 0.35rem 0.75rem;
+    border-radius: 0 0 0 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 700;
+    z-index: 2;
+    white-space: nowrap;
+}
+#mergeOrderConfirmationModal .merge-confirm-tab-primary {
+    background-color: #dc3545;
+    color: #fff;
+}
+#mergeOrderConfirmationModal .merge-confirm-tab-secondary {
+    background-color: #8c8c8c;
+    color: #fff;
+}
+#mergeOrderConfirmationModal .merge-confirm-order-num {
+    font-size: 1.25rem;
+    color: #1a1a1a;
+}
+/* صفوف البطاقة: طاولة أمام رقم الطلب، عدد العناصر والإجمالي (نص يمين، قيمة يسار) */
+#mergeOrderConfirmationModal .merge-confirm-card-inner { direction: rtl; }
+#mergeOrderConfirmationModal .merge-confirm-row {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+}
+#mergeOrderConfirmationModal .merge-confirm-row .text-end { min-width: fit-content; }
+#mergeOrderConfirmationModal .merge-confirm-row .text-start { min-width: fit-content; }
+#mergeOrderConfirmationModal .merge-confirm-table-row { align-items: center; }
+/* صف رقم الطلب يبعد شوية عن التاب من فوق (الطلب الأساسي) */
+#mergeOrderConfirmationModal .merge-confirm-primary-card > .merge-confirm-table-row:first-child {
+    margin-top: 0.75rem;
+}
+/* صف رقم الطلب يبعد شوية عن التاب من فوق (الطلب الثانوي) */
+#mergeOrderConfirmationModal .merge-confirm-secondary-card > .merge-confirm-table-row:first-child {
+    margin-top: 0.75rem;
+}
+/* البطاقات لازقة في حدود المودال: body بدون padding أفقي، والصف بعرض كامل */
+#mergeOrderConfirmationModal .merge-confirm-body.p-0 {
+    padding-left: 0 !important;
+    padding-right: 0 !important;
+    overflow-x: visible;
+}
+#mergeOrderConfirmationModal .merge-confirm-cards-row {
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+    max-width: 100%;
+}
+/* الطلب الأساسي: padding بين البوكس والمودال من جهة اليمين، لاصق بالسهم من اليسار */
+#mergeOrderConfirmationModal .merge-confirm-col-primary {
+    padding-inline-start: 0 !important;
+    padding-inline-end: 1rem !important;
+    padding-right: 1rem !important;
+    padding-left: 0 !important;
+}
+/* عمود السهم: بدون padding من جهة الطلب الأساسي حتى يلتصق به */
+#mergeOrderConfirmationModal .merge-confirm-col-arrow {
+    padding-inline-start: 0 !important;
+    padding-right: 0 !important;
+}
+/* الطلب الثانوي يسار في RTL → إلغاء padding من جهة اليسار */
+/* الطلب الثانوي: padding بين البوكس والمودال من جهة اليسار */
+#mergeOrderConfirmationModal .merge-confirm-col-secondary {
+    padding-inline-start: 1rem !important;
+    padding-inline-end: 0 !important;
+    padding-left: 1rem !important;
+    padding-right: 0 !important;
+}
+/* Table/type pills (Figma: rounded badges with icons) */
+#mergeOrderConfirmationModal .merge-confirm-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+/* Pills: أخضر مع نص أبيض (طاولة)، رمادي مع نص أبيض (نوع الطلب) */
+#mergeOrderConfirmationModal .merge-confirm-pill-table {
+    background-color: #28a745;
+    color: #fff;
+    border: none;
+}
+#mergeOrderConfirmationModal .merge-confirm-pill-table i,
+#mergeOrderConfirmationModal .merge-confirm-pill-table .merge-confirm-table-icon { color: currentColor; fill: currentColor; flex-shrink: 0; }
+#mergeOrderConfirmationModal .merge-confirm-pill-type {
+    background-color: #6c757d;
+    color: #fff;
+    border: none;
+}
+#mergeOrderConfirmationModal .merge-confirm-pill-type i,
+#mergeOrderConfirmationModal .merge-confirm-pill-type .merge-confirm-table-icon { color: currentColor; fill: currentColor; flex-shrink: 0; }
+/* البطاقات: خلفية رمادية فاتحة، زوايا مدورة أصغر من المودال، التاب يبرز من الزاوية */
+#mergeOrderConfirmationModal .merge-confirm-primary-card {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+#mergeOrderConfirmationModal[dir="rtl"] .merge-confirm-primary-card {
+    border-radius: 0.5rem 0 0 0.5rem;
+}
+#mergeOrderConfirmationModal .merge-confirm-secondary-card {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    color: #212529;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+}
+#mergeOrderConfirmationModal[dir="rtl"] .merge-confirm-secondary-card {
+    border-radius: 0 0.5rem 0.5rem 0;
+}
+/* Arrow: circular white with grey outline and dark grey arrow */
+#mergeOrderConfirmationModal .merge-confirm-arrow-circle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    background-color: #f5f5f5;
+    border: 1px solid #dee2e6;
+    border-radius: 50%;
+    color: #6c757d;
+    font-size: 1.25rem;
+}
+#mergeOrderConfirmationModal .merge-confirm-summary {
+    background-color: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 0.375rem;
+    padding: 1rem 1.25rem;
+}
+#mergeOrderConfirmationModal .merge-confirm-summary-title { color: #333; }
+#mergeOrderConfirmationModal .merge-confirm-summary-title i { color: #ffc107; }
+#mergeOrderConfirmationModal .merge-confirm-summary-label { color: #333; }
+#mergeOrderConfirmationModal .merge-confirm-summary-total { color: #dc3545 !important; }
+#mergeOrderConfirmationModal .merge-confirm-summary-disclaimer { color: #856404 !important; }
+#mergeOrderConfirmationModal .merge-confirm-footer { gap: 0.75rem; }
+#mergeOrderConfirmationModal .merge-confirm-btn-cancel,
+#mergeOrderConfirmationModal .merge-confirm-btn-submit {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 44px;
+}
+#mergeOrderConfirmationModal .merge-confirm-btn-cancel {
+    background-color: #fff;
+    border: 1px solid #dc3545;
+    color: #dc3545;
+}
+#mergeOrderConfirmationModal .merge-confirm-btn-cancel:hover {
+    background-color: #fff5f5;
+    border-color: #dc3545;
+    color: #dc3545;
+}
+#mergeOrderConfirmationModal .merge-confirm-btn-submit {
+    background-color: #dc3545;
+    border: 1px solid #dc3545;
+    color: #fff;
+}
+#mergeOrderConfirmationModal .merge-confirm-btn-submit:hover:not(:disabled) {
+    background-color: #bb2d3b;
+    border-color: #bb2d3b;
+    color: #fff;
+}
+
+/* Merge Success Modal – Figma: order No position, strikethrough merged, check mark position */
+.merge-success-icon-large {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: #198754;
+    color: #fff;
+    border: 10px solid #d4edda;
+    box-shadow: 0 2px 12px rgba(25, 135, 84, 0.35), 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+.merge-success-orders { text-align: right; }
+.merge-success-row {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    background-color: #fff;
+}
+.merge-success-label {
+    display: block;
+    margin: 0;
+    font-weight: 500;
+    color: #495057 !important;
+}
+.merge-success-icon {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+.merge-success-icon-check {
+    background-color: #28a745;
+    color: #fff;
+}
+.merge-success-icon-closed {
+    background-color: #6c757d;
+    color: #fff;
+}
+.merge-success-order-num {
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.merge-success-order-num-main {
+    color: #212529;
+}
+.merge-success-order-num-merged {
+    color: #adb5bd;
+    text-decoration: line-through;
+}
+
+/* Split Success Modal – checkmark with light border + outer ring like screen, same row + arrow, icon next to home link */
+#splitSuccessModal .split-success-icon-check {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: #198754;
+    color: #fff;
+    border: 3px solid rgba(255, 255, 255, 0.9);
+    box-shadow: 0 0 0 6px #d4edda, 0 2px 12px rgba(25, 135, 84, 0.3), 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+#splitSuccessModal .split-success-box {
+    text-align: right;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    background-color: #f8f9fa;
+}
+#splitSuccessModal .split-success-row-inner {
+    min-height: 4rem;
+}
+#splitSuccessModal .split-success-card {
+    padding: 0.5rem;
+    min-width: 0;
+}
+#splitSuccessModal .split-success-arrow-wrap {
+    width: 2.5rem;
+}
+#splitSuccessModal .split-success-arrow {
+    font-size: 1.25rem;
+    opacity: 0.7;
+}
+#splitSuccessModal .split-success-label {
+    font-weight: 500;
+    color: #495057 !important;
+}
+#splitSuccessModal .split-success-order-num {
+    font-weight: 700;
+    color: #212529;
+}
+#splitSuccessModal .split-success-order-num-new {
+    color: #dc3545;
+}
+#splitSuccessModal .split-success-table-row {
+    font-weight: 500;
+    color: #6c757d;
+}
+#splitSuccessModal .split-success-transfer {
+    padding: 0;
+}
+#splitSuccessModal .split-success-transfer.border-top {
+    border-color: #e9ecef !important;
+}
+#splitSuccessModal .split-success-home-link {
+    background: none;
+    border: none;
+    text-decoration: none;
+}
+#splitSuccessModal .split-success-home-link:hover {
+    text-decoration: underline;
+    color: #495057 !important;
+}
+#splitSuccessModal .split-success-btn-back {
+    background-color: #f8f9fa;
+    color: #212529;
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    font-weight: 500;
+}
+#splitSuccessModal .split-success-btn-back:hover {
+    background-color: #e9ecef;
+    border-color: #ced4da;
+    color: #212529;
+}

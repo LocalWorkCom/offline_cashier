@@ -366,14 +366,14 @@
               <div class="num-items d-flex justify-content-between mb-1 border-bottom">
                 <h6 class="text-muted"><small>عدد العناصر</small></h6>
                 <h6 class="text-muted">
-                  <small>{{ order.order_details.order_items_count }}</small>
+                  <small>{{ getDisplayOrderItems(order).length }}</small>
                 </h6>
               </div>
 
               <div class="order-items border-bottom py-1 mb-1 flex-grow-1"
-                [ngClass]="order.order_items.length > 2 ? 'overflow-scroll' :'overflow-visible'">
+                [ngClass]="getDisplayOrderItems(order).length > 2 ? 'overflow-scroll' :'overflow-visible'">
                 <div class="d-flex justify-content-between align-items-center align-items-md-center gap-1 px-1 mb-2"
-                  *ngFor="let item of order.order_items">
+                  *ngFor="let item of getDisplayOrderItems(order)">
                   <!-- Item Name & Quantity -->
 
                   <h6 class="mb-0 fs-6 text-break">
@@ -421,7 +421,7 @@
                         aria-expanded="false" data-bs-display="static">
                         <i class="fa-solid fa-ellipsis-vertical"></i> </a>
                       <ul class="dropdown-menu" aria-labelledby="dropdownMenu2">
-                        @if (!(order.order_details.status === 'cancelled' && order.order_details.merged_into_order_id)) {
+                        @if (!isMergedOrder(order)) {
                         <li> <button class="dropdown-item" type="button" (click)="openEditModal(item , order.order_details.order_id)">
                             تعديل الطلب
                           </button></li>
@@ -595,7 +595,7 @@
                                   <p>رقم الطلب</p>
                                   <p class="text-muted">{{order.order_details.order_number}}</p>
                                 </div>
-                                @for (item of order.order_items; track $index; let i = $index;) {
+                                @for (item of getDisplayOrderItems(order); track $index; let i = $index;) {
                                 <div class="my-2" *ngIf="item.dish_status !== 'cancel'">
                                   <div class="d-flex justify-content-between align-items-center">
                                     <div>
@@ -860,7 +860,8 @@
                     <rect x="8" y="14" width="3" height="10" rx="1" fill="currentColor"/>
                     <rect x="21" y="14" width="3" height="10" rx="1" fill="currentColor"/>
                   </svg>
-                  <strong class="split-table-name mb-1" style="font-size: 0.95rem;">طاولة {{ table.number }}</strong>
+                  <strong class="split-table-name mb-1" style="font-size: 0.95rem;">#{{ table.number }}</strong>
+                  <small class="text-muted d-block" style="font-size: 0.75rem;">{{ table.name || ('طاولة ' + table.number) }}</small>
                   <small *ngIf="table.status === 2 && selectedTableIdForSplit != table.id" class="fw-bold split-table-status-occupied">مشغولة</small>
                   <small *ngIf="table.status === 1 && selectedTableIdForSplit != table.id" class="fw-bold split-table-status-available">متاحة</small>
                   <small *ngIf="selectedTableIdForSplit == table.id" class="fw-bold split-table-status-selected">محدد</small>
@@ -871,7 +872,7 @@
         </div>
 
         <!-- خارجي - يسمح بالتدخين (مثل Figma) -->
-        <div class="split-section">
+        <div class="split-section mb-4">
           <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
             <h6 class="fw-bold mb-0 d-flex align-items-center gap-2">
               <span class="split-section-icon-wrap split-section-icon-outdoor d-inline-flex align-items-center justify-content-center">
@@ -916,7 +917,8 @@
                     <rect x="8" y="14" width="3" height="10" rx="1" fill="currentColor"/>
                     <rect x="21" y="14" width="3" height="10" rx="1" fill="currentColor"/>
                   </svg>
-                  <strong class="split-table-name mb-1" style="font-size: 0.95rem;">طاولة {{ table.number }}</strong>
+                  <strong class="split-table-name mb-1" style="font-size: 0.95rem;">#{{ table.number }}</strong>
+                  <small class="text-muted d-block" style="font-size: 0.75rem;">{{ table.name || ('طاولة ' + table.number) }}</small>
                   <small *ngIf="table.status === 2 && selectedTableIdForSplit != table.id" class="fw-bold split-table-status-occupied">مشغولة</small>
                   <small *ngIf="table.status === 1 && selectedTableIdForSplit != table.id" class="fw-bold split-table-status-available">متاحة</small>
                   <small *ngIf="selectedTableIdForSplit == table.id" class="fw-bold split-table-status-selected">محدد</small>
@@ -926,11 +928,65 @@
           </div>
         </div>
 
-        <!-- Selected Table Info -->
+        <!-- الطابق العلوي (Upper floor) -->
+        <div class="split-section" *ngIf="getSplitTablesUpperFloor().length > 0">
+          <div class="d-flex flex-wrap align-items-center justify-content-between gap-2 mb-3">
+            <h6 class="fw-bold mb-0 d-flex align-items-center gap-2">
+              <span class="split-section-icon-wrap split-section-icon-indoor d-inline-flex align-items-center justify-content-center">
+                <i class="fa-solid fa-layer-group" style="font-size: 0.95rem;"></i>
+              </span>
+              الطابق العلوي
+            </h6>
+            <div class="d-flex flex-wrap align-items-center gap-2">
+              <span class="badge rounded-pill bg-light text-dark border">{{ getSplitTablesUpperFloor().length }} طاولات</span>
+            </div>
+          </div>
+          <div class="row g-3" style="max-height: 280px; overflow-y: auto;">
+            <div class="col-6 col-md-4 col-lg-3" *ngFor="let table of getSplitTablesUpperFloor()">
+              <div class="card p-3 text-center position-relative split-table-card"
+                   [class.split-table-card-selected]="selectedTableIdForSplit == table.id"
+                   [class.split-table-card-occupied]="table.status === 2 && selectedTableIdForSplit != table.id"
+                   [class.split-table-card-available]="table.status === 1 && selectedTableIdForSplit != table.id"
+                   (click)="selectTableForSplit(table.id)"
+                   style="cursor: pointer; min-height: 140px; display: flex; flex-direction: column; justify-content: center; border-radius: 12px; transition: all 0.2s;">
+                <div class="position-absolute top-0 start-0 m-2">
+                  <ng-container *ngIf="selectedTableIdForSplit == table.id">
+                    <i class="fa-solid fa-check-circle text-danger" style="font-size: 1rem;"></i>
+                  </ng-container>
+                  <ng-container *ngIf="table.status === 2 && selectedTableIdForSplit != table.id">
+                    <i class="fa-solid fa-lock text-danger" style="font-size: 0.9rem;"></i>
+                  </ng-container>
+                  <span *ngIf="table.status !== 2 && selectedTableIdForSplit != table.id" class="d-flex align-items-center gap-1">
+                    <i class="fa-solid fa-user split-table-seats-icon" style="font-size: 0.7rem;"></i>
+                    <small class="fw-bold split-table-seats-num" style="font-size: 0.75rem;">{{ table.seats ?? table.seat_count ?? '-' }}</small>
+                  </span>
+                </div>
+                <div class="position-absolute top-0 end-0 m-2">
+                  <small class="fw-bold split-table-serial">#{{ table.number }}</small>
+                </div>
+                <div class="split-table-center d-flex flex-column align-items-center justify-content-center flex-grow-1 pt-4 pb-2">
+                  <svg class="split-table-icon mb-2" style="width: 2rem; height: 2rem;" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                    <rect x="4" y="8" width="24" height="6" rx="2" fill="currentColor"/>
+                    <rect x="8" y="14" width="3" height="10" rx="1" fill="currentColor"/>
+                    <rect x="21" y="14" width="3" height="10" rx="1" fill="currentColor"/>
+                  </svg>
+                  <strong class="split-table-name mb-1" style="font-size: 0.95rem;">#{{ table.number }}</strong>
+                  <small class="text-muted d-block" style="font-size: 0.75rem;">{{ table.name || ('طاولة ' + table.number) }}</small>
+                  <small *ngIf="table.status === 2 && selectedTableIdForSplit != table.id" class="fw-bold split-table-status-occupied">مشغولة</small>
+                  <small *ngIf="table.status === 1 && selectedTableIdForSplit != table.id" class="fw-bold split-table-status-available">متاحة</small>
+                  <small *ngIf="selectedTableIdForSplit == table.id" class="fw-bold split-table-status-selected">محدد</small>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Selected Table Info: Arabic name + table number + seats -->
         <div *ngIf="selectedTableIdForSplit" class="alert alert-light border-0 d-flex justify-content-between align-items-center mb-0" style="background-color: #f8f9fa;">
           <div class="d-flex align-items-center gap-2">
             <i class="fa-solid fa-chair text-muted"></i>
             <span class="text-muted">الطاولة المحددة: <strong class="text-dark">{{ getSelectedTableName() }}</strong></span>
+            <span *ngIf="getSelectedTableSeats() != null" class="text-muted small">(السعة: {{ getSelectedTableSeats() }})</span>
           </div>
         </div>
       </div>
@@ -944,72 +1000,52 @@
   </div>
 </div>
 
-<!-- Split Order Modal - Step 2: Select Items -->
-<div class="modal fade" id="splitOrderItemsModal" tabindex="-1" aria-labelledby="splitOrderItemsModalLabel" aria-hidden="true">
+<!-- Split Order Modal - Step 2: Select Items (Figma: order+table in header, count, instruction, card items, نقل before -, table no only, cancel light blue) -->
+<div class="modal fade" id="splitOrderItemsModal" tabindex="-1" aria-labelledby="splitOrderItemsModalLabel" aria-hidden="true" dir="rtl">
   <div class="modal-dialog modal-dialog-centered modal-xl">
-    <div class="modal-content p-3">
-      <div class="modal-header border-0 d-flex justify-content-between align-items-center">
-        <div class="d-flex align-items-center gap-2">
-          <i class="fa-solid fa-code-branch text-danger fs-4"></i>
-          <h5 class="modal-title fw-bold mb-0" id="splitOrderItemsModalLabel">تجزئة الطلب: تحديد الأصناف</h5>
+    <div class="modal-content p-3 split-items-modal">
+      <div class="modal-header border-0 position-relative d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <button type="button" class="btn-close position-absolute" style="left: 0; top: 50%; transform: translateY(-50%);" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        <div class="d-flex flex-column align-items-start gap-1">
+          <div class="d-flex align-items-center gap-2">
+            <i class="fa-solid fa-code-branch text-danger fs-4"></i>
+            <h5 class="modal-title fw-bold mb-0" id="splitOrderItemsModalLabel">تجزئة الطلب: تحديد الأصناف</h5>
+          </div>
+          <p class="text-muted small mb-0" *ngIf="currentSplitOrder">
+            الطلب {{ currentSplitOrder?.order_details?.order_number }} — طاولة {{ currentSplitOrder?.order_details?.table_number ?? '—' }}
+          </p>
         </div>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        <div class="split-items-instruction d-flex align-items-center gap-2 mb-3">
+          <i class="fa-solid fa-circle-info split-items-instruction-icon"></i>
+          <span>حدد الكمية المراد نقلها لطلب جديد</span>
+        </div>
       </div>
       <div class="modal-body">
-        <div class="alert alert-info mb-3">
-          <i class="fa-solid fa-info-circle me-2"></i>
-          حدد الكمية المراد نقلها لطلب جديد
-        </div>
-
-        <div class="row">
-          <!-- Left: Original Order Items -->
-          <div class="col-md-6 mb-3">
-            <h6 class="fw-bold mb-3">قائمة الأصناف</h6>
-            <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
-              <div *ngFor="let item of splitOrderItems" class="mb-3 pb-3 border-bottom">
-                <div class="d-flex align-items-center gap-2 mb-2">
-                  <i class="fa-solid fa-utensils text-warning"></i>
-                  <div class="flex-grow-1">
-                    <strong>{{ item.dish_name }}</strong>
-                    <div class="text-muted small">
-                      {{ item.total_dish_price }} {{ splitOrderCurrency }} - الكمية الأصلية: {{ item.quantity }}
-                    </div>
-                  </div>
-                </div>
-                <button class="btn btn-sm btn-outline-secondary" disabled>
-                  نقل
-                </button>
-              </div>
+        <div class="row g-3">
+          <div class="col-12 col-md-7 mb-3">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <h6 class="fw-bold mb-0">قائمة الأصناف</h6>
+              <span class="text-muted small">{{ splitOrderItems?.length ?? 0 }} أصناف</span>
             </div>
-          </div>
-
-          <!-- Right: New Order Items -->
-          <div class="col-md-6 mb-3">
-            <h6 class="fw-bold mb-3">الطلب الجديد</h6>
-            <div class="border rounded p-3">
-              <div class="mb-3">
-                <label class="form-label small fw-bold">نقل إلى</label>
-                <div class="d-flex align-items-center gap-2 p-2 bg-light rounded">
-                  <i class="fa-solid fa-chair"></i>
-                  <span>{{ getSelectedTableName() }}</span>
-                </div>
-              </div>
-
-              <div class="mb-3" style="max-height: 300px; overflow-y: auto;">
-                <div *ngFor="let item of splitOrderItems" class="mb-3 pb-3 border-bottom">
-                  <div class="d-flex justify-content-between align-items-center mb-2">
-                    <strong>{{ item.dish_name }}</strong>
-                    <span *ngIf="item.selectedQuantity > 0" class="fw-bold">{{ (item.total_dish_price / item.quantity * item.selectedQuantity).toFixed(2) }}</span>
+            <div class="split-items-list border rounded-3 p-3" style="min-height: 320px; max-height: 420px; overflow-y: auto;">
+              <div *ngFor="let item of splitOrderItems" class="split-item-card rounded-3 p-2 mb-2">
+                <div class="d-flex align-items-center gap-2 flex-wrap">
+                  <i class="fa-solid fa-utensils text-warning flex-shrink-0" style="font-size: 0.9rem;"></i>
+                  <div class="flex-grow-1 min-width-0">
+                    <strong class="d-block">{{ item.dish_name }}</strong>
+                    <span class="text-muted small">{{ item.total_dish_price }} {{ splitOrderCurrency }} — الكمية الأصلية: {{ item.quantity }}</span>
                   </div>
-                  <div class="d-flex align-items-center gap-2">
-                    <button class="btn btn-sm"
+                  <div class="d-flex align-items-center gap-1 flex-shrink-0 split-qty-wrap">
+                    <span class="small text-muted ms-1">نقل</span>
+                    <button type="button" class="btn btn-sm rounded-circle p-1"
                             [class.btn-danger]="item.selectedQuantity > 0"
                             [class.btn-outline-secondary]="item.selectedQuantity === 0"
                             (click)="decreaseSplitQuantity(item)"
-                            [disabled]="item.selectedQuantity === 0">
-                      <i class="fa-solid fa-minus"></i>
+                            [disabled]="item.selectedQuantity === 0"
+                            style="width: 32px; height: 32px;">
+                      <i class="fa-solid fa-minus" style="font-size: 0.7rem;"></i>
                     </button>
-                    <input type="number" class="form-control form-control-sm text-center"
+                    <input type="number" class="form-control form-control-sm text-center mx-1"
                            [ngModel]="item.selectedQuantity"
                            (ngModelChange)="onSplitQuantityChange(item, $event)"
                            (input)="onSplitQuantityInput(item, $event)"
@@ -1018,39 +1054,67 @@
                            (paste)="onSplitQuantityPaste(item, $event)"
                            [min]="0"
                            [max]="item.quantity"
-                           style="width: 60px;"
+                           style="width: 48px;"
                            [class.is-invalid]="(item.selectedQuantity || 0) < 0 || (item.selectedQuantity || 0) > item.quantity">
-                    <button class="btn btn-sm"
+                    <button type="button" class="btn btn-sm rounded-circle p-1"
                             [class.btn-danger]="item.selectedQuantity > 0"
                             [class.btn-outline-secondary]="item.selectedQuantity === 0"
                             (click)="increaseSplitQuantity(item)"
-                            [disabled]="item.selectedQuantity >= item.quantity">
-                      <i class="fa-solid fa-plus"></i>
+                            [disabled]="item.selectedQuantity >= item.quantity"
+                            style="width: 32px; height: 32px;">
+                      <i class="fa-solid fa-plus" style="font-size: 0.7rem;"></i>
                     </button>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <div class="border-top pt-3">
+          <div class="col-12 col-md-5 mb-3">
+            <h6 class="fw-bold mb-3">الطلب الجديد</h6>
+            <div class="border rounded-3 p-3 d-flex flex-column split-items-new-box" style="min-height: 320px;">
+              <div class="mb-3">
+                <label class="form-label small fw-bold">نقل إلى</label>
+                <div class="d-flex align-items-center gap-2 p-2 bg-light rounded-3">
+                  <i class="fa-solid fa-chair"></i>
+                  <span>طاولة {{ getSelectedTableNumberOrName() }}</span>
+                </div>
+              </div>
+
+              <div class="mb-3 flex-grow-1 split-new-order-items" style="max-height: 220px; overflow-y: auto;">
+                <ng-container *ngFor="let item of getSelectedSplitItems()">
+                  <div class="d-flex justify-content-between align-items-center py-2 border-bottom border-light">
+                    <span class="text-nowrap"><strong>{{ item.selectedQuantity }}</strong> x {{ item.dish_name }}</span>
+                    <span class="text-muted small ms-2">{{ getSplitItemPriceForQuantity(item, item.selectedQuantity) }} {{ splitOrderCurrency }}</span>
+                  </div>
+                </ng-container>
+                <div *ngIf="getSelectedSplitItems().length === 0" class="text-muted small py-2">
+                  حدد الكميات من قائمة الأصناف
+                </div>
+              </div>
+
+              <div class="border-top pt-3 mb-3">
                 <div class="d-flex justify-content-between align-items-center">
                   <strong>المجموع</strong>
                   <strong class="text-danger">{{ getSplitNewOrderTotal() }} {{ splitOrderCurrency }}</strong>
                 </div>
               </div>
+
+              <div class="d-flex flex-column gap-2 mt-auto">
+                <button type="button" class="btn btn-danger w-100 py-2" (click)="showSplitConfirmation()" [disabled]="getSplitNewOrderTotal() === 0 || !areSplitQuantitiesValid()">
+                  <i class="fa-solid fa-check me-2"></i>
+                  تأكيد التجزئة
+                </button>
+                <button type="button" class="btn split-items-btn-cancel w-100 py-2" (click)="goBackToSplitStep1()">إلغاء</button>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <div class="modal-footer border-0 d-flex justify-content-between">
-        <button type="button" class="btn btn-outline-secondary" (click)="goBackToSplitStep1()">رجوع</button>
-        <div *ngIf="splitErrorMessage" class="alert alert-danger text-center mb-2">
-          {{ splitErrorMessage }}
-        </div>
-        <button type="button" class="btn btn-danger" (click)="showSplitConfirmation()" [disabled]="getSplitNewOrderTotal() === 0 || !areSplitQuantitiesValid()">
-          <i class="fa-solid fa-check me-2"></i>
-          تأكيد التجزئة
-        </button>
+      <div *ngIf="splitErrorMessage" class="alert alert-danger text-center mx-3 mb-0">
+        {{ splitErrorMessage }}
       </div>
+      <div class="modal-footer border-0 py-2"></div>
     </div>
   </div>
 </div>
@@ -1080,22 +1144,22 @@
                 <h6 class="fw-bold mb-0">الطلب الأصلي</h6>
                 <span class="split-confirm-table-pill split-confirm-table-orange rounded-pill px-3 py-1 d-inline-flex align-items-center gap-1 ms-auto">
                   <svg class="split-confirm-table-icon" style="width: 14px; height: 14px;" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><rect x="4" y="8" width="24" height="6" rx="2"/><rect x="8" y="14" width="3" height="10" rx="1"/><rect x="21" y="14" width="3" height="10" rx="1"/></svg>
-                  طاولة {{ currentSplitOrder?.order_details?.table_number }}
+                  طاولة {{ currentSplitOrder?.order_details?.table_number ?? '—' }}
                 </span>
               </div>
               <div class="mb-3"><strong>{{ currentSplitOrder?.order_details?.order_number }}</strong></div>
               <div class="split-confirm-items d-flex flex-column gap-2">
                 <div *ngFor="let item of getRemainingSplitItems()" class="split-confirm-item-card border rounded p-2">
                   <div class="d-flex justify-content-between align-items-center">
-                    <span class="text-muted small me-2">{{ (item.total_dish_price / item.quantity * item.remainingQuantity).toFixed(2) }}</span>
+                    <span class="text-muted small me-2">{{ getSplitItemPriceForQuantity(item, item.remainingQuantity) }}</span>
                     <span>{{ item.dish_name }}</span>
                     <span class="badge rounded-pill split-confirm-qty-pill">{{ item.remainingQuantity }}x</span>
                   </div>
                 </div>
                 <div *ngFor="let item of getSelectedSplitItems()" class="split-confirm-item-card split-confirm-transferred border rounded p-2">
                   <div class="d-flex justify-content-between align-items-center">
-                    <span class="text-muted small me-2">{{ (item.total_dish_price / item.quantity * item.selectedQuantity).toFixed(2) }}</span>
-                    <span class="text-muted">{{ item.dish_name }}</span>
+<span class="text-muted small me-2">{{ getSplitItemPriceForQuantity(item, item.selectedQuantity) }}</span>
+                  <span class="text-muted">{{ item.dish_name }}</span>
                     <span class="badge rounded-pill bg-secondary text-white">0x</span>
                   </div>
                   <small class="text-muted">منقول</small>
@@ -1122,14 +1186,14 @@
                 <span class="badge rounded-pill split-confirm-new-badge">جديد</span>
                 <span class="split-confirm-table-pill split-confirm-table-blue rounded-pill px-3 py-1 d-inline-flex align-items-center gap-1 ms-auto">
                   <svg class="split-confirm-table-icon" style="width: 14px; height: 14px;" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true"><rect x="4" y="8" width="24" height="6" rx="2"/><rect x="8" y="14" width="3" height="10" rx="1"/><rect x="21" y="14" width="3" height="10" rx="1"/></svg>
-                  {{ getSelectedTableName() }}
+                  طاولة {{ getSelectedTableNumberOrName() }}
                 </span>
               </div>
               <div class="mb-3"><strong>{{ getNewSplitOrderNumber() }}</strong></div>
               <div class="split-confirm-items d-flex flex-column gap-2">
                 <div *ngFor="let item of getSelectedSplitItems()" class="split-confirm-item-card border rounded p-2">
                   <div class="d-flex justify-content-between align-items-center">
-                    <span class="text-muted small me-2">{{ (item.total_dish_price / item.quantity * item.selectedQuantity).toFixed(2) }}</span>
+                    <span class="text-muted small me-2">{{ getSplitItemPriceForQuantity(item, item.selectedQuantity) }}</span>
                     <span>{{ item.dish_name }}</span>
                     <span class="badge rounded-pill split-confirm-qty-pill split-confirm-qty-blue">{{ item.selectedQuantity }}x</span>
                   </div>
@@ -1188,9 +1252,9 @@
             <div class="d-flex align-items-start justify-content-between w-100">
               <!-- Left Side: Order Details with Table Badge spanning 2 rows -->
               <div class="d-flex align-items-center gap-3">
-                <!-- First Column: Table Badge (spans 2 rows) - Figma: red text, red-tinted background -->
+                <!-- First Column: Table Badge (spans 2 rows) - text inside box in red -->
                 <div class="badge rounded px-3 py-2 d-inline-flex align-items-center justify-content-center"
-                     style="background-color: #dc3545; color: #fff; border: none; font-size: 0.85rem; min-height: 60px; align-self: stretch; border-radius: 8px !important;">
+                     style="background-color: #fff5f5; color: #dc3545; border: 1px solid #dc3545; font-size: 0.85rem; min-height: 60px; align-self: stretch; border-radius: 8px !important;">
                   <div class="d-flex flex-column align-items-center">
                     <span>طاولة</span>
                     <span>{{ order.order_details.table_number }}</span>
@@ -1241,93 +1305,119 @@
   </div>
 </div>
 
-<!-- Merge Order Confirmation Modal -->
-<div class="modal fade" id="mergeOrderConfirmationModal" tabindex="-1" aria-labelledby="mergeOrderConfirmationModalLabel" aria-hidden="true">
+<!-- Merge Order Confirmation Modal - Figma: X left, table before order no, grey secondary, summary colors, equal buttons -->
+<div class="modal fade" id="mergeOrderConfirmationModal" tabindex="-1" aria-labelledby="mergeOrderConfirmationModalLabel" aria-hidden="true" dir="rtl">
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content p-3">
-      <div class="modal-header border-0 d-flex justify-content-between align-items-center position-relative">
+    <div class="modal-content merge-confirm-content">
+      <div class="modal-header border-0 d-flex justify-content-between align-items-center position-relative merge-confirm-header px-3">
         <div class="d-flex align-items-center gap-2">
-          <i class="fa-solid fa-code-merge text-danger fs-4"></i>
+          <span class="merge-confirm-header-icon">
+            <i class="fa-solid fa-code-merge text-white"></i>
+          </span>
           <h5 class="modal-title fw-bold mb-0" id="mergeOrderConfirmationModalLabel">تأكيد دمج الطلبات</h5>
         </div>
-        <button type="button" class="btn-close position-absolute" style="left: 0; top: 50%; transform: translateY(-50%);" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        <button type="button" class="btn-close position-absolute merge-confirm-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
       </div>
-      <div class="modal-body">
-        <p class="text-muted mb-4">
+      <div class="modal-body merge-confirm-body p-0">
+        <p class="text-muted mb-4 merge-confirm-intro px-3 pt-0">
           هل أنت متأكد من رغبتك في دمج الطلبات التالية؟ سيتم نقل جميع العناصر من الطلب الثانوي إلى الطلب الأساسي.
         </p>
 
-        <div class="row mb-4">
-          <!-- Primary Order (Original) - Left Side -->
-          <div class="col-md-5">
-            <div class="border rounded p-3 h-100" style="background-color: #fff5f5; border-color: #dc3545 !important;">
-              <h6 class="fw-bold mb-3 text-danger">الطلب الأساسي (المستلم)</h6>
-              <div class="mb-2 d-flex align-items-center justify-content-between">
-                <strong>{{ currentMergeOrder?.order_details?.order_number }}</strong>
-                <div class="d-flex flex-column align-items-end">
-                  <span>طاولة {{ currentMergeOrder?.order_details?.table_number }}</span>
+        <div class="row mb-4 align-items-stretch merge-confirm-cards-row g-0 mx-0">
+          <!-- Primary Order (Receiver) - لازق في الحد (يمين في RTL) -->
+          <div class="col-md-5 merge-confirm-col-primary">
+            <div class="merge-confirm-card-wrap position-relative h-100">
+              <div class="merge-confirm-tab merge-confirm-tab-primary">الطلب الأساسي (المستلم)</div>
+              <div class="p-3 pt-4 h-100 merge-confirm-primary-card merge-confirm-card-inner">
+                <div class="merge-confirm-row merge-confirm-table-row mb-3">
+                  <strong class="merge-confirm-order-num">{{ currentMergeOrder?.order_details?.order_number }}</strong>
+                  <span class="merge-confirm-pill merge-confirm-pill-table d-inline-flex align-items-center">
+                    <svg class="merge-confirm-table-icon me-1" style="width: 1rem; height: 1rem;" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <rect x="4" y="8" width="24" height="6" rx="2" fill="currentColor"/>
+                      <rect x="8" y="14" width="3" height="10" rx="1" fill="currentColor"/>
+                      <rect x="21" y="14" width="3" height="10" rx="1" fill="currentColor"/>
+                    </svg>
+                    طاولة {{ currentMergeOrder?.order_details?.table_number }}
+                  </span>
                 </div>
-              </div>
-              <div class="mb-2 d-flex justify-content-between align-items-center">
-                <span class="text-muted">عدد العناصر</span>
-                <strong>{{ currentMergeOrder?.order_details?.order_items_count }}</strong>
-              </div>
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="text-muted">الإجمالي</span>
-                <strong>{{ currentMergeOrder?.total_price }} {{ mergeOrderCurrency }}</strong>
+                <div class="merge-confirm-row mb-2">
+                  <span class="text-muted text-end">عدد العناصر</span>
+                  <strong class="text-start">{{ currentMergeOrder?.order_details?.order_items_count }}</strong>
+                </div>
+                <div class="merge-confirm-row">
+                  <span class="text-muted text-end">الإجمالي</span>
+                  <strong class="text-start">{{ currentMergeOrder?.total_price }} {{ mergeOrderCurrency }}</strong>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Arrow (pointing from left to right, from secondary to primary) -->
-          <div class="col-md-2 d-flex align-items-center justify-content-center">
-            <i class="fa-solid fa-arrow-right text-danger fs-1"></i>
+          <!-- Arrow (secondary → primary) -->
+          <div class="col-md-2 d-flex align-items-center justify-content-center merge-confirm-col-arrow px-2">
+            <span class="merge-confirm-arrow-circle">
+              <i class="fa-solid fa-arrow-right"></i>
+            </span>
           </div>
 
-          <!-- Secondary Order (Sender) - Right Side -->
-          <div class="col-md-5">
-            <div class="border rounded p-3 h-100" style="background-color: #f5f5f5; border-color: #d0d0d0 !important;">
-              <h6 class="fw-bold mb-3" style="color: #666;">الطلب الثانوي (المرسل)</h6>
-              <div class="mb-2 d-flex align-items-center justify-content-between">
-                <strong>{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong>
-                <div class="d-flex flex-column align-items-end">
-                  <span>{{ getSecondaryMergeOrder()?.order_details?.order_type === 'dine-in' ? ('طاولة ' + (getSecondaryMergeOrder()?.order_details?.table_number ?? '')) : 'إستلام' }}</span>
+          <!-- Secondary Order (Sender) - لازق في الحد (يسار في RTL) -->
+          <div class="col-md-5 merge-confirm-col-secondary">
+            <div class="merge-confirm-card-wrap position-relative h-100">
+              <div class="merge-confirm-tab merge-confirm-tab-secondary">الطلب الثانوي (المرسل)</div>
+              <div class="p-3 pt-4 h-100 merge-confirm-secondary-card merge-confirm-card-inner">
+                <div class="merge-confirm-row merge-confirm-table-row mb-3">
+                  <strong class="merge-confirm-order-num">{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong>
+                  <ng-container *ngIf="getSecondaryMergeOrder()?.order_details?.order_type === 'dine-in'; else secondaryTypePill">
+                    <span class="merge-confirm-pill merge-confirm-pill-type d-inline-flex align-items-center">
+                      <svg class="merge-confirm-table-icon me-1" style="width: 1rem; height: 1rem;" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <rect x="4" y="8" width="24" height="6" rx="2" fill="currentColor"/>
+                        <rect x="8" y="14" width="3" height="10" rx="1" fill="currentColor"/>
+                        <rect x="21" y="14" width="3" height="10" rx="1" fill="currentColor"/>
+                      </svg>
+                      طاولة {{ getSecondaryMergeOrder()?.order_details?.table_number }}
+                    </span>
+                  </ng-container>
+                  <ng-template #secondaryTypePill>
+                    <span class="merge-confirm-pill merge-confirm-pill-type d-inline-flex">
+                      <i class="fa-solid fa-bag-shopping me-1"></i>
+                      {{ getSecondaryMergeOrder()?.order_details?.order_type === 'Takeaway' ? 'إستلام' : getSecondaryMergeOrder()?.order_details?.order_type === 'Delivery' ? 'توصيل' : 'إستلام' }}
+                    </span>
+                  </ng-template>
                 </div>
-              </div>
-              <div class="mb-2 d-flex justify-content-between align-items-center">
-                <span class="text-muted">عدد العناصر</span>
-                <strong>{{ getSecondaryMergeOrder()?.order_details?.order_items_count }}</strong>
-              </div>
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="text-muted">الإجمالي</span>
-                <strong>{{ getSecondaryMergeOrder()?.total_price }} {{ mergeOrderCurrency }}</strong>
+                <div class="merge-confirm-row mb-2">
+                  <span class="text-muted text-end">عدد العناصر</span>
+                  <strong class="text-start">{{ getSecondaryMergeOrder()?.order_details?.order_items_count }}</strong>
+                </div>
+                <div class="merge-confirm-row">
+                  <span class="text-muted text-end">الإجمالي</span>
+                  <strong class="text-start">{{ getSecondaryMergeOrder()?.total_price }} {{ mergeOrderCurrency }}</strong>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Merge Summary -->
-        <div class="alert alert-warning" style="background-color: #fff3cd; border-color: #ffc107;">
-          <h6 class="fw-bold mb-2">
-            <i class="fa-solid fa-circle-exclamation text-warning me-2"></i>
+        <!-- Merge Summary - Figma colors -->
+        <div class="merge-confirm-summary mx-3">
+          <h6 class="fw-bold mb-2 merge-confirm-summary-title">
+            <i class="fa-solid fa-circle-exclamation me-2"></i>
             ملخص الدمج
           </h6>
           <div class="d-flex justify-content-between align-items-center">
-            <span class="text-dark">الإجمالي الجديد للطلب الأساسي:</span>
-            <strong class="fs-5 text-danger">{{ getMergeNewTotal() }} {{ mergeOrderCurrency }}</strong>
+            <span class="merge-confirm-summary-label">الإجمالي الجديد للطلب الأساسي:</span>
+            <strong class="fs-5 merge-confirm-summary-total">{{ getMergeNewTotal() }} {{ mergeOrderCurrency }}</strong>
           </div>
-          <div class="mt-2 small" style="color: #dc3545;">
+          <div class="mt-2 small merge-confirm-summary-disclaimer">
             * سيتم إغلاق الطلب الثانوي <strong>{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong> نهائياً.
           </div>
         </div>
       </div>
-      <div class="modal-footer border-0 d-flex gap-2">
-        <button type="button" class="btn btn-danger flex-fill" (click)="submitMergeRequest()" [disabled]="isMergeSubmitting">
+      <div class="modal-footer border-0 d-flex gap-2 merge-confirm-footer px-3">
+        <button type="button" class="btn merge-confirm-btn-cancel flex-fill" (click)="goBackToMergeStep1()">إلغاء</button>
+        <button type="button" class="btn merge-confirm-btn-submit flex-fill" (click)="submitMergeRequest()" [disabled]="isMergeSubmitting">
           <span *ngIf="isMergeSubmitting" class="spinner-border spinner-border-sm me-2"></span>
           <i *ngIf="!isMergeSubmitting" class="fa-solid fa-check me-2"></i>
           {{ isMergeSubmitting ? 'جاري الإرسال...' : 'تأكيد الدمج' }}
         </button>
-        <button type="button" class="btn btn-danger flex-fill" (click)="goBackToMergeStep1()">إلغاء</button>
       </div>
     </div>
   </div>
@@ -1339,92 +1429,98 @@
     <div class="modal-content p-4">
       <div class="modal-body text-center">
         <div class="mb-3">
-          <i class="fa-solid fa-check-circle text-success" style="font-size: 4rem;"></i>
+          <span class="split-success-icon-check d-inline-flex align-items-center justify-content-center">
+            <i class="fa-solid fa-check text-white" style="font-size: 1.5rem;"></i>
+          </span>
         </div>
         <h4 class="fw-bold mb-3">تم تجزئة الطلب بنجاح!</h4>
         <p class="text-muted mb-4">
           تم إنشاء طلب جديد ونقل العناصر المختارة إليه. يمكنك الآن متابعة العمل على أي من الطلبين.
         </p>
 
-        <div class="row mb-4">
-          <div class="col-6">
-            <div class="border rounded p-2">
-              <small class="text-muted d-block">الطلب الجديد</small>
-              <strong>{{ getNewSplitOrderNumber() }}</strong>
-              <div class="small mt-1">
-                <i class="fa-solid fa-chair me-1"></i>
-                {{ getSelectedTableName() }}
-              </div>
-              <div class="small text-muted mt-1">
-                تم نقل {{ getSelectedSplitItemsCount() }} عنصر({{ getSelectedSplitItemsCount() }}) إلى الطلب الجديد
-              </div>
+        <div class="split-success-box mb-4" dir="rtl">
+          <div class="split-success-row-inner d-flex align-items-stretch justify-content-center gap-2 flex-wrap">
+            <div class="split-success-card text-center flex-grow-1">
+              <small class="text-muted split-success-label d-block mb-1">الطلب الأصلي</small>
+              <span class="split-success-order-num d-block">{{ currentSplitOrder?.order_details?.order_number }}</span>
+              <span class="split-success-table-row small text-muted d-block mt-1">طاولة {{ currentSplitOrder?.order_details?.table_number ?? '—' }}</span>
+            </div>
+            <div class="split-success-arrow-wrap d-flex align-items-center justify-content-center flex-shrink-0">
+              <i class="fa-solid fa-arrow-left split-success-arrow text-muted"></i>
+            </div>
+            <div class="split-success-card text-center flex-grow-1">
+              <small class="text-muted split-success-label d-block mb-1">الطلب الجديد</small>
+              <span class="split-success-order-num split-success-order-num-new d-block">{{ getNewSplitOrderNumber() }}</span>
+              <span class="split-success-table-row small text-muted d-block mt-1">طاولة {{ getSelectedTableNumberOrName() }}</span>
             </div>
           </div>
-          <div class="col-6">
-            <div class="border rounded p-2">
-              <small class="text-muted d-block">الطلب الأصلي</small>
-              <strong>{{ currentSplitOrder?.order_details?.order_number }}</strong>
-              <div class="small mt-1">
-                <i class="fa-solid fa-chair me-1"></i>
-                طاولة {{ currentSplitOrder?.order_details?.table_number }}
-              </div>
-            </div>
-          </div>
+          <p class="split-success-transfer small text-muted mb-0 mt-3 pt-2 border-top">
+            تم نقل {{ getSelectedSplitItemsCount() }} عنصر({{ getSelectedSplitItemsCount() }}) إلى الطلب الجديد
+          </p>
         </div>
 
         <div class="d-flex flex-column gap-2">
-          <button type="button" class="btn btn-danger" (click)="viewNewSplitOrder()">
+          <button type="button" class="btn btn-danger rounded-3" (click)="viewNewSplitOrder()">
             <i class="fa-solid fa-external-link me-2"></i>
             عرض الطلب الجديد
           </button>
-          <button type="button" class="btn btn-outline-secondary" (click)="viewOriginalSplitOrder()">
+          <button type="button" class="btn split-success-btn-back" (click)="viewOriginalSplitOrder()">
             العودة للطلب الأصلي
           </button>
-          <a class="text-muted small" (click)="closeSplitSuccessModal()" style="cursor: pointer;">
-            العودة للرئيسية
-          </a>
+          <p class="mb-0 mt-1">
+            <span class="split-success-home-link text-muted small" (click)="closeSplitSuccessModal()" style="cursor: pointer;">
+              <i class="fa-solid fa-th-large me-1"></i>
+              العودة للرئيسية
+            </span>
+          </p>
         </div>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Merge Success Modal -->
+<!-- Merge Success Modal - Figma: rectangular cards -->
 <div class="modal fade" id="mergeSuccessModal" tabindex="-1" aria-labelledby="mergeSuccessModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-md">
     <div class="modal-content p-4">
       <div class="modal-body text-center">
         <div class="mb-3">
-          <i class="fa-solid fa-check-circle text-success" style="font-size: 4rem;"></i>
+          <span class="merge-success-icon-large d-inline-flex align-items-center justify-content-center">
+            <i class="fa-solid fa-check" style="font-size: 1.5rem;"></i>
+          </span>
         </div>
         <h4 class="fw-bold mb-3">تم دمج الطلبات بنجاح</h4>
         <p class="text-muted mb-4">
           تم دمج الطلب الثانوي وإغلاقه. تم تحديث الطلب الرئيسي بالعناصر الجديدة بنجاح.
         </p>
 
-        <div class="row mb-4">
-          <div class="col-6">
-            <div class="border rounded p-2">
-              <small class="text-muted d-block">الطلب الرئيسي المحدث</small>
-              <strong>{{ currentMergeOrder?.order_details?.order_number }}</strong>
-              <div class="mt-1">
-                <i class="fa-solid fa-check-circle text-success"></i>
+        <div class="row g-3 mb-4 merge-success-orders" dir="rtl">
+          <div class="col-12">
+            <div class="merge-success-row d-flex align-items-center justify-content-between gap-2" style="min-height: 56px;" dir="rtl">
+              <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                <span class="merge-success-icon merge-success-icon-check d-inline-flex align-items-center justify-content-center flex-shrink-0">
+                  <i class="fa-solid fa-plus" style="font-size: 0.65rem;"></i>
+                </span>
+                <small class="text-muted merge-success-label mb-0">الطلب الرئيسي المحدث</small>
               </div>
+              <span class="merge-success-order-num merge-success-order-num-main">{{ currentMergeOrder?.order_details?.order_number }}</span>
             </div>
           </div>
-          <div class="col-6">
-            <div class="border rounded p-2">
-              <small class="text-muted d-block">الطلب الثانوي (مغلق)</small>
-              <strong>{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong>
-              <div class="mt-1">
-                <i class="fa-solid fa-circle text-muted"></i>
+          <div class="col-12">
+            <div class="merge-success-row d-flex align-items-center justify-content-between gap-2" style="min-height: 56px;" dir="rtl">
+              <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                <span class="merge-success-icon merge-success-icon-closed d-inline-flex align-items-center justify-content-center flex-shrink-0">
+                  <i class="fa-solid fa-minus" style="font-size: 0.6rem;"></i>
+                </span>
+                <small class="text-muted merge-success-label mb-0">الطلب الثانوي (مغلق)</small>
               </div>
+              <span class="merge-success-order-num merge-success-order-num-merged">{{ getSecondaryMergeOrder()?.order_details?.order_number }}</span>
             </div>
           </div>
         </div>
 
         <div class="d-flex flex-column gap-2">
-          <button type="button" class="btn btn-danger" (click)="viewMergedOrder()">
+          <button type="button" class="btn btn-danger rounded-3" (click)="viewMergedOrder()">
             <i class="fa-solid fa-arrow-left me-2"></i>
             عرض الطلب المدمج
           </button>

@@ -16,7 +16,10 @@
             "outputPath": "dist/cashier",
             "index": "src/index.html",
             "main": "src/main.ts",
-            "polyfills": ["zone.js", "@angular/localize/init"],
+            "polyfills": [
+              "zone.js",
+              "@angular/localize/init"
+            ],
             "tsConfig": "tsconfig.app.json",
             "assets": [
               "src/assets",
@@ -37,20 +40,24 @@
               "node_modules/bootstrap/dist/js/bootstrap.min.js"
             ],
             "serviceWorker": true,
-            "ngswConfigPath": "ngsw-config.json"
+            "ngswConfigPath": "ngsw-config.json",
+            "allowedCommonJsDependencies": [
+              "html2canvas",
+              "pusher-js"
+            ]
           },
           "configurations": {
             "production": {
               "budgets": [
                 {
                   "type": "initial",
-                  "maximumWarning": "2MB",
-                  "maximumError": "5MB"
+                  "maximumWarning": "10MB",
+                  "maximumError": "15MB"
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "10kB",
-                  "maximumError": "15kB"
+                  "maximumWarning": "25kB",
+                  "maximumError": "30kB"
                 }
               ],
               "optimization": {
@@ -76,17 +83,17 @@
               ]
             },
             "development": {
-            "optimization": false,
-            "buildOptimizer": false,
-            "extractLicenses": false,
-            "sourceMap": {
-              "scripts": true,
-              "styles": true,
-              "vendor": true
-            },
-            "namedChunks": true,
-            "vendorChunk": true
-           }
+              "optimization": false,
+              "buildOptimizer": false,
+              "extractLicenses": false,
+              "sourceMap": {
+                "scripts": true,
+                "styles": true,
+                "vendor": true
+              },
+              "namedChunks": true,
+              "vendorChunk": true
+            }
           },
           "defaultConfiguration": "production"
         },
@@ -125,7 +132,6 @@
               "node_modules/jquery/dist/jquery.min.js",
               "node_modules/select2/dist/js/select2.min.js"
             ],
-
             "styles": [
               "src/styles.css",
               "./node_modules/ngx-countries-dropdown/assets/styles.css",

@@ -7,6 +7,7 @@ import {
   TemplateRef,
 } from '@angular/core';
 import { PillDetailsService } from '../services/pill-details.service';
+import { OrderListDetailsService } from '../services/order-list-details.service';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { DatePipe } from '@angular/common';
@@ -21,6 +22,7 @@ import { baseUrl } from '../environment';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { PrintTimeService } from '../services/print-time.service';
 import { ReceiptComponent } from '../receipt/receipt.component';
+import { SilentPrintService } from '../services/silent-print.service';
 
 
 @Component({
@@ -37,6 +39,7 @@ export class PillEditComponent {
 
   loading: boolean = false;
   receiptData: any;
+  isPrinting = false;
   // @ViewChild('deliveredButton', { static: false }) deliveredButton!: ElementRef;
   invoices: any[] = [];
   pillDetails: any;
@@ -114,6 +117,7 @@ export class PillEditComponent {
 
   constructor(
     private pillDetailsService: PillDetailsService,
+    private orderListDetailsService: OrderListDetailsService,
     private route: ActivatedRoute,
     private orderService: PillDetailsService,
     private cdr: ChangeDetectorRef,
@@ -122,7 +126,8 @@ export class PillEditComponent {
     private router: Router,
     private http: HttpClient,
     private modalService: NgbModal,
-    private printTime: PrintTimeService
+    private printTime: PrintTimeService,
+    private silentPrint: SilentPrintService
   ) {
     this.currencySymbol = localStorage.getItem('currency_symbol') || 'ج.م';
   }
@@ -215,13 +220,14 @@ export class PillEditComponent {
         console.log(this.invoices[0]?.order_type);
         this.orderType = this.invoices[0]?.order_type || '';
 
-        // restore coupon data if exists on invoice
+        // restore coupon data if exists on invoice (بعد التجزئة لا يكون هناك كوبون على الطلب الأصلي)
         const summary = this.invoices?.[0]?.invoice_summary;
         if (summary) {
-          this.couponType = summary.coupon_type || '';
-          this.couponTitle = summary.coupon_title || '';
-          this.discountAmount = Number(summary.coupon_value) || 0;
-          this.couponCode = summary.coupon_code || '';
+          const hasCoupon = summary.coupon_id != null && summary.coupon_id !== '';
+          this.couponType = hasCoupon ? (summary.coupon_type || '') : '';
+          this.couponTitle = hasCoupon ? (summary.coupon_title || '') : '';
+          this.discountAmount = hasCoupon ? (Number(summary.coupon_value) || 0) : 0;
+          this.couponCode = hasCoupon ? (summary.coupon_code || '') : '';
 
           // التأكد من وجود subtotal_price_before_coupon، وإلا استخدام subtotal_price أو total_price
           if (!summary.subtotal_price_before_coupon) {
@@ -267,14 +273,13 @@ export class PillEditComponent {
             ...e.invoice_summary,
             currency_symbol: e.currency_symbol,
           };
-
-          // Convert coupon_value if it's a percentage
-          // if (summary.coupon_type === 'percentage') {
-          //   const couponValue = parseFloat(summary.coupon_value); // "10.00" → 10
-          //   const subtotal = parseFloat(summary.subtotal_price);
-          //   summary.coupon_value = ((couponValue / 100) * subtotal).toFixed(2); // Convert to currency
-          // }
-
+          // بعد الدمج لا يكون هناك كوبون على الفاتورة: إخفاء الكوبون من العرض
+          if (summary.coupon_id == null || summary.coupon_id === '') {
+            summary.coupon_value = 0;
+            summary.coupon_title = null;
+            summary.coupon_code = null;
+            summary.coupon_type = null;
+          }
           return summary;
         });
 
@@ -289,7 +294,7 @@ export class PillEditComponent {
           invoices: response.data.invoices,
           order_id: response.data.order_id,
           invoice_summary: this.invoiceSummary || [],
-          orderDetails: this.orderDetails.flat() || [],
+          orderDetails: this.getFilteredOrderDetailsFlat(),
           date: this.date,
           time: this.time,
           showPrices: true,
@@ -303,12 +308,74 @@ export class PillEditComponent {
           waiter: response.data.waiter,
           make_type: response.data.make_type
         };
+        if (this.receiptData?.invoices?.[0]) {
+          this.receiptData.invoices[0].orderDetails = this.getFilteredOrderDetailsFlat();
+        }
 
+        // After split, coupon must not apply to primary order; clear it from display if this is the split primary
+        this.applyClearCouponForSplitPrimaryOrder();
+        // After merge: ensure invoice_summary in memory has no coupon so الفاتورة section hides coupon row
+        if (this.invoices?.[0]?.invoice_summary && (this.invoices[0].invoice_summary.coupon_id == null || this.invoices[0].invoice_summary.coupon_id === '')) {
+          this.invoices[0].invoice_summary.coupon_value = 0;
+          this.invoices[0].invoice_summary.coupon_title = null;
+          this.invoices[0].invoice_summary.coupon_code = null;
+          this.discountAmount = 0;
+          this.couponTitle = '';
+          this.couponCode = '';
+        }
+
+        // Merged order fix: invoice API may return only primary order items. Fetch full order and use merged items if more.
+        const orderId = response.data.order_id;
+        const invoiceItemsCount = (this.orderDetails?.flat() || []).length;
+        if (orderId != null && orderId !== '') {
+          this.orderListDetailsService.getOrderById(String(orderId)).subscribe({
+            next: (orderRes: any) => {
+              const order = orderRes?.data?.orderDetails?.[0];
+              const rawItems = order?.order_details || [];
+              const orderItems = Array.isArray(rawItems) ? rawItems.filter((it: any) => (Number(it.quantity) || 0) > 0) : [];
+              if (orderItems.length > invoiceItemsCount && this.invoices?.[0]) {
+                this.invoices[0].orderDetails = orderItems;
+                this.orderDetails = this.invoices.map((e: any) => e.orderDetails || []);
+                const summary = order?.order_summary || this.invoices[0]?.invoice_summary || {};
+                const subtotal = orderItems.reduce((s: number, it: any) => s + (Number(it.total_dish_price) || 0), 0);
+                const total = Number(summary.total ?? summary.total_price ?? subtotal);
+                if (this.invoiceSummary?.[0]) {
+                  this.invoiceSummary[0] = { ...this.invoiceSummary[0], subtotal_price_before_coupon: subtotal, subtotal_price: subtotal, total_price: total, total };
+                }
+                if (this.invoices[0].invoice_summary) {
+                  this.invoices[0].invoice_summary = { ...this.invoices[0].invoice_summary, subtotal_price_before_coupon: subtotal, subtotal_price: subtotal, total_price: total, total };
+                }
+                this.totalll = total;
+                this.receiptData = {
+                  ...this.receiptData,
+                  orderDetails: this.getFilteredOrderDetailsFlat(),
+                  invoice_summary: this.invoiceSummary || [],
+                };
+                if (this.receiptData?.invoices?.[0]) {
+                  this.receiptData.invoices[0].orderDetails = this.getFilteredOrderDetailsFlat();
+                }
+                this.applyClearCouponForSplitPrimaryOrder();
+                this.cdr.detectChanges();
+              }
+            },
+            error: () => {},
+          });
+        }
       },
       error: (error: any) => {
         console.error(' Error fetching pill details:', error);
       },
     });
+  }
+  /** عناصر الطلب ذات كمية أكبر من صفر فقط (بعد التجزئة أو الحذف لا تظهر العناصر المُزالَة) */
+  get activeOrderDetails(): any[] {
+    const details = this.orderDetails?.[0];
+    if (!details || !Array.isArray(details)) return [];
+    return details.filter((item: any) => (Number(item.quantity) || 0) > 0);
+  }
+  /** نفس القائمة مصفاة للطباعة (مصفوفة مسطحة) */
+  getFilteredOrderDetailsFlat(): any[] {
+    return (this.orderDetails?.flat() || []).filter((item: any) => (Number(item.quantity) || 0) > 0);
   }
   hasDeliveryOrDineIn(): boolean {
     return this.invoices?.some((invoice: { order_type: string }) =>
@@ -762,12 +829,13 @@ export class PillEditComponent {
                 }]
               : [];
 
+            const filteredOrderDetails = (response.data.orderDetails || []).filter((item: any) => (Number(item.quantity) || 0) > 0);
             this.receiptData = {
               branchDetails: branchDetails,
               invoices: invoices,
               order_id: response.data.order.id,
               invoice_summary: invoiceSummary,
-              orderDetails: response.data.orderDetails || [],
+              orderDetails: filteredOrderDetails,
               date: response.data.order.date,
               time: response.data.order.time,
               showPrices: true,
@@ -781,6 +849,9 @@ export class PillEditComponent {
               waiter: response.data.waiter,
               make_type: response.data.make_type
             };
+            if (this.receiptData?.invoices?.[0]) {
+              this.receiptData.invoices[0].orderDetails = filteredOrderDetails;
+            }
 
             // التأكد من ظهور "مدفوع" في طباعة الفاتورة بعد الدفع
             if (this.paymentStatus === 'paid' && this.receiptData?.invoices?.[0]) {
@@ -791,63 +862,12 @@ export class PillEditComponent {
               }
             }
 
-            // انتظار حتى يتم عرض مكون الإيصال
-            // await new Promise((resolve) => setTimeout(resolve, 500));
-            // this.cdr.detectChanges();
-
-            const printContent = document.getElementById('printSection');
-            if (!printContent) {
-              console.error('Print section not found.');
-              return;
-            }
-
-            const originalHTML = document.body.innerHTML;
-
-           // const copies = this.isDeliveryOrder
-            //   ? [
-            //     { showPrices: true, test: true },
-            //     { showPrices: false, test: false },
-            //     { showPrices: true, test: true },
-            //   ]
-            //   : [
-            //     { showPrices: true, test: true },
-            //     { showPrices: false, test: false },
-            //   ];
-            const copies = [
-              { showPrices: true, test: true },
-            ];
-
-            for (let i = 0; i < copies.length; i++) {
-              this.showPrices = copies[i].showPrices;
-              this.test = copies[i].test;
-              await new Promise((resolve) => setTimeout(resolve, 300));
-
-              const singlePageHTML = `
-              <div>
-                ${printContent.innerHTML}
-              </div>
-            `;
-
-              document.body.innerHTML = singlePageHTML;
-
-              await new Promise((resolve) =>
-                setTimeout(() => {
-                  window.print();
-                  resolve(true);
-                }, 200)
-              );
-            }
-
-            document.body.innerHTML = originalHTML;
-
-            // انتظار قليل قبل إعادة التحميل للتأكد من اكتمال الطباعة
+            // انتظار قليل لشحن البيانات في المكون
+            this.cdr.detectChanges();
             await new Promise((resolve) => setTimeout(resolve, 500));
-            location.reload();
 
-
-
-
-
+            // استدعاء وظيفة الطباعة (ستتعامل مع الطباعة الصامتة إذا كان في Electron)
+            await this.printInvoice(true);
           },
           error: (err) => {
             console.error('خطأ في حفظ الطلب:', err);
@@ -1095,6 +1115,89 @@ export class PillEditComponent {
     this.recalcTotalsWithDiscount(discountValue, 'خصم يدوي', this.manualDiscountType);
   }
 
+  /**
+   * When order was split, coupon must not apply to primary order. If this invoice is for that primary order,
+   * zero the coupon in summary and recalc total, then remove from session list.
+   */
+  private applyClearCouponForSplitPrimaryOrder(): void {
+    const orderId = this.order_id != null ? String(this.order_id) : '';
+    if (!orderId) return;
+    try {
+      const raw = sessionStorage.getItem('splitPrimaryOrderIds') || '[]';
+      const ids: string[] = JSON.parse(raw);
+      if (!ids.includes(orderId)) return;
+      ids.splice(ids.indexOf(orderId), 1);
+      sessionStorage.setItem('splitPrimaryOrderIds', JSON.stringify(ids));
+    } catch (_) {
+      return;
+    }
+    const summary = this.invoices?.[0]?.invoice_summary;
+    if (!summary) return;
+    const hasCoupon = (this.discountAmount > 0) || (Number(summary.coupon_value) || 0) > 0;
+    if (!hasCoupon) return;
+
+    const originalSubtotal = Number(summary._original_subtotal_price_before_coupon || summary.subtotal_price_before_coupon || summary.total_price || 0);
+    const originalServiceFees = Number(summary._original_service_fees || summary.service_fees || 0);
+    const taxPerc = Number(summary.tax_percentage || 0);
+    const servicePerc = Number(summary.service_percentage || 0);
+    const taxApplication = summary.tax_application ?? false;
+    const deliveryFees = Number(summary.delivery_fees || 0);
+
+    let serviceAmount = 0;
+    if (servicePerc > 0) {
+      serviceAmount = (originalSubtotal * servicePerc) / 100;
+    } else {
+      serviceAmount = originalServiceFees;
+    }
+    serviceAmount = Number(serviceAmount.toFixed(2));
+
+    const vatBase = originalSubtotal + serviceAmount;
+    let taxAmount = 0;
+    if (taxPerc > 0) {
+      if (taxApplication) {
+        taxAmount = vatBase - vatBase / (1 + taxPerc / 100);
+      } else {
+        taxAmount = (vatBase * taxPerc) / 100;
+      }
+    }
+    taxAmount = Number(taxAmount.toFixed(3));
+
+    const finalTotal = originalSubtotal + serviceAmount + taxAmount + deliveryFees;
+
+    summary.coupon_value = 0;
+    summary.coupon_title = '';
+    summary.coupon_type = '';
+    summary.coupon_code = '';
+    summary.subtotal_price_before_coupon = originalSubtotal;
+    summary.total_price = Number(finalTotal.toFixed(2));
+    summary.total_after_tax = Number(finalTotal.toFixed(2));
+    summary.tax_value = Number(taxAmount.toFixed(3));
+    summary.tax = Number(taxAmount.toFixed(3));
+    summary.service_fees = serviceAmount;
+
+    if (this.invoiceSummary && this.invoiceSummary[0]) {
+      this.invoiceSummary[0].coupon_value = 0;
+      this.invoiceSummary[0].coupon_title = '';
+      this.invoiceSummary[0].coupon_type = '';
+      this.invoiceSummary[0].coupon_code = '';
+      this.invoiceSummary[0].subtotal_price_before_coupon = originalSubtotal;
+      this.invoiceSummary[0].total_price = Number(finalTotal.toFixed(2));
+      this.invoiceSummary[0].total_after_tax = Number(finalTotal.toFixed(2));
+      this.invoiceSummary[0].tax_value = Number(taxAmount.toFixed(3));
+      this.invoiceSummary[0].tax = Number(taxAmount.toFixed(3));
+      this.invoiceSummary[0].service_fees = serviceAmount;
+    }
+
+    this.discountAmount = 0;
+    this.couponTitle = '';
+    this.couponType = '';
+    this.couponCode = '';
+    this.couponMessage = '';
+    this.couponError = '';
+    this.appliedCoupon = null;
+    this.totalll = summary.total_price;
+  }
+
   removeDiscount(): void {
     const summary = this.invoices?.[0]?.invoice_summary;
     if (!summary) return;
@@ -1213,11 +1316,25 @@ export class PillEditComponent {
     }
 
     try {
-      /* Backend call removed
-      const response = await this.printedInvoiceService
-        .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
-        .toPromise();
-      */
+      if ((window as any).deviceAPI) {
+        console.log('Detected Electron environment. Attempting silent print via SilentPrintService.');
+
+        const printerIP = this.invoices[0]?.branch_details?.printer_ip || "192.168.11.187"; 
+        const port = this.invoices[0]?.branch_details?.printer_port || 9100;
+
+        const result = await this.silentPrint.printElement('printSection', printerIP, port);
+
+        if (result.success) {
+          console.log("Silent print successful");
+          location.reload();
+        } else {
+          console.error("Silent print failed:", result);
+          alert(`فشلت الطباعة الصامتة: ${result.message || 'خطأ غير معروف'}`);
+        }
+
+        return; 
+      }
+
       const printContent = document.getElementById('printSection');
       if (!printContent) {
         console.error('Print section not found.');

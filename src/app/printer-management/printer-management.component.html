@@ -1,85 +1,191 @@
-<div class="d-flex justify-content-between align-items-center mb-4">
-  <h5 class="fw-bold m-0">قائمة الطابعات والأجهزة</h5>
-  <button class="btn btn-danger rounded-3" (click)="addPrinter()">
-    <i class="fas fa-plus ms-1"></i> إضافة جهاز
-  </button>
+<!-- Toast Notification -->
+<div class="position-fixed bottom-0 start-50 translate-middle-x p-3" style="z-index: 2000">
+  <div *ngIf="successMessage" class="toast show align-items-center text-white bg-dark border-0 shadow-lg rounded-pill px-3" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="d-flex">
+      <div class="toast-body">
+        <i class="fas fa-check-circle me-2 text-success"></i>
+        {{ successMessage }}
+      </div>
+    </div>
+  </div>
 </div>
 
-<div class="table-responsive">
-  <table class="table table-hover align-middle">
-    <thead class="table-light">
-      <tr>
-        <th>اسم الجهاز</th>
-        <th>النوع</th>
-        <th>IP</th>
-        <th>Port</th>
-        <th>مخصص لـ</th>
-        <th>الحالة</th>
-        <th>التصنيفات</th>
-        <th class="text-center">الإجراءات</th>
-      </tr>
-    </thead>
-    <tbody>
-      <tr *ngFor="let printer of printers">
-        <td>
-           <div class="fw-bold">{{ getMachineNameLabel(printer.machine_name) }}</div>
-           <small class="text-muted" *ngIf="printer.note">{{ printer.note }}</small>
-        </td>
-        <td>{{ getTypeLabel(printer.type) }}</td>
-        <td>{{ printer.ip }}</td>
-        <td>{{ printer.port }}</td>
-        <td>{{ printer.assigned_to || '-' }}</td>
-        <td><span [ngClass]="getStatusClass(printer.status)">{{ getStatusLabel(printer.status) }}</span></td>
-        <td>
-          <span class="badge bg-light text-dark border me-1" *ngFor="let cat of printer.branch_menu_categories">
-            {{ cat.name_ar || cat.name }}
+<!-- Default Printer Configuration Card -->
+<div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+  <div class="card-header bg-white border-0 pt-4 px-4">
+    <div class="d-flex align-items-center gap-3">
+      <div class="p-2 bg-danger bg-opacity-10 rounded-3 text-danger">
+        <i class="fas fa-cog fa-lg"></i>
+      </div>
+      <div>
+        <h5 class="fw-bold mb-0">إعدادات الطباعة الأساسية</h5>
+        <p class="text-muted small mb-0">تحديد الجهاز الرئيسي لطباعة الفواتير والتقارير</p>
+      </div>
+    </div>
+  </div>
+  <div class="card-body p-4">
+    <div class="row align-items-end g-3">
+      <div class="col-md-9">
+        <label class="form-label small fw-bold text-muted mb-2">الطابعة الافتراضية للنظام</label>
+        <div class="input-group">
+          <span class="input-group-text bg-light border-light-subtle rounded-start-3">
+            <i class="fas fa-print text-muted"></i>
           </span>
-          <span class="text-muted small" *ngIf="!printer.branch_menu_categories?.length">لا يوجد تصنيفات</span>
-        </td>
-        <td class="text-center">
-          <button class="btn btn-sm btn-outline-primary me-2" (click)="editPrinter(printer)">
-             <i class="fas fa-edit"></i>
-          </button>
-          <button class="btn btn-sm btn-outline-danger" (click)="deletePrinter(printer.id!)">
-             <i class="fas fa-trash"></i>
-          </button>
-        </td>
-      </tr>
-      <tr *ngIf="!printers.length && !isPrinterLoading">
-        <td colspan="8" class="text-center p-4 text-muted">لا يوجد أجهزة حالياً</td>
-      </tr>
-      <tr *ngIf="isPrinterLoading">
-        <td colspan="8" class="text-center p-4">
-            <div class="spinner-border text-danger" role="status">
-                <span class="visually-hidden">Loading...</span>
-            </div>
-        </td>
-      </tr>
-    </tbody>
-  </table>
+          <select class="form-select border-light-subtle py-2 shadow-none" [(ngModel)]="defaultPrinterId">
+            <option [value]="null" disabled>اختر الطابعة الافتراضية...</option>
+            <option *ngFor="let p of printers" [value]="p.id">{{ p.machine_name }} ({{ p.ip }})</option>
+          </select>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <button class="btn btn-danger w-100 py-2 rounded-3 d-flex align-items-center justify-content-center gap-2" 
+                [disabled]="!defaultPrinterId || isPrinterLoading" 
+                (click)="saveDefaultPrinter()">
+          <span *ngIf="isPrinterLoading" class="spinner-border spinner-border-sm"></span>
+          <i *ngIf="!isPrinterLoading" class="fas fa-save"></i>
+          <span>حفظ الإعدادات</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Printer List Card -->
+<div class="card border-0 shadow-sm rounded-4 mb-4 overflow-hidden">
+  <div class="card-header bg-white border-0 pt-4 px-4">
+    <div class="d-flex justify-content-between align-items-center">
+      <div class="d-flex align-items-center gap-3">
+        <div class="p-2 bg-primary bg-opacity-10 rounded-3 text-primary">
+          <i class="fas fa-list-ul fa-lg"></i>
+        </div>
+        <div>
+          <h5 class="fw-bold mb-0">قائمة الطابعات والأجهزة</h5>
+          <p class="text-muted small mb-0">إدارة جميع أجهزة الطباعة والشاشات المتصلة بالفرع</p>
+        </div>
+      </div>
+      <button class="btn btn-dark rounded-3 px-4 py-2 d-flex align-items-center gap-2 transition-all hover-lift" (click)="addPrinter()">
+        <i class="fas fa-plus"></i>
+        <span>إضافة جهاز جديد</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="card-body p-0 mt-3">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
+        <thead class="bg-light">
+          <tr>
+            <th class="ps-4 border-0 text-muted small fw-bold text-uppercase">الجهاز</th>
+            <th class="border-0 text-muted small fw-bold text-uppercase">النوع والـ IP</th>
+            <th class="border-0 text-muted small fw-bold text-uppercase">التخصيص</th>
+            <th class="border-0 text-muted small fw-bold text-uppercase">الحالة</th>
+            <th class="border-0 text-muted small fw-bold text-uppercase">التصنيفات</th>
+            <th class="border-0 text-center text-muted small fw-bold text-uppercase pe-4">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let printer of printers" class="border-bottom-0">
+            <td class="ps-4">
+               <div class="d-flex align-items-center gap-3">
+                 <div class="printer-icon-sm rounded-circle d-flex align-items-center justify-content-center bg-light text-secondary">
+                   <i [class]="printer.type === 1 ? 'fas fa-print' : 'fas fa-desktop'"></i>
+                 </div>
+                 <div>
+                   <div class="fw-bold text-dark">{{ getMachineNameLabel(printer.machine_name) }}</div>
+                   <small class="text-muted d-block" *ngIf="printer.note" style="max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                     {{ printer.note }}
+                   </small>
+                 </div>
+               </div>
+            </td>
+            <td>
+              <div class="d-flex flex-column">
+                <span class="badge bg-light text-dark align-self-start mb-1 border border-light-subtle fw-normal">
+                  {{ getTypeLabel(printer.type) }}
+                </span>
+                <code class="small fw-semibold">{{ printer.ip }}:{{ printer.port }}</code>
+              </div>
+            </td>
+            <td>
+              <span class="text-dark small">{{ printer.assigned_to || '-' }}</span>
+            </td>
+            <td>
+              <span [ngClass]="getStatusClass(printer.status)" class="badge-pill">
+                {{ getStatusLabel(printer.status) }}
+              </span>
+            </td>
+            <td>
+              <div class="d-flex flex-wrap gap-1" style="max-width: 250px;">
+                <span class="badge bg-soft-info text-info border-info-subtle border" *ngFor="let cat of printer.branch_menu_categories">
+                  {{ cat.name_ar || cat.name }}
+                </span>
+                <span class="text-muted x-small italic" *ngIf="!printer.branch_menu_categories?.length">لا يوجد تصنيفات</span>
+              </div>
+            </td>
+            <td class="text-center pe-4">
+              <div class="d-flex justify-content-center gap-2">
+                <button class="btn btn-icon btn-light rounded-circle shadow-sm hover-primary" (click)="editPrinter(printer)" title="تعديل">
+                   <i class="fas fa-edit"></i>
+                </button>
+                <button class="btn btn-icon btn-light rounded-circle shadow-sm hover-danger" (click)="confirmDeletePrinter(printer.id!)" title="حذف">
+                   <i class="fas fa-trash"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="!printers.length && !isPrinterLoading">
+            <td colspan="6" class="text-center py-5">
+              <div class="d-flex flex-column align-items-center text-muted">
+                <i class="fas fa-box-open fa-3x mb-3 opacity-25"></i>
+                <p class="mb-0">لا يوجد أجهزة حالياً</p>
+                <button class="btn btn-link btn-sm text-decoration-none" (click)="addPrinter()">أضف أول جهاز الآن</button>
+              </div>
+            </td>
+          </tr>
+          <tr *ngIf="isPrinterLoading">
+            <td colspan="6" class="text-center py-5">
+                <div class="spinner-border text-danger" role="status">
+                    <span class="visually-hidden">جارِ التحميل...</span>
+                </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>
 
 <!-- Printer Modal -->
 <div class="modal fade" id="printerModal" tabindex="-1" aria-labelledby="printerModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-lg">
     <div class="modal-content border-0 shadow-lg rounded-4">
-      <div class="modal-header border-0 pb-0">
-        <h5 class="modal-title fw-bold" id="printerModalLabel">
+      <div class="modal-header border-0 pb-0 px-4 pt-4">
+        <h5 class="modal-title fw-bold d-flex align-items-center gap-2" id="printerModalLabel">
+          <div class="p-2 bg-danger bg-opacity-10 rounded-2 text-danger">
+            <i [class]="isEditingPrinter ? 'fas fa-edit' : 'fas fa-plus'"></i>
+          </div>
           {{ isEditingPrinter ? 'تعديل بيانات الجهاز' : 'إضافة جهاز جديد' }}
         </h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body p-4">
-        <div *ngIf="printerModalMessage" class="alert alert-danger">{{ printerModalMessage }}</div>
+        <div *ngIf="printerModalMessage" class="alert alert-danger rounded-3 border-0 shadow-sm mb-4">
+          <i class="fas fa-exclamation-circle me-2"></i>
+          {{ printerModalMessage }}
+        </div>
         
-        <div class="row g-3">
+        <div class="row g-4">
           <div class="col-md-6">
-            <label class="form-label fw-semibold">اسم الجهاز</label>
-            <input type="text" class="form-control rounded-3" placeholder="مثال: طابعة الكاشير" [(ngModel)]="selectedPrinter.machine_name">
+            <label class="form-label small fw-bold text-muted mb-2">
+              <i class="fas fa-tag me-1"></i> اسم الجهاز
+            </label>
+            <input type="text" class="form-control form-control-lg fs-6 rounded-3 border-light-subtle shadow-none" placeholder="مثال: طابعة الكاشير" [(ngModel)]="selectedPrinter.machine_name">
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">النوع (Type)</label>
-            <select class="form-select rounded-3" [(ngModel)]="selectedPrinter.type">
+            <label class="form-label small fw-bold text-muted mb-2">
+              <i class="fas fa-laptop me-1"></i> النوع (Type)
+            </label>
+            <select class="form-select form-select-lg fs-6 rounded-3 border-light-subtle shadow-none" [(ngModel)]="selectedPrinter.type">
               <option [value]="1">طابعة</option>
               <option [value]="2">شاشة</option>
               <option [value]="3">كشك</option>
@@ -88,21 +194,34 @@
           </div>
 
           <div class="col-md-8">
-            <label class="form-label fw-semibold">IP Address</label>
-            <input type="text" class="form-control rounded-3" placeholder="192.168.1.100" [(ngModel)]="selectedPrinter.ip">
+            <label class="form-label small fw-bold text-muted mb-2">
+              <i class="fas fa-network-wired me-1"></i> عنوان الـ IP
+            </label>
+            <div class="input-group">
+              <span class="input-group-text bg-light border-light-subtle rounded-start-3">
+                <i class="fas fa-globe text-muted small"></i>
+              </span>
+              <input type="text" class="form-control form-control-lg fs-6 border-light-subtle shadow-none" placeholder="192.168.1.100" [(ngModel)]="selectedPrinter.ip">
+            </div>
           </div>
           <div class="col-md-4">
-            <label class="form-label fw-semibold">Port</label>
-            <input type="number" class="form-control rounded-3" placeholder="9100" [(ngModel)]="selectedPrinter.port">
+            <label class="form-label small fw-bold text-muted mb-2">
+              <i class="fas fa-plug me-1"></i> المنفذ (Port)
+            </label>
+            <input type="number" class="form-control form-control-lg fs-6 rounded-3 border-light-subtle shadow-none" placeholder="9100" [(ngModel)]="selectedPrinter.port">
           </div>
 
           <div class="col-md-6">
-            <label class="form-label fw-semibold">مخصص لـ </label>
-            <input type="text" class="form-control rounded-3" placeholder="مثال: الكاشير الرئيسي" [(ngModel)]="selectedPrinter.assigned_to">
+            <label class="form-label small fw-bold text-muted mb-2">
+              <i class="fas fa-user-tag me-1"></i> مخصص لـ
+            </label>
+            <input type="text" class="form-control form-control-lg fs-6 rounded-3 border-light-subtle shadow-none" placeholder="مثال: الكاشير الرئيسي" [(ngModel)]="selectedPrinter.assigned_to">
           </div>
           <div class="col-md-6">
-            <label class="form-label fw-semibold">الحالة</label>
-            <select class="form-select rounded-3" [(ngModel)]="selectedPrinter.status">
+            <label class="form-label small fw-bold text-muted mb-2">
+              <i class="fas fa-toggle-on me-1"></i> الحالة التشغيلية
+            </label>
+            <select class="form-select form-select-lg fs-6 rounded-3 border-light-subtle shadow-none" [(ngModel)]="selectedPrinter.status">
               <option [value]="1">نشط</option>
               <option [value]="2">غير متصل</option>
               <option [value]="3">صيانة</option>
@@ -110,13 +229,20 @@
           </div>
 
           <div class="col-12">
-            <label class="form-label fw-semibold">ملاحظات</label>
-            <textarea class="form-control rounded-3" rows="2" [(ngModel)]="selectedPrinter.note"></textarea>
+            <label class="form-label small fw-bold text-muted mb-2">
+              <i class="fas fa-sticky-note me-1"></i> ملاحظات إضافية
+            </label>
+            <textarea class="form-control rounded-3 border-light-subtle shadow-none" rows="2" [(ngModel)]="selectedPrinter.note" placeholder="أضف أي ملاحظات إضافية هنا..."></textarea>
           </div>
           
           <div class="col-12 mt-4">
-            <label class="form-label fw-semibold d-block mb-3">اختر تصنيفات المنيو المرتبطة:</label>
-            <div class="category-selection-grid d-flex flex-wrap gap-2">
+            <div class="d-flex align-items-center justify-content-between mb-3">
+              <label class="form-label small fw-bold text-muted mb-0">
+                <i class="fas fa-layer-group me-1"></i> التصنيفات المرتبطة بالجهاز
+              </label>
+              <span class="badge bg-light text-dark fw-normal border">{{ selectedCategoryIds.length }} مختارة</span>
+            </div>
+            <div class="category-selection-grid d-flex flex-wrap gap-2 p-3 bg-light rounded-4 border border-dashed">
               <div *ngFor="let cat of categories" 
                    (click)="toggleCategorySelection(cat.id)"
                    [class.active]="selectedCategoryIds.includes(cat.id)"
@@ -124,16 +250,52 @@
                 {{ cat.name }}
                 <i class="fas fa-check-circle ms-1" *ngIf="selectedCategoryIds.includes(cat.id)"></i>
               </div>
+              <div *ngIf="!categories.length" class="text-muted small w-100 text-center py-2">
+                لا توجد تصنيفات متاحة
+              </div>
             </div>
           </div>
         </div>
       </div>
       <div class="modal-footer border-0 pt-0 p-4">
-        <button type="button" class="btn btn-light px-4 rounded-3" data-bs-dismiss="modal">إلغاء</button>
-        <button type="button" class="btn btn-danger px-4 rounded-3" (click)="savePrinter()">
-          {{ isEditingPrinter ? 'تحديث' : 'حفظ' }}
+        <button type="button" class="btn btn-light px-4 py-2 rounded-3 fw-bold" data-bs-dismiss="modal">إلغاء</button>
+        <button type="button" class="btn btn-danger px-5 py-2 rounded-3 fw-bold d-flex align-items-center gap-2 shadow-sm" 
+                [disabled]="isPrinterLoading"
+                (click)="savePrinter()">
+          <span *ngIf="isPrinterLoading" class="spinner-border spinner-border-sm"></span>
+          <i *ngIf="!isPrinterLoading" class="fas fa-check"></i>
+          <span>{{ isEditingPrinter ? 'تحديث البيانات' : 'إضافة الجهاز' }}</span>
         </button>
       </div>
     </div>
   </div>
 </div>
+
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteConfirmModal" tabindex="-1" aria-labelledby="deleteConfirmModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow-lg rounded-4">
+      <div class="modal-body p-4 text-center">
+        <div class="p-3 bg-danger bg-opacity-10 rounded-circle d-inline-block mb-3">
+          <i class="fas fa-trash fa-2x"></i>
+        </div>
+        <h5 class="fw-bold mb-2">تأكيد الحذف</h5>
+        <p class="text-muted small">هل أنت متأكد من حذف هذه الطابعة؟ لا يمكن التراجع عن هذا الإجراء.</p>
+        <div *ngIf="printerModalMessage" class="alert alert-danger small py-2 mb-0 mt-3">
+          {{ printerModalMessage }}
+        </div>
+      </div>
+      <div class="modal-footer border-0 p-4 pt-0 gap-2">
+        <button type="button" class="btn btn-light flex-fill py-2 rounded-3 fw-bold" data-bs-dismiss="modal">إلغاء</button>
+        <button type="button" class="btn btn-danger flex-fill py-2 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2" 
+                [disabled]="isPrinterLoading"
+                (click)="executeDelete()">
+          <span *ngIf="isPrinterLoading" class="spinner-border spinner-border-sm"></span>
+          <span>حذف</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
