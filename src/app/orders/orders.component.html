@@ -422,7 +422,7 @@
                         aria-expanded="false" data-bs-display="static">
                         <i class="fa-solid fa-ellipsis-vertical"></i> </a>
                       <ul class="dropdown-menu" aria-labelledby="dropdownMenu2">
-                        @if (!(order.order_details.status === 'cancelled' && order.order_details.merged_into_order_id)) {
+                        @if (!isMergedOrder(order)) {
                         <li> <button class="dropdown-item" type="button" (click)="openEditModal(item , order.order_details.order_id)">
                             تعديل الطلب
                           </button></li>
@@ -1311,93 +1311,119 @@
   </div>
 </div>
 
-<!-- Merge Order Confirmation Modal -->
-<div class="modal fade" id="mergeOrderConfirmationModal" tabindex="-1" aria-labelledby="mergeOrderConfirmationModalLabel" aria-hidden="true">
+<!-- Merge Order Confirmation Modal - Figma: X left, table before order no, grey secondary, summary colors, equal buttons -->
+<div class="modal fade" id="mergeOrderConfirmationModal" tabindex="-1" aria-labelledby="mergeOrderConfirmationModalLabel" aria-hidden="true" dir="rtl">
   <div class="modal-dialog modal-dialog-centered modal-lg">
-    <div class="modal-content p-3">
-      <div class="modal-header border-0 d-flex justify-content-between align-items-center position-relative">
+    <div class="modal-content merge-confirm-content">
+      <div class="modal-header border-0 d-flex justify-content-between align-items-center position-relative merge-confirm-header px-3">
         <div class="d-flex align-items-center gap-2">
-          <i class="fa-solid fa-code-merge text-danger fs-4"></i>
+          <span class="merge-confirm-header-icon">
+            <i class="fa-solid fa-code-merge text-white"></i>
+          </span>
           <h5 class="modal-title fw-bold mb-0" id="mergeOrderConfirmationModalLabel">تأكيد دمج الطلبات</h5>
         </div>
-        <button type="button" class="btn-close position-absolute" style="left: 0; top: 50%; transform: translateY(-50%);" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        <button type="button" class="btn-close position-absolute merge-confirm-close" data-bs-dismiss="modal" aria-label="إغلاق"></button>
       </div>
-      <div class="modal-body">
-        <p class="text-muted mb-4">
+      <div class="modal-body merge-confirm-body p-0">
+        <p class="text-muted mb-4 merge-confirm-intro px-3 pt-0">
           هل أنت متأكد من رغبتك في دمج الطلبات التالية؟ سيتم نقل جميع العناصر من الطلب الثانوي إلى الطلب الأساسي.
         </p>
 
-        <div class="row mb-4">
-          <!-- Primary Order (Original) - Left Side -->
-          <div class="col-md-5">
-            <div class="border rounded p-3 h-100" style="background-color: #fff5f5; border-color: #dc3545 !important;">
-              <h6 class="fw-bold mb-3 text-danger">الطلب الأساسي (المستلم)</h6>
-              <div class="mb-2 d-flex align-items-center justify-content-between">
-                <strong>{{ currentMergeOrder?.order_details?.order_number }}</strong>
-                <div class="d-flex flex-column align-items-end">
-                  <span>طاولة {{ currentMergeOrder?.order_details?.table_number }}</span>
+        <div class="row mb-4 align-items-stretch merge-confirm-cards-row g-0 mx-0">
+          <!-- Primary Order (Receiver) - لازق في الحد (يمين في RTL) -->
+          <div class="col-md-5 merge-confirm-col-primary">
+            <div class="merge-confirm-card-wrap position-relative h-100">
+              <div class="merge-confirm-tab merge-confirm-tab-primary">الطلب الأساسي (المستلم)</div>
+              <div class="p-3 pt-4 h-100 merge-confirm-primary-card merge-confirm-card-inner">
+                <div class="merge-confirm-row merge-confirm-table-row mb-3">
+                  <strong class="merge-confirm-order-num">{{ currentMergeOrder?.order_details?.order_number }}</strong>
+                  <span class="merge-confirm-pill merge-confirm-pill-table d-inline-flex align-items-center">
+                    <svg class="merge-confirm-table-icon me-1" style="width: 1rem; height: 1rem;" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                      <rect x="4" y="8" width="24" height="6" rx="2" fill="currentColor"/>
+                      <rect x="8" y="14" width="3" height="10" rx="1" fill="currentColor"/>
+                      <rect x="21" y="14" width="3" height="10" rx="1" fill="currentColor"/>
+                    </svg>
+                    طاولة {{ currentMergeOrder?.order_details?.table_number }}
+                  </span>
                 </div>
-              </div>
-              <div class="mb-2 d-flex justify-content-between align-items-center">
-                <span class="text-muted">عدد العناصر</span>
-                <strong>{{ currentMergeOrder?.order_details?.order_items_count }}</strong>
-              </div>
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="text-muted">الإجمالي</span>
-                <strong>{{ currentMergeOrder?.total_price }} {{ mergeOrderCurrency }}</strong>
+                <div class="merge-confirm-row mb-2">
+                  <span class="text-muted text-end">عدد العناصر</span>
+                  <strong class="text-start">{{ currentMergeOrder?.order_details?.order_items_count }}</strong>
+                </div>
+                <div class="merge-confirm-row">
+                  <span class="text-muted text-end">الإجمالي</span>
+                  <strong class="text-start">{{ currentMergeOrder?.total_price }} {{ mergeOrderCurrency }}</strong>
+                </div>
               </div>
             </div>
           </div>
 
-          <!-- Arrow (pointing from left to right, from secondary to primary) -->
-          <div class="col-md-2 d-flex align-items-center justify-content-center">
-            <i class="fa-solid fa-arrow-right text-danger fs-1"></i>
+          <!-- Arrow (secondary → primary) -->
+          <div class="col-md-2 d-flex align-items-center justify-content-center merge-confirm-col-arrow px-2">
+            <span class="merge-confirm-arrow-circle">
+              <i class="fa-solid fa-arrow-right"></i>
+            </span>
           </div>
 
-          <!-- Secondary Order (Sender) - Right Side -->
-          <div class="col-md-5">
-            <div class="border rounded p-3 h-100" style="background-color: #f5f5f5; border-color: #d0d0d0 !important;">
-              <h6 class="fw-bold mb-3" style="color: #666;">الطلب الثانوي (المرسل)</h6>
-              <div class="mb-2 d-flex align-items-center justify-content-between">
-                <strong>{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong>
-                <div class="d-flex flex-column align-items-end">
-                  <span>{{ getSecondaryMergeOrder()?.order_details?.order_type === 'dine-in' ? ('طاولة ' + (getSecondaryMergeOrder()?.order_details?.table_number ?? '')) : 'إستلام' }}</span>
+          <!-- Secondary Order (Sender) - لازق في الحد (يسار في RTL) -->
+          <div class="col-md-5 merge-confirm-col-secondary">
+            <div class="merge-confirm-card-wrap position-relative h-100">
+              <div class="merge-confirm-tab merge-confirm-tab-secondary">الطلب الثانوي (المرسل)</div>
+              <div class="p-3 pt-4 h-100 merge-confirm-secondary-card merge-confirm-card-inner">
+                <div class="merge-confirm-row merge-confirm-table-row mb-3">
+                  <strong class="merge-confirm-order-num">{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong>
+                  <ng-container *ngIf="getSecondaryMergeOrder()?.order_details?.order_type === 'dine-in'; else secondaryTypePill">
+                    <span class="merge-confirm-pill merge-confirm-pill-type d-inline-flex align-items-center">
+                      <svg class="merge-confirm-table-icon me-1" style="width: 1rem; height: 1rem;" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+                        <rect x="4" y="8" width="24" height="6" rx="2" fill="currentColor"/>
+                        <rect x="8" y="14" width="3" height="10" rx="1" fill="currentColor"/>
+                        <rect x="21" y="14" width="3" height="10" rx="1" fill="currentColor"/>
+                      </svg>
+                      طاولة {{ getSecondaryMergeOrder()?.order_details?.table_number }}
+                    </span>
+                  </ng-container>
+                  <ng-template #secondaryTypePill>
+                    <span class="merge-confirm-pill merge-confirm-pill-type d-inline-flex">
+                      <i class="fa-solid fa-bag-shopping me-1"></i>
+                      {{ getSecondaryMergeOrder()?.order_details?.order_type === 'Takeaway' ? 'إستلام' : getSecondaryMergeOrder()?.order_details?.order_type === 'Delivery' ? 'توصيل' : 'إستلام' }}
+                    </span>
+                  </ng-template>
                 </div>
-              </div>
-              <div class="mb-2 d-flex justify-content-between align-items-center">
-                <span class="text-muted">عدد العناصر</span>
-                <strong>{{ getSecondaryMergeOrder()?.order_details?.order_items_count }}</strong>
-              </div>
-              <div class="d-flex justify-content-between align-items-center">
-                <span class="text-muted">الإجمالي</span>
-                <strong>{{ getSecondaryMergeOrder()?.total_price }} {{ mergeOrderCurrency }}</strong>
+                <div class="merge-confirm-row mb-2">
+                  <span class="text-muted text-end">عدد العناصر</span>
+                  <strong class="text-start">{{ getSecondaryMergeOrder()?.order_details?.order_items_count }}</strong>
+                </div>
+                <div class="merge-confirm-row">
+                  <span class="text-muted text-end">الإجمالي</span>
+                  <strong class="text-start">{{ getSecondaryMergeOrder()?.total_price }} {{ mergeOrderCurrency }}</strong>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <!-- Merge Summary -->
-        <div class="alert alert-warning" style="background-color: #fff3cd; border-color: #ffc107;">
-          <h6 class="fw-bold mb-2">
-            <i class="fa-solid fa-circle-exclamation text-warning me-2"></i>
+        <!-- Merge Summary - Figma colors -->
+        <div class="merge-confirm-summary mx-3">
+          <h6 class="fw-bold mb-2 merge-confirm-summary-title">
+            <i class="fa-solid fa-circle-exclamation me-2"></i>
             ملخص الدمج
           </h6>
           <div class="d-flex justify-content-between align-items-center">
-            <span class="text-dark">الإجمالي الجديد للطلب الأساسي:</span>
-            <strong class="fs-5 text-danger">{{ getMergeNewTotal() }} {{ mergeOrderCurrency }}</strong>
+            <span class="merge-confirm-summary-label">الإجمالي الجديد للطلب الأساسي:</span>
+            <strong class="fs-5 merge-confirm-summary-total">{{ getMergeNewTotal() }} {{ mergeOrderCurrency }}</strong>
           </div>
-          <div class="mt-2 small" style="color: #dc3545;">
+          <div class="mt-2 small merge-confirm-summary-disclaimer">
             * سيتم إغلاق الطلب الثانوي <strong>{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong> نهائياً.
           </div>
         </div>
       </div>
-      <div class="modal-footer border-0 d-flex gap-2">
-        <button type="button" class="btn btn-danger flex-fill" (click)="submitMergeRequest()" [disabled]="isMergeSubmitting">
+      <div class="modal-footer border-0 d-flex gap-2 merge-confirm-footer px-3">
+        <button type="button" class="btn merge-confirm-btn-cancel flex-fill" (click)="goBackToMergeStep1()">إلغاء</button>
+        <button type="button" class="btn merge-confirm-btn-submit flex-fill" (click)="submitMergeRequest()" [disabled]="isMergeSubmitting">
           <span *ngIf="isMergeSubmitting" class="spinner-border spinner-border-sm me-2"></span>
           <i *ngIf="!isMergeSubmitting" class="fa-solid fa-check me-2"></i>
           {{ isMergeSubmitting ? 'جاري الإرسال...' : 'تأكيد الدمج' }}
         </button>
-        <button type="button" class="btn btn-danger flex-fill" (click)="goBackToMergeStep1()">إلغاء</button>
       </div>
     </div>
   </div>
@@ -1409,50 +1435,50 @@
     <div class="modal-content p-4">
       <div class="modal-body text-center">
         <div class="mb-3">
-          <i class="fa-solid fa-check-circle text-success" style="font-size: 4rem;"></i>
+          <span class="split-success-icon-check d-inline-flex align-items-center justify-content-center">
+            <i class="fa-solid fa-check text-white" style="font-size: 1.5rem;"></i>
+          </span>
         </div>
         <h4 class="fw-bold mb-3">تم تجزئة الطلب بنجاح!</h4>
         <p class="text-muted mb-4">
           تم إنشاء طلب جديد ونقل العناصر المختارة إليه. يمكنك الآن متابعة العمل على أي من الطلبين.
         </p>
 
-        <div class="row mb-4">
-          <div class="col-6">
-            <div class="border rounded p-2">
-              <small class="text-muted d-block">الطلب الجديد</small>
-              <strong>{{ getNewSplitOrderNumber() }}</strong>
-              <div class="small mt-1">
-                <i class="fa-solid fa-chair me-1"></i>
-                {{ getSelectedTableName() }}
-              </div>
-              <div class="small text-muted mt-1">
-                تم نقل {{ getSelectedSplitItemsCount() }} عنصر({{ getSelectedSplitItemsCount() }}) إلى الطلب الجديد
-              </div>
+        <div class="split-success-box mb-4" dir="rtl">
+          <div class="split-success-row-inner d-flex align-items-stretch justify-content-center gap-2 flex-wrap">
+            <div class="split-success-card text-center flex-grow-1">
+              <small class="text-muted split-success-label d-block mb-1">الطلب الأصلي</small>
+              <span class="split-success-order-num d-block">{{ currentSplitOrder?.order_details?.order_number }}</span>
+              <span class="split-success-table-row small text-muted d-block mt-1">طاولة {{ currentSplitOrder?.order_details?.table_number ?? '—' }}</span>
+            </div>
+            <div class="split-success-arrow-wrap d-flex align-items-center justify-content-center flex-shrink-0">
+              <i class="fa-solid fa-arrow-left split-success-arrow text-muted"></i>
+            </div>
+            <div class="split-success-card text-center flex-grow-1">
+              <small class="text-muted split-success-label d-block mb-1">الطلب الجديد</small>
+              <span class="split-success-order-num split-success-order-num-new d-block">{{ getNewSplitOrderNumber() }}</span>
+              <span class="split-success-table-row small text-muted d-block mt-1">طاولة {{ getSelectedTableNumberOrName() }}</span>
             </div>
           </div>
-          <div class="col-6">
-            <div class="border rounded p-2">
-              <small class="text-muted d-block">الطلب الأصلي</small>
-              <strong>{{ currentSplitOrder?.order_details?.order_number }}</strong>
-              <div class="small mt-1">
-                <i class="fa-solid fa-chair me-1"></i>
-                طاولة {{ currentSplitOrder?.order_details?.table_number }}
-              </div>
-            </div>
-          </div>
+          <p class="split-success-transfer small text-muted mb-0 mt-3 pt-2 border-top">
+            تم نقل {{ getSelectedSplitItemsCount() }} عنصر({{ getSelectedSplitItemsCount() }}) إلى الطلب الجديد
+          </p>
         </div>
 
         <div class="d-flex flex-column gap-2">
-          <button type="button" class="btn btn-danger" (click)="viewNewSplitOrder()">
+          <button type="button" class="btn btn-danger rounded-3" (click)="viewNewSplitOrder()">
             <i class="fa-solid fa-external-link me-2"></i>
             عرض الطلب الجديد
           </button>
-          <button type="button" class="btn btn-outline-secondary" (click)="viewOriginalSplitOrder()">
+          <button type="button" class="btn split-success-btn-back" (click)="viewOriginalSplitOrder()">
             العودة للطلب الأصلي
           </button>
-          <a class="text-muted small" (click)="closeSplitSuccessModal()" style="cursor: pointer;">
-            العودة للرئيسية
-          </a>
+          <p class="mb-0 mt-1">
+            <span class="split-success-home-link text-muted small" (click)="closeSplitSuccessModal()" style="cursor: pointer;">
+              <i class="fa-solid fa-th-large me-1"></i>
+              العودة للرئيسية
+            </span>
+          </p>
         </div>
       </div>
     </div>
@@ -1465,7 +1491,7 @@
     <div class="modal-content p-4">
       <div class="modal-body text-center">
         <div class="mb-3">
-          <span class="d-inline-flex align-items-center justify-content-center rounded-3 bg-success text-white" style="width: 64px; height: 48px;">
+          <span class="merge-success-icon-large d-inline-flex align-items-center justify-content-center">
             <i class="fa-solid fa-check" style="font-size: 1.5rem;"></i>
           </span>
         </div>
@@ -1474,27 +1500,27 @@
           تم دمج الطلب الثانوي وإغلاقه. تم تحديث الطلب الرئيسي بالعناصر الجديدة بنجاح.
         </p>
 
-        <div class="row g-3 mb-4">
+        <div class="row g-3 mb-4 merge-success-orders" dir="rtl">
           <div class="col-12">
-            <div class="border rounded-3 p-3 d-flex align-items-center justify-content-between gap-2 text-start" style="min-height: 56px;">
-              <div>
-                <small class="text-muted d-block">الطلب الرئيسي المحدث</small>
-                <strong>{{ currentMergeOrder?.order_details?.order_number }}</strong>
+            <div class="merge-success-row d-flex align-items-center justify-content-between gap-2" style="min-height: 56px;" dir="rtl">
+              <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                <span class="merge-success-icon merge-success-icon-check d-inline-flex align-items-center justify-content-center flex-shrink-0">
+                  <i class="fa-solid fa-plus" style="font-size: 0.65rem;"></i>
+                </span>
+                <small class="text-muted merge-success-label mb-0">الطلب الرئيسي المحدث</small>
               </div>
-              <span class="d-inline-flex align-items-center justify-content-center rounded-2 bg-success text-white flex-shrink-0" style="width: 36px; height: 28px;">
-                <i class="fa-solid fa-check" style="font-size: 0.85rem;"></i>
-              </span>
+              <span class="merge-success-order-num merge-success-order-num-main">{{ currentMergeOrder?.order_details?.order_number }}</span>
             </div>
           </div>
           <div class="col-12">
-            <div class="border rounded-3 p-3 d-flex align-items-center justify-content-between gap-2 text-start" style="min-height: 56px;">
-              <div>
-                <small class="text-muted d-block">الطلب الثانوي (مغلق)</small>
-                <strong>{{ getSecondaryMergeOrder()?.order_details?.order_number }}</strong>
+            <div class="merge-success-row d-flex align-items-center justify-content-between gap-2" style="min-height: 56px;" dir="rtl">
+              <div class="d-flex align-items-center gap-1 flex-shrink-0">
+                <span class="merge-success-icon merge-success-icon-closed d-inline-flex align-items-center justify-content-center flex-shrink-0">
+                  <i class="fa-solid fa-minus" style="font-size: 0.6rem;"></i>
+                </span>
+                <small class="text-muted merge-success-label mb-0">الطلب الثانوي (مغلق)</small>
               </div>
-              <span class="d-inline-flex align-items-center justify-content-center rounded-2 bg-secondary text-white flex-shrink-0" style="width: 36px; height: 28px;">
-                <i class="fa-solid fa-circle" style="font-size: 0.5rem;"></i>
-              </span>
+              <span class="merge-success-order-num merge-success-order-num-merged">{{ getSecondaryMergeOrder()?.order_details?.order_number }}</span>
             </div>
           </div>
         </div>
