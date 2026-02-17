@@ -190,9 +190,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       this.deliveryFees = applied.deliveryFees;
       // Set the main order details
       this.orderDetails = order.details_order;
-      this.orderSummary = applied.orderSummary;
-
       this.orderItems = this.filterMovedOrderItems(order.details_order?.order_details || []);
+      this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
 
 
 
@@ -254,6 +253,40 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     return items.filter((item: any) => (Number(item.quantity) || 0) > 0);
   }
 
+  /**
+   * Recalculate order summary from displayed items when backend summary is stale (e.g. after split).
+   * Ensures "view original order" and invoice show the correct amount for the remaining items only.
+   */
+  private recalculateSummaryFromDisplayedItems(summary: any, items: any[]): any {
+    if (!summary || !items || items.length === 0) return summary;
+    const itemsSubtotal = items.reduce((sum: number, item: any) => sum + this.safeNum(item.total_dish_price), 0);
+    const summarySubtotal = this.safeNum(summary.subtotal_price_before_coupon ?? summary.subtotal ?? summary.total_dish_price);
+    const diff = Math.abs(itemsSubtotal - summarySubtotal);
+    if (diff < 0.02) return summary;
+    const coupon = this.safeNum(summary.coupon_value);
+    const delivery = this.safeNum(summary.delivery_fees);
+    let service = this.safeNum(summary.service_fees);
+    const servicePct = this.safeNum(summary.service_percentage);
+    if (servicePct > 0) service = (itemsSubtotal - coupon) * (servicePct / 100);
+    let tax = this.safeNum(summary.tax_value);
+    const taxPct = this.safeNum(summary.tax_percentage);
+    if (taxPct > 0 && !summary.tax_application) {
+      const afterCouponAndService = itemsSubtotal - coupon + service;
+      tax = afterCouponAndService * (taxPct / 100);
+    }
+    const total = itemsSubtotal - coupon + service + tax + delivery;
+    return {
+      ...summary,
+      subtotal_price_before_coupon: itemsSubtotal,
+      subtotal: itemsSubtotal,
+      total_dish_price: itemsSubtotal,
+      service_fees: service,
+      tax_value: tax,
+      total: total,
+      total_price: total,
+    };
+  }
+
   // Process order data from API
   private processOrderData(order: any): void {
     this.currencySymbol = order.currency_symbol;
@@ -266,10 +299,10 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
 
     this.deliveryFees = applied.deliveryFees;
     this.orderDetails = order;
-    this.orderSummary = applied.orderSummary;
     this.orderItems = this.filterMovedOrderItems(order.order_details || []);
-    // Persist corrected summary so saveOrderToIndexedDB stores correct delivery_fees and total
-    if (applied.orderSummary !== summary) order.order_summary = applied.orderSummary;
+    this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
+    // Persist corrected summary so saveOrderToIndexedDB stores correct totals (e.g. after split)
+    order.order_summary = this.orderSummary;
 
     if (this.deliveryData?.delivery_name === ' ') {
       this.deliveryData.delivery_name = 'لا يوجد';
@@ -325,8 +358,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
 
             console.log(response.data, 'test');
             this.orderDetails = order;
-            this.orderSummary = applied.orderSummary;
             this.orderItems = this.filterMovedOrderItems(order.order_details || []);
+            this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
             if (this.deliveryData?.delivery_name == ' ') {
               this.deliveryData.delivery_name = 'لا يوجد';
             }

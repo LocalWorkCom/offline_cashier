@@ -896,6 +896,19 @@ export class OrdersComponent implements OnDestroy {
     }
   }
 
+  /** True if this order is a merged order: either it was merged into another (secondary) or it received a merge (primary). */
+  isMergedOrder(order: any): boolean {
+    if (!order?.order_details) return false;
+    const id = order.order_details.order_id;
+    const status = order.order_details.status;
+    const mergedIntoOrderId = order.order_details.merged_into_order_id ?? order.merged_into_order_id;
+    if (status === 'cancelled' && mergedIntoOrderId) return true;
+    const isPrimaryMerged = (this.orders || []).some(
+      (o: any) => (o?.order_details?.merged_into_order_id ?? o?.merged_into_order_id) == id
+    );
+    return !!isPrimaryMerged;
+  }
+
   getStatusText(order: any): string {
     // Handle both old format (status string) and new format (order object)
     const status = typeof order === 'string' ? order : (order?.order_details?.status || order?.status);
@@ -2503,9 +2516,12 @@ export class OrdersComponent implements OnDestroy {
       return false;
     }
 
-    // Filter out completed and cancelled items
+    // Only items still in the order (quantity > 0) and not completed/cancelled
     const activeItems = order.order_items.filter(
-      (item: any) => item.dish_status !== 'completed' && item.dish_status !== 'cancel'
+      (item: any) =>
+        (Number(item.quantity) || 0) > 0 &&
+        item.dish_status !== 'completed' &&
+        item.dish_status !== 'cancel'
     );
 
     if (activeItems.length === 0) {
@@ -2580,10 +2596,13 @@ export class OrdersComponent implements OnDestroy {
     });
   }
 
-  // Open split modal
+  // Open split modal – only show items still in the order (quantity > 0); hide items already moved
   openSplitModal(order: any): void {
     this.currentSplitOrder = order;
-    this.splitOrderItems = order.order_items.map((item: any) => ({
+    const itemsStillInOrder = (order.order_items || []).filter(
+      (item: any) => (Number(item.quantity) || 0) > 0
+    );
+    this.splitOrderItems = itemsStillInOrder.map((item: any) => ({
       ...item,
       isSelected: false,
       selectedQuantity: 0,

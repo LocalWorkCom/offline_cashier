@@ -597,7 +597,7 @@
         <!-- <button class="btn fs-6 rounded-4" (click)="onPrintButtonClick()">
           <i class="fas fa-print ms-1"></i> طباعة الفاتورة
         </button> -->
-        <button class="btn btn btn-primary w-100" [disabled]="loading || amountError || (paymentError && paymentError.trim() !== '') || (paymentAmountError && paymentAmountError.trim() !== '') || (referenceNumberError && referenceNumberError.trim() !== '') || (deliveryStatusError && deliveryStatusError.trim() !== '')" (click)="saveOrder()" *ngIf="
+        <button class="btn pill-edit-pay-btn w-100" [disabled]="loading || amountError || (paymentError && paymentError.trim() !== '') || (paymentAmountError && paymentAmountError.trim() !== '') || (referenceNumberError && referenceNumberError.trim() !== '') || (deliveryStatusError && deliveryStatusError.trim() !== '')" (click)="saveOrder()" *ngIf="
             invoices &&
             invoices.length > 0
           "> <!--  &&
