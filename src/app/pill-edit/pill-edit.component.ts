@@ -220,13 +220,14 @@ export class PillEditComponent {
         console.log(this.invoices[0]?.order_type);
         this.orderType = this.invoices[0]?.order_type || '';
 
-        // restore coupon data if exists on invoice
+        // restore coupon data if exists on invoice (بعد التجزئة لا يكون هناك كوبون على الطلب الأصلي)
         const summary = this.invoices?.[0]?.invoice_summary;
         if (summary) {
-          this.couponType = summary.coupon_type || '';
-          this.couponTitle = summary.coupon_title || '';
-          this.discountAmount = Number(summary.coupon_value) || 0;
-          this.couponCode = summary.coupon_code || '';
+          const hasCoupon = summary.coupon_id != null && summary.coupon_id !== '';
+          this.couponType = hasCoupon ? (summary.coupon_type || '') : '';
+          this.couponTitle = hasCoupon ? (summary.coupon_title || '') : '';
+          this.discountAmount = hasCoupon ? (Number(summary.coupon_value) || 0) : 0;
+          this.couponCode = hasCoupon ? (summary.coupon_code || '') : '';
 
           // التأكد من وجود subtotal_price_before_coupon، وإلا استخدام subtotal_price أو total_price
           if (!summary.subtotal_price_before_coupon) {
@@ -272,14 +273,13 @@ export class PillEditComponent {
             ...e.invoice_summary,
             currency_symbol: e.currency_symbol,
           };
-
-          // Convert coupon_value if it's a percentage
-          // if (summary.coupon_type === 'percentage') {
-          //   const couponValue = parseFloat(summary.coupon_value); // "10.00" → 10
-          //   const subtotal = parseFloat(summary.subtotal_price);
-          //   summary.coupon_value = ((couponValue / 100) * subtotal).toFixed(2); // Convert to currency
-          // }
-
+          // بعد الدمج لا يكون هناك كوبون على الفاتورة: إخفاء الكوبون من العرض
+          if (summary.coupon_id == null || summary.coupon_id === '') {
+            summary.coupon_value = 0;
+            summary.coupon_title = null;
+            summary.coupon_code = null;
+            summary.coupon_type = null;
+          }
           return summary;
         });
 
@@ -294,7 +294,7 @@ export class PillEditComponent {
           invoices: response.data.invoices,
           order_id: response.data.order_id,
           invoice_summary: this.invoiceSummary || [],
-          orderDetails: this.orderDetails.flat() || [],
+          orderDetails: this.getFilteredOrderDetailsFlat(),
           date: this.date,
           time: this.time,
           showPrices: true,
@@ -308,6 +308,21 @@ export class PillEditComponent {
           waiter: response.data.waiter,
           make_type: response.data.make_type
         };
+        if (this.receiptData?.invoices?.[0]) {
+          this.receiptData.invoices[0].orderDetails = this.getFilteredOrderDetailsFlat();
+        }
+
+        // After split, coupon must not apply to primary order; clear it from display if this is the split primary
+        this.applyClearCouponForSplitPrimaryOrder();
+        // After merge: ensure invoice_summary in memory has no coupon so الفاتورة section hides coupon row
+        if (this.invoices?.[0]?.invoice_summary && (this.invoices[0].invoice_summary.coupon_id == null || this.invoices[0].invoice_summary.coupon_id === '')) {
+          this.invoices[0].invoice_summary.coupon_value = 0;
+          this.invoices[0].invoice_summary.coupon_title = null;
+          this.invoices[0].invoice_summary.coupon_code = null;
+          this.discountAmount = 0;
+          this.couponTitle = '';
+          this.couponCode = '';
+        }
 
         // Merged order fix: invoice API may return only primary order items. Fetch full order and use merged items if more.
         const orderId = response.data.order_id;
@@ -333,9 +348,13 @@ export class PillEditComponent {
                 this.totalll = total;
                 this.receiptData = {
                   ...this.receiptData,
-                  orderDetails: this.orderDetails.flat() || [],
+                  orderDetails: this.getFilteredOrderDetailsFlat(),
                   invoice_summary: this.invoiceSummary || [],
                 };
+                if (this.receiptData?.invoices?.[0]) {
+                  this.receiptData.invoices[0].orderDetails = this.getFilteredOrderDetailsFlat();
+                }
+                this.applyClearCouponForSplitPrimaryOrder();
                 this.cdr.detectChanges();
               }
             },
@@ -347,6 +366,16 @@ export class PillEditComponent {
         console.error(' Error fetching pill details:', error);
       },
     });
+  }
+  /** عناصر الطلب ذات كمية أكبر من صفر فقط (بعد التجزئة أو الحذف لا تظهر العناصر المُزالَة) */
+  get activeOrderDetails(): any[] {
+    const details = this.orderDetails?.[0];
+    if (!details || !Array.isArray(details)) return [];
+    return details.filter((item: any) => (Number(item.quantity) || 0) > 0);
+  }
+  /** نفس القائمة مصفاة للطباعة (مصفوفة مسطحة) */
+  getFilteredOrderDetailsFlat(): any[] {
+    return (this.orderDetails?.flat() || []).filter((item: any) => (Number(item.quantity) || 0) > 0);
   }
   hasDeliveryOrDineIn(): boolean {
     return this.invoices?.some((invoice: { order_type: string }) =>
@@ -800,12 +829,13 @@ export class PillEditComponent {
                 }]
               : [];
 
+            const filteredOrderDetails = (response.data.orderDetails || []).filter((item: any) => (Number(item.quantity) || 0) > 0);
             this.receiptData = {
               branchDetails: branchDetails,
               invoices: invoices,
               order_id: response.data.order.id,
               invoice_summary: invoiceSummary,
-              orderDetails: response.data.orderDetails || [],
+              orderDetails: filteredOrderDetails,
               date: response.data.order.date,
               time: response.data.order.time,
               showPrices: true,
@@ -819,6 +849,9 @@ export class PillEditComponent {
               waiter: response.data.waiter,
               make_type: response.data.make_type
             };
+            if (this.receiptData?.invoices?.[0]) {
+              this.receiptData.invoices[0].orderDetails = filteredOrderDetails;
+            }
 
             // التأكد من ظهور "مدفوع" في طباعة الفاتورة بعد الدفع
             if (this.paymentStatus === 'paid' && this.receiptData?.invoices?.[0]) {
@@ -1080,6 +1113,89 @@ export class PillEditComponent {
     this.couponMessage = `تم تطبيق خصم يدوي (${this.manualDiscountType === 'percentage' ? '%' : 'مبلغ ثابت'})`;
     this.couponError = '';
     this.recalcTotalsWithDiscount(discountValue, 'خصم يدوي', this.manualDiscountType);
+  }
+
+  /**
+   * When order was split, coupon must not apply to primary order. If this invoice is for that primary order,
+   * zero the coupon in summary and recalc total, then remove from session list.
+   */
+  private applyClearCouponForSplitPrimaryOrder(): void {
+    const orderId = this.order_id != null ? String(this.order_id) : '';
+    if (!orderId) return;
+    try {
+      const raw = sessionStorage.getItem('splitPrimaryOrderIds') || '[]';
+      const ids: string[] = JSON.parse(raw);
+      if (!ids.includes(orderId)) return;
+      ids.splice(ids.indexOf(orderId), 1);
+      sessionStorage.setItem('splitPrimaryOrderIds', JSON.stringify(ids));
+    } catch (_) {
+      return;
+    }
+    const summary = this.invoices?.[0]?.invoice_summary;
+    if (!summary) return;
+    const hasCoupon = (this.discountAmount > 0) || (Number(summary.coupon_value) || 0) > 0;
+    if (!hasCoupon) return;
+
+    const originalSubtotal = Number(summary._original_subtotal_price_before_coupon || summary.subtotal_price_before_coupon || summary.total_price || 0);
+    const originalServiceFees = Number(summary._original_service_fees || summary.service_fees || 0);
+    const taxPerc = Number(summary.tax_percentage || 0);
+    const servicePerc = Number(summary.service_percentage || 0);
+    const taxApplication = summary.tax_application ?? false;
+    const deliveryFees = Number(summary.delivery_fees || 0);
+
+    let serviceAmount = 0;
+    if (servicePerc > 0) {
+      serviceAmount = (originalSubtotal * servicePerc) / 100;
+    } else {
+      serviceAmount = originalServiceFees;
+    }
+    serviceAmount = Number(serviceAmount.toFixed(2));
+
+    const vatBase = originalSubtotal + serviceAmount;
+    let taxAmount = 0;
+    if (taxPerc > 0) {
+      if (taxApplication) {
+        taxAmount = vatBase - vatBase / (1 + taxPerc / 100);
+      } else {
+        taxAmount = (vatBase * taxPerc) / 100;
+      }
+    }
+    taxAmount = Number(taxAmount.toFixed(3));
+
+    const finalTotal = originalSubtotal + serviceAmount + taxAmount + deliveryFees;
+
+    summary.coupon_value = 0;
+    summary.coupon_title = '';
+    summary.coupon_type = '';
+    summary.coupon_code = '';
+    summary.subtotal_price_before_coupon = originalSubtotal;
+    summary.total_price = Number(finalTotal.toFixed(2));
+    summary.total_after_tax = Number(finalTotal.toFixed(2));
+    summary.tax_value = Number(taxAmount.toFixed(3));
+    summary.tax = Number(taxAmount.toFixed(3));
+    summary.service_fees = serviceAmount;
+
+    if (this.invoiceSummary && this.invoiceSummary[0]) {
+      this.invoiceSummary[0].coupon_value = 0;
+      this.invoiceSummary[0].coupon_title = '';
+      this.invoiceSummary[0].coupon_type = '';
+      this.invoiceSummary[0].coupon_code = '';
+      this.invoiceSummary[0].subtotal_price_before_coupon = originalSubtotal;
+      this.invoiceSummary[0].total_price = Number(finalTotal.toFixed(2));
+      this.invoiceSummary[0].total_after_tax = Number(finalTotal.toFixed(2));
+      this.invoiceSummary[0].tax_value = Number(taxAmount.toFixed(3));
+      this.invoiceSummary[0].tax = Number(taxAmount.toFixed(3));
+      this.invoiceSummary[0].service_fees = serviceAmount;
+    }
+
+    this.discountAmount = 0;
+    this.couponTitle = '';
+    this.couponType = '';
+    this.couponCode = '';
+    this.couponMessage = '';
+    this.couponError = '';
+    this.appliedCoupon = null;
+    this.totalll = summary.total_price;
   }
 
   removeDiscount(): void {

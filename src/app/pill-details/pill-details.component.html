@@ -170,7 +170,7 @@
           <div id="flush-collapseOne" class="accordion-collapse collapse show" aria-labelledby="flush-headingOne"
             data-bs-parent="#accordionFlushExample">
             <div class="accordion-body">
-              <div *ngFor="let item of (orderDetails && orderDetails.length > 0 ? orderDetails[0] : [])"
+              <div *ngFor="let item of activeOrderDetails"
                 class="d-flex justify-content-between px-1 mb-1 align-items-start">
                 <div class="d-flex flex-column">
                   <h6>
@@ -276,6 +276,7 @@
       </div>
 
       <div class="d-flex justify-content-between px-2 mb-1 main-color" *ngIf="
+          invoices[0]?.invoice_summary?.coupon_id &&
           item.tax_application !== 0 &&
           item.coupon_value !== '0.00' &&
           item.coupon_value !== 0
@@ -467,7 +468,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr *ngFor="let item of orderDetails[0]">
+        <tr *ngFor="let item of activeOrderDetails">
           <td>
             <div>
               <div>
@@ -501,6 +502,7 @@
             <span class="fw-bold bg_black">{{ item.subtotal_price_before_coupon }} {{ item.currency_symbol }}</span>
           </div>
           <div class="d-flex justify-content-between  fw-bold" style="font-size: 13px;" *ngIf="
+              invoices[0]?.invoice_summary?.coupon_id &&
               item.tax_application !== 0 &&
               item.coupon_value !== '0.00' &&
               item.coupon_value !== 0

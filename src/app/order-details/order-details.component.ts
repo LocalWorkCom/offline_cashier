@@ -31,6 +31,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   deliveryFees: any;
   isAllLoading: boolean = true;
   errorMessage: string = '';
+  /** When true (e.g. opened from "view original order" after split), coupon is removed from summary so it is not shown on primary order. */
+  clearCouponAfterSplit: boolean = false;
   constructor(
     private route: ActivatedRoute,
     private orderListById: OrderListDetailsService,
@@ -45,6 +47,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         this.orderId = params.get('id');
         if (this.orderId) {
           const forceRefresh = this.route.snapshot.queryParamMap.get('refresh') === 'true';
+          this.clearCouponAfterSplit = this.route.snapshot.queryParamMap.get('clearCoupon') === '1';
           if (forceRefresh && navigator.onLine) {
             // After merge (or similar): force fetch from API so merged items are shown, then update IndexedDB
             console.log("🔄 Refresh requested - fetching order from API");
@@ -301,6 +304,23 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     this.orderDetails = order;
     this.orderItems = this.filterMovedOrderItems(order.order_details || []);
     this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
+    // After split or merge, coupon must not apply; remove it from displayed summary when requested
+    if (this.clearCouponAfterSplit) {
+      const sub = this.safeNum(this.orderSummary.subtotal ?? this.orderSummary.subtotal_price_before_coupon ?? this.orderSummary.total_dish_price);
+      const coupon = this.safeNum(this.orderSummary.coupon_value);
+      const service = this.safeNum(this.orderSummary.service_fees);
+      const tax = this.safeNum(this.orderSummary.tax_value);
+      const delivery = this.safeNum(this.orderSummary.delivery_fees);
+      const total = sub - coupon + service + tax + delivery;
+      this.orderSummary = {
+        ...this.orderSummary,
+        coupon_id: null,
+        coupon_value: 0,
+        coupon_title: null,
+        total: total,
+        total_price: total,
+      };
+    }
     // Persist corrected summary so saveOrderToIndexedDB stores correct totals (e.g. after split)
     order.order_summary = this.orderSummary;
 
@@ -379,8 +399,12 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         },
       });
   }
+  /** Hide coupon row when there is no coupon (no id or value is zero). Avoids showing stale coupon after merge/split. */
   get isCouponZero(): boolean {
-    return Number(this.orderSummary.coupon_value) === 0;
+    const id = this.orderSummary?.coupon_id;
+    if (id == null || id === '') return true;
+    const val = this.orderSummary?.coupon_value;
+    return val == null || Number(val) === 0;
   }
   get hasServiceFees(): boolean {
     return Number(this.orderSummary.service_percentage) > 0;
