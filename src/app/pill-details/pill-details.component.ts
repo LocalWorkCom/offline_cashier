@@ -356,7 +356,7 @@ private processPillDetails(data: any): void {
           invoices: response.data.invoices,
           order_id: response.data.order_id,
           invoice_summary: this.invoiceSummary || [],
-          orderDetails: this.orderDetails.flat() || [],
+          orderDetails: this.getFilteredOrderDetailsFlat(),
           date: this.date,
           time: this.time,
           showPrices: true,
@@ -370,11 +370,24 @@ private processPillDetails(data: any): void {
           waiter: response.data.waiter,
           make_type: response.data.make_type
         };
+        if (this.receiptData?.invoices?.[0]) {
+          this.receiptData.invoices[0].orderDetails = this.getFilteredOrderDetailsFlat();
+        }
       },
       error: (error: any) => {
         console.error(' Error fetching pill details:', error);
       },
     });
+  }
+  /** عناصر الطلب ذات كمية أكبر من صفر فقط (بعد التجزئة أو الحذف لا تظهر العناصر المُزالَة) */
+  get activeOrderDetails(): any[] {
+    const details = this.orderDetails?.[0];
+    if (!details || !Array.isArray(details)) return [];
+    return details.filter((item: any) => (Number(item.quantity) || 0) > 0);
+  }
+  /** نفس القائمة مصفاة للطباعة (مصفوفة مسطحة) */
+  getFilteredOrderDetailsFlat(): any[] {
+    return (this.orderDetails?.flat() || []).filter((item: any) => (Number(item.quantity) || 0) > 0);
   }
   hasDeliveryOrDineIn(): boolean {
     return this.invoices?.some((invoice: { order_type: string }) =>

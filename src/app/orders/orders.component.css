@@ -525,6 +525,65 @@ button.dropdown-item {
     color: #fff;
 }
 
+/* Split Order Items Modal (Step 2) – space for X, instruction in header */
+#splitOrderItemsModal .modal-header {
+    padding-top: 1.25rem;
+}
+#splitOrderItemsModal .split-items-instruction-inline {
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+#splitOrderItemsModal .split-items-instruction-small {
+    font-size: 0.8rem;
+    line-height: 1.3;
+}
+#splitOrderItemsModal .split-items-instruction {
+    background-color: #e3f2fd;
+    color: #0d47a1;
+    padding: 0.3rem 0.5rem;
+    border-radius: 0.5rem;
+    border: 1px solid #bbdefb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    margin-top: 4rem !important;
+}
+#splitOrderItemsModal .split-items-instruction-icon {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+#splitOrderItemsModal .split-item-card {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+#splitOrderItemsModal .split-item-card:last-of-type {
+    margin-bottom: 0 !important;
+}
+#splitOrderItemsModal .split-qty-wrap {
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    border-radius: 0.5rem;
+    padding: 0.25rem 0.35rem;
+}
+#splitOrderItemsModal .split-items-list .border-top {
+    border-color: #dee2e6 !important;
+}
+#splitOrderItemsModal .split-new-item-card {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+#splitOrderItemsModal .split-new-item-card:last-of-type {
+    margin-bottom: 0 !important;
+}
+#splitOrderItemsModal .split-items-btn-cancel {
+    background-color: transparent;
+    border: 1px solid #dee2e6;
+    color: #495057;
+}
+#splitOrderItemsModal .split-items-btn-cancel:hover {
+    background-color: #f8f9fa;
+    border-color: #adb5bd;
+    color: #212529;
+}
+
 /* Merge Order Confirmation Modal – تصميم بالظبط: أيقونة هيدر، تاب بارز، بطاقات رمادية، ظل وزوايا */
 #mergeOrderConfirmationModal.modal { direction: rtl; }
 #mergeOrderConfirmationModal .merge-confirm-content {
