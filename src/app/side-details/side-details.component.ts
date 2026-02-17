@@ -2815,7 +2815,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    if ((this.selectedOrderType === 'Delivery' || this.selectedOrderType === 'توصيل') && !this.selectedDriverId) {
+    if (!this.hasCurrentOrderId && (this.selectedOrderType === 'Delivery' || this.selectedOrderType === 'توصيل') && !this.selectedDriverId) {
       this.isLoading = false;
       this.loading = false;
       this.falseMessage = 'يرجى اختيار مندوب التوصيل';
