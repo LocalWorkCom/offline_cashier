@@ -31,6 +31,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   deliveryFees: any;
   isAllLoading: boolean = true;
   errorMessage: string = '';
+  /** When true (e.g. opened from "view original order" after split), coupon is removed from summary so it is not shown on primary order. */
+  clearCouponAfterSplit: boolean = false;
   constructor(
     private route: ActivatedRoute,
     private orderListById: OrderListDetailsService,
@@ -44,6 +46,14 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         // console.log(params,'params order details')
         this.orderId = params.get('id');
         if (this.orderId) {
+          const forceRefresh = this.route.snapshot.queryParamMap.get('refresh') === 'true';
+          this.clearCouponAfterSplit = this.route.snapshot.queryParamMap.get('clearCoupon') === '1';
+          if (forceRefresh && navigator.onLine) {
+            // After merge (or similar): force fetch from API so merged items are shown, then update IndexedDB
+            console.log("🔄 Refresh requested - fetching order from API");
+            this.fetchOrderDetailsFromAPI();
+            return;
+          }
           if (navigator.onLine) {
             // 🌐 Online → استخدم الـ id الحقيقي من السيرفر
             console.log("✅ Online mode - using actual orderId from route");
@@ -183,9 +193,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       this.deliveryFees = applied.deliveryFees;
       // Set the main order details
       this.orderDetails = order.details_order;
-      this.orderSummary = applied.orderSummary;
-
-      this.orderItems = order.details_order?.order_details || [];
+      this.orderItems = this.filterMovedOrderItems(order.details_order?.order_details || []);
+      this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
 
 
 
@@ -241,6 +250,46 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       });
   }
 
+  /** Exclude moved (split) items: only show items with quantity > 0 so original order shows remaining items only. */
+  private filterMovedOrderItems(items: any[]): any[] {
+    if (!items || !Array.isArray(items)) return [];
+    return items.filter((item: any) => (Number(item.quantity) || 0) > 0);
+  }
+
+  /**
+   * Recalculate order summary from displayed items when backend summary is stale (e.g. after split).
+   * Ensures "view original order" and invoice show the correct amount for the remaining items only.
+   */
+  private recalculateSummaryFromDisplayedItems(summary: any, items: any[]): any {
+    if (!summary || !items || items.length === 0) return summary;
+    const itemsSubtotal = items.reduce((sum: number, item: any) => sum + this.safeNum(item.total_dish_price), 0);
+    const summarySubtotal = this.safeNum(summary.subtotal_price_before_coupon ?? summary.subtotal ?? summary.total_dish_price);
+    const diff = Math.abs(itemsSubtotal - summarySubtotal);
+    if (diff < 0.02) return summary;
+    const coupon = this.safeNum(summary.coupon_value);
+    const delivery = this.safeNum(summary.delivery_fees);
+    let service = this.safeNum(summary.service_fees);
+    const servicePct = this.safeNum(summary.service_percentage);
+    if (servicePct > 0) service = (itemsSubtotal - coupon) * (servicePct / 100);
+    let tax = this.safeNum(summary.tax_value);
+    const taxPct = this.safeNum(summary.tax_percentage);
+    if (taxPct > 0 && !summary.tax_application) {
+      const afterCouponAndService = itemsSubtotal - coupon + service;
+      tax = afterCouponAndService * (taxPct / 100);
+    }
+    const total = itemsSubtotal - coupon + service + tax + delivery;
+    return {
+      ...summary,
+      subtotal_price_before_coupon: itemsSubtotal,
+      subtotal: itemsSubtotal,
+      total_dish_price: itemsSubtotal,
+      service_fees: service,
+      tax_value: tax,
+      total: total,
+      total_price: total,
+    };
+  }
+
   // Process order data from API
   private processOrderData(order: any): void {
     this.currencySymbol = order.currency_symbol;
@@ -253,10 +302,27 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
 
     this.deliveryFees = applied.deliveryFees;
     this.orderDetails = order;
-    this.orderSummary = applied.orderSummary;
-    this.orderItems = order.order_details || [];
-    // Persist corrected summary so saveOrderToIndexedDB stores correct delivery_fees and total
-    if (applied.orderSummary !== summary) order.order_summary = applied.orderSummary;
+    this.orderItems = this.filterMovedOrderItems(order.order_details || []);
+    this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
+    // After split or merge, coupon must not apply; remove it from displayed summary when requested
+    if (this.clearCouponAfterSplit) {
+      const sub = this.safeNum(this.orderSummary.subtotal ?? this.orderSummary.subtotal_price_before_coupon ?? this.orderSummary.total_dish_price);
+      const coupon = this.safeNum(this.orderSummary.coupon_value);
+      const service = this.safeNum(this.orderSummary.service_fees);
+      const tax = this.safeNum(this.orderSummary.tax_value);
+      const delivery = this.safeNum(this.orderSummary.delivery_fees);
+      const total = sub - coupon + service + tax + delivery;
+      this.orderSummary = {
+        ...this.orderSummary,
+        coupon_id: null,
+        coupon_value: 0,
+        coupon_title: null,
+        total: total,
+        total_price: total,
+      };
+    }
+    // Persist corrected summary so saveOrderToIndexedDB stores correct totals (e.g. after split)
+    order.order_summary = this.orderSummary;
 
     if (this.deliveryData?.delivery_name === ' ') {
       this.deliveryData.delivery_name = 'لا يوجد';
@@ -312,8 +378,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
 
             console.log(response.data, 'test');
             this.orderDetails = order;
-            this.orderSummary = applied.orderSummary;
-            this.orderItems = order.order_details;
+            this.orderItems = this.filterMovedOrderItems(order.order_details || []);
+            this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
             if (this.deliveryData?.delivery_name == ' ') {
               this.deliveryData.delivery_name = 'لا يوجد';
             }
@@ -333,8 +399,12 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         },
       });
   }
+  /** Hide coupon row when there is no coupon (no id or value is zero). Avoids showing stale coupon after merge/split. */
   get isCouponZero(): boolean {
-    return Number(this.orderSummary.coupon_value) === 0;
+    const id = this.orderSummary?.coupon_id;
+    if (id == null || id === '') return true;
+    const val = this.orderSummary?.coupon_value;
+    return val == null || Number(val) === 0;
   }
   get hasServiceFees(): boolean {
     return Number(this.orderSummary.service_percentage) > 0;

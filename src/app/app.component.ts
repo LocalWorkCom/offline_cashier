@@ -13,6 +13,8 @@ import { TranslationService } from './core/i18n';
 import { ConfirmDialog } from "primeng/confirmdialog";
 import { NewOrderService } from './services/pusher/newOrder';
 import { DishStatusService } from './services/pusher/dishStatus';
+import { PrintInvoiceService } from './services/pusher/printInvoice';
+import { environment } from './environment';
 
 
 // import {LoginComponent} from "./login/login.component";
@@ -32,12 +34,16 @@ export class AppComponent implements OnInit {
   private translate = inject(TranslationService);
   private newOrderService = inject(NewOrderService);
   private dishStatusService = inject(DishStatusService);
+  private printInvoiceService = inject(PrintInvoiceService);
   ngOnInit(): void {
     this.dir = this.translate.getHtmlDirection();
     document.body.dir = this.dir;
 
     this.pusher.connect();
+    
     this.newOrderService.listenToNewOrder();
     this.dishStatusService.listenToDishStatusInOrder();
+    this.printInvoiceService.listenToPrintInvoice();
   }
 }
+

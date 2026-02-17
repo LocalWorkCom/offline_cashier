@@ -1,6 +1,7 @@
 import {
   Component,
   OnInit,
+  OnDestroy,
   ViewChild,
   ElementRef,
   ChangeDetectorRef,
@@ -13,23 +14,25 @@ import { PrintedInvoiceService } from '../services/printed-invoice.service';
 import { Router } from '@angular/router';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
-import { finalize } from 'rxjs';
+import { finalize, Subject, takeUntil } from 'rxjs';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogComponent } from "../shared/ui/component/confirm-dialog/confirm-dialog.component";
 import { IndexeddbService } from '../services/indexeddb.service';
 import { PrintTimeService } from '../services/print-time.service';
 import { ReceiptComponent } from '../receipt/receipt.component';
+import { SilentPrintService } from '../services/silent-print.service';
 
 @Component({
   selector: 'app-pill-details',
-  imports: [CommonModule, ShowLoaderUntilPageLoadedDirective, DecimalPipe, ConfirmDialogModule,
+  imports: [CommonModule, ShowLoaderUntilPageLoadedDirective, ConfirmDialogModule,
     ButtonModule, ConfirmDialogComponent,RouterLink ,RouterLinkActive, ReceiptComponent],
   templateUrl: './pill-details.component.html',
   styleUrls: ['./pill-details.component.css'],
   providers: [DatePipe],
 })
-export class PillDetailsComponent implements OnInit {
+export class PillDetailsComponent implements OnInit, OnDestroy {
+  private destroy$ = new Subject<void>();
     printOptions = [
       { name: 'طباعة نهائية', id: 0 },
       { name: 'معاينة فقط', id: 1 },
@@ -75,7 +78,13 @@ export class PillDetailsComponent implements OnInit {
     private dbService: IndexeddbService,
     private printedInvoiceService: PrintedInvoiceService,
     private router: Router,
-    private printTime: PrintTimeService) { }
+    private printTime: PrintTimeService,
+    private silentPrint: SilentPrintService) { }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
   private extractDateAndTime(branch: any): void {
     const { created_at } = branch;
 
@@ -347,7 +356,7 @@ private processPillDetails(data: any): void {
           invoices: response.data.invoices,
           order_id: response.data.order_id,
           invoice_summary: this.invoiceSummary || [],
-          orderDetails: this.orderDetails.flat() || [],
+          orderDetails: this.getFilteredOrderDetailsFlat(),
           date: this.date,
           time: this.time,
           showPrices: true,
@@ -361,11 +370,24 @@ private processPillDetails(data: any): void {
           waiter: response.data.waiter,
           make_type: response.data.make_type
         };
+        if (this.receiptData?.invoices?.[0]) {
+          this.receiptData.invoices[0].orderDetails = this.getFilteredOrderDetailsFlat();
+        }
       },
       error: (error: any) => {
         console.error(' Error fetching pill details:', error);
       },
     });
+  }
+  /** عناصر الطلب ذات كمية أكبر من صفر فقط (بعد التجزئة أو الحذف لا تظهر العناصر المُزالَة) */
+  get activeOrderDetails(): any[] {
+    const details = this.orderDetails?.[0];
+    if (!details || !Array.isArray(details)) return [];
+    return details.filter((item: any) => (Number(item.quantity) || 0) > 0);
+  }
+  /** نفس القائمة مصفاة للطباعة (مصفوفة مسطحة) */
+  getFilteredOrderDetailsFlat(): any[] {
+    return (this.orderDetails?.flat() || []).filter((item: any) => (Number(item.quantity) || 0) > 0);
   }
   hasDeliveryOrDineIn(): boolean {
     return this.invoices?.some((invoice: { order_type: string }) =>
@@ -444,7 +466,6 @@ private processPillDetails(data: any): void {
   isFinal = false;
   order_id: any
   async printInvoice(isFinal: boolean = false) {
-
     this.isFinal = isFinal;
     this.isPrinting = true;
 

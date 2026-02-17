@@ -155,8 +155,10 @@ fetchUserProfile() {
   }
 
   handlePrinterSuccess(message: string) {
-    this.successModalMessage = message;
-    this.showSuccessModal();
+    this.successMessage = message;
+    setTimeout(() => {
+      this.successMessage = '';
+    }, 4000);
   }
 
   showSuccessModal() {
