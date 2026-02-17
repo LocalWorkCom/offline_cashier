@@ -83,7 +83,7 @@ export class OrdersComponent implements OnDestroy {
     'in_progress',
     'readyForPickup',
     'completed',
-    'cancelled',
+    'cancelled',                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
     'on_way',
     'delivered',
   ];
@@ -1732,37 +1732,37 @@ export class OrdersComponent implements OnDestroy {
       return;
     }
     //  check if the order is talabat then must be full return
-    if (order.order_details.order_type == "talabat") {
-      if (selectedItems.length !== order.order_items.length) {
-        this.cancelErrorMessage = 'يرجى اختيار جميع الأصناف بالكامل';
-        this.cancelSuccessMessage = '';
-        this.isSubmitting = false;
-        setTimeout(() => {
-          this.cancelErrorMessage = '';
-        }, 4000);
-        return;
-      }
+    // if (order.order_details.order_type == "talabat") {
+    //   if (selectedItems.length !== order.order_items.length) {
+    //     this.cancelErrorMessage = 'يرجى اختيار جميع الأصناف بالكامل';
+    //     this.cancelSuccessMessage = '';
+    //     this.isSubmitting = false;
+    //     setTimeout(() => {
+    //       this.cancelErrorMessage = '';
+    //     }, 4000);
+    //     return;
+    //   }
 
-      // التحقق من أن الكمية المرجعة تساوي الكمية الأصلية لكل عنصر
-      const itemsWithWrongQuantity = order.order_items.filter((item: any) => {
-        const originalQuantity = item.quantity;
-        const selectedQuantity = item.selectedQuantity ?? item.quantity;
-        const returnedQuantity = originalQuantity - selectedQuantity;
-        // يجب أن تكون الكمية المرجعة = الكمية الأصلية (يعني selectedQuantity = 0)
-        return returnedQuantity !== originalQuantity;
-      });
+    //   // التحقق من أن الكمية المرجعة تساوي الكمية الأصلية لكل عنصر
+    //   const itemsWithWrongQuantity = order.order_items.filter((item: any) => {
+    //     const originalQuantity = item.quantity;
+    //     const selectedQuantity = item.selectedQuantity ?? item.quantity;
+    //     const returnedQuantity = originalQuantity - selectedQuantity;
+    //     // يجب أن تكون الكمية المرجعة = الكمية الأصلية (يعني selectedQuantity = 0)
+    //     return returnedQuantity !== originalQuantity;
+    //   });
 
-      if (itemsWithWrongQuantity.length > 0) {
-        const itemNames = itemsWithWrongQuantity.map((item: any) => item.dish_name).join('، ');
-        this.cancelErrorMessage = `يرجى إدخال نفس الكمية الأصلية للعناصر التالية: ${itemNames}`;
-        this.cancelSuccessMessage = '';
-        this.isSubmitting = false;
-        setTimeout(() => {
-          this.cancelErrorMessage = '';
-        }, 4000);
-        return;
-      }
-    }
+    //   if (itemsWithWrongQuantity.length > 0) {
+    //     const itemNames = itemsWithWrongQuantity.map((item: any) => item.dish_name).join('، ');
+    //     this.cancelErrorMessage = `يرجى إدخال نفس الكمية الأصلية للعناصر التالية: ${itemNames}`;
+    //     this.cancelSuccessMessage = '';
+    //     this.isSubmitting = false;
+    //     setTimeout(() => {
+    //       this.cancelErrorMessage = '';
+    //     }, 4000);
+    //     return;
+    //   }
+    // }
 
     // Validate cancelReason
     this.cancelReasonTouched = true;
@@ -1911,7 +1911,7 @@ export class OrdersComponent implements OnDestroy {
               // Refresh order data to get updated calculations (coupon, tax, total)
               this.refreshOrderAfterCancel(order.order_details.order_id);
 
-              /* 
+              /*
               // Removed to prevent double printing (handled by global listener)
               this.dbService.getOrderFromPrintkitchenById(order.order_details.order_id).then((orderMetadata: any) => {
                 if (orderMetadata) {
@@ -2053,7 +2053,7 @@ export class OrdersComponent implements OnDestroy {
           this.successMessage = 'تم تحديث الطلب بنجاح';
           this.successMessageModal.show();
 
-            /* 
+            /*
             // Removed to prevent double printing (handled by global listener)
             this.dbService.getOrderFromPrintkitchenById(orderId).then((orderMetadata: any) => {
               console.log('🔍 [DEBUG] Order from printkitchen indexeddb:', orderMetadata);
@@ -2075,7 +2075,7 @@ export class OrdersComponent implements OnDestroy {
                 item_id: editedItemOldState.order_detail_id,
                 quantity: editedItemOldState.quantity,
                 size: editedItemOldState.size,
-                dish_addons: editedItemOldState.dish_addons 
+                dish_addons: editedItemOldState.dish_addons
               }];
 
               this.processKitchenPrint(orderId, oldItems, 'edit');
@@ -2184,7 +2184,7 @@ export class OrdersComponent implements OnDestroy {
 
 
 
-             /* 
+             /*
              // Removed to prevent double printing (handled by global listener)
              this.dbService.getOrderFromPrintkitchenById(order.order_details.order_id).then((orderMetadata: any) => {
                if (orderMetadata) {
@@ -2486,7 +2486,7 @@ export class OrdersComponent implements OnDestroy {
   changeTypeDeliverySelectedCountry: { code: string; flag: string; phoneLength?: number } | null = null;
   changeTypeDeliveryCountrySearchTerm: string = '';
   changeTypeDeliverySearchPhoneIdle: boolean = true;
-  
+
   drivers: any[] = [];
   changeTypeDeliveryDriverId: number | null = null;
 
