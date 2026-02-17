@@ -1,3 +1,20 @@
+/* Pay button: main app color (red), no blue; hover reverts to same color scheme */
+.pill-edit-pay-btn {
+  background-color: #FE0000 !important;
+  border-color: #FE0000 !important;
+  color: #fff !important;
+}
+.pill-edit-pay-btn:hover:not(:disabled),
+.pill-edit-pay-btn:focus:not(:disabled),
+.pill-edit-pay-btn:active:not(:disabled) {
+  background-color: #d90000 !important;
+  border-color: #d90000 !important;
+  color: #fff !important;
+}
+.pill-edit-pay-btn:disabled {
+  opacity: 0.65;
+}
+
 .accordion-button:not(.collapsed) {
   color: var(--bs-accordion-active-color);
   background-color: #fff !important;

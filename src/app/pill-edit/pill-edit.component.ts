@@ -7,6 +7,7 @@ import {
   TemplateRef,
 } from '@angular/core';
 import { PillDetailsService } from '../services/pill-details.service';
+import { OrderListDetailsService } from '../services/order-list-details.service';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { DatePipe } from '@angular/common';
@@ -116,6 +117,7 @@ export class PillEditComponent {
 
   constructor(
     private pillDetailsService: PillDetailsService,
+    private orderListDetailsService: OrderListDetailsService,
     private route: ActivatedRoute,
     private orderService: PillDetailsService,
     private cdr: ChangeDetectorRef,
@@ -307,6 +309,39 @@ export class PillEditComponent {
           make_type: response.data.make_type
         };
 
+        // Merged order fix: invoice API may return only primary order items. Fetch full order and use merged items if more.
+        const orderId = response.data.order_id;
+        const invoiceItemsCount = (this.orderDetails?.flat() || []).length;
+        if (orderId != null && orderId !== '') {
+          this.orderListDetailsService.getOrderById(String(orderId)).subscribe({
+            next: (orderRes: any) => {
+              const order = orderRes?.data?.orderDetails?.[0];
+              const rawItems = order?.order_details || [];
+              const orderItems = Array.isArray(rawItems) ? rawItems.filter((it: any) => (Number(it.quantity) || 0) > 0) : [];
+              if (orderItems.length > invoiceItemsCount && this.invoices?.[0]) {
+                this.invoices[0].orderDetails = orderItems;
+                this.orderDetails = this.invoices.map((e: any) => e.orderDetails || []);
+                const summary = order?.order_summary || this.invoices[0]?.invoice_summary || {};
+                const subtotal = orderItems.reduce((s: number, it: any) => s + (Number(it.total_dish_price) || 0), 0);
+                const total = Number(summary.total ?? summary.total_price ?? subtotal);
+                if (this.invoiceSummary?.[0]) {
+                  this.invoiceSummary[0] = { ...this.invoiceSummary[0], subtotal_price_before_coupon: subtotal, subtotal_price: subtotal, total_price: total, total };
+                }
+                if (this.invoices[0].invoice_summary) {
+                  this.invoices[0].invoice_summary = { ...this.invoices[0].invoice_summary, subtotal_price_before_coupon: subtotal, subtotal_price: subtotal, total_price: total, total };
+                }
+                this.totalll = total;
+                this.receiptData = {
+                  ...this.receiptData,
+                  orderDetails: this.orderDetails.flat() || [],
+                  invoice_summary: this.invoiceSummary || [],
+                };
+                this.cdr.detectChanges();
+              }
+            },
+            error: () => {},
+          });
+        }
       },
       error: (error: any) => {
         console.error(' Error fetching pill details:', error);
