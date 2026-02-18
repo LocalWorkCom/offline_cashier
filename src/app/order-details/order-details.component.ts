@@ -1,5 +1,5 @@
 import { Component, OnInit, OnDestroy, Input } from '@angular/core';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { OrderListDetailsService } from '../services/order-list-details.service';
 import { CommonModule, Location } from '@angular/common';
 import { Subject } from 'rxjs';
@@ -14,7 +14,7 @@ import { IndexeddbService } from '../services/indexeddb.service';
   selector: 'app-order-details',
   templateUrl: './order-details.component.html',
   styleUrls: ['./order-details.component.css'],
-  imports: [CommonModule, ShowLoaderUntilPageLoadedDirective],
+  imports: [CommonModule, ShowLoaderUntilPageLoadedDirective, RouterLink],
 })
 export class OrderDetailsComponent implements OnInit, OnDestroy {
   orderId: any;
@@ -33,8 +33,12 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   errorMessage: string = '';
   /** When true (e.g. opened from "view original order" after split), coupon is removed from summary so it is not shown on primary order. */
   clearCouponAfterSplit: boolean = false;
+  /** Loading state for cancel-item request (set to order_detail_id while loading). */
+  removeItemLoading: number | null = null;
+
   constructor(
     private route: ActivatedRoute,
+    private router: Router,
     private orderListById: OrderListDetailsService,
     private http: HttpClient,
     private location: Location,
@@ -456,17 +460,14 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   cancelOrder(): void {
     if (!this.orderId) return;
 
-
     const cancelUrl = `${baseUrl}api/orders/cashier/request-cancel`;
-
     const token = localStorage.getItem('authToken');
-
     const headers = new HttpHeaders({
       Authorization: `Bearer ${token}`,
     });
     const body = {
       order_id: this.orderId,
-      type: "full", // 1 to delete all the dishes
+      type: "full",
       items: this.orderItems,
       reason: "fff",
     };
@@ -479,11 +480,89 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         setTimeout(() => {
           this.errorMessage = '';
         }, 2000);
-        this.fetchOrderDetails();
+        this.fetchOrderDetailsFromAPI();
       },
       error: (error) => {
         console.error('Failed to cancel order:', error);
       },
     });
+  }
+
+  /** Whether to show the order actions card (unpaid, pending, not talabat). */
+  canShowOrderActions(): boolean {
+    const d = this.orderDetails;
+    if (!d) return false;
+    if (d.status === 'cancelled' || d.status === 'cancel') return false;
+    const paymentStatus = d.payment_status ?? d.transactions?.[0]?.payment_status;
+    if (paymentStatus !== 'unpaid') return false;
+    if (d.order_type === 'talabat') return false;
+    return true;
+  }
+
+  isDineIn(): boolean {
+    return this.orderDetails?.order_type === 'dine-in';
+  }
+
+  /** Add Item: go to cart for this order so user can add more items. */
+  goToAddItem(): void {
+    if (!this.orderId) return;
+    this.router.navigate(['/cart', this.orderId]);
+  }
+
+  /** Change Order Type: go to orders list with this order so user can use "تغيير النوع" there. */
+  goToChangeOrderType(): void {
+    if (!this.orderId) return;
+    this.router.navigate(['/orders'], { queryParams: { openOrder: this.orderId, action: 'changeType' } });
+  }
+
+  /** Whether to show Cancel/Modify item buttons for this line (unpaid, pending/inprogress item). */
+  canShowItemActions(item: any): boolean {
+    if (!this.canShowOrderActions()) return false;
+    const status = item?.dish_status;
+    return status === 'pending' || status === 'inprogress';
+  }
+
+  /** Cancel a single item (partial cancel). */
+  cancelItem(item: any): void {
+    const detailId = item?.id ?? item?.order_detail_id;
+    if (detailId == null || !this.orderId) return;
+
+    this.removeItemLoading = detailId;
+    const url = `${baseUrl}api/orders/cashier/request-cancel`;
+    const token = localStorage.getItem('authToken');
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+    });
+    const quantity = Number(item?.quantity) || 1;
+    const body = {
+      order_id: this.orderId,
+      items: [{ order_detail_id: detailId, quantity }],
+      type: 'partial',
+      reason: 'cashier reason',
+      flag: 'cancel',
+    };
+
+    this.dbService.saveOrderToPrintkitchen(this.orderId, 'cancel').then(() => {}).catch(() => {});
+
+    this.http.post(url, body, { headers }).pipe(
+      finalize(() => { this.removeItemLoading = null; })
+    ).subscribe({
+      next: (res: any) => {
+        this.errorMessage = res?.message || 'تم حذف الصنف بنجاح';
+        this.status_order = res?.status;
+        setTimeout(() => { this.errorMessage = ''; }, 2000);
+        this.fetchOrderDetailsFromAPI();
+      },
+      error: (err) => {
+        this.errorMessage = err?.error?.message || 'فشل حذف الصنف';
+        setTimeout(() => { this.errorMessage = ''; }, 3000);
+      },
+    });
+  }
+
+  /** Modify Item: go to orders list so user can open this order and use "تعديل الطلب" on the item. */
+  goToModifyItem(_item: any): void {
+    if (!this.orderId) return;
+    this.router.navigate(['/orders'], { queryParams: { openOrder: this.orderId, action: 'modifyItem' } });
   }
 }

@@ -445,8 +445,10 @@ button.dropdown-item {
 }
 #splitOrderConfirmationModal .split-confirm-new {
     background-color: #fff;
-    border-color: #b3d7ff !important;
-    border-width: 1.5px !important;
+    border-color: #dee2e6 !important;
+    border-width: 1px !important;
+    /* ظل أزرق من الجنب الشمال (اليسار) فقط مثل Figma */
+    box-shadow: -4px 0 0 0 #0d6efd, 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 #splitOrderConfirmationModal .split-confirm-new-badge {
     background-color: #b3d7ff;
@@ -470,6 +472,16 @@ button.dropdown-item {
 #splitOrderConfirmationModal .split-confirm-table-icon {
     flex-shrink: 0;
 }
+/* بوكس الطاولة في أقصى يمين البوكس (RTL) */
+#splitOrderConfirmationModal .split-confirm-card-header {
+    flex-direction: row;
+}
+#splitOrderConfirmationModal .split-confirm-title-left {
+    margin-inline-end: auto;
+}
+#splitOrderConfirmationModal .split-confirm-table-end {
+    flex-shrink: 0;
+}
 #splitOrderConfirmationModal .split-confirm-item-card {
     background-color: #fff;
     border-color: #dee2e6 !important;
@@ -479,6 +491,13 @@ button.dropdown-item {
 }
 #splitOrderConfirmationModal .split-confirm-transferred .text-muted {
     color: #adb5bd !important;
+}
+/* خط مكشوط على اسم العنصر المنقول والسعر */
+#splitOrderConfirmationModal .split-confirm-transferred .split-confirm-item-qty-name span:last-child {
+    text-decoration: line-through;
+}
+#splitOrderConfirmationModal .split-confirm-transferred .split-confirm-item-price {
+    text-decoration: line-through;
 }
 #splitOrderConfirmationModal .split-confirm-qty-pill {
     background-color: #e9ecef;
@@ -492,9 +511,13 @@ button.dropdown-item {
 #splitOrderConfirmationModal .split-confirm-transfer-btn {
     width: 40px;
     height: 40px;
-    background-color: #dc3545;
-    color: #fff;
+    background-color: transparent;
+    border: 2px solid #dc3545;
     flex-shrink: 0;
+}
+#splitOrderConfirmationModal .split-confirm-transfer-arrow {
+    color: #dc3545;
+    font-size: 1.25rem;
 }
 #splitOrderConfirmationModal .split-confirm-note {
     background-color: #fff9e6;
@@ -525,30 +548,105 @@ button.dropdown-item {
     color: #fff;
 }
 
-/* Split Order Items Modal (Step 2) – space for X, instruction in header */
-#splitOrderItemsModal .modal-header {
-    padding-top: 1.25rem;
+/* Split Order Items Modal (Step 2) – Figma: X top-right, title with highlight, no banner, qty one group */
+#splitOrderItemsModal .split-items-modal-header {
+    padding: 1.25rem 3rem 1rem 1rem;
+    align-items: flex-start;
 }
-#splitOrderItemsModal .split-items-instruction-inline {
-    font-size: 0.8rem;
-    line-height: 1.3;
+#splitOrderItemsModal .split-items-close-btn {
+    left: 0;
+    right: auto;
+    top: 0.75rem;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0;
+    border-radius: 0.35rem;
+    background-color: #dc3545;
+    color: #fff;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
 }
-#splitOrderItemsModal .split-items-instruction-small {
+#splitOrderItemsModal .split-items-close-btn:hover {
+    background-color: #bb2d3b;
+    color: #fff;
+}
+#splitOrderItemsModal .split-items-title-wrap {
+    padding-inline-start: 2.75rem;
+}
+#splitOrderItemsModal .split-items-title-plain {
+    font-size: 1.15rem;
+    color: #212529;
+}
+#splitOrderItemsModal .split-items-subtitle {
+    font-size: 0.875rem;
+}
+#splitOrderItemsModal .split-items-subtitle-dot {
+    opacity: 0.7;
+}
+#splitOrderItemsModal .split-items-order-pill {
+    background-color: #e9ecef;
+    color: #495057;
     font-size: 0.8rem;
-    line-height: 1.3;
+}
+#splitOrderItemsModal .split-items-arrow-btn {
+    right: 0;
+    left: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    padding: 0;
+    border-radius: 50%;
+    background-color: #fff;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+#splitOrderItemsModal .split-items-arrow-btn:hover {
+    background-color: #f8f9fa;
+    color: #495057;
+    border-color: #ced4da;
 }
 #splitOrderItemsModal .split-items-instruction {
     background-color: #e3f2fd;
     color: #0d47a1;
     padding: 0.3rem 0.5rem;
-    border-radius: 0.5rem;
-    border: 1px solid #bbdefb;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-    margin-top: 4rem !important;
+    border-radius: 50px;
+    border: 1px solid #90caf9;
+    font-size: 0.9rem;
+    width: 100%;
+}
+#splitOrderItemsModal .split-items-instruction span:last-child {
+    color: #0d47a1;
+    font-weight: 500;
+}
+#splitOrderItemsModal .split-items-instruction-icon-wrap {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    border-radius: 50%;
+    background-color: #1976d2;
+    color: #fff;
 }
 #splitOrderItemsModal .split-items-instruction-icon {
-    font-size: 1.1rem;
-    opacity: 0.9;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+#splitOrderItemsModal .split-items-title-row {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+#splitOrderItemsModal .split-items-title-highlight {
+    background-color: #cce5ff;
+    color: #0d6efd;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.35rem;
 }
 #splitOrderItemsModal .split-item-card {
     background-color: #f8f9fa;
@@ -557,11 +655,31 @@ button.dropdown-item {
 #splitOrderItemsModal .split-item-card:last-of-type {
     margin-bottom: 0 !important;
 }
-#splitOrderItemsModal .split-qty-wrap {
-    background-color: #fff;
-    border: 1px solid #e9ecef;
-    border-radius: 0.5rem;
-    padding: 0.25rem 0.35rem;
+/* Quantity: one rounded group without separate square (Figma) */
+#splitOrderItemsModal .split-qty-control {
+    background-color: #e9ecef;
+    border: 1px solid #dee2e6;
+    padding: 0.15rem;
+    gap: 0;
+}
+#splitOrderItemsModal .split-qty-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 0.4rem;
+}
+#splitOrderItemsModal .split-qty-input {
+    width: 42px;
+    min-width: 42px;
+    background: transparent;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+#splitOrderItemsModal .split-qty-input:focus {
+    outline: none;
+    box-shadow: none;
 }
 #splitOrderItemsModal .split-items-list .border-top {
     border-color: #dee2e6 !important;
@@ -573,15 +691,29 @@ button.dropdown-item {
 #splitOrderItemsModal .split-new-item-card:last-of-type {
     margin-bottom: 0 !important;
 }
+#splitOrderItemsModal .split-items-new-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
 #splitOrderItemsModal .split-items-btn-cancel {
-    background-color: transparent;
-    border: 1px solid #dee2e6;
-    color: #495057;
+    background-color: #e7f1ff;
+    border: 1px solid #b6d4fe;
+    color: #0d6efd;
 }
 #splitOrderItemsModal .split-items-btn-cancel:hover {
-    background-color: #f8f9fa;
-    border-color: #adb5bd;
-    color: #212529;
+    background-color: #cfe2ff;
+    border-color: #9ec5fe;
+    color: #0d6efd;
+}
+#splitOrderItemsModal .split-items-modal .modal-content {
+    border-radius: 0.75rem;
+}
+#splitOrderItemsModal .split-items-list,
+#splitOrderItemsModal .split-items-new-box {
+    border-radius: 0.75rem;
+}
+#splitOrderItemsModal .modal-body {
+    padding: 1rem 1.5rem 1.25rem;
 }
 
 /* Merge Order Confirmation Modal – تصميم بالظبط: أيقونة هيدر، تاب بارز، بطاقات رمادية، ظل وزوايا */
@@ -844,6 +976,17 @@ button.dropdown-item {
     color: #fff;
     border: 3px solid rgba(255, 255, 255, 0.9);
     box-shadow: 0 0 0 6px #d4edda, 0 2px 12px rgba(25, 135, 84, 0.3), 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+/* Figma: middle sentence – regular weight, smaller, black, centered */
+#splitSuccessModal .split-success-desc {
+    font-size: 0.9375rem;
+    font-weight: 400;
+    color: #212529;
+    text-align: center;
+    line-height: 1.5;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
 }
 #splitSuccessModal .split-success-box {
     text-align: right;

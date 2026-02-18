@@ -95,6 +95,9 @@ export class OrdersComponent implements OnDestroy {
   errorMessage: any;
   apiUrl = `${baseUrl}`;
   removeLoading: boolean = false;
+  /** When navigating from order-details with ?openOrder=id&action=changeType */
+  private pendingOpenOrderId: string | null = null;
+  private pendingOpenOrderAction: string | null = null;
 
   constructor(
     private ordersService: OrdersService,
@@ -139,8 +142,15 @@ export class OrdersComponent implements OnDestroy {
     this.filterCartItems();
     this.loadDrivers();
 
-    // Subscribe to query params to detect 'openOrder'Details();
-    // this.setupPusherListeners();
+    this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((q) => {
+      const openOrder = q.get('openOrder');
+      const action = q.get('action');
+      if (openOrder && action) {
+        this.pendingOpenOrderId = openOrder;
+        this.pendingOpenOrderAction = action;
+        this.tryOpenPendingOrderAction();
+      }
+    });
     this.listenToDishChange();
     // this.listenToOrderChange();
     this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe({
@@ -292,6 +302,26 @@ export class OrdersComponent implements OnDestroy {
 
     this.filterOrders();
     this.loading = true;
+    this.tryOpenPendingOrderAction();
+  }
+
+  tryOpenPendingOrderAction(): void {
+    if (!this.pendingOpenOrderId || !this.pendingOpenOrderAction) return;
+    if (this.orders.length === 0) return;
+    const orderId = Number(this.pendingOpenOrderId);
+    if (isNaN(orderId)) {
+      this.pendingOpenOrderId = null;
+      this.pendingOpenOrderAction = null;
+      return;
+    }
+    const order = this.orders.find((o: any) => Number(o?.order_details?.order_id) === orderId);
+    if (!order) return;
+    if (this.pendingOpenOrderAction === 'changeType') {
+      this.openChangeTypeModal(order);
+    }
+    this.pendingOpenOrderId = null;
+    this.pendingOpenOrderAction = null;
+    this.router.navigate([], { relativeTo: this.route, queryParams: {}, queryParamsHandling: '' });
   }
 
   loadDrivers() {
@@ -3977,14 +4007,33 @@ export class OrdersComponent implements OnDestroy {
       next: (response: any) => {
         if (response.status && response.data) {
           const mapped = response.data.map((table: any) => {
-            const typeRaw = (table.type ?? table.table_type?.name_en ?? table.table_type?.name_ar ?? table.table_type ?? table.type_ar ?? table.type_en ?? '').toString().toLowerCase().trim();
-            const typeAr = (table.type_ar ?? table.table_type?.name_ar ?? table.table_type?.name ?? table.type ?? '').toString().trim();
+            const typeObj = table.type && typeof table.type === 'object' ? table.type : null;
+            // الباك اند يرجع type كرقم (1 = داخلي، 2 = خارجي) أو type_name مثل "in door" / "out door"
+            const typeNum = table.type != null && typeof table.type === 'number' ? table.type : null;
+            const typeRawVal = typeObj?.name_en ?? typeObj?.name ?? table.type_name ?? table.table_type?.name_en ?? table.table_type?.name_ar ?? table.table_type ?? table.type_ar ?? table.type_en ?? table.type ?? '';
+            const typeRaw = (typeof typeRawVal === 'number' ? (typeRawVal === 2 ? 'external' : 'internal') : String(typeRawVal)).toLowerCase().trim();
+            const typeArVal = typeObj?.name_ar ?? typeObj?.name ?? table.type_ar ?? table.table_type?.name_ar ?? table.table_type?.name ?? table.type ?? '';
+            const typeAr = (typeof typeArVal === 'number' ? (typeArVal === 2 ? 'خارجي' : 'داخلي') : String(typeArVal)).trim();
             const floorId = table.floor_id ?? table.floor?.id ?? null;
             const floorName = (table.floor_name ?? table.floor?.name ?? table.floor?.name_en ?? table.floor?.name_ar ?? '').toString().toLowerCase();
             const areaName = (table.floor_area_name ?? table.area_name ?? table.floor_partition?.name ?? table.floor_partition?.name_ar ?? table.floor_area ?? '').toString().toLowerCase();
             const tableNumber = table.number ?? table.table_number ?? table.id;
-            const typeId = table.type_id ?? table.table_type_id ?? table.table_type?.id ?? null;
+            // type_id من الـ API أو type (رقم 1/2) من نفس الـ response
+            const typeId = table.type_id ?? typeNum ?? typeObj?.id ?? table.table_type_id ?? table.table_type?.id ?? null;
             const seats = table.seats ?? table.seat_count ?? table.capacity ?? table.seats_count ?? table.number_of_seats ?? null;
+            // التصنيف: من is_external إن وُجد، وإلا من type_id ثم type_ar/tableType (مثل "خارجي" من الداشبورد)
+            let isExternal: boolean;
+            if (table.hasOwnProperty('is_external') && table.is_external !== null && table.is_external !== undefined) {
+              isExternal = table.is_external === true || table.is_external === '1';
+            } else {
+              const tid = typeId != null ? Number(typeId) : NaN;
+              const ar = (typeAr || typeRaw || '').toString().trim();
+              const t = (typeRaw || typeAr || '').toString().toLowerCase().replace(/\s+/g, ' ');
+              if (!Number.isNaN(tid)) isExternal = tid === 2;
+              else if (ar === 'خارجي' || t === 'external' || t === 'خارجي' || t === 'out door' || t === 'outdoor') isExternal = true;
+              else if (ar === 'داخلي' || t === 'internal' || t === 'داخلي' || t === 'in door' || t === 'indoor') isExternal = false;
+              else isExternal = false; // غير معروف نعتبره داخلي
+            }
             return {
               id: table.id,
               name: table.name_ar || table.name || `طاولة ${tableNumber}`,
@@ -3996,10 +4045,12 @@ export class OrdersComponent implements OnDestroy {
               tableType: typeRaw || typeAr,
               tableTypeAr: typeAr,
               type_id: typeId,
+              is_external: isExternal,
               floorId,
               floorName,
               areaName,
               branch_id: table.branch_id ?? null,
+              serial_number: table.serial_number ?? table.serial_number_id ?? null,
             };
           });
           // Same branch only: من نفس الـ branch
@@ -4015,8 +4066,12 @@ export class OrdersComponent implements OnDestroy {
     });
   }
 
-  /** هل الطاولة مصنفة كـ "داخلية" (الصالة الرئيسية) – نفس تصنيف لوحة التحكم "النوع: داخلي". */
+  /** هل الطاولة مصنفة كـ "داخلية". نعتمد is_external من الـ API إن وُجد، وإلا type_id و type_ar (مثل "داخلي"/"خارجي" من الداشبورد). */
   private isTableInternal(table: any): boolean {
+    if (table.hasOwnProperty('is_external') && table.is_external !== undefined && table.is_external !== null) {
+      if (table.is_external === true || table.is_external === '1') return false;
+      if (table.is_external === false || table.is_external === '0') return true;
+    }
     const typeId = table.type_id != null ? Number(table.type_id) : null;
     if (typeId === 1) return true;
     if (typeId === 2) return false;
@@ -4025,8 +4080,12 @@ export class OrdersComponent implements OnDestroy {
     return ar === 'داخلي' || t === 'internal' || t === 'داخلي';
   }
 
-  /** هل الطاولة مصنفة كـ "خارجية" (التراس الخارجي) – نفس تصنيف لوحة التحكم "النوع: خارجي". */
+  /** هل الطاولة مصنفة كـ "خارجية". نعتمد is_external من الـ API إن وُجد، وإلا type_id و type_ar. */
   private isTableExternal(table: any): boolean {
+    if (table.hasOwnProperty('is_external') && table.is_external !== undefined && table.is_external !== null) {
+      if (table.is_external === true || table.is_external === '1') return true;
+      if (table.is_external === false || table.is_external === '0') return false;
+    }
     const typeId = table.type_id != null ? Number(table.type_id) : null;
     if (typeId === 2) return true;
     if (typeId === 1) return false;
