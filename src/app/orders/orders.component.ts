@@ -1141,6 +1141,54 @@ export class OrdersComponent implements OnDestroy {
     return items.filter((item: any) => (Number(item.quantity) || 0) > 0);
   }
 
+  /**
+   * Compute total amounts (price + tax + service) for returned quantities
+   * of all items in a given order. Used for the return invoice summary.
+   */
+  getReturnTotals(order: any): {
+    taxTotal: number;
+    serviceTotal: number;
+    priceTotal: number;
+    grandTotal: number;
+  } {
+    const items = this.getDisplayOrderItems(order);
+
+    let taxTotal = 0;
+    let serviceTotal = 0;
+    let priceTotal = 0;
+
+    for (const item of items) {
+      const totalQty = Number(item.quantity) || 0;
+      const selectedQty =
+        item.selectedQuantity !== undefined && item.selectedQuantity !== null
+          ? Number(item.selectedQuantity)
+          : totalQty;
+
+      const returnedQty = totalQty - selectedQty;
+      if (returnedQty <= 0) {
+        continue;
+      }
+
+      const qty = totalQty || 1;
+      const taxPart = ((item.tax_value ?? 0) / qty) * returnedQty;
+      const servicePart = ((item.service_fees ?? 0) / qty) * returnedQty;
+      const pricePart = ((item.total_dish_price ?? 0) / qty) * returnedQty;
+
+      taxTotal += taxPart;
+      serviceTotal += servicePart;
+      priceTotal += pricePart;
+    }
+
+    const grandTotal = taxTotal + serviceTotal + priceTotal;
+
+    return {
+      taxTotal,
+      serviceTotal,
+      priceTotal,
+      grandTotal,
+    };
+  }
+
   selectOrderType(orderType: string): void {
     console.log('fatema', orderType, this.selectedOrderTypeStatus);
 
