@@ -83,7 +83,7 @@ export class OrdersComponent implements OnDestroy {
     'in_progress',
     'readyForPickup',
     'completed',
-    'cancelled',                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               
+    'cancelled',
     'on_way',
     'delivered',
   ];
@@ -1501,6 +1501,8 @@ export class OrdersComponent implements OnDestroy {
   cancelSuccessMessage: string = '';
   cancelMessage: any;
   selectedReturnPaymentMethod: string = 'cash'; // Default payment method for return invoice
+  returnCashAmount: number | null = null;
+  returnCreditAmount: number | null = null;
   /*   submitCancelRequest(order: any): void {
     const selectedItems = order.order_items
       .filter((item: any) => item.isChecked)
@@ -1795,8 +1797,20 @@ export class OrdersComponent implements OnDestroy {
     const isFullReturn =
       selectedItems.length === order.order_items.length &&
       selectedItems.every((item: any) => item.isFullyReturned);
+      let paymentMethod ='';
+      let paymentMethod2 =null;
 
-    const body = {
+      if(this.selectedReturnPaymentMethod == 'cash + credit') {
+        paymentMethod = 'cash';
+        paymentMethod2 = 'credit';
+      } else if(this.selectedReturnPaymentMethod == 'credit') {
+        paymentMethod = 'credit';
+      }
+      else {
+        paymentMethod = 'cash';
+      }
+
+    const body: any = {
       order_id: order.order_details.order_id,
       items: selectedItems.map((item: any) => ({
         item_id: item.item_id,
@@ -1806,8 +1820,13 @@ export class OrdersComponent implements OnDestroy {
       })),
       type: isFullReturn ? 'full' : 'partial',
       reason: this.cancelReason || '',
-      payment_method: this.selectedReturnPaymentMethod,
+      payment_method: paymentMethod,
+      payment_method2: paymentMethod2,
     };
+    if (this.selectedReturnPaymentMethod === 'cash + credit') {
+      body.cash_amount = Number(this.returnCashAmount) || 0;
+      body.credit_amount = Number(this.returnCreditAmount) || 0;
+    }
 
     console.log('Sending:', body, selectedItems, order);
 
