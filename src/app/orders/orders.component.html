@@ -619,6 +619,8 @@
                                         </span>
                                       </div>
                                     </div>
+
+
                                   </div>
                                   <div
                                     class="d-flex align-items-center justify-content-between yellow my-3 px-3 pt-2 rounded-3">
@@ -633,12 +635,46 @@
                                     <p>{{ item.quantity - (item.selectedQuantity ?? item.quantity) }}</p>
                                   </div>
 
+                                  @if (selectedReturnPaymentMethod === 'cash + credit') {
+                                    @let returnedQty = item.quantity - (item.selectedQuantity ?? item.quantity);
+                                    @let qty = item.quantity || 1;
+                                    @let taxPart = ((item.tax_value ?? 0) / qty) * returnedQty;
+                                    @let servicePart = ((item.service_fees ?? 0) / qty) * returnedQty;
+                                    @let pricePart = ((item.total_dish_price ?? 0) / qty) * returnedQty;
+                                    @let itemTotal = taxPart + servicePart + pricePart;
+
+
+                                    <!-- <div class="mt-2 text-danger yellow p-2 rounded-3">
+                                          <div class="small mb-2 ">
+                                            @if ((item.tax_value ?? 0) > 0) {
+                                              <p class="mb-0">هذا المبلغ يضاف عليه الضريبه وقيمتها {{ taxPart }} {{ order.currency_symbol }}</p>
+                                            }
+                                            @if ((item.service_fees ?? 0) > 0) {
+                                              <p class="mb-0">هذا المبلغ يضاف عليه الخدمة وقيمتها {{ servicePart }} {{ order.currency_symbol }}</p>
+                                            }
+                                            <p>الاجمالي: {{ itemTotal }} {{ order.currency_symbol }}</p>
+                                          </div>
+                                    </div> -->
+                                  }
+
                                 </div>
                                 }
                               </p-accordion-content>
                             </p-accordion-panel>
                           </p-accordion>
                         </div>
+                        @if (selectedReturnPaymentMethod === 'cash + credit') {
+                          @let totals = getReturnTotals(order);
+                          <div class="mt-2 p-2 rounded-3 text-danger" style="background-color: #f8d7da;">
+                            <!-- <p class="mb-1 fw-bold">ملخص المرتجع:</p> -->
+                            <p class="mb-1"> المبلغ المرتجع شامل الضريبه: {{ totals.taxTotal }} {{ order.currency_symbol }}
+                              والخدمة: {{ totals.serviceTotal }} {{ order.currency_symbol }}
+                              والاجمالي: {{ totals.grandTotal }} {{ order.currency_symbol }}
+                            </p>
+                            <!-- <p class="mb-1">إجمالي الخدمة: {{ totals.serviceTotal }} {{ order.currency_symbol }}</p>
+                            <p class="mb-0 fw-bold">إجمالي المرتجع: {{ totals.grandTotal }} {{ order.currency_symbol }}</p> -->
+                          </div>
+                        }
                         @if (order.order_details.hasCoupon) {
                         <div class="mt-3 bg-lightgray">
                           <h6 class="fw-bold main-color">
@@ -648,14 +684,40 @@
                         </div>
                         }
                         <!-- choose payment method if order.order_details.transactions[0].payment_method is credit-->
-                        @if (order.details_order?.transactions?.[0]?.payment_method === 'credit')
+                        @if (order.details_order?.transactions?.[0]?.payment_method === 'credit' || order.details_order?.transactions?.[1]?.payment_method === 'credit')
                         {
                           <div class="mt-3">
                             <label for="paymentMethod" class="form-label fw-bold"> اختر طريقة الدفع </label>
                             <select class="form-select" id="paymentMethod" [(ngModel)]="selectedReturnPaymentMethod">
                               <option value="cash">نقدي</option>
                               <option value="credit">بطاقة</option>
+                              <option value="cash + credit">نقدي + بطاقة</option>
                             </select>
+                            @if (selectedReturnPaymentMethod === 'cash + credit') {
+
+                              <div class="mt-3">
+                                <label for="returnCashAmount" class="form-label fw-bold">المبلغ المرتجع بالنقدي</label>
+                                <input
+                                  type="text"
+                                  class="form-control"
+                                  id="returnCashAmount"
+                                  [(ngModel)]="returnCashAmount"
+                                  name="returnCashAmount"
+                                  placeholder="0.00"
+                                  />
+                              </div>
+                              <div class="mt-3">
+                                <label for="returnCreditAmount" class="form-label fw-bold">المبلغ المرتجع بالبطاقة</label>
+                                <input
+                                  type="text"
+                                  class="form-control"
+                                  id="returnCreditAmount"
+                                  [(ngModel)]="returnCreditAmount"
+                                  name="returnCreditAmount"
+                                  placeholder="0.00"
+                                  />
+                              </div>
+                            }
                           </div>
                         }
                         <div class="my-4">
