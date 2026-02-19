@@ -1219,6 +1219,18 @@ export class OrdersComponent implements OnDestroy {
     };
   }
 
+  /**
+   * For "cash + credit" return: validates that returnCashAmount + returnCreditAmount equals grandTotal.
+   */
+  isReturnCashCreditAmountsValid(order: any): boolean {
+    if (this.selectedReturnPaymentMethod !== 'cash + credit') return true;
+    const totals = this.getReturnTotals(order);
+    const cash = Number(this.returnCashAmount) || 0;
+    const credit = Number(this.returnCreditAmount) || 0;
+    const sum = cash + credit;
+    return Math.abs(sum - totals.grandTotal) < 0.01;
+  }
+
   selectOrderType(orderType: string): void {
     console.log('fatema', orderType, this.selectedOrderTypeStatus);
 
@@ -1811,6 +1823,17 @@ export class OrdersComponent implements OnDestroy {
       }, 4000);
       return;
     }
+
+    if (this.selectedReturnPaymentMethod === 'cash + credit' && !this.isReturnCashCreditAmountsValid(order)) {
+      this.cancelErrorMessage = 'يجب أن يساوي مجموع المبلغ النقدي + البطاقة إجمالي المرتجع';
+      this.cancelSuccessMessage = '';
+      this.isSubmitting = false;
+      setTimeout(() => {
+        this.cancelErrorMessage = '';
+      }, 4000);
+      return;
+    }
+
     //  check if the order is talabat then must be full return
     // if (order.order_details.order_type == "talabat") {
     //   if (selectedItems.length !== order.order_items.length) {
@@ -2514,9 +2537,9 @@ export class OrdersComponent implements OnDestroy {
     const cashValue = Number(totalCash);
     const creditValue = Number(totalCredit);
     const orderPrice = Number(order.total_price);
-    if(order.details_order?.transactions?.[0]?.payment_method == 'credit') {
+    if(order.details_order?.transactions?.[0]?.payment_method == 'credit' || order.details_order?.transactions?.[1]?.payment_method == 'credit') {
       // console.log('creditdalia');
-      return !isNaN(creditValue) && !isNaN(orderPrice) && (creditValue > orderPrice || cashValue > orderPrice);
+      return !isNaN(creditValue) && !isNaN(orderPrice) && (creditValue > orderPrice || cashValue > orderPrice || cashValue + creditValue > orderPrice);
     }
         // console.log('cashdalia');
 
