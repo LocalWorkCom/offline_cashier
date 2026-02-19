@@ -2815,15 +2815,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    if (!this.hasCurrentOrderId && (this.selectedOrderType === 'Delivery' || this.selectedOrderType === 'توصيل') && !this.selectedDriverId) {
-      this.isLoading = false;
-      this.loading = false;
-      this.falseMessage = 'يرجى اختيار مندوب التوصيل';
-      setTimeout(() => {
-        this.falseMessage = '';
-      }, 1500);
-      return;
-    }
+
 
     // جلب البيانات الأساسية
     const branchId = Number(localStorage.getItem('branch_id')) || null;

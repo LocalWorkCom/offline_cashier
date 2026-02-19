@@ -3618,12 +3618,11 @@ export class OrdersComponent implements OnDestroy {
   isDeliveryInfoComplete(): boolean {
     if (this.selectedNewOrderType !== 'Delivery') return true;
     const o = this.currentOrderForTypeChange;
-    const hasDriver = !!this.changeTypeDeliveryDriverId;
     const hasExisting = o?.order_details?.client_address_id || (o?.details_order as any)?.client_address_id;
     const hasName = !!(o?.order_details?.client_name || this.changeTypeDeliveryName?.trim());
     const hasPhone = !!(o?.order_details?.client_phone || this.changeTypeDeliveryPhone?.trim());
     const hasCode = !!(o?.order_details?.client_country_code || this.changeTypeDeliveryCountryCode?.trim());
-    if (hasExisting && hasName && hasPhone && hasCode && hasDriver) return true;
+    if (hasExisting && hasName && hasPhone && hasCode) return true;
     const hasAddress = !!(
       this.changeTypeDeliveryAddress?.trim() ||
       this.changeTypeDeliveryBuilding?.trim() ||
@@ -3632,15 +3631,14 @@ export class OrdersComponent implements OnDestroy {
       (this.changeTypeDeliveryBuildingType === 'hotel' && (this.changeTypeDeliveryHotelId || this.changeTypeDeliveryHotelName?.trim()))
     );
     if (this.changeTypeDeliveryBuildingType === 'hotel') {
-      return !!(this.changeTypeDeliveryHotelId || this.changeTypeDeliveryHotelName?.trim()) && hasDriver;
+      return !!(this.changeTypeDeliveryHotelId || this.changeTypeDeliveryHotelName?.trim());
     }
     return !!(
       this.changeTypeDeliveryName?.trim() &&
       this.changeTypeDeliveryPhone?.trim() &&
       this.changeTypeDeliveryCountryCode?.trim() &&
       this.changeTypeDeliveryAreaId &&
-      hasAddress &&
-      hasDriver
+      hasAddress
     );
   }
 
@@ -3725,9 +3723,6 @@ export class OrdersComponent implements OnDestroy {
       }
       if (addressId != null && !this.changeTypeDeliveryAreaId) {
         body['client_address'] = addressId;
-      }
-      if (this.changeTypeDeliveryDriverId) {
-        body['delivery_id'] = this.changeTypeDeliveryDriverId;
       }
     }
 
