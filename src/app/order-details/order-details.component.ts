@@ -55,21 +55,24 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
           if (forceRefresh && navigator.onLine) {
             // After merge (or similar): force fetch from API so merged items are shown, then update IndexedDB
             console.log("🔄 Refresh requested - fetching order from API");
-            this.fetchOrderDetailsFromAPI();
+            //this.fetchOrderDetailsFromAPI();
+        this.fetchOrderDetails();
             return;
           }
-          if (navigator.onLine) {
-            // 🌐 Online → استخدم الـ id الحقيقي من السيرفر
-            console.log("✅ Online mode - using actual orderId from route");
-            this.searchOrderInIndexedDB();
-            // أو كمان API call: this.fetchOrderDetailsFromAPI(this.orderId);
+          // if (navigator.onLine) {
+          //   // 🌐 Online → استخدم الـ id الحقيقي من السيرفر
+          //   console.log("✅ Online mode - using actual orderId from route");
+            // this.searchOrderInIndexedDB();
+            // أو كمان API call:
+            //this.fetchOrderDetailsFromAPI();
+        this.fetchOrderDetails();
 
-          } else {
-            // 📴 Offline → الـ orderId اللي في الـ params مش هو الحقيقي
-            // نجيب التفاصيل من الـ IndexedDB
-            console.log("📴 Offline mode - fetching order by runId/tempId");
-            this.searchOrderInIndexedDB();
-          }
+          // } else {
+          //   // 📴 Offline → الـ orderId اللي في الـ params مش هو الحقيقي
+          //   // نجيب التفاصيل من الـ IndexedDB
+          //   console.log("📴 Offline mode - fetching order by runId/tempId");
+          //   this.searchOrderInIndexedDB();
+          // }
         }
       },
       error: (err) => {
@@ -92,19 +95,20 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       this.loading = false;
       return;
     }
-    this.dbService.getOrderById(numericOrderId).then(order => {
-      if (order) {
-        console.log('Order found in IndexedDB:', order);
-        this.displayOrderDetails(order);
-      } else {
-        console.log('Order not found in IndexedDB, fetching from API');
+    // this.dbService.getOrderById(numericOrderId).then(order => {
+    //   if (order) {
+    //     console.log('Order found in IndexedDB:', order);
+    //     this.displayOrderDetails(order);
+    //   } else {
+    //     console.log('Order not found in IndexedDB, fetching from API');
         // this.fetchOrderDetailsFromAPI();
-        this.fetchOrderDetails();
-      }
-    }).catch(err => {
-      console.error('Error searching order in IndexedDB:', err);
-      this.fetchOrderDetailsFromAPI();
-    });
+        // this.fetchOrderDetails();
+      // }
+    // }).catch(err => {
+    //   console.error('Error searching order in IndexedDB:', err);
+    //   this.fetchOrderDetailsFromAPI();
+    // });
+    this.fetchOrderDetailsFromAPI();
   }
 
   /** Branch default delivery_fees from dashboard (fixes wrong fee after change-type-to-delivery). */
@@ -225,6 +229,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   fetchOrderDetailsFromAPI(): void {
     this.loading = true;
     this.error = '';
+    console.log("orderId -dalia",this.orderId);
 
     this.orderListById.getOrderById(this.orderId)
       .pipe(
@@ -237,10 +242,12 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         next: (response) => {
           if (response && response.data) {
             const order = response.data.orderDetails[0];
+
+            console.log("order -dalia",response.data);
             this.processOrderData(order);
 
             // Save to IndexedDB for future access
-            this.saveOrderToIndexedDB(order);
+            // this.saveOrderToIndexedDB(order);
           } else {
             this.error = 'No order details available.';
             this.loading = false;
@@ -383,7 +390,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
             console.log(response.data, 'test');
             this.orderDetails = order;
             this.orderItems = this.filterMovedOrderItems(order.order_details || []);
-            this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
+            // this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
+            this.orderSummary = response.data.orderDetails[0].order_summary;
             if (this.deliveryData?.delivery_name == ' ') {
               this.deliveryData.delivery_name = 'لا يوجد';
             }
