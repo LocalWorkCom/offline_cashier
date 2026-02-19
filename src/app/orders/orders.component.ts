@@ -2693,11 +2693,16 @@ export class OrdersComponent implements OnDestroy {
     });
   }
 
-  // Open split modal – only show items still in the order (quantity > 0); hide items already moved
+  // Open split modal – only show items still in the order (quantity > 0) and not cancelled
   openSplitModal(order: any): void {
     this.currentSplitOrder = order;
     const itemsStillInOrder = (order.order_items || []).filter(
-      (item: any) => (Number(item.quantity) || 0) > 0
+      (item: any) =>
+        (Number(item.quantity) || 0) > 0 &&
+        item.dish_status !== 'cancel' &&
+        item.dish_status !== 'cancelled' &&
+        item.status !== 'cancel' &&
+        item.status !== 'cancelled'
     );
     this.splitOrderItems = itemsStillInOrder.map((item: any) => ({
       ...item,
