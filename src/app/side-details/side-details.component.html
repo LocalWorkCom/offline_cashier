@@ -867,17 +867,7 @@
       <!-- <button class="btn w-100 my-3" (click)="submitOrder()">
       <h5 class="mb-0">تنفيذ الطلب</h5>
     </button> -->
-      <!-- Delivery Driver Dropdown -->
-      
-      <div *ngIf="(selectedOrderType === 'Delivery' || selectedOrderType === 'توصيل') && !hasCurrentOrderId" class="mb-3">
-        <label class="form-label fw-bold">مندوب التوصيل</label>
-        <select class="form-select" [(ngModel)]="selectedDriverId" name="deliveryDriver" required>
-          <option [ngValue]="null">اختر مندوب التوصيل</option>
-          <option *ngFor="let driver of drivers" [ngValue]="driver.id">
-            {{ driver.first_name }} {{ driver.last_name }}
-          </option>
-        </select>
-      </div>
+
 
       <button class="btn w-100 my-3 bg-success" (click)="submitOrder()" [disabled]="isLoading || (paymentError && paymentError.trim() !== '') || amountError">
         <h5 class="mb-0">

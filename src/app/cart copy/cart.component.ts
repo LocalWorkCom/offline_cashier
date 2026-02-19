@@ -12,8 +12,9 @@ import { CartItemsModalComponent } from '../cart-items-modal/cart-items-modal.co
 import { Router } from '@angular/router';
 import { OrderListDetailsService } from '../services/order-list-details.service';
 import { baseUrl } from '../environment'; 
+import { OrdersService } from '../services/orders.service';
 
-declare var bootstrap: any;
+declare var bootstrap: any;     
 
 @Component({
   selector: 'app-cart',
@@ -57,6 +58,12 @@ export class CartComponent {
   selectedOrder: any;
   allOrderDetails: any;
   selectedStatus: any
+  // Delivery driver properties
+  drivers: any[] = [];
+  selectedDriverId: number | null = null;
+  isSavingDriver: boolean = false;
+  driverSaveMessage: string = '';
+  driverSaveSuccess: boolean = false;
   constructor(
     private productsService: ProductsService,
     private http: HttpClient,
@@ -65,7 +72,8 @@ export class CartComponent {
     private router: Router,
     private route: ActivatedRoute,
     private orderListById: OrderListDetailsService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private ordersService: OrdersService
   ) {
     const navigation = this.router.getCurrentNavigation();
     this.orderDetails = navigation?.extras.state?.['orderData'];
@@ -269,6 +277,11 @@ export class CartComponent {
 
           this.isLoading = false;
 
+          // Load drivers if delivery order
+          if (this.deliveryData) {
+            this.loadDrivers();
+          }
+
           console.log(this.allOrderDetails, 'paymenMethod');
 
         } else {
@@ -343,4 +356,62 @@ export class CartComponent {
     return this.cartItems.reduce((sum, item) => sum + this.getItemTotal(item), 0);
   }
 
+  loadDrivers(): void {
+    this.ordersService.getDrivers().subscribe({
+      next: (response: any) => {
+        if (response && response.status && response.data) {
+          this.drivers = response.data;
+          // Pre-select the current driver if exists
+          if (this.deliveryData?.delivery_id) {
+            this.selectedDriverId = this.deliveryData.delivery_id;
+          }
+        }
+      },
+      error: (error: any) => {
+        console.error('Error fetching drivers:', error);
+      }
+    });
+  }
+
+  saveDeliveryDriver(): void {
+    if (!this.selectedDriverId || !this.cartId) return;
+
+    this.isSavingDriver = true;
+    this.driverSaveMessage = '';
+
+    const token = localStorage.getItem('authToken');
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+    });
+
+    const body = {
+      order_id: this.cartId,
+      delivery_id: this.selectedDriverId,
+    };
+
+    this.http.post(`${baseUrl}api/orders/update-delivery-driver`, body, { headers }).subscribe({
+      next: (response: any) => {
+        this.isSavingDriver = false;
+        this.driverSaveSuccess = true;
+        this.driverSaveMessage = response.message || 'تم حفظ مندوب التوصيل بنجاح';
+        // Update the displayed delivery name
+        const selectedDriver = this.drivers.find(d => d.id === this.selectedDriverId);
+        if (selectedDriver) {
+          this.deliveryData.delivery_name = selectedDriver.first_name + ' ' + selectedDriver.last_name;
+          this.deliveryData.delivery_id = this.selectedDriverId;
+        }
+        setTimeout(() => {
+          this.driverSaveMessage = '';
+        }, 3000);
+      },
+      error: (error: any) => {
+        this.isSavingDriver = false;
+        this.driverSaveSuccess = false;
+        this.driverSaveMessage = error.error?.message || 'حدث خطأ أثناء حفظ مندوب التوصيل';
+        setTimeout(() => {
+          this.driverSaveMessage = '';
+        }, 3000);
+      },
+    });
+  }
 }

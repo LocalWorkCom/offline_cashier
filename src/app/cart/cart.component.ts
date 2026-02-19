@@ -48,7 +48,14 @@ export class CartComponent {
   FormDataDetails: any;
   selectedOrder: any;
   allOrderDetails: any;
-  selectedStatus: any
+  selectedStatus: any;
+
+  // Change Driver modal properties
+  driversList: any[] = [];
+  selectedDriverId: number | null = null;
+  isLoadingDrivers: boolean = false;
+  isSavingDriver: boolean = false;
+  changeDriverModal: any;
   constructor(
     private productsService: ProductsService,
     private http: HttpClient,
@@ -352,7 +359,7 @@ export class CartComponent {
         };
         // 🚀 Send courier + order ID to API with token
        
-          this.http.post(`${baseUrl}/api/orders/cashier/update/order`,{
+          this.http.post(`${baseUrl}api/orders/update-delivery-driver`,{
       
           delivery_id: courier.id,
           order_id: orderId
@@ -367,7 +374,77 @@ export class CartComponent {
     );
   }
 
-  // Component that opens the modal
+  // === Change Driver Modal Methods ===
+  openChangeDriverModal() {
+    this.isLoadingDrivers = true;
+    this.selectedDriverId = null;
+    this.driversList = [];
 
+    // Open modal
+    const modalElement = document.getElementById('changeDriverModal');
+    if (modalElement) {
+      this.changeDriverModal = new bootstrap.Modal(modalElement);
+      this.changeDriverModal.show();
+    }
 
+    // Fetch drivers
+    this.plaseOrderService.getCouriers().subscribe({
+      next: (data: any) => {
+        this.driversList = data.data || [];
+        this.isLoadingDrivers = false;
+      },
+      error: (err: any) => {
+        console.error('Error fetching drivers:', err);
+        this.isLoadingDrivers = false;
+      }
+    });
+  }
+
+  saveDriverChange() {
+    if (!this.selectedDriverId || !this.cartId) return;
+
+    this.isSavingDriver = true;
+    const token = localStorage.getItem('authToken');
+    const headers = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
+
+    this.http.post(`${baseUrl}api/orders/update-delivery-driver`, {
+      delivery_id: this.selectedDriverId,
+      order_id: this.cartId
+    }, { headers }).subscribe({
+      next: (res: any) => {
+        console.log('Driver changed successfully:', res);
+
+        // Update the UI with the new driver
+        const selectedDriver = this.driversList.find(d => d.id === this.selectedDriverId);
+        if (selectedDriver) {
+          const driverName = `${selectedDriver.first_name} ${selectedDriver.last_name}`;
+          this.selectedCourier = {
+            id: this.selectedDriverId!,
+            name: driverName
+          };
+          localStorage.setItem(`selectedCourier_${this.cartId}`, JSON.stringify(this.selectedCourier));
+
+          // Also update deliveryData if it exists
+          if (this.deliveryData) {
+            this.deliveryData.delivery_name = driverName;
+          }
+        }
+
+        this.isSavingDriver = false;
+        this.cdr.detectChanges();
+
+        // Close modal
+        if (this.changeDriverModal) {
+          this.changeDriverModal.hide();
+        }
+      },
+      error: (err: any) => {
+        console.error('Failed to change driver:', err);
+        this.isSavingDriver = false;
+      }
+    });
+  }
 }
