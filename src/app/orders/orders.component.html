@@ -691,10 +691,10 @@
                             <select class="form-select" id="paymentMethod" [(ngModel)]="selectedReturnPaymentMethod">
                               <option value="cash">نقدي</option>
                               <option value="credit">بطاقة</option>
-                              <option value="cash + credit">نقدي + بطاقة</option>
+                              <option value="cash + credit" selected>نقدي + بطاقة</option>
                             </select>
                             @if (selectedReturnPaymentMethod === 'cash + credit') {
-
+                              @let totals = getReturnTotals(order);
                               <div class="mt-3">
                                 <label for="returnCashAmount" class="form-label fw-bold">المبلغ المرتجع بالنقدي</label>
                                 <input
@@ -717,6 +717,11 @@
                                   placeholder="0.00"
                                   />
                               </div>
+                              @if (!isReturnCashCreditAmountsValid(order)) {
+                                <p class="text-danger small mt-2 mb-0">
+                                  يجب أن يساوي مجموع النقدي + البطاقة إجمالي المرتجع: {{ totals.grandTotal }} {{ order.currency_symbol }}
+                                </p>
+                              }
                             }
                           </div>
                         }
@@ -752,7 +757,7 @@
 
 
                         <button type="button" class="btn w-100 my-2 py-2" (click)="submitCancelRequest(order)"
-                          [disabled]="isSubmitting">
+                          [disabled]="isSubmitting || (selectedReturnPaymentMethod === 'cash + credit' && !isReturnCashCreditAmountsValid(order))">
                           <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
                           {{ isSubmitting ? 'جاري الإرسال...' : 'إرسال طلب المرتجع' }} </button>
 
