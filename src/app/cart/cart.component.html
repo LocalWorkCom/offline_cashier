@@ -58,14 +58,31 @@
           {{ deliveryData?.client_name }}
         </small>
       </div>
-      @if ((selectedCourier && cartId) && !deliveryData.delivery_name ) {
-      <small class="fw-bold text-muted">السائق المختار: </small>
-      <small class="text-muted">{{ selectedCourier.name || "لا يوجد"}}</small>
+      @if (selectedCourier && cartId) {
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <small class="fw-bold text-muted">السائق المختار: </small>
+          <small class="text-muted">{{ selectedCourier.name || "لا يوجد"}}</small>
+        </div>
+        @if (cartId) {
+        <a class="text-primary fw-bold" style="cursor: pointer; font-size: 13px;" (click)="openChangeDriverModal()">
+          <i class="fas fa-exchange-alt me-1"></i>تغيير السائق
+        </a>
+        }
+      </div>
       }
       @if (deliveryData.delivery_name && !(selectedCourier && cartId)) {
-      <small class="fw-bold text-muted">السائق المختار: </small>
-      <small class="text-muted">{{ deliveryData?.delivery_name || "لا يوجد" }}</small>
-
+      <div class="d-flex align-items-center justify-content-between">
+        <div>
+          <small class="fw-bold text-muted">السائق المختار: </small>
+          <small class="text-muted">{{ deliveryData?.delivery_name || "لا يوجد" }}</small>
+        </div>
+        @if (cartId) {
+        <a class="text-primary fw-bold" style="cursor: pointer; font-size: 13px;" (click)="openChangeDriverModal()">
+          <i class="fas fa-exchange-alt me-1"></i>تغيير السائق
+        </a>
+        }
+      </div>
       }
       }
 
@@ -263,6 +280,49 @@
       <div class="modal-footer">
         <button class="btn btn-static-main" (click)="confirmStatus()" data-bs-dismiss="modal">
           تأكيد
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Change Driver Modal -->
+<div class="modal fade" id="changeDriverModal" tabindex="-1" aria-labelledby="changeDriverModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <h5 class="modal-title" id="changeDriverModalLabel">تغيير السائق</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        @if (isLoadingDrivers) {
+        <div class="text-center py-3">
+          <div class="spinner-border" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+        </div>
+        }
+        @if (driversList.length > 0) {
+        <div class="mb-3">
+          <label for="driverSelect" class="form-label fw-bold">اختر السائق</label>
+          <select class="form-select" id="driverSelect" [(ngModel)]="selectedDriverId">
+            <option [ngValue]="null" disabled>-- اختر سائق --</option>
+            @for (driver of driversList; track driver.id) {
+            <option [ngValue]="driver.id">{{ driver.first_name }} {{ driver.last_name }}</option>
+            }
+          </select>
+        </div>
+        } @else if (!isLoadingDrivers) {
+        <p class="text-muted text-center">لا يوجد سائقين متاحين</p>
+        }
+      </div>
+      <div class="modal-footer border-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+        <button type="button" class="btn btn-primary" [disabled]="!selectedDriverId || isSavingDriver" (click)="saveDriverChange()">
+          @if (isSavingDriver) {
+          <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+          }
+          حفظ
         </button>
       </div>
     </div>
