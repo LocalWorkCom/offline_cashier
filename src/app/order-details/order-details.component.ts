@@ -5,16 +5,19 @@ import { CommonModule, Location } from '@angular/common';
 import { Subject } from 'rxjs';
 import { finalize, takeUntil } from 'rxjs/operators';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
 import { baseUrl } from '../environment';
 import { IndexeddbService } from '../services/indexeddb.service';
+import { TablesService } from '../services/tables.service';
 
+declare var bootstrap: any;
 
 @Component({
   selector: 'app-order-details',
   templateUrl: './order-details.component.html',
   styleUrls: ['./order-details.component.css'],
-  imports: [CommonModule, ShowLoaderUntilPageLoadedDirective, RouterLink],
+  imports: [CommonModule, FormsModule, ShowLoaderUntilPageLoadedDirective, RouterLink],
 })
 export class OrderDetailsComponent implements OnInit, OnDestroy {
   orderId: any;
@@ -36,13 +39,21 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   /** Loading state for cancel-item request (set to order_detail_id while loading). */
   removeItemLoading: number | null = null;
 
+  /** Change Order Type modal (على صفحة التفاصيل) */
+  currentOrderForTypeChange: any = null;
+  selectedNewOrderType: string = '';
+  selectedTableIdForTypeChange: string = '';
+  availableTables: any[] = [];
+  isChangeTypeSubmitting: boolean = false;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
     private orderListById: OrderListDetailsService,
     private http: HttpClient,
     private location: Location,
-    private dbService: IndexeddbService
+    private dbService: IndexeddbService,
+    private tablesService: TablesService
   ) { }
   ngOnInit(): void {
     this.route.paramMap.subscribe({
@@ -517,7 +528,167 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     this.router.navigate(['/cart', this.orderId]);
   }
 
-  /** Change Order Type: go to orders list with this order so user can use "تغيير النوع" there. */
+  /** Open Change Order Type modal on this page (بدون الانتقال لصفحة الطلبات). */
+  openChangeOrderTypeModalFromDetails(): void {
+    const paymentStatus = this.orderDetails?.payment_status ?? this.orderDetails?.transactions?.[0]?.payment_status;
+    if (paymentStatus === 'paid') {
+      const warningEl = document.getElementById('changeTypePaidWarningModalDetails');
+      if (warningEl) {
+        const modal = new bootstrap.Modal(warningEl);
+        modal.show();
+      }
+      return;
+    }
+    const rawType = this.orderDetails?.order_type || '';
+    this.selectedNewOrderType = rawType === 'reservation-table' ? 'dine-in' : (['Delivery', 'Takeaway', 'dine-in'].includes(rawType) ? rawType : '');
+    this.selectedTableIdForTypeChange = this.orderDetails?.table_id ? String(this.orderDetails.table_id) : '';
+    this.currentOrderForTypeChange = {
+      order_details: {
+        order_id: this.orderId,
+        order_number: this.orderDetails?.order_summary?.order_number ?? this.orderDetails?.order_number ?? this.orderId,
+        order_type: this.orderDetails?.order_type,
+        payment_status: paymentStatus,
+        table_id: this.orderDetails?.table_id,
+        table_number: this.orderDetails?.table_number,
+      },
+    };
+    this.fetchAvailableTablesForChangeType();
+    const modalEl = document.getElementById('changeOrderTypeModalDetails');
+    if (modalEl) {
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    }
+  }
+
+  fetchAvailableTablesForChangeType(): void {
+    this.tablesService.getTables().subscribe({
+      next: (response: any) => {
+        if (response?.status && response?.data && Array.isArray(response.data)) {
+          this.availableTables = response.data.map((table: any) => ({
+            id: table.id,
+            number: table.number ?? table.table_number ?? table.id,
+            status: table.status ?? 1,
+          }));
+        }
+      },
+      error: () => { this.availableTables = []; },
+    });
+  }
+
+  get availableTablesForTypeChange(): any[] {
+    if (!this.availableTables?.length) return [];
+    const currentTableId = this.currentOrderForTypeChange?.order_details?.table_id;
+    return this.availableTables.filter(
+      (t: any) => t.status === 1 || (currentTableId != null && Number(t.id) === Number(currentTableId))
+    );
+  }
+
+  isSameOrderTypeSelected(): boolean {
+    const current = this.currentOrderForTypeChange?.order_details?.order_type;
+    if (!current || !this.selectedNewOrderType) return false;
+    const normalizedCurrent = current === 'reservation-table' ? 'dine-in' : current;
+    return normalizedCurrent === this.selectedNewOrderType;
+  }
+
+  openChangeTypeConfirmModalDetails(): void {
+    const modalEl = document.getElementById('changeOrderTypeModalDetails');
+    if (modalEl) {
+      const inst = bootstrap.Modal.getInstance(modalEl);
+      inst?.hide();
+    }
+    setTimeout(() => {
+      const confirmEl = document.getElementById('confirmChangeOrderTypeModalDetails');
+      if (confirmEl) {
+        const modal = new bootstrap.Modal(confirmEl);
+        modal.show();
+      }
+    }, 300);
+  }
+
+  onConfirmChangeOrderTypeClickDetails(): void {
+    if (this.selectedNewOrderType === 'Delivery') {
+      const confirmEl = document.getElementById('confirmChangeOrderTypeModalDetails');
+      if (confirmEl) {
+        const inst = bootstrap.Modal.getInstance(confirmEl);
+        inst?.hide();
+      }
+      this.router.navigate(['/orders'], { queryParams: { openOrder: this.orderId, action: 'changeType' } });
+      return;
+    }
+    this.submitChangeOrderTypeDetails();
+  }
+
+  submitChangeOrderTypeDetails(): void {
+    if (!this.currentOrderForTypeChange) return;
+    const newOrderType = this.selectedNewOrderType;
+    if (!newOrderType || !['Delivery', 'Takeaway', 'dine-in'].includes(newOrderType)) return;
+    if (newOrderType === 'dine-in' && !this.selectedTableIdForTypeChange) return;
+
+    this.isChangeTypeSubmitting = true;
+    const token = localStorage.getItem('authToken');
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      lang: 'ar',
+    });
+    const body: Record<string, unknown> = {
+      order_id: this.currentOrderForTypeChange.order_details.order_id,
+      new_order_type: newOrderType,
+    };
+    if (newOrderType === 'dine-in' && this.selectedTableIdForTypeChange) {
+      body['table_id'] = parseInt(this.selectedTableIdForTypeChange, 10);
+    }
+
+    this.http.post(`${baseUrl}api/orders/changeOrderType`, body, { headers }).subscribe({
+      next: (res: any) => {
+        this.isChangeTypeSubmitting = false;
+        const confirmEl = document.getElementById('confirmChangeOrderTypeModalDetails');
+        if (confirmEl) {
+          const inst = bootstrap.Modal.getInstance(confirmEl);
+          inst?.hide();
+        }
+        if (res?.status) {
+          this.errorMessage = res?.message || 'تم تغيير نوع الطلب بنجاح';
+          this.status_order = true;
+          setTimeout(() => { this.errorMessage = ''; }, 3000);
+          this.fetchOrderDetailsFromAPI();
+          this.currentOrderForTypeChange = null;
+          this.selectedNewOrderType = '';
+          this.selectedTableIdForTypeChange = '';
+        } else {
+          this.errorMessage = (res?.errorData && typeof res.errorData === 'object' && Object.values(res.errorData).flat().filter(Boolean)[0]) || res?.message || 'حدث خطأ أثناء تغيير نوع الطلب';
+          setTimeout(() => { this.errorMessage = ''; }, 4000);
+        }
+      },
+      error: (err: any) => {
+        this.isChangeTypeSubmitting = false;
+        this.errorMessage = err?.error?.message || err?.error?.errorData || 'حدث خطأ أثناء تغيير نوع الطلب';
+        setTimeout(() => { this.errorMessage = ''; }, 4000);
+      },
+    });
+  }
+
+  getOrderTypeShortLabel(type: string): string {
+    if (!type) return '';
+    const short: Record<string, string> = {
+      'dine-in': 'محلي',
+      'Takeaway': 'استلام',
+      'Delivery': 'توصيل',
+    };
+    return short[type] || type;
+  }
+
+  getOrderTypeIconClass(type: string): string {
+    if (!type) return 'fa-solid fa-circle';
+    const icons: Record<string, string> = {
+      'dine-in': 'fa-solid fa-utensils',
+      'Takeaway': 'fa-solid fa-bag-shopping',
+      'Delivery': 'fa-solid fa-truck',
+    };
+    return icons[type] || 'fa-solid fa-circle';
+  }
+
+  /** Change Order Type: go to orders list (when user wants to complete Delivery form there). */
   goToChangeOrderType(): void {
     if (!this.orderId) return;
     this.router.navigate(['/orders'], { queryParams: { openOrder: this.orderId, action: 'changeType' } });

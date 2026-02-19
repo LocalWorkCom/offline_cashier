@@ -396,19 +396,31 @@ button.dropdown-item {
 }
 
 /* Status filter pills – تصميم الصورة: الكل (أبيض/رمادي)، متاحة (أخضر)، مشغولة (وردي/أحمر) */
+#splitOrderModal .split-status-pills-box {
+    background-color: #f8f9fa;
+    border: none;
+    border-radius: 0.5rem;
+}
+#splitOrderModal .split-status-pill-divider {
+    width: 1px;
+    height: 1.5rem;
+    background-color: #dee2e6;
+    flex-shrink: 0;
+}
 #splitOrderModal .split-status-pill {
     font-size: 0.9rem;
     font-weight: 500;
     transition: all 0.2s;
+    border-radius: 0.35rem !important;
 }
 #splitOrderModal .split-status-pill-all {
-    background-color: #fff;
+    background-color: transparent;
     color: #6c757d;
-    border-color: #dee2e6 !important;
+    border: none;
 }
 #splitOrderModal .split-status-pill-all:hover,
 #splitOrderModal .split-status-pill-all.split-status-pill-active {
-    background-color: #f8f9fa;
+    background-color: transparent;
     color: #495057;
 }
 #splitOrderModal .split-status-pill-available {
@@ -562,16 +574,16 @@ button.dropdown-item {
     min-width: 36px;
     padding: 0;
     border-radius: 0.35rem;
-    background-color: #dc3545;
-    color: #fff;
+    background-color: transparent;
+    color: #6c757d;
     border: none;
     display: inline-flex;
     align-items: center;
     justify-content: center;
 }
 #splitOrderItemsModal .split-items-close-btn:hover {
-    background-color: #bb2d3b;
-    color: #fff;
+    color: #495057;
+    background-color: #f8f9fa;
 }
 #splitOrderItemsModal .split-items-title-wrap {
     padding-inline-start: 2.75rem;
@@ -648,19 +660,53 @@ button.dropdown-item {
     padding: 0.2rem 0.5rem;
     border-radius: 0.35rem;
 }
-#splitOrderItemsModal .split-item-card {
-    background-color: #f8f9fa;
-    border: 1px solid #e9ecef;
+#splitOrderItemsModal .split-items-list-wrap {
+    min-height: 320px;
+    max-height: 420px;
+    display: flex;
+    flex-direction: column;
 }
-#splitOrderItemsModal .split-item-card:last-of-type {
-    margin-bottom: 0 !important;
+#splitOrderItemsModal .split-items-list-header {
+    background-color: #fff;
+    flex-shrink: 0;
 }
-/* Quantity: one rounded group without separate square (Figma) */
-#splitOrderItemsModal .split-qty-control {
+#splitOrderItemsModal .split-items-list-count {
+    background-color: #ffebee;
+    color: #dc3545;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+#splitOrderItemsModal .split-items-list-body {
+    overflow-y: auto;
+    flex-grow: 1;
+}
+#splitOrderItemsModal .split-item-row {
+    background: none;
+    border: none;
+}
+#splitOrderItemsModal .split-item-row:last-child {
+    border-bottom: none !important;
+}
+/* Quantity selector: مثل الصورة – نقل بوكس أبيض، ناقص رمادي وأيقونة بيضاء، كمية خلفية بيضاء وخط أحمر/رمادي، زائد أحمر وأيقونة بيضاء */
+#splitOrderItemsModal .split-qty-wrap {
+    align-items: center;
+    gap: 0.5rem;
+}
+#splitOrderItemsModal .split-qty-label {
     background-color: #e9ecef;
-    border: 1px solid #dee2e6;
-    padding: 0.15rem;
+    color: #495057;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: none;
+    margin-inline-end: 0.25rem;
+}
+#splitOrderItemsModal .split-qty-control {
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    padding: 0.2rem 0.35rem;
     gap: 0;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 #splitOrderItemsModal .split-qty-btn {
     width: 32px;
@@ -669,17 +715,58 @@ button.dropdown-item {
     padding: 0;
     border: none;
     border-radius: 0.4rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+#splitOrderItemsModal .split-qty-btn.split-qty-minus {
+    background-color: #adb5bd;
+    color: #fff;
+}
+#splitOrderItemsModal .split-qty-btn.split-qty-minus:not(:disabled):hover {
+    background-color: #9ca3af;
+    color: #fff;
+}
+#splitOrderItemsModal .split-qty-btn.split-qty-minus:disabled {
+    background-color: #e9ecef;
+    color: #dee2e6;
+}
+#splitOrderItemsModal .split-qty-btn.split-qty-plus {
+    background-color: #dc3545;
+    color: #fff;
+}
+#splitOrderItemsModal .split-qty-btn.split-qty-plus:not(:disabled):hover {
+    background-color: #bb2d3b;
+    color: #fff;
+}
+#splitOrderItemsModal .split-qty-btn.split-qty-plus:disabled {
+    background-color: #e9ecef;
+    color: #dee2e6;
 }
 #splitOrderItemsModal .split-qty-input {
-    width: 42px;
-    min-width: 42px;
-    background: transparent;
+    width: 36px;
+    min-width: 36px;
+    background-color: #fff;
     font-size: 0.9rem;
-    font-weight: 500;
+    font-weight: 600;
+    border: none;
+    padding: 0 4px;
+    color: #adb5bd;
+    border-radius: 0.35rem;
+    margin: 0 2px;
+}
+#splitOrderItemsModal .split-qty-input.split-qty-input-filled {
+    color: #dc3545;
+    background-color: #fff;
 }
 #splitOrderItemsModal .split-qty-input:focus {
     outline: none;
     box-shadow: none;
+}
+#splitOrderItemsModal .split-items-count-badge {
+    background-color: #dc3545;
+    color: #fff;
+    font-size: 0.75rem;
 }
 #splitOrderItemsModal .split-items-list .border-top {
     border-color: #dee2e6 !important;
@@ -696,24 +783,27 @@ button.dropdown-item {
     gap: 0.5rem;
 }
 #splitOrderItemsModal .split-items-btn-cancel {
-    background-color: #e7f1ff;
-    border: 1px solid #b6d4fe;
-    color: #0d6efd;
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    color: #212529;
 }
 #splitOrderItemsModal .split-items-btn-cancel:hover {
-    background-color: #cfe2ff;
-    border-color: #9ec5fe;
-    color: #0d6efd;
+    background-color: #f8f9fa;
+    border-color: #adb5bd;
+    color: #212529;
 }
 #splitOrderItemsModal .split-items-modal .modal-content {
     border-radius: 0.75rem;
 }
-#splitOrderItemsModal .split-items-list,
+#splitOrderItemsModal .split-items-list-wrap,
 #splitOrderItemsModal .split-items-new-box {
     border-radius: 0.75rem;
 }
-#splitOrderItemsModal .modal-body {
-    padding: 1rem 1.5rem 1.25rem;
+#splitOrderItemsModal .split-items-new-box {
+    min-height: 320px;
+}
+#splitOrderItemsModal .split-items-modal-body.modal-body {
+    padding: 0.75rem 1rem 1rem;
 }
 
 /* Merge Order Confirmation Modal – تصميم بالظبط: أيقونة هيدر، تاب بارز، بطاقات رمادية، ظل وزوايا */
@@ -990,7 +1080,7 @@ button.dropdown-item {
 }
 #splitSuccessModal .split-success-box {
     text-align: right;
-    border: 1px solid #e9ecef;
+    border: none;
     border-radius: 0.5rem;
     padding: 1rem;
     background-color: #f8f9fa;
@@ -1020,15 +1110,46 @@ button.dropdown-item {
 #splitSuccessModal .split-success-order-num-new {
     color: #dc3545;
 }
+#splitSuccessModal .split-success-table-box {
+    background-color: #f1f3f5;
+    border: none;
+    border-radius: 0.35rem;
+    padding: 0.25rem 0.5rem;
+    display: inline-block;
+}
+#splitSuccessModal .split-success-table-box-new {
+    background-color: #ffebee;
+}
+#splitSuccessModal .split-success-table-box-new .split-success-table-row {
+    color: #dc3545;
+}
 #splitSuccessModal .split-success-table-row {
     font-weight: 500;
-    color: #6c757d;
+    color: #495057;
+}
+#splitSuccessModal .split-success-transfer-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
 }
 #splitSuccessModal .split-success-transfer {
     padding: 0;
+    margin: 0;
+    text-align: center;
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: #495057;
 }
 #splitSuccessModal .split-success-transfer.border-top {
     border-color: #e9ecef !important;
+}
+#splitSuccessModal .split-success-transfer-icon {
+    color: #6c757d;
+    font-size: 0.75rem;
 }
 #splitSuccessModal .split-success-home-link {
     background: none;
