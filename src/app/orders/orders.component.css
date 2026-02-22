@@ -396,19 +396,31 @@ button.dropdown-item {
 }
 
 /* Status filter pills – تصميم الصورة: الكل (أبيض/رمادي)، متاحة (أخضر)، مشغولة (وردي/أحمر) */
+#splitOrderModal .split-status-pills-box {
+    background-color: #f8f9fa;
+    border: none;
+    border-radius: 0.5rem;
+}
+#splitOrderModal .split-status-pill-divider {
+    width: 1px;
+    height: 1.5rem;
+    background-color: #dee2e6;
+    flex-shrink: 0;
+}
 #splitOrderModal .split-status-pill {
     font-size: 0.9rem;
     font-weight: 500;
     transition: all 0.2s;
+    border-radius: 0.35rem !important;
 }
 #splitOrderModal .split-status-pill-all {
-    background-color: #fff;
+    background-color: transparent;
     color: #6c757d;
-    border-color: #dee2e6 !important;
+    border: none;
 }
 #splitOrderModal .split-status-pill-all:hover,
 #splitOrderModal .split-status-pill-all.split-status-pill-active {
-    background-color: #f8f9fa;
+    background-color: transparent;
     color: #495057;
 }
 #splitOrderModal .split-status-pill-available {
@@ -445,8 +457,10 @@ button.dropdown-item {
 }
 #splitOrderConfirmationModal .split-confirm-new {
     background-color: #fff;
-    border-color: #b3d7ff !important;
-    border-width: 1.5px !important;
+    border-color: #dee2e6 !important;
+    border-width: 1px !important;
+    /* ظل أزرق من الجنب الشمال (اليسار) فقط مثل Figma */
+    box-shadow: -4px 0 0 0 #0d6efd, 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 #splitOrderConfirmationModal .split-confirm-new-badge {
     background-color: #b3d7ff;
@@ -470,6 +484,16 @@ button.dropdown-item {
 #splitOrderConfirmationModal .split-confirm-table-icon {
     flex-shrink: 0;
 }
+/* بوكس الطاولة في أقصى يمين البوكس (RTL) */
+#splitOrderConfirmationModal .split-confirm-card-header {
+    flex-direction: row;
+}
+#splitOrderConfirmationModal .split-confirm-title-left {
+    margin-inline-end: auto;
+}
+#splitOrderConfirmationModal .split-confirm-table-end {
+    flex-shrink: 0;
+}
 #splitOrderConfirmationModal .split-confirm-item-card {
     background-color: #fff;
     border-color: #dee2e6 !important;
@@ -479,6 +503,13 @@ button.dropdown-item {
 }
 #splitOrderConfirmationModal .split-confirm-transferred .text-muted {
     color: #adb5bd !important;
+}
+/* خط مكشوط على اسم العنصر المنقول والسعر */
+#splitOrderConfirmationModal .split-confirm-transferred .split-confirm-item-qty-name span:last-child {
+    text-decoration: line-through;
+}
+#splitOrderConfirmationModal .split-confirm-transferred .split-confirm-item-price {
+    text-decoration: line-through;
 }
 #splitOrderConfirmationModal .split-confirm-qty-pill {
     background-color: #e9ecef;
@@ -492,9 +523,13 @@ button.dropdown-item {
 #splitOrderConfirmationModal .split-confirm-transfer-btn {
     width: 40px;
     height: 40px;
-    background-color: #dc3545;
-    color: #fff;
+    background-color: transparent;
+    border: 2px solid #dc3545;
     flex-shrink: 0;
+}
+#splitOrderConfirmationModal .split-confirm-transfer-arrow {
+    color: #dc3545;
+    font-size: 1.25rem;
 }
 #splitOrderConfirmationModal .split-confirm-note {
     background-color: #fff9e6;
@@ -523,6 +558,252 @@ button.dropdown-item {
     background-color: #bb2d3b;
     border-color: #bb2d3b;
     color: #fff;
+}
+
+/* Split Order Items Modal (Step 2) – Figma: X top-right, title with highlight, no banner, qty one group */
+#splitOrderItemsModal .split-items-modal-header {
+    padding: 1.25rem 3rem 1rem 1rem;
+    align-items: flex-start;
+}
+#splitOrderItemsModal .split-items-close-btn {
+    left: 0;
+    right: auto;
+    top: 0.75rem;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    padding: 0;
+    border-radius: 0.35rem;
+    background-color: transparent;
+    color: #6c757d;
+    border: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+#splitOrderItemsModal .split-items-close-btn:hover {
+    color: #495057;
+    background-color: #f8f9fa;
+}
+#splitOrderItemsModal .split-items-title-wrap {
+    padding-inline-start: 2.75rem;
+}
+#splitOrderItemsModal .split-items-title-plain {
+    font-size: 1.15rem;
+    color: #212529;
+}
+#splitOrderItemsModal .split-items-subtitle {
+    font-size: 0.875rem;
+}
+#splitOrderItemsModal .split-items-subtitle-dot {
+    opacity: 0.7;
+}
+#splitOrderItemsModal .split-items-order-pill {
+    background-color: #e9ecef;
+    color: #495057;
+    font-size: 0.8rem;
+}
+#splitOrderItemsModal .split-items-arrow-btn {
+    right: 0;
+    left: auto;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
+    padding: 0;
+    border-radius: 50%;
+    background-color: #fff;
+    color: #6c757d;
+    border: 1px solid #dee2e6;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+#splitOrderItemsModal .split-items-arrow-btn:hover {
+    background-color: #f8f9fa;
+    color: #495057;
+    border-color: #ced4da;
+}
+#splitOrderItemsModal .split-items-instruction {
+    background-color: #e3f2fd;
+    color: #0d47a1;
+    padding: 0.3rem 0.5rem;
+    border-radius: 50px;
+    border: 1px solid #90caf9;
+    font-size: 0.9rem;
+    width: 100%;
+}
+#splitOrderItemsModal .split-items-instruction span:last-child {
+    color: #0d47a1;
+    font-weight: 500;
+}
+#splitOrderItemsModal .split-items-instruction-icon-wrap {
+    width: 22px;
+    height: 22px;
+    min-width: 22px;
+    border-radius: 50%;
+    background-color: #1976d2;
+    color: #fff;
+}
+#splitOrderItemsModal .split-items-instruction-icon {
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+#splitOrderItemsModal .split-items-title-row {
+    font-size: 1.15rem;
+    font-weight: 700;
+}
+#splitOrderItemsModal .split-items-title-highlight {
+    background-color: #cce5ff;
+    color: #0d6efd;
+    padding: 0.2rem 0.5rem;
+    border-radius: 0.35rem;
+}
+#splitOrderItemsModal .split-items-list-wrap {
+    min-height: 320px;
+    max-height: 420px;
+    display: flex;
+    flex-direction: column;
+}
+#splitOrderItemsModal .split-items-list-header {
+    background-color: #fff;
+    flex-shrink: 0;
+}
+#splitOrderItemsModal .split-items-list-count {
+    background-color: #ffebee;
+    color: #dc3545;
+    font-size: 0.8rem;
+    font-weight: 500;
+}
+#splitOrderItemsModal .split-items-list-body {
+    overflow-y: auto;
+    flex-grow: 1;
+}
+#splitOrderItemsModal .split-item-row {
+    background: none;
+    border: none;
+}
+#splitOrderItemsModal .split-item-row:last-child {
+    border-bottom: none !important;
+}
+/* Quantity selector: مثل الصورة – نقل بوكس أبيض، ناقص رمادي وأيقونة بيضاء، كمية خلفية بيضاء وخط أحمر/رمادي، زائد أحمر وأيقونة بيضاء */
+#splitOrderItemsModal .split-qty-wrap {
+    align-items: center;
+    gap: 0.5rem;
+}
+#splitOrderItemsModal .split-qty-label {
+    background-color: #e9ecef;
+    color: #495057;
+    font-size: 0.8rem;
+    font-weight: 500;
+    border: none;
+    margin-inline-end: 0.25rem;
+}
+#splitOrderItemsModal .split-qty-control {
+    background-color: #fff;
+    border: 1px solid #e9ecef;
+    padding: 0.2rem 0.35rem;
+    gap: 0;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+}
+#splitOrderItemsModal .split-qty-btn {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 0.4rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+#splitOrderItemsModal .split-qty-btn.split-qty-minus {
+    background-color: #adb5bd;
+    color: #fff;
+}
+#splitOrderItemsModal .split-qty-btn.split-qty-minus:not(:disabled):hover {
+    background-color: #9ca3af;
+    color: #fff;
+}
+#splitOrderItemsModal .split-qty-btn.split-qty-minus:disabled {
+    background-color: #e9ecef;
+    color: #dee2e6;
+}
+#splitOrderItemsModal .split-qty-btn.split-qty-plus {
+    background-color: #dc3545;
+    color: #fff;
+}
+#splitOrderItemsModal .split-qty-btn.split-qty-plus:not(:disabled):hover {
+    background-color: #bb2d3b;
+    color: #fff;
+}
+#splitOrderItemsModal .split-qty-btn.split-qty-plus:disabled {
+    background-color: #e9ecef;
+    color: #dee2e6;
+}
+#splitOrderItemsModal .split-qty-input {
+    width: 36px;
+    min-width: 36px;
+    background-color: #fff;
+    font-size: 0.9rem;
+    font-weight: 600;
+    border: none;
+    padding: 0 4px;
+    color: #adb5bd;
+    border-radius: 0.35rem;
+    margin: 0 2px;
+}
+#splitOrderItemsModal .split-qty-input.split-qty-input-filled {
+    color: #dc3545;
+    background-color: #fff;
+}
+#splitOrderItemsModal .split-qty-input:focus {
+    outline: none;
+    box-shadow: none;
+}
+#splitOrderItemsModal .split-items-count-badge {
+    background-color: #dc3545;
+    color: #fff;
+    font-size: 0.75rem;
+}
+#splitOrderItemsModal .split-items-list .border-top {
+    border-color: #dee2e6 !important;
+}
+#splitOrderItemsModal .split-new-item-card {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+}
+#splitOrderItemsModal .split-new-item-card:last-of-type {
+    margin-bottom: 0 !important;
+}
+#splitOrderItemsModal .split-items-new-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+#splitOrderItemsModal .split-items-btn-cancel {
+    background-color: #fff;
+    border: 1px solid #ced4da;
+    color: #212529;
+}
+#splitOrderItemsModal .split-items-btn-cancel:hover {
+    background-color: #f8f9fa;
+    border-color: #adb5bd;
+    color: #212529;
+}
+#splitOrderItemsModal .split-items-modal .modal-content {
+    border-radius: 0.75rem;
+}
+#splitOrderItemsModal .split-items-list-wrap,
+#splitOrderItemsModal .split-items-new-box {
+    border-radius: 0.75rem;
+}
+#splitOrderItemsModal .split-items-new-box {
+    min-height: 320px;
+}
+#splitOrderItemsModal .split-items-modal-body.modal-body {
+    padding: 0.75rem 1rem 1rem;
 }
 
 /* Merge Order Confirmation Modal – تصميم بالظبط: أيقونة هيدر، تاب بارز، بطاقات رمادية، ظل وزوايا */
@@ -786,9 +1067,20 @@ button.dropdown-item {
     border: 3px solid rgba(255, 255, 255, 0.9);
     box-shadow: 0 0 0 6px #d4edda, 0 2px 12px rgba(25, 135, 84, 0.3), 0 4px 16px rgba(0, 0, 0, 0.06);
 }
+/* Figma: middle sentence – regular weight, smaller, black, centered */
+#splitSuccessModal .split-success-desc {
+    font-size: 0.9375rem;
+    font-weight: 400;
+    color: #212529;
+    text-align: center;
+    line-height: 1.5;
+    max-width: 100%;
+    margin-left: auto;
+    margin-right: auto;
+}
 #splitSuccessModal .split-success-box {
     text-align: right;
-    border: 1px solid #e9ecef;
+    border: none;
     border-radius: 0.5rem;
     padding: 1rem;
     background-color: #f8f9fa;
@@ -818,15 +1110,46 @@ button.dropdown-item {
 #splitSuccessModal .split-success-order-num-new {
     color: #dc3545;
 }
+#splitSuccessModal .split-success-table-box {
+    background-color: #f1f3f5;
+    border: none;
+    border-radius: 0.35rem;
+    padding: 0.25rem 0.5rem;
+    display: inline-block;
+}
+#splitSuccessModal .split-success-table-box-new {
+    background-color: #ffebee;
+}
+#splitSuccessModal .split-success-table-box-new .split-success-table-row {
+    color: #dc3545;
+}
 #splitSuccessModal .split-success-table-row {
     font-weight: 500;
-    color: #6c757d;
+    color: #495057;
+}
+#splitSuccessModal .split-success-transfer-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e9ecef;
 }
 #splitSuccessModal .split-success-transfer {
     padding: 0;
+    margin: 0;
+    text-align: center;
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: #495057;
 }
 #splitSuccessModal .split-success-transfer.border-top {
     border-color: #e9ecef !important;
+}
+#splitSuccessModal .split-success-transfer-icon {
+    color: #6c757d;
+    font-size: 0.75rem;
 }
 #splitSuccessModal .split-success-home-link {
     background: none;

@@ -41,16 +41,36 @@ export class EditOrderModalComponent implements OnInit {
     authService: AuthService
   ) {}
 
+  /** For Talabat orders, base price comes from dish.Id_menus_integrations[0].menus_integration_dishs[0].price */
+  private getTalabatDishPrice(dish: any): number | null {
+    const integrations = dish?.Id_menus_integrations;
+    if (!Array.isArray(integrations) || integrations.length === 0) return null;
+    const first = integrations[0];
+    const integrationDishs = first?.menus_integration_dishs;
+    if (!Array.isArray(integrationDishs) || integrationDishs.length === 0) return null;
+    const price = integrationDishs[0]?.price;
+    const num = price != null ? Number(price) : NaN;
+    return Number.isFinite(num) ? num : null;
+  }
+
   ngOnInit(): void {
     if (this.itemId) this.loadItem();
-    console.log(this.selectedItem, this.itemId);
+    console.log("sss",this.selectedItem, this.itemId);
 
     if (!this.selectedItem?.dish) return;
 
     const dish = this.selectedItem;
 
+
     this.quantity = dish.quantity || 1;
     this.note = dish.note || '';
+
+    if (this.selectedItem.order_type === 'talabat') {
+      const talabatPrice = this.getTalabatDishPrice(this.selectedItem.dish);
+      if (talabatPrice != null) {
+        this.selectedItem.dish.price = talabatPrice;
+      }
+    }
 
     // ✅ set default size
     if (!this.selectedSize && dish?.sizes?.length) {
@@ -99,6 +119,7 @@ export class EditOrderModalComponent implements OnInit {
         next: (res: any) => {
           if (res.status) {
             this.selectedItem = res.data;
+            console.log("selectedItem",this.selectedItem);
             this.hydrateFromApi(); // ✅ run after data arrives
           } else {
             this.error = 'لم يتم العثور على تفاصيل الطلب';
@@ -116,6 +137,14 @@ export class EditOrderModalComponent implements OnInit {
     if (!this.selectedItem?.dish) return;
 
     const dish = this.selectedItem.dish;
+
+    // Talabat: use price from Id_menus_integrations[0].menus_integration_dishs[0]
+    if (this.selectedItem.order_type === 'talabat') {
+      const talabatPrice = this.getTalabatDishPrice(dish);
+      if (talabatPrice != null) {
+        this.selectedItem.dish.price = talabatPrice;
+      }
+    }
 
     // qty & note
     this.quantity = Number(dish.quantity) || 1;

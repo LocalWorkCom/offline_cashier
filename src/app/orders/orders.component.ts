@@ -95,6 +95,9 @@ export class OrdersComponent implements OnDestroy {
   errorMessage: any;
   apiUrl = `${baseUrl}`;
   removeLoading: boolean = false;
+  /** When navigating from order-details with ?openOrder=id&action=changeType */
+  private pendingOpenOrderId: string | null = null;
+  private pendingOpenOrderAction: string | null = null;
 
   constructor(
     private ordersService: OrdersService,
@@ -139,6 +142,17 @@ export class OrdersComponent implements OnDestroy {
     this.filterCartItems();
     // Subscribe to query params to detect 'openOrder'Details();
     // this.setupPusherListeners();
+    //this.loadDrivers();
+
+    this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((q) => {
+      const openOrder = q.get('openOrder');
+      const action = q.get('action');
+      if (openOrder && action) {
+        this.pendingOpenOrderId = openOrder;
+        this.pendingOpenOrderAction = action;
+        this.tryOpenPendingOrderAction();
+      }
+    });
     this.listenToDishChange();
     // this.listenToOrderChange();
     this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe({
@@ -290,6 +304,26 @@ export class OrdersComponent implements OnDestroy {
 
     this.filterOrders();
     this.loading = true;
+    this.tryOpenPendingOrderAction();
+  }
+
+  tryOpenPendingOrderAction(): void {
+    if (!this.pendingOpenOrderId || !this.pendingOpenOrderAction) return;
+    if (this.orders.length === 0) return;
+    const orderId = Number(this.pendingOpenOrderId);
+    if (isNaN(orderId)) {
+      this.pendingOpenOrderId = null;
+      this.pendingOpenOrderAction = null;
+      return;
+    }
+    const order = this.orders.find((o: any) => Number(o?.order_details?.order_id) === orderId);
+    if (!order) return;
+    if (this.pendingOpenOrderAction === 'changeType') {
+      this.openChangeTypeModal(order);
+    }
+    this.pendingOpenOrderId = null;
+    this.pendingOpenOrderAction = null;
+    this.router.navigate([], { relativeTo: this.route, queryParams: {}, queryParamsHandling: '' });
   }
 
   //end dalia
@@ -1127,6 +1161,66 @@ export class OrdersComponent implements OnDestroy {
     return items.filter((item: any) => (Number(item.quantity) || 0) > 0);
   }
 
+  /**
+   * Compute total amounts (price + tax + service) for returned quantities
+   * of all items in a given order. Used for the return invoice summary.
+   */
+  getReturnTotals(order: any): {
+    taxTotal: number;
+    serviceTotal: number;
+    priceTotal: number;
+    grandTotal: number;
+  } {
+    const items = this.getDisplayOrderItems(order);
+
+    let taxTotal = 0;
+    let serviceTotal = 0;
+    let priceTotal = 0;
+
+    for (const item of items) {
+      const totalQty = Number(item.quantity) || 0;
+      const selectedQty =
+        item.selectedQuantity !== undefined && item.selectedQuantity !== null
+          ? Number(item.selectedQuantity)
+          : totalQty;
+
+      const returnedQty = totalQty - selectedQty;
+      if (returnedQty <= 0) {
+        continue;
+      }
+
+      const qty = totalQty || 1;
+      const taxPart = ((item.tax_value ?? 0) / qty) * returnedQty;
+      const servicePart = ((item.service_fees ?? 0) / qty) * returnedQty;
+      const pricePart = ((item.total_dish_price ?? 0) / qty) * returnedQty;
+
+      taxTotal += taxPart;
+      serviceTotal += servicePart;
+      priceTotal += pricePart;
+    }
+
+    const grandTotal = taxTotal + serviceTotal + priceTotal;
+
+    return {
+      taxTotal,
+      serviceTotal,
+      priceTotal,
+      grandTotal,
+    };
+  }
+
+  /**
+   * For "cash + credit" return: validates that returnCashAmount + returnCreditAmount equals grandTotal.
+   */
+  isReturnCashCreditAmountsValid(order: any): boolean {
+    if (this.selectedReturnPaymentMethod !== 'cash + credit') return true;
+    const totals = this.getReturnTotals(order);
+    const cash = Number(this.returnCashAmount) || 0;
+    const credit = Number(this.returnCreditAmount) || 0;
+    const sum = cash + credit;
+    return Math.abs(sum - totals.grandTotal) < 0.01;
+  }
+
   selectOrderType(orderType: string): void {
     console.log('fatema', orderType, this.selectedOrderTypeStatus);
 
@@ -1487,6 +1581,8 @@ export class OrdersComponent implements OnDestroy {
   cancelSuccessMessage: string = '';
   cancelMessage: any;
   selectedReturnPaymentMethod: string = 'cash'; // Default payment method for return invoice
+  returnCashAmount: number | null = null;
+  returnCreditAmount: number | null = null;
   /*   submitCancelRequest(order: any): void {
     const selectedItems = order.order_items
       .filter((item: any) => item.isChecked)
@@ -1717,38 +1813,49 @@ export class OrdersComponent implements OnDestroy {
       }, 4000);
       return;
     }
-    //  check if the order is talabat then must be full return
-    if (order.order_details.order_type == "talabat") {
-      if (selectedItems.length !== order.order_items.length) {
-        this.cancelErrorMessage = 'يرجى اختيار جميع الأصناف بالكامل';
-        this.cancelSuccessMessage = '';
-        this.isSubmitting = false;
-        setTimeout(() => {
-          this.cancelErrorMessage = '';
-        }, 4000);
-        return;
-      }
 
-      // التحقق من أن الكمية المرجعة تساوي الكمية الأصلية لكل عنصر
-      const itemsWithWrongQuantity = order.order_items.filter((item: any) => {
-        const originalQuantity = item.quantity;
-        const selectedQuantity = item.selectedQuantity ?? item.quantity;
-        const returnedQuantity = originalQuantity - selectedQuantity;
-        // يجب أن تكون الكمية المرجعة = الكمية الأصلية (يعني selectedQuantity = 0)
-        return returnedQuantity !== originalQuantity;
-      });
-
-      if (itemsWithWrongQuantity.length > 0) {
-        const itemNames = itemsWithWrongQuantity.map((item: any) => item.dish_name).join('، ');
-        this.cancelErrorMessage = `يرجى إدخال نفس الكمية الأصلية للعناصر التالية: ${itemNames}`;
-        this.cancelSuccessMessage = '';
-        this.isSubmitting = false;
-        setTimeout(() => {
-          this.cancelErrorMessage = '';
-        }, 4000);
-        return;
-      }
+    if (this.selectedReturnPaymentMethod === 'cash + credit' && !this.isReturnCashCreditAmountsValid(order)) {
+      this.cancelErrorMessage = 'يجب أن يساوي مجموع المبلغ النقدي + البطاقة إجمالي المرتجع';
+      this.cancelSuccessMessage = '';
+      this.isSubmitting = false;
+      setTimeout(() => {
+        this.cancelErrorMessage = '';
+      }, 4000);
+      return;
     }
+
+    //  check if the order is talabat then must be full return
+    // if (order.order_details.order_type == "talabat") {
+    //   if (selectedItems.length !== order.order_items.length) {
+    //     this.cancelErrorMessage = 'يرجى اختيار جميع الأصناف بالكامل';
+    //     this.cancelSuccessMessage = '';
+    //     this.isSubmitting = false;
+    //     setTimeout(() => {
+    //       this.cancelErrorMessage = '';
+    //     }, 4000);
+    //     return;
+    //   }
+
+    //   // التحقق من أن الكمية المرجعة تساوي الكمية الأصلية لكل عنصر
+    //   const itemsWithWrongQuantity = order.order_items.filter((item: any) => {
+    //     const originalQuantity = item.quantity;
+    //     const selectedQuantity = item.selectedQuantity ?? item.quantity;
+    //     const returnedQuantity = originalQuantity - selectedQuantity;
+    //     // يجب أن تكون الكمية المرجعة = الكمية الأصلية (يعني selectedQuantity = 0)
+    //     return returnedQuantity !== originalQuantity;
+    //   });
+
+    //   if (itemsWithWrongQuantity.length > 0) {
+    //     const itemNames = itemsWithWrongQuantity.map((item: any) => item.dish_name).join('، ');
+    //     this.cancelErrorMessage = `يرجى إدخال نفس الكمية الأصلية للعناصر التالية: ${itemNames}`;
+    //     this.cancelSuccessMessage = '';
+    //     this.isSubmitting = false;
+    //     setTimeout(() => {
+    //       this.cancelErrorMessage = '';
+    //     }, 4000);
+    //     return;
+    //   }
+    // }
 
     // Validate cancelReason
     this.cancelReasonTouched = true;
@@ -1781,8 +1888,20 @@ export class OrdersComponent implements OnDestroy {
     const isFullReturn =
       selectedItems.length === order.order_items.length &&
       selectedItems.every((item: any) => item.isFullyReturned);
+      let paymentMethod ='';
+      let paymentMethod2 =null;
 
-    const body = {
+      if(this.selectedReturnPaymentMethod == 'cash + credit') {
+        paymentMethod = 'cash';
+        paymentMethod2 = 'credit';
+      } else if(this.selectedReturnPaymentMethod == 'credit') {
+        paymentMethod = 'credit';
+      }
+      else {
+        paymentMethod = 'cash';
+      }
+
+    const body: any = {
       order_id: order.order_details.order_id,
       items: selectedItems.map((item: any) => ({
         item_id: item.item_id,
@@ -1792,8 +1911,13 @@ export class OrdersComponent implements OnDestroy {
       })),
       type: isFullReturn ? 'full' : 'partial',
       reason: this.cancelReason || '',
-      payment_method: this.selectedReturnPaymentMethod,
+      payment_method: paymentMethod,
+      payment_method2: paymentMethod2,
     };
+    if (this.selectedReturnPaymentMethod === 'cash + credit') {
+      body.cash_amount = Number(this.returnCashAmount) || 0;
+      body.credit_amount = Number(this.returnCreditAmount) || 0;
+    }
 
     console.log('Sending:', body, selectedItems, order);
 
@@ -1897,7 +2021,7 @@ export class OrdersComponent implements OnDestroy {
               // Refresh order data to get updated calculations (coupon, tax, total)
               this.refreshOrderAfterCancel(order.order_details.order_id);
 
-              /* 
+              /*
               // Removed to prevent double printing (handled by global listener)
               this.dbService.getOrderFromPrintkitchenById(order.order_details.order_id).then((orderMetadata: any) => {
                 if (orderMetadata) {
@@ -2039,7 +2163,7 @@ export class OrdersComponent implements OnDestroy {
           this.successMessage = 'تم تحديث الطلب بنجاح';
           this.successMessageModal.show();
 
-            /* 
+            /*
             // Removed to prevent double printing (handled by global listener)
             this.dbService.getOrderFromPrintkitchenById(orderId).then((orderMetadata: any) => {
               console.log('🔍 [DEBUG] Order from printkitchen indexeddb:', orderMetadata);
@@ -2061,7 +2185,7 @@ export class OrdersComponent implements OnDestroy {
                 item_id: editedItemOldState.order_detail_id,
                 quantity: editedItemOldState.quantity,
                 size: editedItemOldState.size,
-                dish_addons: editedItemOldState.dish_addons 
+                dish_addons: editedItemOldState.dish_addons
               }];
 
               this.processKitchenPrint(orderId, oldItems, 'edit');
@@ -2170,7 +2294,7 @@ export class OrdersComponent implements OnDestroy {
 
 
 
-             /* 
+             /*
              // Removed to prevent double printing (handled by global listener)
              this.dbService.getOrderFromPrintkitchenById(order.order_details.order_id).then((orderMetadata: any) => {
                if (orderMetadata) {
@@ -2385,7 +2509,7 @@ export class OrdersComponent implements OnDestroy {
   private clearCouponData(): void {
     const couponKeys = [
       'appliedCoupon', 'validCoupon', 'couponTitle',
-      'couponCode', 'discountAmount'
+      'couponCode', 'discountAmount', 'couponType', 'couponValue'
     ];
 
     couponKeys.forEach(key => {
@@ -2403,9 +2527,9 @@ export class OrdersComponent implements OnDestroy {
     const cashValue = Number(totalCash);
     const creditValue = Number(totalCredit);
     const orderPrice = Number(order.total_price);
-    if(order.details_order?.transactions?.[0]?.payment_method == 'credit') {
+    if(order.details_order?.transactions?.[0]?.payment_method == 'credit' || order.details_order?.transactions?.[1]?.payment_method == 'credit') {
       // console.log('creditdalia');
-      return !isNaN(creditValue) && !isNaN(orderPrice) && (creditValue > orderPrice || cashValue > orderPrice);
+      return !isNaN(creditValue) && !isNaN(orderPrice) && (creditValue > orderPrice || cashValue > orderPrice || cashValue + creditValue > orderPrice);
     }
         // console.log('cashdalia');
 
@@ -2472,7 +2596,7 @@ export class OrdersComponent implements OnDestroy {
   changeTypeDeliverySelectedCountry: { code: string; flag: string; phoneLength?: number } | null = null;
   changeTypeDeliveryCountrySearchTerm: string = '';
   changeTypeDeliverySearchPhoneIdle: boolean = true;
-  
+
   drivers: any[] = [];
   changeTypeDeliveryDriverId: number | null = null;
 
@@ -2582,11 +2706,16 @@ export class OrdersComponent implements OnDestroy {
     });
   }
 
-  // Open split modal – only show items still in the order (quantity > 0); hide items already moved
+  // Open split modal – only show items still in the order (quantity > 0) and not cancelled
   openSplitModal(order: any): void {
     this.currentSplitOrder = order;
     const itemsStillInOrder = (order.order_items || []).filter(
-      (item: any) => (Number(item.quantity) || 0) > 0
+      (item: any) =>
+        (Number(item.quantity) || 0) > 0 &&
+        item.dish_status !== 'cancel' &&
+        item.dish_status !== 'cancelled' &&
+        item.status !== 'cancel' &&
+        item.status !== 'cancelled'
     );
     this.splitOrderItems = itemsStillInOrder.map((item: any) => ({
       ...item,
@@ -3074,7 +3203,7 @@ export class OrdersComponent implements OnDestroy {
     this.closeSplitSuccessModal();
     if (this.currentSplitOrder && this.currentSplitOrder.order_details?.order_id) {
       const orderId = this.currentSplitOrder.order_details.order_id;
-      this.router.navigate(['/order-details', orderId], { queryParams: { refresh: 'true' } });
+      this.router.navigate(['/order-details', orderId], { queryParams: { refresh: 'true', clearCoupon: '1' } });
     }
   }
 
@@ -3172,13 +3301,13 @@ export class OrdersComponent implements OnDestroy {
     return parseFloat(total.toFixed(2));
   }
 
-  // View merged order (force refresh from API so merged items are shown)
+  // View merged order (force refresh from API so merged items are shown; clear coupon as after merge no coupon applies)
   viewMergedOrder(): void {
     this.closeMergeSuccessModal();
-    // Navigate to order details with refresh=true so order-details fetches from API, not stale IndexedDB
+    // Navigate to order details with refresh + clearCoupon so order-details fetches from API and shows no coupon
     if (this.currentMergeOrder && this.currentMergeOrder.order_details?.order_id) {
       const orderId = this.currentMergeOrder.order_details.order_id;
-      this.router.navigate(['/order-details', orderId], { queryParams: { refresh: 'true' } });
+      this.router.navigate(['/order-details', orderId], { queryParams: { refresh: 'true', clearCoupon: '1' } });
     }
   }
 
@@ -3957,14 +4086,33 @@ export class OrdersComponent implements OnDestroy {
       next: (response: any) => {
         if (response.status && response.data) {
           const mapped = response.data.map((table: any) => {
-            const typeRaw = (table.type ?? table.table_type?.name_en ?? table.table_type?.name_ar ?? table.table_type ?? table.type_ar ?? table.type_en ?? '').toString().toLowerCase().trim();
-            const typeAr = (table.type_ar ?? table.table_type?.name_ar ?? table.table_type?.name ?? table.type ?? '').toString().trim();
+            const typeObj = table.type && typeof table.type === 'object' ? table.type : null;
+            // الباك اند يرجع type كرقم (1 = داخلي، 2 = خارجي) أو type_name مثل "in door" / "out door"
+            const typeNum = table.type != null && typeof table.type === 'number' ? table.type : null;
+            const typeRawVal = typeObj?.name_en ?? typeObj?.name ?? table.type_name ?? table.table_type?.name_en ?? table.table_type?.name_ar ?? table.table_type ?? table.type_ar ?? table.type_en ?? table.type ?? '';
+            const typeRaw = (typeof typeRawVal === 'number' ? (typeRawVal === 2 ? 'external' : 'internal') : String(typeRawVal)).toLowerCase().trim();
+            const typeArVal = typeObj?.name_ar ?? typeObj?.name ?? table.type_ar ?? table.table_type?.name_ar ?? table.table_type?.name ?? table.type ?? '';
+            const typeAr = (typeof typeArVal === 'number' ? (typeArVal === 2 ? 'خارجي' : 'داخلي') : String(typeArVal)).trim();
             const floorId = table.floor_id ?? table.floor?.id ?? null;
             const floorName = (table.floor_name ?? table.floor?.name ?? table.floor?.name_en ?? table.floor?.name_ar ?? '').toString().toLowerCase();
             const areaName = (table.floor_area_name ?? table.area_name ?? table.floor_partition?.name ?? table.floor_partition?.name_ar ?? table.floor_area ?? '').toString().toLowerCase();
             const tableNumber = table.number ?? table.table_number ?? table.id;
-            const typeId = table.type_id ?? table.table_type_id ?? table.table_type?.id ?? null;
+            // type_id من الـ API أو type (رقم 1/2) من نفس الـ response
+            const typeId = table.type_id ?? typeNum ?? typeObj?.id ?? table.table_type_id ?? table.table_type?.id ?? null;
             const seats = table.seats ?? table.seat_count ?? table.capacity ?? table.seats_count ?? table.number_of_seats ?? null;
+            // التصنيف: من is_external إن وُجد، وإلا من type_id ثم type_ar/tableType (مثل "خارجي" من الداشبورد)
+            let isExternal: boolean;
+            if (table.hasOwnProperty('is_external') && table.is_external !== null && table.is_external !== undefined) {
+              isExternal = table.is_external === true || table.is_external === '1';
+            } else {
+              const tid = typeId != null ? Number(typeId) : NaN;
+              const ar = (typeAr || typeRaw || '').toString().trim();
+              const t = (typeRaw || typeAr || '').toString().toLowerCase().replace(/\s+/g, ' ');
+              if (!Number.isNaN(tid)) isExternal = tid === 2;
+              else if (ar === 'خارجي' || t === 'external' || t === 'خارجي' || t === 'out door' || t === 'outdoor') isExternal = true;
+              else if (ar === 'داخلي' || t === 'internal' || t === 'داخلي' || t === 'in door' || t === 'indoor') isExternal = false;
+              else isExternal = false; // غير معروف نعتبره داخلي
+            }
             return {
               id: table.id,
               name: table.name_ar || table.name || `طاولة ${tableNumber}`,
@@ -3976,10 +4124,12 @@ export class OrdersComponent implements OnDestroy {
               tableType: typeRaw || typeAr,
               tableTypeAr: typeAr,
               type_id: typeId,
+              is_external: isExternal,
               floorId,
               floorName,
               areaName,
               branch_id: table.branch_id ?? null,
+              serial_number: table.serial_number ?? table.serial_number_id ?? null,
             };
           });
           // Same branch only: من نفس الـ branch
@@ -3995,8 +4145,12 @@ export class OrdersComponent implements OnDestroy {
     });
   }
 
-  /** هل الطاولة مصنفة كـ "داخلية" (الصالة الرئيسية) – نفس تصنيف لوحة التحكم "النوع: داخلي". */
+  /** هل الطاولة مصنفة كـ "داخلية". نعتمد is_external من الـ API إن وُجد، وإلا type_id و type_ar (مثل "داخلي"/"خارجي" من الداشبورد). */
   private isTableInternal(table: any): boolean {
+    if (table.hasOwnProperty('is_external') && table.is_external !== undefined && table.is_external !== null) {
+      if (table.is_external === true || table.is_external === '1') return false;
+      if (table.is_external === false || table.is_external === '0') return true;
+    }
     const typeId = table.type_id != null ? Number(table.type_id) : null;
     if (typeId === 1) return true;
     if (typeId === 2) return false;
@@ -4005,8 +4159,12 @@ export class OrdersComponent implements OnDestroy {
     return ar === 'داخلي' || t === 'internal' || t === 'داخلي';
   }
 
-  /** هل الطاولة مصنفة كـ "خارجية" (التراس الخارجي) – نفس تصنيف لوحة التحكم "النوع: خارجي". */
+  /** هل الطاولة مصنفة كـ "خارجية". نعتمد is_external من الـ API إن وُجد، وإلا type_id و type_ar. */
   private isTableExternal(table: any): boolean {
+    if (table.hasOwnProperty('is_external') && table.is_external !== undefined && table.is_external !== null) {
+      if (table.is_external === true || table.is_external === '1') return true;
+      if (table.is_external === false || table.is_external === '0') return false;
+    }
     const typeId = table.type_id != null ? Number(table.type_id) : null;
     if (typeId === 2) return true;
     if (typeId === 1) return false;
@@ -4176,6 +4334,7 @@ export class OrdersComponent implements OnDestroy {
       order_id: this.currentSplitOrder.order_details.order_id,
       new_table_id: parseInt(this.selectedTableIdForSplit),
       items: items,
+      clear_coupon: true, // Ask backend to remove coupon from primary order; coupon must not apply to either order after split
     };
 
     this.http
@@ -4184,6 +4343,19 @@ export class OrdersComponent implements OnDestroy {
         next: (response: any) => {
           this.isSplitSubmitting = false;
           if (response.status) {
+            // Coupon must be removed from both orders after split; clear local coupon data so it is not reapplied
+            this.clearCouponData();
+            // Mark primary order so pill-edit can remove coupon from invoice display when opened
+            const primaryOrderId = String(this.currentSplitOrder?.order_details?.order_id ?? '');
+            if (primaryOrderId) {
+              try {
+                const raw = sessionStorage.getItem('splitPrimaryOrderIds') || '[]';
+                const ids: string[] = JSON.parse(raw);
+                if (!ids.includes(primaryOrderId)) ids.push(primaryOrderId);
+                sessionStorage.setItem('splitPrimaryOrderIds', JSON.stringify(ids));
+              } catch (_) {}
+            }
+
             // Save new order ID from response
             if (response.data?.new_order_id) {
               this.newSplitOrderId = response.data.new_order_id;
