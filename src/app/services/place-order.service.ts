@@ -42,12 +42,12 @@ export class PlaceOrderService {
       console.error('No auth token found!');
       return throwError(() => new Error('Authentication token missing.'));
     }
-
+    console.log('drivers in place-order.service');
     const headers = new HttpHeaders({
       Authorization: `Bearer ${token}`,
     });
 
-    return this.http.get(`${this.apiUrl}/deliveries`, { headers }).pipe(
+    return this.http.get(`${this.apiUrl}/orders/deliveries/drivers`, { headers }).pipe(
       catchError((error: any) => {
         console.error('Error fetching couriers:', error);
         return throwError(() => error);

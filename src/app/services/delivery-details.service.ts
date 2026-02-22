@@ -17,6 +17,7 @@ export class DeliveryDetailsService {
       'Authorization',
       `Bearer ${this.token}`
     );
-    return this.http.get(`${this.apiUrl}/deliveries`, { headers });
+    console.log('drivers in delivery-details.service');
+    return this.http.get(`${this.apiUrl}/orders/deliveries/drivers`, { headers });
   }
 }
