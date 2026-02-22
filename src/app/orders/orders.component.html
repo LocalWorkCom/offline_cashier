@@ -48,23 +48,22 @@
       </li>
     </ul> -->
 
-    <ul class="nav nav-requests mb-4 px-0 mini-tabs" role="tablist">
-      <li class="nav-item" role="presentation">
-        <button class="nav-link mb-2" [class.active]="selectedStatus === 'all'" (click)="selectStatus('all')">
-          {{ getStatusLabel("all") }}
-          <span>({{ getStatusCount("all", selectedOrderTypeStatus) }})</span>
+    <ul class="nav nav-requests mb-4 px-0 w-100 d-flex flex-row justify-content-between" role="tablist">
+      <li class="nav-item flex-fill mx-1" role="presentation">
+        <button class="nav-link w-100 mb-2" [class.active]="selectedStatus === 'all'" (click)="selectStatus('all')">
+          <span>الكل ({{ getStatusCount("all", selectedOrderTypeStatus) }} من {{ totalOrdersCount }})</span>
         </button>
       </li>
 
-      <li class="nav-item" role="presentation">
-        <button class="nav-link mb-2" [class.active]="selectedStatus === 'static'" (click)="selectStatus('static')">
+      <li class="nav-item flex-fill mx-1" role="presentation">
+        <button class="nav-link w-100 mb-2" [class.active]="selectedStatus === 'static'" (click)="selectStatus('static')">
           {{ getStatusLabel("static") }}
           <span>({{ getStatusCount("static", selectedOrderTypeStatus) }})</span>
         </button>
       </li>
 
-      <li class="nav-item" *ngFor="let status of getFilteredStatuses()">
-        <button class="nav-link sub mx-2" [class.active]="selectedStatus === status" (click)="selectStatus(status)">
+      <li class="nav-item flex-fill mx-1" *ngFor="let status of getFilteredStatuses()">
+        <button class="nav-link sub w-100" [class.active]="selectedStatus === status" (click)="selectStatus(status)">
           {{ getStatusLabel(status) }}
           <span>({{ getStatusCount(status, selectedOrderTypeStatus) }})</span>
         </button>
@@ -72,7 +71,7 @@
     </ul>
     <div class="input-group w-100 mx-auto my-3">
       <input [(ngModel)]="searchOrderNumber" (ngModelChange)="filterOrdersInput()" placeholder="ابحث ب رقم الطلب"
-        class="form-control rounded-start" />
+        class="form-control rounded-start" dir="ltr" style="text-align: center;" />
       <span class="input-group-text">
         <i class="fa-solid fa-magnifying-glass"></i>
       </span>
@@ -81,7 +80,7 @@
       <ng-container *ngIf="selectedStatus === 'static'; else dynamicOrders">
         <div *ngIf="filteredOrders.length > 0; else noItems">
           <div class="row m-0">
-            <div *ngFor="let order of filteredOrders" class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4">
+            <div *ngFor="let order of filteredOrders; trackBy: trackByOrderId" class="col-xl-3 col-lg-4 col-md-6 col-sm-12 mb-4">
               <div class="card p-2 d-flex flex-column justify-content-between h-100"
                 [class.card-updated]="order.recentlyUpdated">
                 <!-- Update Indicator -->
@@ -235,7 +234,7 @@
 
       <ng-template #dynamicOrders>
         <div class="row m-0">
-          <div *ngFor="let order of filteredOrders" class="col-xl-4 col-md-6 col-sm-12 mb-4">
+          <div *ngFor="let order of filteredOrders; trackBy: trackByOrderId" class="col-xl-4 col-md-6 col-sm-12 mb-4">
             <div class="card p-2 d-flex flex-column h-100 justify-content-between"
               [class.card-updated]="order.recentlyUpdated" [id]="'order-' + order.order_details?.order_number">
               <!-- Update Indicator -->
@@ -784,7 +783,17 @@
                     </div>
                   </div>
                 </div>
-              </div>
+            </div>
+          </div>
+        </div>
+          <div class="row mt-4 mb-5" *ngIf="hasMoreOrders">
+            <div class="col-12 text-center">
+              <button type="button" (click)="loadMore()" class="btn-static btn-static-main text-white w-100 py-3" [disabled]="isLoadMoreLoading">
+                <span *ngIf="!isLoadMoreLoading">تحميل المزيد</span>
+                <span *ngIf="isLoadMoreLoading">
+                  <i class="fa fa-spinner fa-spin"></i> جاري التحميل...
+                </span>
+              </button>
             </div>
           </div>
         </div>
