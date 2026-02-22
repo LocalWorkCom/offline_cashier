@@ -279,7 +279,7 @@ private processPillDetails(data: any): void {
       next: (response: any) => {
         this.order_id = response.data.order_id;
         this.invoices = response.data.invoices || [];
-        
+
         if (this.invoices.length === 0) {
           console.warn('No invoices found in response');
           return;
@@ -356,7 +356,7 @@ private processPillDetails(data: any): void {
           invoices: response.data.invoices,
           order_id: response.data.order_id,
           invoice_summary: this.invoiceSummary || [],
-          orderDetails: this.orderDetails.flat() || [],
+          orderDetails: this.getFilteredOrderDetailsFlat(),
           date: this.date,
           time: this.time,
           showPrices: true,
@@ -370,11 +370,24 @@ private processPillDetails(data: any): void {
           waiter: response.data.waiter,
           make_type: response.data.make_type
         };
+        if (this.receiptData?.invoices?.[0]) {
+          this.receiptData.invoices[0].orderDetails = this.getFilteredOrderDetailsFlat();
+        }
       },
       error: (error: any) => {
         console.error(' Error fetching pill details:', error);
       },
     });
+  }
+  /** عناصر الطلب ذات كمية أكبر من صفر فقط (بعد التجزئة أو الحذف لا تظهر العناصر المُزالَة) */
+  get activeOrderDetails(): any[] {
+    const details = this.orderDetails?.[0];
+    if (!details || !Array.isArray(details)) return [];
+    return details.filter((item: any) => (Number(item.quantity) || 0) > 0);
+  }
+  /** نفس القائمة مصفاة للطباعة (مصفوفة مسطحة) */
+  getFilteredOrderDetailsFlat(): any[] {
+    return (this.orderDetails?.flat() || []).filter((item: any) => (Number(item.quantity) || 0) > 0);
   }
   hasDeliveryOrDineIn(): boolean {
     return this.invoices?.some((invoice: { order_type: string }) =>
@@ -452,6 +465,74 @@ private processPillDetails(data: any): void {
   }
   isFinal = false;
   order_id: any
+  // async printInvoice(isFinal: boolean = false) {
+  //   this.isFinal = isFinal;
+  //   this.isPrinting = true;
+
+  //   if (!this.invoices?.length || !this.invoiceSummary?.length) {
+  //     console.warn('Invoice data not ready.');
+  //     this.isPrinting = false;
+  //     return;
+  //   }
+
+  //   // Update isFinal in receiptData if it exists
+  //   if (this.receiptData) {
+  //     this.receiptData.isFinal = isFinal;
+  //   }
+
+  //   try {
+  //     // Backend API call removed as per request
+
+  //     const response = await this.printedInvoiceService
+  //       .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
+  //       .toPromise();
+  //     console.log('Print invoice response:', response);
+
+
+  //     const printContent = document.getElementById('printSection');
+  //     if (!printContent) {
+  //       console.error('Print section not found.');
+  //       return;
+  //     }
+
+  //     const originalHTML = document.body.innerHTML;
+
+  //     const copies = [
+  //       { showPrices: true, test: true },
+  //     ];
+
+  //     for (let i = 0; i < copies.length; i++) {
+  //       this.showPrices = copies[i].showPrices;
+  //       this.test = copies[i].test;
+  //       await new Promise((resolve) => setTimeout(resolve, 300));
+
+  //       const singlePageHTML = `
+  //         <div>
+  //           ${printContent.innerHTML}
+  //         </div>
+  //       `;
+
+
+  //       document.body.innerHTML = singlePageHTML;
+
+  //       await new Promise((resolve) =>
+  //         setTimeout(() => {
+  //           window.print();
+  //           resolve(true);
+  //         }, 200)
+  //       );
+  //     }
+
+  //     document.body.innerHTML = originalHTML;
+  //     location.reload();
+  //   } catch (error) {
+  //     console.error('Error printing invoice:', error);
+  //   } finally {
+  //     this.isPrinting = false;
+  //   }
+
+  // }
+
   async printInvoice(isFinal: boolean = false) {
     this.isFinal = isFinal;
     this.isPrinting = true;
@@ -468,8 +549,12 @@ private processPillDetails(data: any): void {
     }
 
     try {
-      
+
     console.log('Printing invoice...........');
+    const response = await this.printedInvoiceService
+    .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
+    .toPromise();
+  console.log('Print invoice response:', response);
 
 this.cdr.detectChanges();
 // Allow time for view to update
@@ -479,7 +564,7 @@ await new Promise((resolve) => setTimeout(resolve, 100));
 if ((window as any).deviceAPI) {
   console.log('Detected Electron environment. Attempting silent print via SilentPrintService.');
 
-  const printerIP = this.invoices[0]?.branch_details?.printer_ip || "192.168.11.187"; 
+  const printerIP = this.invoices[0]?.branch_details?.printer_ip || "192.168.11.187";
   const port = this.invoices[0]?.branch_details?.printer_port || 9100;
 
   const result = await this.silentPrint.printElement('printSection', printerIP, port);
