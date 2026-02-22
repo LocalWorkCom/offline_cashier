@@ -1,13 +1,17 @@
-.main{
-  width: 100%;
-  min-height: 200px;
+.main {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(255, 255, 255, 0.9);
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  z-index: 99999;
 }
 .spinner-border {
-  border-color:  #FE0000;
+  border-color: #fe0000;
   border-right-color: transparent;
   --bs-spinner-width: 3rem;
   --bs-spinner-height: 3rem;
