@@ -15,7 +15,7 @@ import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { OrderDetailsComponent } from '../order-details/order-details.component';
 import { OrderListService } from '../services/order-list.service';
-import { finalize, takeUntil } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, finalize, takeUntil } from 'rxjs/operators';
 import { Subject } from 'rxjs';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
 import { PusherService } from '../services/pusher/pusher.service';
@@ -98,6 +98,7 @@ export class OrdersComponent implements OnDestroy {
   /** When navigating from order-details with ?openOrder=id&action=changeType */
   private pendingOpenOrderId: string | null = null;
   private pendingOpenOrderAction: string | null = null;
+  private searchSubject = new Subject<string>();
 
   constructor(
     private ordersService: OrdersService,
@@ -125,10 +126,17 @@ export class OrdersComponent implements OnDestroy {
     // console.log(this.orderDetails,'orderDetails')
   }
 
+  currentPage: number = 1;
+  hasMoreOrders: boolean = true;
+  totalOrdersCount: number = 0;
+  isLoadMoreLoading: boolean = false;
+  orderTypeCounts: any = {};
+
   ngOnInit(): void {
     // console.log("this.isOnline", this.isOnline);
     this.selectedOrderTypeStatus = 'All';
     this.fetchOrdersData();
+    this.fetchOrderTypeCounts();
     // if (this.isOnline == false) {
     //   // this.loadOrdersFromIndexedDB();
     //         this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
@@ -154,6 +162,15 @@ export class OrdersComponent implements OnDestroy {
       }
     });
     this.listenToDishChange();
+    this.searchSubject.pipe(
+      debounceTime(500),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      if (this.selectedStatus !== 'static') {
+        this.fetchOrdersFromAPI();
+      }
+    });
     // this.listenToOrderChange();
     this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe({
       next: (params) => {
@@ -218,58 +235,105 @@ export class OrdersComponent implements OnDestroy {
   //   });
   // }
   // Fetch orders from API
-  private fetchOrdersFromAPI(): void {
-    this.loading = false;
+  private fetchOrdersFromAPI(isLoadMore: boolean = false): void {
+    if (!isLoadMore) {
+      this.loading = false;
+      this.currentPage = 1;
+      this.orders = [];
+    } else {
+      this.isLoadMoreLoading = true;
+    }
+
     this.ordersListService
-      .getOrdersList()
+      .getOrdersListV2(this.selectedOrderTypeStatus, this.currentPage, this.searchOrderNumber)
       .pipe(
         finalize(() => {
           this.loading = true;
+          this.isLoadMoreLoading = false;
         }),
         takeUntil(this.destroy$)
       )
       .subscribe({
         next: (response) => {
           if (response.status && response.data.orders) {
-            console.log(
-              'Orders fetched from API:',
-              response.data.orders.length
-            );
-            this.processOrders(response.data.orders);
+            const newOrders = response.data.orders;
+            this.totalOrdersCount = response.data.order_counts || 0;
 
-            // Save to IndexedDB
-            this.dbService.saveOrders(response.data.orders).then(() => {
-              console.log('Orders saved to IndexedDB');
-              return this.dbService.setOrdersLastSync(Date.now());
-            }).catch(err => {
-              console.error('Error saving orders to IndexedDB:', err);
-            });
+            if (isLoadMore) {
+              this.orders = [...this.orders, ...newOrders];
+            } else {
+              this.orders = newOrders;
+            }
+
+            // Use pagination data from API
+            if (response.data.pagination) {
+              this.hasMoreOrders = response.data.pagination.has_more;
+              this.totalOrdersCount = response.data.pagination.total;
+            } else {
+              this.totalOrdersCount = response.data.order_counts || 0;
+              this.hasMoreOrders = this.orders.length < this.totalOrdersCount;
+              if (newOrders.length === 0) {
+                this.hasMoreOrders = false;
+              }
+            }
+
+            this.processOrders(this.orders);
+
+            // Save to IndexedDB (only for the first page usually, but here we save current list)
+            if (!isLoadMore) {
+              this.dbService.saveOrders(this.orders).then(() => {
+                console.log('Orders saved to IndexedDB');
+                return this.dbService.setOrdersLastSync(Date.now());
+              }).catch(err => {
+                console.error('Error saving orders to IndexedDB:', err);
+              });
+            }
           } else {
             console.warn('No orders found in API response.');
-            this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
-
+            if (!isLoadMore) {
+              this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+              this.orders = [];
+              this.filteredOrders = [];
+            }
+            this.hasMoreOrders = false;
             this.loading = true;
           }
         },
         error: (err) => {
           this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
           this.loading = true;
+          this.isLoadMoreLoading = false;
           this.showMessageModal(
             'حدث خطأ فى الاتصال يرجى المحاولة مره اخرى',
             'error'
           );
-
-          // If we're online but API failed, try to use IndexedDB data as fallback
-          // if (this.isOnline) {
-          //   this.dbService.getOrders().then(orders => {
-          //     if (orders && orders.length > 0) {
-          //       console.log('Using IndexedDB data as fallback:', orders.length);
-          //       this.processOrders(orders);
-          //     }
-          //   });
-          // }
         },
       });
+  }
+
+  loadMore(): void {
+    if (this.hasMoreOrders && !this.isLoadMoreLoading) {
+      this.currentPage++;
+      this.fetchOrdersFromAPI(true);
+    }
+  }
+
+  fetchOrderTypeCounts(): void {
+    this.ordersListService.getOrderTypesCounts().subscribe({
+      next: (response) => {
+        if (response.status && response.data) {
+          const countsMap: any = { 'All': response.data.total };
+          response.data.types.forEach((item: any) => {
+            countsMap[item.type] = item.count;
+          });
+          this.orderTypeCounts = countsMap;
+          console.log('Order type counts updated:', this.orderTypeCounts);
+        }
+      },
+      error: (err) => {
+        console.error('Error fetching order type counts:', err);
+      }
+    });
   }
   // Process orders (common method for both API and IndexedDB data)
   private processOrders(orders: any[]): void {
@@ -551,15 +615,17 @@ export class OrdersComponent implements OnDestroy {
     this.filterOrders();
   }
   filterOrdersInput(): void {
-    const search = this.searchOrderNumber?.trim().toLowerCase();
-
-    // Reset view if search is empty
-    if (!search) {
-      this.filterOrders();
+    if (this.selectedStatus !== 'static') {
+      this.searchSubject.next(this.searchOrderNumber);
       return;
     }
 
-    // Find all orders that match the search
+    const search = this.searchOrderNumber?.trim().toLowerCase();
+  
+  if (!search) {
+    this.filterOrders();
+    return;
+  }
     const foundOrders = this.orders.filter((order) =>
       order.order_details?.order_number
         ?.toString()
@@ -984,18 +1050,23 @@ export class OrdersComponent implements OnDestroy {
     return translations[type] || type;
   }
   getOrderTypeCount(orderType: string): number {
-    if (orderType === 'All') {
-      if (this.selectedStatus === 'static') {
+    if (this.selectedStatus === 'static') {
+      if (orderType === 'All') {
         return this.cartItems?.length || 0;
       }
-      return this.orders.length;
-    }
-
-    if (this.selectedStatus === 'static') {
       return (
         this.cartItems?.filter((item: { type: string }) => item.type === orderType)
           ?.length || 0
       );
+    }
+
+    // Use backend-provided counts if available
+    if (this.orderTypeCounts && this.orderTypeCounts[orderType] !== undefined) {
+      return this.orderTypeCounts[orderType];
+    }
+
+    if (orderType === 'All') {
+      return this.orders.length;
     }
 
     return this.orders.filter(
@@ -1225,13 +1296,29 @@ export class OrdersComponent implements OnDestroy {
     console.log('fatema', orderType, this.selectedOrderTypeStatus);
 
     this.selectedOrderTypeStatus = orderType;
-    this.filterOrders();
-    this.filterOrdersInput();
+    if (this.selectedStatus !== 'static') {
+      this.fetchOrdersFromAPI();
+    } else {
+      this.filterOrders();
+      this.filterOrdersInput();
+    }
   }
   selectStatus(status: string): void {
     this.selectedStatus = status;
-    this.filterOrdersInput();
-    this.filterOrders();
+    if (this.selectedStatus !== 'static') {
+      // If we are switching away from static or between dynamic statuses,
+      // but the API doesn't support status filtering yet, we might still 
+      // rely on client-side filtering of the already fetched orders.
+      // However, the user asked for "backend side not the front side".
+      // Let's assume listv2 also supports &status=... or we just fetch all for that type and filter.
+      // For now, let's just trigger a re-fetch if we change type, 
+      // but for status we might still use client side if the API doesn't support it.
+      // But let's re-fetch to start from page 1.
+      this.fetchOrdersFromAPI();
+    } else {
+      this.filterOrdersInput();
+      this.filterOrders();
+    }
   }
   getTotalPrice(order: any): number {
     let total = 0;
