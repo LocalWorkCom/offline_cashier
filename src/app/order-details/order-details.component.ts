@@ -10,6 +10,8 @@ import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-load
 import { baseUrl } from '../environment';
 import { IndexeddbService } from '../services/indexeddb.service';
 import { TablesService } from '../services/tables.service';
+import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { EditOrderModalComponent } from '../edit-order-modal/edit-order-modal.component';
 
 declare var bootstrap: any;
 
@@ -17,7 +19,7 @@ declare var bootstrap: any;
   selector: 'app-order-details',
   templateUrl: './order-details.component.html',
   styleUrls: ['./order-details.component.css'],
-  imports: [CommonModule, FormsModule, ShowLoaderUntilPageLoadedDirective, RouterLink],
+  imports: [CommonModule, FormsModule, ShowLoaderUntilPageLoadedDirective, RouterLink, EditOrderModalComponent],
 })
 export class OrderDetailsComponent implements OnInit, OnDestroy {
   orderId: any;
@@ -39,6 +41,10 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   /** Loading state for cancel-item request (set to order_detail_id while loading). */
   removeItemLoading: number | null = null;
 
+  /** Delete item confirmation modal (على صفحة التفاصيل) */
+  itemToDelete: any = null;
+  deleteItemErrMsg: string = '';
+
   /** Change Order Type modal (على صفحة التفاصيل) */
   currentOrderForTypeChange: any = null;
   selectedNewOrderType: string = '';
@@ -53,7 +59,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     private http: HttpClient,
     private location: Location,
     private dbService: IndexeddbService,
-    private tablesService: TablesService
+    private tablesService: TablesService,
+    private ngbModal: NgbModal
   ) { }
   ngOnInit(): void {
     this.route.paramMap.subscribe({
@@ -272,10 +279,21 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       });
   }
 
-  /** Exclude moved (split) items: only show items with quantity > 0 so original order shows remaining items only. */
+  /** Show all items: active (qty > 0) and cancelled (so they appear in yellow). Exclude only moved/split (qty 0 and not cancelled). */
   private filterMovedOrderItems(items: any[]): any[] {
     if (!items || !Array.isArray(items)) return [];
-    return items.filter((item: any) => (Number(item.quantity) || 0) > 0);
+    return items.filter((item: any) => {
+      const qty = Number(item.quantity) || 0;
+      const status = (item.dish_status ?? item.status ?? '').toString().toLowerCase();
+      const isCancelled = status === 'cancel' || status === 'cancelled';
+      return qty > 0 || isCancelled;
+    });
+  }
+
+  /** Whether this item is cancelled (display in yellow, no edit/delete). */
+  isItemCancelled(item: any): boolean {
+    const status = (item?.dish_status ?? item?.status ?? '').toString().toLowerCase();
+    return status === 'cancel' || status === 'cancelled';
   }
 
   /**
@@ -284,7 +302,9 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
    */
   private recalculateSummaryFromDisplayedItems(summary: any, items: any[]): any {
     if (!summary || !items || items.length === 0) return summary;
-    const itemsSubtotal = items.reduce((sum: number, item: any) => sum + this.safeNum(item.total_dish_price), 0);
+    const itemsSubtotal = items
+      .filter((item: any) => !this.isItemCancelled(item))
+      .reduce((sum: number, item: any) => sum + this.safeNum(item.total_dish_price), 0);
     const summarySubtotal = this.safeNum(summary.subtotal_price_before_coupon ?? summary.subtotal ?? summary.total_dish_price);
     const diff = Math.abs(itemsSubtotal - summarySubtotal);
     if (diff < 0.02) return summary;
@@ -701,12 +721,13 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     return status === 'pending' || status === 'inprogress';
   }
 
-  /** Cancel a single item (partial cancel). */
-  cancelItem(item: any): void {
+  /** Cancel a single item (partial cancel). Optional onDone called in finalize (e.g. to close delete modal). */
+  cancelItem(item: any, onDone?: () => void): void {
     const detailId = item?.id ?? item?.order_detail_id;
     if (detailId == null || !this.orderId) return;
 
     this.removeItemLoading = detailId;
+    this.deleteItemErrMsg = '';
     const url = `${baseUrl}api/orders/cashier/request-cancel`;
     const token = localStorage.getItem('authToken');
     const headers = new HttpHeaders({
@@ -715,7 +736,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     const quantity = Number(item?.quantity) || 1;
     const body = {
       order_id: this.orderId,
-      items: [{ order_detail_id: detailId, quantity }],
+      items: [{ item_id: detailId, quantity }],
       type: 'partial',
       reason: 'cashier reason',
       flag: 'cancel',
@@ -724,7 +745,10 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     this.dbService.saveOrderToPrintkitchen(this.orderId, 'cancel').then(() => {}).catch(() => {});
 
     this.http.post(url, body, { headers }).pipe(
-      finalize(() => { this.removeItemLoading = null; })
+      finalize(() => {
+        this.removeItemLoading = null;
+        onDone?.();
+      })
     ).subscribe({
       next: (res: any) => {
         this.errorMessage = res?.message || 'تم حذف الصنف بنجاح';
@@ -734,14 +758,68 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       },
       error: (err) => {
         this.errorMessage = err?.error?.message || 'فشل حذف الصنف';
+        this.deleteItemErrMsg = err?.error?.message || 'فشل حذف الصنف';
         setTimeout(() => { this.errorMessage = ''; }, 3000);
+        this.fetchOrderDetailsFromAPI();
       },
     });
   }
 
-  /** Modify Item: go to orders list so user can open this order and use "تعديل الطلب" on the item. */
-  goToModifyItem(_item: any): void {
-    if (!this.orderId) return;
-    this.router.navigate(['/orders'], { queryParams: { openOrder: this.orderId, action: 'modifyItem' } });
+  /** Open delete-item confirmation modal (same as orders list "حذف الطلب"). */
+  openDeleteItemModal(item: any): void {
+    this.itemToDelete = item;
+    this.deleteItemErrMsg = '';
+    const el = document.getElementById('deleteItemConfirmModalDetails');
+    if (el) {
+      const modalInstance = (bootstrap as any).Modal.getOrCreateInstance(el);
+      modalInstance.show();
+    }
+  }
+
+  /** Hide delete-item modal and clear selection. */
+  hideDeleteItemModal(): void {
+    const el = document.getElementById('deleteItemConfirmModalDetails');
+    if (el) {
+      const modalInstance = (bootstrap as any).Modal.getInstance(el);
+      if (modalInstance) modalInstance.hide();
+    }
+    this.itemToDelete = null;
+    this.deleteItemErrMsg = '';
+  }
+
+  /** Confirm delete from modal: mark item as cancelled so it turns yellow, then call cancelItem and close modal when done. */
+  confirmDeleteItem(): void {
+    if (!this.itemToDelete) return;
+    this.itemToDelete.dish_status = 'cancel';
+    this.cancelItem(this.itemToDelete, () => this.hideDeleteItemModal());
+  }
+
+  /** Open edit-item modal on the current page (same as orders list "تعديل الطلب"). */
+  openEditModalFromDetails(item: any): void {
+    const detailId = item?.order_detail_id ?? item?.id;
+    if (detailId == null || !this.orderId) return;
+
+    const hasExtraData = item.size || (item.addons && item.addons.length > 0);
+    const modalSize = hasExtraData ? 'lg' : 'md';
+
+    const editModal = this.ngbModal.open(EditOrderModalComponent, {
+      size: modalSize,
+      centered: true,
+    });
+    editModal.componentInstance.itemId = detailId;
+
+    this.dbService.saveOrderToPrintkitchen(this.orderId, 'edit').then(() => {}).catch(() => {});
+
+    editModal.result.then(
+      (result) => {
+        if (result) {
+          this.errorMessage = 'تم تحديث الطلب بنجاح';
+          this.status_order = true;
+          setTimeout(() => { this.errorMessage = ''; }, 2000);
+          this.fetchOrderDetailsFromAPI();
+        }
+      },
+      () => {}
+    );
   }
 }
