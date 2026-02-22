@@ -4,7 +4,7 @@ import { PillsService } from '../services/pills.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NewOrderService } from '../services/pusher/newOrder';
-import { finalize, Subject, switchMap, takeUntil, timer } from 'rxjs';
+import { debounceTime, distinctUntilChanged, finalize, Subject, switchMap, takeUntil, timer } from 'rxjs';
 import { NewInvoiceService } from '../services/pusher/newInvoice';
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
 import { IndexeddbService } from '../services/indexeddb.service';
@@ -42,6 +42,12 @@ export class PillsComponent implements OnInit, OnDestroy {
   orderTypeFilter: string = 'dine-in';
   highlightedPillId: string | null = null;
   errorMessage: any;
+
+  currentPage: number = 1;
+  hasMoreInvoices: boolean = true;
+  totalInvoicesCount: number = 0;
+  isLoadMoreLoading: boolean = false;
+  private searchSubject = new Subject<string>();
 
   private destroy$ = new Subject<void>();
   loading: boolean = true;
@@ -83,6 +89,14 @@ export class PillsComponent implements OnInit, OnDestroy {
     //   console.error('Error initializing IndexedDB:', error);
     //   this.loading = true;
     // });
+
+    this.searchSubject.pipe(
+      debounceTime(500),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$)
+    ).subscribe(() => {
+      this.fetchPillsData();
+    });
 
     this.listenToNewInvoice();
   }
@@ -235,20 +249,28 @@ console.log(newOrder);
     this.cdr.detectChanges();
   }
 
-  fetchPillsData(): void {
-    this.loading = false;
+  fetchPillsData(isLoadMore: boolean = false): void {
+    if (!isLoadMore) {
+      this.loading = false;
+      this.currentPage = 1;
+      this.pills = [];
+    } else {
+      this.isLoadMoreLoading = true;
+    }
+
     this.pillRequestService
-      .getPills()
+      .getPillsV2(this.currentPage, this.searchOrderNumber, this.orderTypeFilter)
       .pipe(
         finalize(() => {
           this.loading = true;
-        })
+          this.isLoadMoreLoading = false;
+        }),
+        takeUntil(this.destroy$)
       )
       .subscribe({
         next: (response) => {
-          if (response.status) {
-            // Ensure all pills have an invoice_number before saving
-            this.pills = response.data.invoices
+          if (response.status && response.data.invoices) {
+            const newInvoices = response.data.invoices
               // 1️⃣ Remove cancelled (filter first)
               .filter(
                 (pill: any) =>
@@ -268,16 +290,14 @@ console.log(newOrder);
                 return pill;
               });
 
-            // ✅ حفظ الفواتير في IndexedDB عند العمل online
-            // First clear existing pills, then save new ones
-            // this.dbService.clearPills()
-            //   .then(() => {
-            //     return this.dbService.saveData('pills', this.pills);
-            //   })
-            //   .then(() => {
-            //     console.log('Pills data saved to IndexedDB');
-            //   })
-            //   .catch(error => console.error('Error clearing and saving pills:', error));
+            if (isLoadMore) {
+              this.pills = [...this.pills, ...newInvoices];
+            } else {
+              this.pills = newInvoices;
+            }
+
+            this.totalInvoicesCount = response.data.pagination?.total || 0;
+            this.hasMoreInvoices = response.data.pagination?.has_more || false;
 
             this.updatePillsByStatus();
             this.usingOfflineData = false;
@@ -286,13 +306,25 @@ console.log(newOrder);
 
         error: (error) => {
           console.error('Error fetching pills data:', error);
-          // If online but API fails, try to load from IndexedDB
-          // this.loadFromIndexedDB();
           this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
-
-          this.loading = true;
         },
       });
+  }
+
+  onSearchChange(): void {
+    this.searchSubject.next(this.searchOrderNumber);
+  }
+
+  loadMoreInvoices(): void {
+    if (this.hasMoreInvoices && !this.isLoadMoreLoading) {
+      this.currentPage++;
+      this.fetchPillsData(true);
+    }
+  }
+
+  selectOrderTypeFilter(type: string): void {
+    this.orderTypeFilter = type;
+    this.fetchPillsData();
   }
 
   private loadFromIndexedDB() {
@@ -383,71 +415,6 @@ console.log(newOrder);
   //     }
   //   });
   // }
-  /* fetchPillsData(): void {
-    this.loading = false;
-    this.pillRequestService.getPills().pipe(
-      finalize(() => {
-        this.loading = true;
-      })
-    ).subscribe((response) => {
-      if (response.status) {
-        this.pills = response.data.invoices
-          // 1️⃣ Remove cancelled
-          // .filter((pill: any) => (pill.order_items_count == 0 && pill.payment_status == "unpaid"))
-          // 2️⃣ Transform credit notes to "returned"
-          .map((pill: any) => {
-            if (pill.invoice_type === 'credit_note') {
-              return {
-                ...pill,
-                invoice_print_status: 'returned'
-              };
-            }
-            return pill;
-          });
-  
-        // ✅ Console returned invoices
-        const returnedInvoices = this.pills.filter(
-          (pill: any) => pill.invoice_print_status === 'returned'
-        );
-        console.log('Returned invoices:', returnedInvoices);
-  
-        this.updatePillsByStatus();
-      }
-    });
-  } */
-
-  // fetchPillsData(): void {
-  //   this.loading = false;
-  //   this.pillRequestService.getPills().pipe(
-  //     finalize(() => {
-  //       this.loading = true;
-  //     })
-  //   ).subscribe((response) => {
-  //     if (response.status) {
-  //       this.pills = response.data.invoices
-  //         // 1️⃣ Remove cancelled (filter first)
-  //         .filter((pill: any) => !(pill.order_items_count === 0 && pill.payment_status === "unpaid"))
-  //         // 2️⃣ Transform credit notes to "returned"
-  //         .map((pill: any) => {
-  //           if (pill.invoice_type === 'credit_note') {
-  //             return {
-  //               ...pill,
-  //               invoice_print_status: 'returned'
-  //             };
-  //           }
-  //           return pill;
-  //         });
-
-  //       // ✅ Console returned invoices
-  //       const returnedInvoices = this.pills.filter(
-  //         (pill: any) => pill.invoice_print_status === 'returned'
-  //       );
-  //       console.log('Returned invoices:', returnedInvoices);
-
-  //       this.updatePillsByStatus();
-  //     }
-  //   });
-  // }
 
   // private updatePillsByStatus(): void {
   //   const allStatuses = ['hold', 'urgent', 'done'];
@@ -467,7 +434,7 @@ console.log(newOrder);
   //   this.filterPills();
   // }
   private updatePillsByStatus(): void {
-    const allStatuses = ['hold', 'urgent', 'done', 'cancelled', 'returned'];
+    const allStatuses = ['all', 'hold', 'urgent', 'done', 'cancelled', 'returned'];
     const fetchedStatuses = Array.from(
       new Set(this.pills.map((pill) => pill.invoice_print_status))
     );
@@ -476,9 +443,14 @@ console.log(newOrder);
     );
 
     this.pillsByStatus = mergedStatuses.map((status) => {
-      let pillsForStatus = this.pills.filter(
-        (pill) => pill.invoice_print_status === status
-      );
+      let pillsForStatus;
+      if (status === 'all') {
+        pillsForStatus = [...this.pills];
+      } else {
+        pillsForStatus = this.pills.filter(
+          (pill) => pill.invoice_print_status === status
+        );
+      }
 
       // Ensure returned tab only has credit notes
       if (status === 'returned') {
@@ -499,6 +471,7 @@ console.log(newOrder);
 
   getTranslatedStatus(status: string): string {
     const statusTranslations: { [key: string]: string } = {
+      all: 'الكل',
       hold: 'معلقة',
       urgent: 'طارئة',
       done: 'مكتملة',
@@ -511,8 +484,6 @@ console.log(newOrder);
   filterPills() {
     if (!this.pillsByStatus || this.pillsByStatus.length === 0) return;
 
-    const search = this.searchText?.trim().toLowerCase() || '';
-
     this.filteredPillsByStatus = this.pillsByStatus.map(
       (statusGroup: { status: string; pills: any[] }) => {
         let pills = statusGroup.pills;
@@ -520,11 +491,6 @@ console.log(newOrder);
         pills = pills.filter(
           (pill) => pill.order_type === this.orderTypeFilter
         );
-        if (search) {
-          pills = pills.filter((pill) =>
-            pill.order_number?.toString().toLowerCase().includes(search)
-          );
-        }
 
         return {
           status: statusGroup.status,
@@ -533,33 +499,12 @@ console.log(newOrder);
       }
     );
 
-    if (search) {
-      const match = this.pills.find((pill) =>
-        pill.order_number?.toString().toLowerCase().includes(search)
-      );
+    const search = this.searchOrderNumber?.trim().toLowerCase();
+    if (search && this.pills.length > 0) {
+      const match = this.pills[0]; // Take first match since API filtered it
 
       if (match) {
         this.highlightedPillId = `pill-${match.order_number}`;
-
-        // 👇 Set the order type tab (e.g. dine-in, Delivery, Takeaway)
-        this.orderTypeFilter = match.order_type;
-
-        // 👇 Re-filter pills again now that the tab changed
-        this.filteredPillsByStatus = this.pillsByStatus.map(
-          (statusGroup: { status: string; pills: any[] }) => {
-            let pills = statusGroup.pills;
-            pills = pills.filter(
-              (pill) => pill.order_type === this.orderTypeFilter
-            );
-            pills = pills.filter((pill) =>
-              pill.order_number?.toString().toLowerCase().includes(search)
-            );
-            return {
-              status: statusGroup.status,
-              pills,
-            };
-          }
-        );
 
         // 👇 Set the correct status group tab (hold, urgent, done)
         const statusIndex = this.pillsByStatus.findIndex(

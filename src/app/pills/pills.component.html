@@ -10,8 +10,8 @@
 
     <!-- Search Bar -->
     <div class="input-group w-100 mx-auto my-3">
-      <input [(ngModel)]="searchText" (input)="filterPills()" placeholder="ابحث ب رقم الطلب"
-        class="form-control rounded-start" aria-describedby="search-icon" />
+      <input [(ngModel)]="searchOrderNumber" (ngModelChange)="onSearchChange()" placeholder="ابحث ب رقم الطلب"
+        class="form-control rounded-start" aria-describedby="search-icon" dir="ltr" style="text-align: center;" />
       <span class="input-group-text">
         <i class="fa-solid fa-magnifying-glass"></i>
       </span>
@@ -24,7 +24,7 @@
 
       <li class="nav-item flex-fill mx-1">
         <button class="nav-link w-100 d-flex align-items-center" [ngClass]="{ active: orderTypeFilter === 'dine-in' }"
-          (click)="orderTypeFilter = 'dine-in'; filterPills()">
+          (click)="selectOrderTypeFilter('dine-in')">
           فى المطعم
           <figure class="mb-0 me-2">
             <img src="assets/images/in.png" alt="" />
@@ -33,7 +33,7 @@
       </li>
       <li class="nav-item flex-fill mx-1">
         <button class="nav-link w-100 d-flex align-items-center" [ngClass]="{ active: orderTypeFilter === 'Takeaway' }"
-          (click)="orderTypeFilter = 'Takeaway'; filterPills()">
+          (click)="selectOrderTypeFilter('Takeaway')">
           إستلام
           <figure class="mb-0 me-2">
             <img src="assets/images/out.png" alt="" />
@@ -42,7 +42,7 @@
       </li>
       <li class="nav-item flex-fill mx-1 delivery">
         <button class="nav-link w-100 d-flex align-items-center" [ngClass]="{ active: orderTypeFilter === 'Delivery' }"
-          (click)="orderTypeFilter = 'Delivery'; filterPills()">
+          (click)="selectOrderTypeFilter('Delivery')">
           توصيل
           <figure class="mb-0 me-2">
             <img src="assets/images/delivery.png" alt="" />
@@ -51,7 +51,7 @@
       </li>
       <li class="nav-item flex-fill mx-1">
         <button class="nav-link w-100 d-flex align-items-center" [ngClass]="{ active: orderTypeFilter === 'talabat' }"
-          (click)="orderTypeFilter = 'talabat'; filterPills()">
+          (click)="selectOrderTypeFilter('talabat')">
           طلبات
           <figure class="mb-0 me-2">
             <img src="assets/images/out.png" alt="" />
@@ -64,12 +64,12 @@
 
 
     <!-- Pills Status Navigation -->
-    <ul class="nav nav-pills mb-4 px-0" id="pills-tab21" role="tablist">
-      <li class="nav-item" role="presentation" *ngFor="let statusGroup of filteredPillsByStatus; let i = index; ">
-        <button class="nav-link sub" [ngClass]="{ active: selectedStatus === i }" (click)="selectStatusGroup(i)"
+    <ul class="nav nav-pills mb-4 px-0 w-100 d-flex flex-row justify-content-between" id="pills-tab21" role="tablist">
+      <li class="nav-item flex-fill mx-1" role="presentation" *ngFor="let statusGroup of filteredPillsByStatus; let i = index; ">
+        <button class="nav-link sub w-100" [ngClass]="{ active: selectedStatus === i }" (click)="selectStatusGroup(i)"
           role="tab" [attr.aria-controls]="'pills-' + statusGroup.status">
           <span>
-            {{ getTranslatedStatus(statusGroup.status) }} ({{ statusGroup.pills.length }})
+            {{ getTranslatedStatus(statusGroup.status) }} ({{ statusGroup.pills.length }}<ng-container *ngIf="statusGroup.status === 'all'"> من {{ totalInvoicesCount }}</ng-container>)
           </span>
         </button>
       </li>
@@ -138,6 +138,15 @@
               </div>
             </div>
           </div>
+        </div>
+
+        <div class="load-more-container text-center mt-4 w-100" *ngIf="hasMoreInvoices">
+          <button (click)="loadMoreInvoices()" class="btn-static btn-static-main text-white w-100 py-3" [disabled]="isLoadMoreLoading">
+            <span *ngIf="!isLoadMoreLoading">تحميل المزيد</span>
+            <span *ngIf="isLoadMoreLoading">
+              <i class="fa fa-spinner fa-spin"></i> جاري التحميل...
+            </span>
+          </button>
         </div>
       </div>
     </div>

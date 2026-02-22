@@ -367,8 +367,11 @@ export class OrdersComponent implements OnDestroy {
     if (this.ordersStatus.length > 0) this.ordersStatus.unshift('all');
 
     this.filterOrders();
-    this.loading = true;
     this.tryOpenPendingOrderAction();
+  }
+
+  trackByOrderId(index: number, item: any): any {
+    return item.order_id || (item.order_details ? item.order_details.order_id : index);
   }
 
   tryOpenPendingOrderAction(): void {
@@ -1596,6 +1599,13 @@ export class OrdersComponent implements OnDestroy {
   }
 
   filterOrders(): void {
+    if (this.isLoadMoreLoading) {
+      // Synchronous update for Load More to maintain scroll position
+      this.startFiltering();
+      return;
+    }
+
+    // Only show the full loader if we're not loading more data
     this.isFilterdFromClientSide = false;
 
     // Let Angular render spinner first, then run filter logic
