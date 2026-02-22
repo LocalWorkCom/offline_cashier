@@ -64,4 +64,35 @@ fetchAndSaveOrders(): Observable<any> {
 }
 //end dalia
 
+  getOrdersListV2(type: string = 'All', page: number = 1, orderNumber: string = ''): Observable<any> {
+    const token = localStorage.getItem('authToken');
+
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    let url = `${this.apiUrl}/orders/listv2?page=${page}`;
+    
+    if (type && type !== 'All') {
+      // Use lower case for the type parameter as requested
+      const typeParam = type.toLowerCase();
+      url += `&type=${typeParam}`;
+    }
+
+    if (orderNumber) {
+      url += `&order_number=${orderNumber}`;
+    }
+
+    return this.http.get(url, { headers });
+  }
+
+  getOrderTypesCounts(): Observable<any> {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    return this.http.get(`${this.apiUrl}/orders/types-counts`, { headers });
+  }
 }
