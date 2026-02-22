@@ -137,8 +137,6 @@ export class OrdersComponent implements OnDestroy {
 
     this.loadCartItems();
     this.filterCartItems();
-    this.loadDrivers();
-
     // Subscribe to query params to detect 'openOrder'Details();
     // this.setupPusherListeners();
     this.listenToDishChange();
@@ -294,18 +292,6 @@ export class OrdersComponent implements OnDestroy {
     this.loading = true;
   }
 
-  loadDrivers() {
-    this.ordersService.getDrivers().subscribe({
-      next: (response: any) => {
-        if (response && response.status && response.data) {
-          this.drivers = response.data;
-        }
-      },
-      error: (error: any) => {
-        console.error('Error fetching drivers:', error);
-      }
-    });
-  }
   //end dalia
   newOrderFromPusher: any;
   /*   listenToNewOrder() {
@@ -3295,7 +3281,6 @@ export class OrdersComponent implements OnDestroy {
     this.loadDeliveryAreas();
     this.loadChangeTypeHotels();
     this.loadChangeTypeDeliveryCountries();
-    this.loadDrivers();
     const modalEl = document.getElementById('changeTypeDeliveryDetailsModal');
     if (modalEl) {
       const modal = new bootstrap.Modal(modalEl);
