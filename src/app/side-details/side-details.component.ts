@@ -492,7 +492,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // this.loadCouponFromLocalStorage();
     this.loadFormData();
     // this.checkIfTableIsAvaliable();
-    this.loadDrivers();
     this.loadTableNumber();
     this.fetchCountries();
     this.loadAdditionalNote();
@@ -658,18 +657,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     console.log('💰 تم تعيين مبلغ الدفع تلقائياً:', cartTotal);
   }
 
-  loadDrivers() {
-    this.ordersService.getDrivers().subscribe({
-      next: (response: any) => {
-        if (response && response.status && response.data) {
-          this.drivers = response.data;
-        }
-      },
-      error: (error: any) => {
-        console.error('Error fetching drivers:', error);
-      }
-    });
-  }
   private setupNetworkListeners(): void {
     window.addEventListener('online', () => {
       this.isOnline = true;

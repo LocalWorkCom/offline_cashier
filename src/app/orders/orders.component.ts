@@ -140,7 +140,9 @@ export class OrdersComponent implements OnDestroy {
 
     this.loadCartItems();
     this.filterCartItems();
-    this.loadDrivers();
+    // Subscribe to query params to detect 'openOrder'Details();
+    // this.setupPusherListeners();
+    //this.loadDrivers();
 
     this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe((q) => {
       const openOrder = q.get('openOrder');
@@ -324,18 +326,6 @@ export class OrdersComponent implements OnDestroy {
     this.router.navigate([], { relativeTo: this.route, queryParams: {}, queryParamsHandling: '' });
   }
 
-  loadDrivers() {
-    this.ordersService.getDrivers().subscribe({
-      next: (response: any) => {
-        if (response && response.status && response.data) {
-          this.drivers = response.data;
-        }
-      },
-      error: (error: any) => {
-        console.error('Error fetching drivers:', error);
-      }
-    });
-  }
   //end dalia
   newOrderFromPusher: any;
   /*   listenToNewOrder() {
@@ -3420,7 +3410,6 @@ export class OrdersComponent implements OnDestroy {
     this.loadDeliveryAreas();
     this.loadChangeTypeHotels();
     this.loadChangeTypeDeliveryCountries();
-    this.loadDrivers();
     const modalEl = document.getElementById('changeTypeDeliveryDetailsModal');
     if (modalEl) {
       const modal = new bootstrap.Modal(modalEl);
