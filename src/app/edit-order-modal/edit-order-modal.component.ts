@@ -41,16 +41,53 @@ export class EditOrderModalComponent implements OnInit {
     authService: AuthService
   ) {}
 
-  /** For Talabat orders, base price comes from dish.Id_menus_integrations[0].menus_integration_dishs[0].price */
-  private getTalabatDishPrice(dish: any): number | null {
-    const integrations = dish?.Id_menus_integrations;
-    if (!Array.isArray(integrations) || integrations.length === 0) return null;
-    const first = integrations[0];
-    const integrationDishs = first?.menus_integration_dishs;
-    if (!Array.isArray(integrationDishs) || integrationDishs.length === 0) return null;
-    const price = integrationDishs[0]?.price;
-    const num = price != null ? Number(price) : NaN;
-    return Number.isFinite(num) ? num : null;
+  /** تطبيق أسعار تلابات وفلترة sizes/addons — نعرض فقط اللي لها تطابق في تكامل تلابات */
+  private applyTalabatIntegration(): void {
+    const item = this.selectedItem;
+    if (!item?.dish || item.order_type !== 'talabat') return;
+
+    const integrations = item.dish.Id_menus_integrations;
+    if (!Array.isArray(integrations)) return;
+
+    const integration = integrations.find((i: any) =>
+      i.name_en?.toLowerCase().includes('talabat')
+    );
+    if (!integration) return;
+
+    // السعر الأساسي للطبق
+    const newPrice = integration.menus_integration_dishs?.[0]?.price;
+    if (newPrice != null) {
+      item.dish.price = parseFloat(newPrice);
+    }
+
+    // sizes — فقط اللي لها تطابق في menus_integration_dish_sizes
+    if (Array.isArray(item.sizes) && Array.isArray(integration.menus_integration_dish_sizes)) {
+      item.sizes = item.sizes.reduce((acc: any[], size: any) => {
+        const matched = integration.menus_integration_dish_sizes.find(
+          (s: any) => s.branch_menu_size_id === size.id
+        );
+        if (matched) {
+          acc.push({ ...size, price: parseFloat(matched.price) });
+        }
+        return acc;
+      }, []);
+    }
+
+    // addons — فقط اللي لها تطابق في menus_integration_dish_addons
+    if (Array.isArray(item.addon_categories) && Array.isArray(integration.menus_integration_dish_addons)) {
+      item.addon_categories = item.addon_categories.map((category: any) => ({
+        ...category,
+        addons: category.addons.reduce((acc: any[], addon: any) => {
+          const matched = integration.menus_integration_dish_addons.find(
+            (a: any) => a.branch_menu_addon_id === addon.id
+          );
+          if (matched) {
+            acc.push({ ...addon, price: parseFloat(matched.price) });
+          }
+          return acc;
+        }, []),
+      }));
+    }
   }
 
   ngOnInit(): void {
@@ -66,10 +103,7 @@ export class EditOrderModalComponent implements OnInit {
     this.note = dish.note || '';
 
     if (this.selectedItem.order_type === 'talabat') {
-      const talabatPrice = this.getTalabatDishPrice(this.selectedItem.dish);
-      if (talabatPrice != null) {
-        this.selectedItem.dish.price = talabatPrice;
-      }
+      this.applyTalabatIntegration();
     }
 
     // ✅ set default size
@@ -138,12 +172,9 @@ export class EditOrderModalComponent implements OnInit {
 
     const dish = this.selectedItem.dish;
 
-    // Talabat: use price from Id_menus_integrations[0].menus_integration_dishs[0]
+    // Talabat: أسعار من التكامل + فلترة sizes و addons
     if (this.selectedItem.order_type === 'talabat') {
-      const talabatPrice = this.getTalabatDishPrice(dish);
-      if (talabatPrice != null) {
-        this.selectedItem.dish.price = talabatPrice;
-      }
+      this.applyTalabatIntegration();
     }
 
     // qty & note
