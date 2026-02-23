@@ -72,13 +72,13 @@ export class PillsService {
   }
   //end dalia
 
-  getPillsV2(page: number = 1, orderNumber: string = '', orderType: string = 'all'): Observable<any> {
+  getPillsV2(page: number = 1, orderNumber: string = '', orderType: string = 'all', perPage: number = 30): Observable<any> {
     const token = localStorage.getItem('authToken');
     if (!token) {
       throw new Error('No authentication token found');
     }
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
-    let url = `${this.apiUrl}/invoices/v2?page=${page}`;
+    let url = `${this.apiUrl}/invoices/v2?page=${page}&per_page=${perPage}`;
     if (orderNumber) {
       url += `&order_number=${orderNumber}`;
     }
