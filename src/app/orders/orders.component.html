@@ -774,10 +774,12 @@
                 <div class="modal fade" id="successSmallModal" tabindex="-1" aria-hidden="true">
                   <div class="modal-dialog modal-dialog-centered modal-sm">
                     <div class="modal-content p-3 text-center">
-                      <p class="fw-bold">
+                      <p class="fw-bold mb-3">
                         {{cancelMessage}}
                       </p>
-
+                      <button type="button" class="btn btn-primary w-100" (click)="closeSuccessSmallModal()" aria-label="موافق">
+                        موافق
+                      </button>
                     </div>
                   </div>
                 </div>

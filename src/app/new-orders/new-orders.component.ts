@@ -805,6 +805,19 @@ export class NewOrdersComponent implements OnInit, OnDestroy {
     }, 1500);
   }
 
+  /** Close the success/return message modal and clean up backdrop so the app doesn't hang. */
+  closeSuccessSmallModal(): void {
+    const el = document.getElementById('successSmallModal');
+    if (el) {
+      const instance = bootstrap.Modal.getInstance(el);
+      if (instance) instance.hide();
+    }
+    document.querySelectorAll('.modal-backdrop').forEach((node) => node.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.overflow = '';
+    document.body.style.paddingRight = '';
+  }
+
   // في الـ component
   getButtonClass(order: any): string {
     const status = order.order_details?.status;
