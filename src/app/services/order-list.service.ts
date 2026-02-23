@@ -64,7 +64,7 @@ fetchAndSaveOrders(): Observable<any> {
 }
 //end dalia
 
-  getOrdersListV2(type: string = 'All', page: number = 1, orderNumber: string = ''): Observable<any> {
+  getOrdersListV2(type: string = 'All', page: number = 1, orderNumber: string = '', perPage: number = 30): Observable<any> {
     const token = localStorage.getItem('authToken');
 
     if (!token) {
@@ -72,7 +72,7 @@ fetchAndSaveOrders(): Observable<any> {
     }
 
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
-    let url = `${this.apiUrl}/orders/listv2?page=${page}`;
+    let url = `${this.apiUrl}/orders/listv2?page=${page}&per_page=${perPage}`;
     
     if (type && type !== 'All') {
       // Use lower case for the type parameter as requested
