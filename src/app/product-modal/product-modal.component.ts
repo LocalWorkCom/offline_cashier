@@ -67,32 +67,32 @@ export class ProductModalComponent implements OnInit {
             const newPrice = integration.menus_integration_dishs?.[0]?.price || product.price;
             product.price = parseFloat(newPrice);
 
-            // تحديث الأسعار داخل الـ sizes
+            // تحديث الأسعار داخل الـ sizes — نعرض فقط الأحجام اللي لها تطابق في التكامل
             if (Array.isArray(product.sizes) && Array.isArray(integration.menus_integration_dish_sizes)) {
-              product.sizes = product.sizes.map((size: any) => {
+              product.sizes = product.sizes.reduce((acc: any[], size: any) => {
                 const matchedSize = integration.menus_integration_dish_sizes.find(
                   (s: any) => s.branch_menu_size_id === size.id
                 );
                 if (matchedSize) {
-                  return { ...size, price: parseFloat(matchedSize.price) };
+                  acc.push({ ...size, price: parseFloat(matchedSize.price) });
                 }
-                return size;
-              });
+                return acc;
+              }, []);
             }
 
-            // تحديث الأسعار داخل الـ addons
+                      // تحديث الأسعار داخل الـ addons — نعرض فقط الإضافات اللي لها تطابق في التكامل
             if (Array.isArray(product.addon_categories) && Array.isArray(integration.menus_integration_dish_addons)) {
               product.addon_categories = product.addon_categories.map((category: any) => ({
                 ...category,
-                addons: category.addons.map((addon: any) => {
+                addons: category.addons.reduce((acc: any[], addon: any) => {
                   const matchedAddon = integration.menus_integration_dish_addons.find(
                     (a: any) => a.branch_menu_addon_id === addon.id
                   );
                   if (matchedAddon) {
-                    return { ...addon, price: parseFloat(matchedAddon.price) };
+                    acc.push({ ...addon, price: parseFloat(matchedAddon.price) });
                   }
-                  return addon;
-                }),
+                  return acc;
+                }, []),
               }));
             }
           }
