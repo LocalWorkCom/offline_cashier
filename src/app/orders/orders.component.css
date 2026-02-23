@@ -483,15 +483,23 @@ button.dropdown-item {
     font-size: 0.85rem;
     font-weight: 500;
 }
+/* بوكس طاولة الطلب الجديد: خلفية بيضاء، أيقونة زرقاء، خط أسود (Figma) */
 #splitOrderConfirmationModal .split-confirm-table-blue {
-    background-color: #cce5ff;
-    color: #0d6efd;
-    border: none;
+    background-color: #fff;
+    color: #000;
+    border: 1px solid #dee2e6;
 }
+#splitOrderConfirmationModal .split-confirm-table-blue .split-confirm-table-icon {
+    color: #0d6efd;
+}
+/* بوكس طاولة الطلب الأصلي: خلفية مرجانية فاتحة، إطار برتقالي محمر، نص وأيقونة بني محمر (مثل الاسكرين) */
 #splitOrderConfirmationModal .split-confirm-table-orange {
-    background-color: #ffe0b8;
-    color: #e65100;
-    border: none;
+    background-color: #fde5dc;
+    color: #a0522d;
+    border: 1px solid #e8a88a;
+}
+#splitOrderConfirmationModal .split-confirm-table-orange .split-confirm-table-icon {
+    color: #a0522d;
 }
 #splitOrderConfirmationModal .split-confirm-table-icon {
     flex-shrink: 0;
@@ -816,6 +824,16 @@ button.dropdown-item {
 }
 #splitOrderItemsModal .split-items-modal-body.modal-body {
     padding: 0.75rem 1rem 1rem;
+}
+
+/* مودال دمج الطلبات – ألوان بوكس الطاولة مثل الشاشة: خلفية برتقالية فاتحة، رقم ونص برتقالي/بني، حدود بنفس درجة اللون */
+.merge-order-table-badge {
+    background-color: rgb(255, 239, 230) !important;
+    color: rgb(187, 86, 13) !important;
+    border: 1px solid rgb(204, 127, 72);
+}
+.merge-order-table-badge-inner {
+    gap: 0.35rem;
 }
 
 /* Merge Order Confirmation Modal – تصميم بالظبط: أيقونة هيدر، تاب بارز، بطاقات رمادية، ظل وزوايا */
