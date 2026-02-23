@@ -2631,12 +2631,16 @@ export class OrdersComponent implements OnDestroy {
   canShowReturnInvoice(order: any): boolean {
     const totalCash = localStorage.getItem('totalcash');
     const totalCredit = localStorage.getItem('totalvisa');
+
+
+  
     if (!totalCash && !totalCredit) {
       return false;
     }
     const cashValue = Number(totalCash);
     const creditValue = Number(totalCredit);
     const orderPrice = Number(order.total_price);
+    console.log("orderPrice",orderPrice,cashValue,creditValue);
     if(order.details_order?.transactions?.[0]?.payment_method == 'credit' || order.details_order?.transactions?.[1]?.payment_method == 'credit') {
       // console.log('creditdalia');
       return !isNaN(creditValue) && !isNaN(orderPrice) && (creditValue > orderPrice || cashValue > orderPrice || cashValue + creditValue > orderPrice);
