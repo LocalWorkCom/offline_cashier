@@ -410,7 +410,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
           if (response) {
             const order = response.data.orderDetails[0];
             this.currencySymbol = order.currency_symbol;
-            this.paymenMethod = order.transactions[0].payment_method;
+            this.paymenMethod = order.transactions?.[0]?.payment_method ?? 'Unknown';
             this.deliveryData = order.order_type === 'Delivery' ? response.data.orderDetails[0].delivery_data : null;
             const summary = order.order_summary || {};
             const rawFee = summary.delivery_fees ?? 0;
@@ -418,17 +418,30 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
             const applied = this.normalizeSummaryByOrderType(orderType, summary, Number(rawFee));
             this.deliveryFees = applied.deliveryFees;
 
-            console.log(response.data, 'test');
             this.orderDetails = order;
             this.orderItems = this.filterMovedOrderItems(order.order_details || []);
-            // this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
-            this.orderSummary = response.data.orderDetails[0].order_summary;
+            // Recalculate summary from displayed items so sub amount matches all items (e.g. after merge/split)
+            this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
+            // After merge (clearCoupon=1): remove coupon from display and recalc total without coupon
+            if (this.clearCouponAfterSplit) {
+              const sub = this.safeNum(this.orderSummary.subtotal ?? this.orderSummary.subtotal_price_before_coupon ?? this.orderSummary.total_dish_price);
+              const service = this.safeNum(this.orderSummary.service_fees);
+              const tax = this.safeNum(this.orderSummary.tax_value);
+              const delivery = this.safeNum(this.orderSummary.delivery_fees);
+              const total = sub + service + tax + delivery;
+              this.orderSummary = {
+                ...this.orderSummary,
+                coupon_id: null,
+                coupon_value: 0,
+                coupon_title: null,
+                total,
+                total_price: total,
+              };
+            }
+            order.order_summary = this.orderSummary;
             if (this.deliveryData?.delivery_name == ' ') {
               this.deliveryData.delivery_name = 'لا يوجد';
             }
-            console.log(' ordtterSummary :', this.orderDetails);
-
-            console.log(' orderSummary :', this.orderSummary);
             this.loading = false;
           } else {
             this.error = 'No order details available.';

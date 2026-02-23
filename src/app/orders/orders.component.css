@@ -451,16 +451,28 @@ button.dropdown-item {
 #splitOrderConfirmationModal .modal-header {
     padding-inline-start: 2.5rem;
 }
+/* Figma: card frame – rounded, shadow, colored vertical border */
 #splitOrderConfirmationModal .split-confirm-original {
     background-color: #fff;
-    border-color: #dee2e6 !important;
+    border: 1px solid #e9ecef;
+    /* border-inline-end: 4px solid #ff9800; */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
 }
 #splitOrderConfirmationModal .split-confirm-new {
     background-color: #fff;
-    border-color: #dee2e6 !important;
-    border-width: 1px !important;
-    /* ظل أزرق من الجنب الشمال (اليسار) فقط مثل Figma */
-    box-shadow: -4px 0 0 0 #0d6efd, 0 1px 3px rgba(0, 0, 0, 0.06);
+    border: 1px solid #e9ecef;
+    border-inline-end: 4px solid #0d6efd;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+/* Total on same line at bottom – label and amount in one row */
+#splitOrderConfirmationModal .split-confirm-total-row {
+    flex-wrap: nowrap;
+}
+#splitOrderConfirmationModal .split-confirm-total-label {
+    color: #212529;
+}
+#splitOrderConfirmationModal .split-confirm-total-amount {
+    color: #212529;
 }
 #splitOrderConfirmationModal .split-confirm-new-badge {
     background-color: #b3d7ff;
@@ -495,8 +507,8 @@ button.dropdown-item {
     flex-shrink: 0;
 }
 #splitOrderConfirmationModal .split-confirm-item-card {
-    background-color: #fff;
-    border-color: #dee2e6 !important;
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
 }
 #splitOrderConfirmationModal .split-confirm-transferred {
     background-color: #f8f9fa;
