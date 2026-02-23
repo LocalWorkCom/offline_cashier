@@ -254,8 +254,9 @@
 <div class="modal fade" id="orderStatusModal" tabindex="-1" aria-labelledby="orderStatusModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header border-0">
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      <div class="modal-header border-0 d-flex justify-content-between align-items-center">
+        <span></span>
+        <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <h1 class="modal-title fs-5 text-center">حالة الطلب</h1>
@@ -290,9 +291,9 @@
 <div class="modal fade" id="changeDriverModal" tabindex="-1" aria-labelledby="changeDriverModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content">
-      <div class="modal-header border-0">
+      <div class="modal-header border-0 d-flex justify-content-between align-items-center">
         <h5 class="modal-title" id="changeDriverModalLabel">تغيير السائق</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         @if (isLoadingDrivers) {
