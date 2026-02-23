@@ -1269,9 +1269,14 @@
         </p>
 
         <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
-          <div *ngIf="eligibleOrdersForMerge.length === 0" class="text-muted text-center py-4">
+          <div *ngIf="isMergeListLoading" class="text-center py-4">
+            <span class="spinner-border spinner-border-sm text-danger me-2" role="status"></span>
+            جاري تحميل الطلبات...
+          </div>
+          <div *ngIf="!isMergeListLoading && eligibleOrdersForMerge.length === 0" class="text-muted text-center py-4">
             لا توجد طلبات متاحة للدمج
           </div>
+          <ng-container *ngIf="!isMergeListLoading">
           <div *ngFor="let order of eligibleOrdersForMerge"
                class="border rounded p-3 mb-3 cursor-pointer position-relative"
                [class.border-danger]="selectedOrderIdForMerge === order.order_details.order_id"
@@ -1321,10 +1326,11 @@
               </div>
             </div>
           </div>
+          </ng-container>
         </div>
       </div>
       <div class="modal-footer border-0 d-flex justify-content-between gap-2">
-        <button type="button" class="btn btn-danger flex-fill" (click)="goToMergeConfirmation()" [disabled]="!selectedOrderIdForMerge">
+        <button type="button" class="btn btn-danger flex-fill" (click)="goToMergeConfirmation()" [disabled]="!selectedOrderIdForMerge || isMergeListLoading">
           <i class="fa-solid fa-code-merge me-2"></i>
           تأكيد الدمج
         </button>

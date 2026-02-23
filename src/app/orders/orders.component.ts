@@ -2671,6 +2671,8 @@ export class OrdersComponent implements OnDestroy {
   // Merge Order Properties
   currentMergeOrder: any = null;
   eligibleOrdersForMerge: any[] = [];
+  /** True while fetching the full list of orders for merge (so modal shows all mergeable orders, not just current page). */
+  isMergeListLoading: boolean = false;
   selectedOrderIdForMerge: number | null = null;
   selectedTableIdForMerge: string = '';
   mergeOrderCurrency: string = '';
@@ -2778,42 +2780,56 @@ export class OrdersComponent implements OnDestroy {
     return eligibleOrders.length > 0;
   }
 
-  // Get eligible orders for merge (excluding current order) – same branch only
-  getEligibleOrdersForMerge(currentOrder: any): any[] {
+  // Get eligible orders for merge (excluding current order) – same branch only. Uses provided list (e.g. from API).
+  getEligibleOrdersForMergeFromList(currentOrder: any, ordersList: any[]): any[] {
     const currentBranchId = localStorage.getItem('branch_id');
-    return this.orders.filter((order: any) => {
-      // Must be from the same branch (avoid showing tables/orders from another branch)
+    return (ordersList || []).filter((order: any) => {
       const orderBranchId = order.branch_id ?? order.details_order?.branch_id ?? order.order_details?.branch_id;
       if (currentBranchId != null && orderBranchId != null && String(orderBranchId) !== String(currentBranchId)) {
         return false;
       }
-
-      // Must be different order
-      if (order.order_details.order_id === currentOrder.order_details.order_id) {
+      if (order.order_details?.order_id === currentOrder?.order_details?.order_id) {
         return false;
       }
-
-      // Must be dine-in, unpaid, and status 'pending'
       if (
-        order.order_details.order_type !== 'dine-in' ||
-        order.order_details.payment_status !== 'unpaid' ||
-        order.order_details.status !== 'pending'
+        order.order_details?.order_type !== 'dine-in' ||
+        order.order_details?.payment_status !== 'unpaid' ||
+        order.order_details?.status !== 'pending'
       ) {
         return false;
       }
-
-      // Check if order has any non-completed items (must have at least one item that is not completed or cancelled)
       if (!order.order_items || order.order_items.length === 0) {
         return false;
       }
-
-      // Must have at least one item that is not completed and not cancelled
       const hasNonCompletedItems = order.order_items.some(
         (item: any) => item.dish_status !== 'completed' && item.dish_status !== 'cancel'
       );
-
       return hasNonCompletedItems;
     });
+  }
+
+  // Get eligible orders for merge from current page only (used when API list is not used)
+  getEligibleOrdersForMerge(currentOrder: any): any[] {
+    return this.getEligibleOrdersForMergeFromList(currentOrder, this.orders);
+  }
+
+  /** Process raw API orders for merge list: same filter + map as processOrders, without mutating this.orders. */
+  private processOrdersForMergeList(orders: any[]): any[] {
+    if (!orders || orders.length === 0) return [];
+    const currencySymbol = orders[0]?.currency_symbol ?? this.currencySymbol;
+    return orders
+      .filter(
+        (order: any) =>
+          this.allowedOrderTypes.includes(order.order_details?.order_type) &&
+          (this.allowedStatuses.includes(order.order_details?.status) || order.order_details?.status === 'packing')
+      )
+      .map((order: any) => {
+        const processed = { ...order, currency_symbol: currencySymbol };
+        if (processed.order_details?.status === 'packing') {
+          processed.order_details = { ...processed.order_details, status: 'pending' };
+        }
+        return processed;
+      });
   }
 
   // Open split modal – only show items still in the order (quantity > 0) and not cancelled
@@ -3317,10 +3333,11 @@ export class OrdersComponent implements OnDestroy {
     }
   }
 
-  // Open merge modal
+  // Open merge modal – fetch full list of dine-in orders so all mergeable orders are shown (not just current page)
   openMergeModal(order: any): void {
     this.currentMergeOrder = order;
-    this.eligibleOrdersForMerge = this.getEligibleOrdersForMerge(order);
+    this.eligibleOrdersForMerge = [];
+    this.isMergeListLoading = true;
     this.selectedOrderIdForMerge = null;
     this.selectedTableIdForMerge = order.order_details.table_id?.toString() || '';
     this.mergeOrderCurrency = order.currency_symbol || this.currencySymbol;
@@ -3332,12 +3349,35 @@ export class OrdersComponent implements OnDestroy {
     // Fetch available tables
     this.fetchAvailableTables();
 
-    // Show modal
+    // Show modal first
     const modalElement = document.getElementById('mergeOrderModal');
     if (modalElement) {
       const modal = new bootstrap.Modal(modalElement);
       modal.show();
     }
+
+    // Fetch dine-in orders with high per_page so merge list shows all mergeable orders, not just current page
+    const mergeListPerPage = 300;
+    this.ordersListService
+      .getOrdersListV2('dine-in', 1, '', mergeListPerPage)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (response) => {
+          this.isMergeListLoading = false;
+          if (response?.status && response?.data?.orders?.length) {
+            const processed = this.processOrdersForMergeList(response.data.orders);
+            this.eligibleOrdersForMerge = this.getEligibleOrdersForMergeFromList(order, processed);
+          } else {
+            this.eligibleOrdersForMerge = this.getEligibleOrdersForMerge(order);
+          }
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          this.isMergeListLoading = false;
+          this.eligibleOrdersForMerge = this.getEligibleOrdersForMerge(order);
+          this.cdr.detectChanges();
+        },
+      });
   }
 
   // Select order for merge
