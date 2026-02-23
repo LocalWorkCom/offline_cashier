@@ -415,21 +415,23 @@
                     @if (order.order_details.payment_status == 'unpaid')
                     {
                     @if(item?.dish_status == 'pending' || item?.dish_status == 'inprogress' ){
-                    <div class="dropdown">
+                      @if (!isMergedOrder(order)) {
+                      <div class="dropdown">
                       <a class="dropdown-toggle mx-2" type="button" id="dropdownMenu2" data-bs-toggle="dropdown"
                         aria-expanded="false" data-bs-display="static">
                         <i class="fa-solid fa-ellipsis-vertical"></i> </a>
                       <ul class="dropdown-menu" aria-labelledby="dropdownMenu2">
-                        @if (!isMergedOrder(order)) {
+                       
                         <li> <button class="dropdown-item" type="button" (click)="openEditModal(item , order.order_details.order_id)">
                             تعديل الطلب
                           </button></li>
-                        }
+                       
                         <li><button class="dropdown-item" type="button" data-bs-toggle="modal"
                             [attr.data-bs-target]="'#deleteConfirmModal' + item.order_detail_id">
                             حذف الطلب</button></li>
                       </ul>
                     </div>
+                  }
                     }
                     }
                     <div class="modal modal-sm fade" [id]="'deleteConfirmModal' + item.order_detail_id" tabindex="-1"
@@ -1158,7 +1160,7 @@
         <div class="row g-3 align-items-stretch flex-nowrap">
           <!-- يمين: الطلب الأصلي -->
           <div class="col flex-fill" style="min-width: 0;">
-            <div class="split-confirm-card split-confirm-original h-100 border rounded p-3">
+            <div class="split-confirm-card split-confirm-original h-100 d-flex flex-column rounded-3 p-3">
               <div class="d-flex flex-wrap align-items-center gap-2 mb-2 w-100 split-confirm-card-header">
                 <h6 class="fw-bold mb-0 split-confirm-title-left">الطلب الأصلي</h6>
                 <span class="split-confirm-table-pill split-confirm-table-orange rounded-pill px-3 py-1 d-inline-flex align-items-center gap-1 split-confirm-table-end">
@@ -1167,8 +1169,8 @@
                 </span>
               </div>
               <div class="mb-3"><strong>{{ currentSplitOrder?.order_details?.order_number }}</strong></div>
-              <div class="split-confirm-items d-flex flex-column gap-2">
-                <div *ngFor="let item of getRemainingSplitItems()" class="split-confirm-item-card border rounded p-2">
+              <div class="split-confirm-items d-flex flex-column gap-2 flex-grow-1 overflow-auto">
+                <div *ngFor="let item of getRemainingSplitItems()" class="split-confirm-item-card rounded-2 p-2">
                   <div class="d-flex justify-content-between align-items-center gap-2 split-confirm-item-row">
                     <span class="d-inline-flex align-items-center gap-2 split-confirm-item-qty-name">
                       <span class="badge rounded-pill split-confirm-qty-pill">{{ item.remainingQuantity }}x</span>
@@ -1177,7 +1179,7 @@
                     <span class="text-muted small split-confirm-item-price">{{ getSplitItemPriceForQuantity(item, item.remainingQuantity) }}</span>
                   </div>
                 </div>
-                <div *ngFor="let item of getSelectedSplitItems()" class="split-confirm-item-card split-confirm-transferred border rounded p-2">
+                <div *ngFor="let item of getSelectedSplitItems()" class="split-confirm-item-card split-confirm-transferred rounded-2 p-2">
                   <div class="d-flex justify-content-between align-items-center gap-2 split-confirm-item-row">
                     <span class="d-inline-flex align-items-center gap-2 split-confirm-item-qty-name">
                       <span class="badge rounded-pill bg-secondary text-white">0x</span>
@@ -1188,8 +1190,9 @@
                   <small class="text-muted">منقول</small>
                 </div>
               </div>
-              <div class="border-top pt-2 mt-2">
-                <strong>المجموع الجديد: {{ getSplitRemainingTotal() }} {{ splitOrderCurrency }}</strong>
+              <div class="border-top pt-2 mt-2 d-flex justify-content-between align-items-center gap-2 split-confirm-total-row flex-shrink-0">
+                <strong class="split-confirm-total-label">المجموع الجديد</strong>
+                <strong class="split-confirm-total-amount">{{ getSplitRemainingTotal() }} {{ splitOrderCurrency }}</strong>
               </div>
             </div>
           </div>
@@ -1203,7 +1206,7 @@
 
           <!-- يسار: الطلب الجديد -->
           <div class="col flex-fill" style="min-width: 0;">
-            <div class="split-confirm-card split-confirm-new h-100 border rounded p-3">
+            <div class="split-confirm-card split-confirm-new h-100 d-flex flex-column rounded-3 p-3">
               <div class="d-flex flex-wrap align-items-center gap-2 mb-2 w-100 split-confirm-card-header">
                 <h6 class="fw-bold mb-0 split-confirm-title-left">الطلب الجديد</h6>
                 <span class="badge rounded-pill split-confirm-new-badge">جديد</span>
@@ -1213,8 +1216,8 @@
                 </span>
               </div>
               <div class="mb-3"><strong>{{ getNewSplitOrderNumber() }}</strong></div>
-              <div class="split-confirm-items d-flex flex-column gap-2">
-                <div *ngFor="let item of getSelectedSplitItems()" class="split-confirm-item-card border rounded p-2">
+              <div class="split-confirm-items d-flex flex-column gap-2 flex-grow-1 overflow-auto">
+                <div *ngFor="let item of getSelectedSplitItems()" class="split-confirm-item-card rounded-2 p-2">
                   <div class="d-flex justify-content-between align-items-center gap-2 split-confirm-item-row">
                     <span class="d-inline-flex align-items-center gap-2 split-confirm-item-qty-name">
                       <span class="badge rounded-pill split-confirm-qty-pill split-confirm-qty-blue">{{ item.selectedQuantity }}x</span>
@@ -1224,8 +1227,9 @@
                   </div>
                 </div>
               </div>
-              <div class="border-top pt-2 mt-2">
-                <strong>إجمالي الطلب الجديد: {{ getSplitNewOrderTotal() }} {{ splitOrderCurrency }}</strong>
+              <div class="border-top pt-2 mt-2 d-flex justify-content-between align-items-center gap-2 split-confirm-total-row flex-shrink-0">
+                <strong class="split-confirm-total-label">إجمالي الطلب الجديد</strong>
+                <strong class="split-confirm-total-amount">{{ getSplitNewOrderTotal() }} {{ splitOrderCurrency }}</strong>
               </div>
             </div>
           </div>
@@ -1265,9 +1269,14 @@
         </p>
 
         <div class="border rounded p-3" style="max-height: 400px; overflow-y: auto;">
-          <div *ngIf="eligibleOrdersForMerge.length === 0" class="text-muted text-center py-4">
+          <div *ngIf="isMergeListLoading" class="text-center py-4">
+            <span class="spinner-border spinner-border-sm text-danger me-2" role="status"></span>
+            جاري تحميل الطلبات...
+          </div>
+          <div *ngIf="!isMergeListLoading && eligibleOrdersForMerge.length === 0" class="text-muted text-center py-4">
             لا توجد طلبات متاحة للدمج
           </div>
+          <ng-container *ngIf="!isMergeListLoading">
           <div *ngFor="let order of eligibleOrdersForMerge"
                class="border rounded p-3 mb-3 cursor-pointer position-relative"
                [class.border-danger]="selectedOrderIdForMerge === order.order_details.order_id"
@@ -1278,9 +1287,9 @@
               <!-- Left Side: Order Details with Table Badge spanning 2 rows -->
               <div class="d-flex align-items-center gap-3">
                 <!-- First Column: Table Badge (spans 2 rows) - text inside box in red -->
-                <div class="badge rounded px-3 py-2 d-inline-flex align-items-center justify-content-center"
-                     style="background-color: #fff5f5; color: #dc3545; border: 1px solid #dc3545; font-size: 0.85rem; min-height: 60px; align-self: stretch; border-radius: 8px !important;">
-                  <div class="d-flex flex-column align-items-center">
+                <div class="badge rounded px-3 py-2 d-inline-flex align-items-center justify-content-center merge-order-table-badge"
+                     style="font-size: 0.85rem; min-height: 60px; align-self: stretch; border-radius: 8px !important;">
+                  <div class="d-flex flex-column align-items-center merge-order-table-badge-inner">
                     <span>طاولة</span>
                     <span>{{ order.order_details.table_number }}</span>
                   </div>
@@ -1317,10 +1326,11 @@
               </div>
             </div>
           </div>
+          </ng-container>
         </div>
       </div>
       <div class="modal-footer border-0 d-flex justify-content-between gap-2">
-        <button type="button" class="btn btn-danger flex-fill" (click)="goToMergeConfirmation()" [disabled]="!selectedOrderIdForMerge">
+        <button type="button" class="btn btn-danger flex-fill" (click)="goToMergeConfirmation()" [disabled]="!selectedOrderIdForMerge || isMergeListLoading">
           <i class="fa-solid fa-code-merge me-2"></i>
           تأكيد الدمج
         </button>
