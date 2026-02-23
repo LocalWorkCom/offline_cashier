@@ -1,4 +1,21 @@
 <div class="card p-3 m-3">
+  <div *ngIf="orderDetails && canShowOrderActions()" class="d-flex w-100 gap-2 mb-3">
+    <button type="button" class="btn reversed main-color flex-fill py-2 text-center" (click)="openChangeOrderTypeModalFromDetails()" title="تغيير نوع الطلب" style="font-size: 13px;">
+      <i class="fa-solid fa-arrows-rotate px-1"></i>
+      تغيير نوع الطلب
+    </button>
+    
+    <button type="button" class="btn reversed main-color flex-fill py-2 text-center" (click)="cancelOrder()" title="حذف الطلب" style="font-size: 13px;">
+      <i class="fa-solid fa-trash-can px-1"></i>
+      حذف الطلب
+    </button>
+    
+    <a *ngIf="isDineIn()" [routerLink]="['/tableavailable', cartId]" class="btn reversed main-color flex-fill py-2 text-decoration-none text-center" title="تغيير الطاولة" style="font-size: 13px;">
+      <i class="fa-solid fa-chair px-1"></i>
+      تغيير الطاولة
+    </a>
+  </div>
+
   <ul class="nav nav-pills px-0 align-items-center" id="pills-tab" role="tablist">
     <li class="nav-item mb-2" role="presentation">
       <button class="nav-link sub" [class.active]="selectedOrderType === 'Delivery'"
@@ -127,8 +144,12 @@
   @if (cartItems.length) {
   <div class="d-flex justify-content-between mb-2">
     <h5 class="fw-bold">تفاصيل الطلب</h5>
-
   </div>
+
+  
+  <div class="alert alert-success" *ngIf="message">{{ message }}</div>
+  <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
+
   <div class="d-flex justify-content-between mb-2">
     <div class="d-flex">
       <p>رقم الطلب </p>
@@ -137,38 +158,44 @@
     <p>{{ getTotalItemCount() }} عناصر</p>
   </div>
 
-  @for (item of cartItems; track i; let i = $index) {
-  <div class="sideCart-plate p-3 mb-4">
-    <div class="d-flex">
-      <figure class="sideCart-plate-img m-0">
-        <img [src]="item.image || 'assets/images/no-image.png'" [alt]="item.dish_name" />
-      </figure>
-      <div class="cart-details pe-3">
-        <h5>{{ item.quantity }} <span>X</span> {{ item.dish_name }}</h5>
-        <!-- <small class="text-muted"> {{ item.size }} {{ item.addons }} </small> -->
-        @if (item.size ) {
-        <small class="text-muted">
-          {{ item.size }}
-        </small>
-        } @if (item.addons && item.addons.length > 0) {
-        <div class="mt-2">
-          <small class="text-muted">الإضافات:</small>
-          <ul class="list-unstyled p-0">
-            @for (addon of item.addons; track $index) {
-            <li class="text-muted">
-              <small>{{ addon }}</small>
-            </li>
-            }
-          </ul>
-        </div>
-        } @if (item.note) {
-        <small class="text-muted"> ملاحظات: {{ item.note }} </small>
-        }
-      </div>
+  @for (item of cartItems; track $index) {
+  <div class="d-flex justify-content-between mb-3 align-items-start pb-2 border-bottom" [ngClass]="{'text-warning': isItemCancelled(item)}">
+    <div class="d-flex flex-column" [ngClass]="{'text-warning': isItemCancelled(item)}">
+      <h6 class="d-flex align-items-center gap-1 mb-1">
+        <span class="d-inline-flex align-items-center justify-content-center bg-secondary rounded text-white ms-2" style="min-width: 1.75rem; height: 1.75rem; font-weight: 600;">{{ item.quantity }}</span>
+        x
+        <span>{{ item.dish_name }}</span>
+      </h6>
+      @if (item.size) {
+      <h6 class="text-muted mx-5 fw-medium mb-1 small">
+        الحجم: {{ item.size }}
+      </h6>
+      }
+      @if (item.addons && item.addons.length > 0) {
+      <h6 class="text-muted mx-5 fw-medium mb-1 small">
+        إضافة: {{ item.addons }}
+      </h6>
+      }
+      @if (item.note) {
+      <h6 class="text-muted mx-5 fw-medium mb-1 small">
+        ملاحظات: {{ item.note }}
+      </h6>
+      }
     </div>
-    <p class="fw-bold">
-      {{ item.total_dish_price}} {{ this.currencySymbol }}
-    </p>
+    <div class="d-flex align-items-center gap-2">
+      <h6 class="fw-bold mb-0">
+        <span>{{ item.total_dish_price }}</span> {{ currencySymbol }}
+      </h6>
+      <ng-container *ngIf="canShowItemActions(item)">
+        <button type="button" class="btn btn-sm py-1 px-2 bg-white border border-danger" (click)="openDeleteItemModal(item)" [disabled]="removeItemLoading === (item.id || item.order_detail_id)" title="إلغاء صنف">
+          <span *ngIf="removeItemLoading === (item.id || item.order_detail_id)">...</span>
+          <i *ngIf="removeItemLoading !== (item.id || item.order_detail_id)" class="fa-solid fa-trash-can fa-sm main-color"></i>
+        </button>
+        <button type="button" class="btn btn-sm py-1 px-2 bg-white border border-danger" (click)="openEditModalFromDetails(item)" title="تعديل صنف">
+          <i class="fa-solid fa-pen fa-sm main-color"></i>
+        </button>
+      </ng-container>
+    </div>
   </div>
   }
 
@@ -287,6 +314,29 @@
   </div>
 </div>
 
+<!-- Delete item confirmation modal -->
+<div class="modal modal-sm fade" id="deleteItemConfirmModalDetails" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <button type="button" class="btn-close btn" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        <img class="cancel-icon d-block mx-auto mb-3" src="assets/images/ix_error-filled.png" alt="" style="width: 60px;" />
+        <h1 class="modal-title fs-5 text-center my-3">هل أنت متأكد أنك تريد حذف هذا الصنف؟</h1>
+        <div class="alert alert-danger my-2 text-center" *ngIf="deleteItemErrMsg">{{ deleteItemErrMsg }}</div>
+        <div class="d-flex justify-content-center mt-4">
+          <button type="button" class="btn reversed main-color w-50 mx-2" data-bs-dismiss="modal" aria-label="Close">لا</button>
+          <button type="button" class="btn w-50 mx-2" [disabled]="removeItemLoading !== null" (click)="confirmDeleteItem()">
+            <span *ngIf="removeItemLoading !== null">جاري الحذف...</span>
+            <span *ngIf="removeItemLoading === null">نعم</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Change Driver Modal -->
 <div class="modal fade" id="changeDriverModal" tabindex="-1" aria-labelledby="changeDriverModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered">
@@ -325,6 +375,153 @@
           }
           حفظ
         </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Change Order Type Modal (على صفحة العربة) -->
+<div class="modal fade" id="changeOrderTypeModalDetails" tabindex="-1" aria-labelledby="changeOrderTypeModalDetailsLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-3">
+      <div class="modal-header border-0 d-flex justify-content-between align-items-center" dir="rtl">
+        <div class="d-flex align-items-center gap-2">
+          <span class="bg-primary text-white rounded p-2 d-inline-flex align-items-center justify-content-center">
+            <i class="fa-solid fa-arrows-rotate fs-5"></i>
+          </span>
+          <h5 class="modal-title fw-bold mb-0" id="changeOrderTypeModalDetailsLabel">تغيير نوع الطلب</h5>
+        </div>
+        <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+      </div>
+      <div class="modal-body">
+        <p class="text-muted small mb-3">
+          يرجى اختيار نوع الطلب الجديد لهذا الطلب رقم <strong class="text-dark">{{ currentOrderForTypeChange?.order_details?.order_number }}</strong>. سيتم تحديث تفاصيل الفاتورة تلقائياً بناءً على الاختيار.
+        </p>
+        <div class="d-flex flex-column gap-3" dir="ltr">
+          <div class="form-check rounded-3 p-3 d-flex align-items-center gap-3 transition-all"
+               [style.border]="selectedNewOrderType === 'dine-in' ? '2px solid #0d6efd' : '1px solid #dee2e6'">
+            <input class="form-check-input flex-shrink-0 ms-3 me-2" type="radio" name="newOrderTypeDetails" id="typeDineInDetails" value="dine-in"
+                   [(ngModel)]="selectedNewOrderType">
+            <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end">
+              <label class="form-check-label text-end cursor-pointer mb-0" for="typeDineInDetails">
+                <strong class="d-block">داخل المطعم (محلي)</strong>
+                <span class="text-muted small">تقديم الطلب على طاولة داخل المطعم</span>
+              </label>
+              <i class="fa-solid fa-utensils rounded-circle p-2 text-white flex-shrink-0" style="background-color: #ff9800;"></i>
+            </div>
+          </div>
+          <div class="form-check rounded-3 p-3 d-flex align-items-center gap-3 transition-all"
+               [style.border]="selectedNewOrderType === 'Takeaway' ? '2px solid #0d6efd' : '1px solid #dee2e6'">
+            <input class="form-check-input flex-shrink-0 ms-3 me-2" type="radio" name="newOrderTypeDetails" id="typeTakeawayDetails" value="Takeaway"
+                   [(ngModel)]="selectedNewOrderType">
+            <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end">
+              <label class="form-check-label text-end cursor-pointer mb-0" for="typeTakeawayDetails">
+                <strong class="d-block">استلام من الفرع (سفري)</strong>
+                <span class="text-muted small">يأتي العميل لاستلام الطلب بنفسه</span>
+              </label>
+              <i class="fa-solid fa-bag-shopping rounded-circle p-2 text-white bg-primary flex-shrink-0"></i>
+            </div>
+          </div>
+          <div class="form-check rounded-3 p-3 d-flex align-items-center gap-3 transition-all"
+               [style.border]="selectedNewOrderType === 'Delivery' ? '2px solid #0d6efd' : '1px solid #dee2e6'">
+            <input class="form-check-input flex-shrink-0 ms-3 me-2" type="radio" name="newOrderTypeDetails" id="typeDeliveryDetails" value="Delivery"
+                   [(ngModel)]="selectedNewOrderType">
+            <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end">
+              <label class="form-check-label text-end cursor-pointer mb-0" for="typeDeliveryDetails">
+                <strong class="d-block">توصيل</strong>
+                <span class="text-muted small">توصيل الطلب إلى موقع العميل</span>
+              </label>
+              <i class="fa-solid fa-truck rounded-circle p-2 text-white flex-shrink-0" style="background-color: #9c27b0;"></i>
+            </div>
+          </div>
+        </div>
+        <div *ngIf="selectedNewOrderType === 'dine-in'" class="mt-3">
+          <label class="form-label fw-bold">اختر الطاولة</label>
+          <select class="form-select" [(ngModel)]="selectedTableIdForTypeChange" name="tableIdForTypeChangeDetails">
+            <option value="">اختر الطاولة...</option>
+            <option *ngFor="let table of availableTablesForTypeChange" [value]="table.id">طاولة رقم {{ table.number }}</option>
+          </select>
+        </div>
+      </div>
+      <div class="modal-footer border-0 d-flex justify-content-between flex-row-reverse">
+        <button type="button" class="btn btn-danger" (click)="openChangeTypeConfirmModalDetails()"
+                [disabled]="!selectedNewOrderType || (selectedNewOrderType === 'dine-in' && !selectedTableIdForTypeChange) || isSameOrderTypeSelected()">
+          <i class="fa-solid fa-check me-2"></i>
+          تأكيد التغيير
+        </button>
+        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm Change Order Type Modal -->
+<div class="modal fade" id="confirmChangeOrderTypeModalDetails" tabindex="-1" aria-labelledby="confirmChangeOrderTypeModalDetailsLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content p-4 rounded-3 shadow" style="max-width: 420px;">
+      <div class="modal-header border-0 text-center d-block pt-2">
+        <div class="mb-3">
+          <span class="d-inline-flex align-items-center justify-content-center rounded-circle p-3" style="background-color: #ffc107; width: 56px; height: 56px;">
+            <i class="fa-solid fa-arrows-rotate fs-5" style="color: #b8860b;"></i>
+          </span>
+        </div>
+        <h5 class="modal-title fw-bold text-dark mb-1" id="confirmChangeOrderTypeModalDetailsLabel">تأكيد تغيير نوع الطلب</h5>
+        <p class="text-muted small mb-0">يرجى مراجعة تفاصيل التغيير أدناه قبل المتابعة</p>
+      </div>
+      <div class="modal-body px-4 pb-2">
+        <div class="rounded-3 p-3 mb-3" style="background-color: #f5f5f5;">
+          <div class="d-flex align-items-center justify-content-between gap-2 flex-wrap">
+            <div class="flex-grow-1 text-center">
+              <div class="small text-muted mb-2">من</div>
+              <div class="d-inline-flex align-items-center gap-2 rounded-3 px-3 py-2 bg-white shadow-sm" style="min-width: 120px;">
+                <i class="text-dark" [ngClass]="getOrderTypeIconClass(currentOrderForTypeChange?.order_details?.order_type)"></i>
+                <span class="text-dark fw-medium">{{ getOrderTypeShortLabel(currentOrderForTypeChange?.order_details?.order_type) }}</span>
+              </div>
+            </div>
+            <div class="flex-shrink-0">
+              <i class="fa-solid fa-arrow-left text-muted"></i>
+            </div>
+            <div class="flex-grow-1 text-center">
+              <div class="small text-muted mb-2">إلى</div>
+              <div class="d-inline-flex align-items-center gap-2 rounded-3 px-3 py-2 bg-white border-2 shadow-sm" style="min-width: 120px; border-color: #dc3545 !important;">
+                <i class="text-danger" [ngClass]="getOrderTypeIconClass(selectedNewOrderType)"></i>
+                <span class="text-danger fw-bold">{{ getOrderTypeShortLabel(selectedNewOrderType) }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="alert rounded-3 d-flex align-items-start gap-2 mb-0" style="background-color: #fff8e1; border: none;">
+          <span class="rounded-circle d-inline-flex align-items-center justify-content-center flex-shrink-0" style="background-color: #ffc107; width: 24px; height: 24px;">
+            <i class="fa-solid fa-info small" style="color: #1a1a1a;"></i>
+          </span>
+          <p class="mb-0 small text-dark">
+            سيتم تغيير نوع الطلب #{{ currentOrderForTypeChange?.order_details?.order_number }}. قد يؤثر هذا على الأسعار والضرائب المطبقة. هل أنت متأكد أنك تريد المتابعة؟
+          </p>
+        </div>
+      </div>
+      <div class="modal-footer border-0 d-flex gap-2 px-4 pb-4 pt-2" style="flex-wrap: nowrap;">
+        <button type="button" class="btn rounded-3 py-2 text-center" style="flex: 0 0 calc(50% - 4px); background-color: #fff; color: #495057; border: 1px solid #ced4da; min-height: 44px;" data-bs-dismiss="modal" aria-label="Cancel">إلغاء</button>
+        <button type="button" class="btn btn-danger rounded-3 py-2 text-center" style="flex: 0 0 calc(50% - 4px); min-height: 44px;" (click)="onConfirmChangeOrderTypeClickDetails()" [disabled]="isChangeTypeSubmitting" aria-label="Confirm">
+          <span *ngIf="isChangeTypeSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+          <i *ngIf="!isChangeTypeSubmitting" class="fa-solid fa-check me-2"></i>
+          تأكيد التغيير
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Paid Order Warning (Change Type) -->
+<div class="modal fade" id="changeTypePaidWarningModalDetails" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content p-4 text-center">
+      <div class="modal-body">
+        <div class="rounded-circle bg-danger d-inline-flex align-items-center justify-content-center text-white mb-3" style="width: 60px; height: 60px;">
+          <i class="fa-solid fa-exclamation fa-2x"></i>
+        </div>
+        <h6 class="fw-bold mb-2">تنبيه</h6>
+        <p class="text-muted small mb-4">لا يمكن تغيير نوع الطلب لطلب مدفوع.</p>
+        <button type="button" class="btn btn-danger w-100" data-bs-dismiss="modal" aria-label="Close">حسنًا</button>
       </div>
     </div>
   </div>
