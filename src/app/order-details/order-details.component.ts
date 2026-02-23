@@ -727,9 +727,13 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     this.router.navigate(['/orders'], { queryParams: { openOrder: this.orderId, action: 'changeType' } });
   }
 
-  /** Whether to show Cancel/Modify item buttons for this line (unpaid, pending/inprogress item). */
+  /** Whether to show Cancel/Modify item buttons for this line (unpaid, pending/inprogress item). Shown for all order types including talabat (طلبات). */
   canShowItemActions(item: any): boolean {
-    if (!this.canShowOrderActions()) return false;
+    const d = this.orderDetails;
+    if (!d) return false;
+    if (d.status === 'cancelled' || d.status === 'cancel') return false;
+    const paymentStatus = d.payment_status ?? d.transactions?.[0]?.payment_status;
+    if (paymentStatus !== 'unpaid') return false;
     const status = item?.dish_status;
     return status === 'pending' || status === 'inprogress';
   }
