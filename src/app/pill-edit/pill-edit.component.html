@@ -154,9 +154,10 @@
             data-bs-parent="#accordionFlushExample">
             <div class="accordion-body">
               <div *ngFor="let item of activeOrderDetails"
-                class="d-flex justify-content-between px-1 mb-1 align-items-start">
-                <div class="d-flex flex-column">
-                  <h6>
+                class="d-flex justify-content-between px-1 mb-1 align-items-start"
+                [ngClass]="{'text-warning': isItemCancelled(item)}">
+                <div class="d-flex flex-column" [ngClass]="{'text-warning': isItemCancelled(item)}">
+                  <h6 [style.text-decoration]="isItemCancelled(item) ? 'line-through' : null">
                     <span class="badge bg-lightgray text-dark ms-2">
                       {{ item.quantity }}
                     </span>
@@ -176,7 +177,7 @@
                     ملاحظات: {{ item.note }}
                   </h6>
                 </div>
-                <h6 class="fw-bold">
+                <h6 class="fw-bold" [style.text-decoration]="isItemCancelled(item) ? 'line-through' : null">
                   <span *ngIf="invoiceSummary && invoiceSummary.length > 0">{{ item.total_dish_price }}
                     {{ invoiceSummary[0].currency_symbol }}</span>
                 </h6>
@@ -531,8 +532,7 @@
       <div class="d-flex justify-content-between px-2 mb-1 align-items-center">
         <h6 class="mb-0">مجموع الطلب</h6>
         <h6 class="mb-0 text-end" *ngIf="invoices[0]?.invoice_summary">
-          <span>{{ (invoices[0].invoice_summary.subtotal_price_before_coupon || invoices[0].invoice_summary.total_price
-            || 0).toFixed(2) }}
+          <span>{{ (displayInvoiceSummary?.subtotal_price_before_coupon ?? invoices[0].invoice_summary.subtotal_price_before_coupon ?? invoices[0].invoice_summary.total_price ?? 0) | number:'1.2-2' }}
             {{ item.currency_symbol }}</span>
         </h6>
       </div>
@@ -560,7 +560,7 @@
       <div class="d-flex justify-content-between px-2 mb-1 align-items-center" *ngIf="item.service_percentage">
         <h6 class="mb-0">الخدمة <span class="main-color">{{item.service_percentage}}%</span></h6>
         <h6 class="mb-0 text-end">
-          <span>{{ item.service_fees | number:'1.2-2' }} {{ item.currency_symbol }}</span>
+          <span>{{ (displayInvoiceSummary?.service_fees ?? item.service_fees) | number:'1.2-2' }} {{ item.currency_symbol }}</span>
         </h6>
       </div>
       <div class="d-flex justify-content-between px-2 mb-1 align-items-center" *ngIf="item.delivery_fees">
@@ -576,7 +576,7 @@
       <div class="d-flex justify-content-between px-2 mb-1 align-items-center" *ngIf="!item.tax_application && item.tax_percentage">
         <h6 class="mb-0">ضريبة القيمة المضافة <span class="main-color">{{ item.tax_percentage }}%</span></h6>
         <h6 class="mb-0 text-end">
-          <span>{{ item.tax_value | number:'1.2-2' }} {{ item.currency_symbol }}</span>
+          <span>{{ (displayInvoiceSummary?.tax_value ?? item.tax_value) | number:'1.2-2' }} {{ item.currency_symbol }}</span>
         </h6>
       </div>
       <div class="d-flex flex-column">
@@ -587,8 +587,8 @@
             المجموع الكلى
           </h4>
           <h6 class="fw-bold mb-0 fs-4 text-end" *ngIf="invoices[0]?.invoice_summary">
-            <!-- استخدام totalll إذا كان محدثاً (بعد تطبيق الكوبون)، وإلا استخدام invoice_summary.total_price -->
-            <span>{{ (totalll !== null && totalll !== undefined ? totalll : invoices[0].invoice_summary.total_price) | number:'1.2-2' }} {{ invoices[0].currency_symbol }}</span>
+            <!-- ملخص العرض يستبعد العناصر الملغاة؛ totalll بعد الكوبون -->
+            <span>{{ (totalll !== null && totalll !== undefined ? totalll : (displayInvoiceSummary?.total_price ?? invoices[0].invoice_summary.total_price)) | number:'1.2-2' }} {{ invoices[0].currency_symbol }}</span>
           </h6>
         </div>
       </div>
