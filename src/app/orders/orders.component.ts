@@ -131,6 +131,7 @@ export class OrdersComponent implements OnDestroy {
   totalOrdersCount: number = 0;
   isLoadMoreLoading: boolean = false;
   orderTypeCounts: any = {};
+  orderStatusCounts: any = {};
 
   ngOnInit(): void {
     // console.log("this.isOnline", this.isOnline);
@@ -244,8 +245,15 @@ export class OrdersComponent implements OnDestroy {
       this.isLoadMoreLoading = true;
     }
 
+    let statusParam = this.selectedStatus;
+    if (statusParam === 'in_progress') {
+      statusParam = 'inprogress';
+    } else if (statusParam === 'readyForPickup') {
+      statusParam = 'packing';
+    }
+
     this.ordersListService
-      .getOrdersListV2(this.selectedOrderTypeStatus, this.currentPage, this.searchOrderNumber)
+      .getOrdersListV2(this.selectedOrderTypeStatus, this.currentPage, this.searchOrderNumber, 30, statusParam)
       .pipe(
         finalize(() => {
           this.loading = true;
@@ -319,19 +327,35 @@ export class OrdersComponent implements OnDestroy {
   }
 
   fetchOrderTypeCounts(): void {
-    this.ordersListService.getOrderTypesCounts().subscribe({
+    const typeParam = this.selectedOrderTypeStatus === 'All' ? 'all' : this.selectedOrderTypeStatus;
+    this.ordersListService.getTypeStatusCounts(typeParam).subscribe({
       next: (response) => {
         if (response.status && response.data) {
-          const countsMap: any = { 'All': response.data.total };
-          response.data.types.forEach((item: any) => {
-            countsMap[item.type] = item.count;
-          });
-          this.orderTypeCounts = countsMap;
-          console.log('Order type counts updated:', this.orderTypeCounts);
+          // Build type counts map
+          const typesMap: any = {};
+          let total = 0;
+          if (response.data.types && Array.isArray(response.data.types)) {
+            response.data.types.forEach((item: any) => {
+              typesMap[item.type] = item.count;
+              total += item.count;
+            });
+          }
+          typesMap['All'] = total;
+          this.orderTypeCounts = typesMap;
+
+          // Build status counts map
+          const statusMap: any = {};
+          if (response.data.statuses && Array.isArray(response.data.statuses)) {
+            response.data.statuses.forEach((item: any) => {
+              statusMap[item.status] = item.count;
+            });
+          }
+          this.orderStatusCounts = statusMap;
+          console.log('Type/Status counts updated:', this.orderTypeCounts, this.orderStatusCounts);
         }
       },
       error: (err) => {
-        console.error('Error fetching order type counts:', err);
+        console.error('Error fetching type/status counts:', err);
       }
     });
   }
@@ -343,18 +367,20 @@ export class OrdersComponent implements OnDestroy {
         (order: any) =>
           this.allowedOrderTypes.includes(order.order_details?.order_type) &&
           (this.allowedStatuses.includes(order.order_details?.status) ||
-           order.order_details?.status === 'packing') // Allow packing status
+           order.order_details?.status === 'packing' ||
+           order.order_details?.status === 'inprogress')
       )
       .map((order: any) => {
-        // Convert 'packing' status to 'pending' for frontend compatibility
         const processedOrder = {
           ...order,
           currency_symbol: this.currencySymbol,
         };
 
-        // Map packing to pending for frontend
+        // Map backend status to frontend status
         if (processedOrder.order_details?.status === 'packing') {
-          processedOrder.order_details.status = 'pending';
+          processedOrder.order_details.status = 'readyForPickup';
+        } else if (processedOrder.order_details?.status === 'inprogress') {
+          processedOrder.order_details.status = 'in_progress';
         }
 
         return processedOrder;
@@ -1299,6 +1325,7 @@ export class OrdersComponent implements OnDestroy {
     console.log('fatema', orderType, this.selectedOrderTypeStatus);
 
     this.selectedOrderTypeStatus = orderType;
+    this.fetchOrderTypeCounts();
     if (this.selectedStatus !== 'static') {
       this.fetchOrdersFromAPI();
     } else {
@@ -1426,9 +1453,28 @@ export class OrdersComponent implements OnDestroy {
       return parsed.filter((item: any) => item.type === orderType).length;
     }
 
+    // Use backend-provided status counts if available
+    if (this.orderStatusCounts && Object.keys(this.orderStatusCounts).length > 0) {
+      if (status === 'all') {
+        // Sum all status counts
+        return Object.values(this.orderStatusCounts).reduce((sum: number, c: any) => sum + (Number(c) || 0), 0);
+      }
+      // Map frontend status names to backend keys
+      // Frontend 'in_progress' = backend 'inprogress'
+      if (status === 'in_progress') {
+        return Number(this.orderStatusCounts['inprogress']) || Number(this.orderStatusCounts['in_progress']) || 0;
+      }
+      if (status === 'readyForPickup') {
+        return (Number(this.orderStatusCounts['readyForPickup']) || 0) + (Number(this.orderStatusCounts['packing']) || 0);
+      }
+      const count = this.orderStatusCounts[status];
+      return count !== undefined ? Number(count) : 0;
+    }
+
+    // Fallback to client-side counting
     if (status === 'all') {
       if (orderType === 'All') {
-        return this.orders.length; // ✅ count all
+        return this.orders.length;
       }
 
       return this.orders.filter(

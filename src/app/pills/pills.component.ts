@@ -32,16 +32,18 @@ export class PillsComponent implements OnInit, OnDestroy {
   selectedStatus: number = 0;
   statusTranslations: { [key: string]: string } = {
     hold: 'معلقة',
-    urgent: 'طارئة',
     done: 'مكتملة',
   };
+  selectedStatusLabel: string = 'all';
   searchOrderNumber: string = '';
   searchText: any;
   filteredPillsByStatus: any[] | undefined;
   orderType: any;
-  orderTypeFilter: string = 'dine-in';
+  orderTypeFilter: string = 'all';
   highlightedPillId: string | null = null;
   errorMessage: any;
+  invoiceTypeCounts: any = {};
+  invoiceStatusCounts: any = {};
 
   currentPage: number = 1;
   hasMoreInvoices: boolean = true;
@@ -74,15 +76,11 @@ export class PillsComponent implements OnInit, OnDestroy {
 
   // start dalia
   ngOnInit() {
-    // window.addEventListener('online', this.handleOnlineStatus.bind(this));
-    // window.addEventListener('offline', this.handleOnlineStatus.bind(this));
-
-    this.fetchPillsData();
-    // this.dbService.init().then(() => {
-    if (navigator.onLine) {
-      this.fetchPillsData(); // جلب وحفظ البيانات في IndexedDB
+    this.isOnline = navigator.onLine;
+    if (this.isOnline) {
+      this.fetchPillsData();
+      this.fetchInvoiceCounts();
     } else {
-      // this.loadFromIndexedDB(); // جلب البيانات من IndexedDB عند العمل offline
       this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
     }
     // }).catch(error => {
@@ -258,8 +256,16 @@ console.log(newOrder);
       this.isLoadMoreLoading = true;
     }
 
+    const apiStatusMap: any = {
+      'hold': 'unpaid',
+      'done': 'paid',
+      'cancelled': 'cancelled',
+      'returned': 'returned'
+    };
+    const statusParam = apiStatusMap[this.selectedStatusLabel] || this.selectedStatusLabel;
+
     this.pillRequestService
-      .getPillsV2(this.currentPage, this.searchOrderNumber, this.orderTypeFilter)
+      .getPillsV2(this.currentPage, this.searchOrderNumber, this.orderTypeFilter, 28, statusParam)
       .pipe(
         finalize(() => {
           this.loading = true;
@@ -270,25 +276,7 @@ console.log(newOrder);
       .subscribe({
         next: (response) => {
           if (response.status && response.data.invoices) {
-            const newInvoices = response.data.invoices
-              // 1️⃣ Remove cancelled (filter first)
-              .filter(
-                (pill: any) =>
-                  !(
-                    pill.order_items_count === 0 &&
-                    pill.payment_status === 'unpaid'
-                  )
-              )
-              // 2️⃣ Transform credit notes to "returned"
-              .map((pill: any) => {
-                if (pill.invoice_type === 'credit_note') {
-                  return {
-                    ...pill,
-                    invoice_print_status: 'returned',
-                  };
-                }
-                return pill;
-              });
+            const newInvoices = response.data.invoices;
 
             if (isLoadMore) {
               this.pills = [...this.pills, ...newInvoices];
@@ -301,12 +289,22 @@ console.log(newOrder);
 
             this.updatePillsByStatus();
             this.usingOfflineData = false;
+            this.cdr.detectChanges();
+          } else {
+            console.warn('No invoices found in API response.');
+            if (!isLoadMore) {
+              this.pills = [];
+              this.updatePillsByStatus();
+            }
+            this.hasMoreInvoices = false;
+            this.cdr.detectChanges();
           }
         },
 
         error: (error) => {
           console.error('Error fetching pills data:', error);
           this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+          this.cdr.detectChanges();
         },
       });
   }
@@ -322,9 +320,60 @@ console.log(newOrder);
     }
   }
 
+  fetchInvoiceCounts(): void {
+    const typeParam = this.orderTypeFilter;
+    this.pillRequestService.getTypeStatusCounts(typeParam).subscribe({
+      next: (response) => {
+        if (response.status && response.data) {
+          const typesMap: any = {};
+          if (response.data.types) {
+            response.data.types.forEach((item: any) => {
+              typesMap[item.type] = item.count;
+            });
+          }
+          this.invoiceTypeCounts = typesMap;
+
+          const statusMap: any = {};
+          if (response.data.statuses) {
+            response.data.statuses.forEach((item: any) => {
+              statusMap[item.status] = item.count;
+            });
+          }
+          this.invoiceStatusCounts = statusMap;
+        }
+      },
+      error: (err) => {
+        console.error('Error fetching invoice counts:', err);
+      }
+    });
+  }
+
+  getInvoiceTypeCount(type: string): number {
+    if (type === 'all') {
+      return Object.values(this.invoiceTypeCounts).reduce((sum: number, c: any) => sum + (Number(c) || 0), 0);
+    }
+    return this.invoiceTypeCounts[type] || 0;
+  }
+
+  getInvoiceStatusCount(status: string): number {
+    if (status === 'all') {
+      return this.totalInvoicesCount;
+    }
+    const apiStatusMap: any = {
+      'hold': 'unpaid', 
+      'done': 'paid',
+      'cancelled': 'cancelled',
+      'returned': 'returned'
+    };
+    const apiStatus = apiStatusMap[status] || status;
+    return this.invoiceStatusCounts[apiStatus] || 0;
+  }
+
   selectOrderTypeFilter(type: string): void {
     this.orderTypeFilter = type;
+    this.currentPage = 1;
     this.fetchPillsData();
+    this.fetchInvoiceCounts();
   }
 
   private loadFromIndexedDB() {
@@ -400,6 +449,9 @@ console.log(newOrder);
   // }
   selectStatusGroup(index: number): void {
     this.selectedStatus = index;
+    const allStatuses = ['all', 'hold', 'done', 'cancelled', 'returned'];
+    this.selectedStatusLabel = allStatuses[index] || 'all';
+    this.fetchPillsData();
   }
   // fetchPillsData(): void {
   //   this.loading = false;
@@ -434,38 +486,28 @@ console.log(newOrder);
   //   this.filterPills();
   // }
   private updatePillsByStatus(): void {
-    const allStatuses = ['all', 'hold', 'urgent', 'done', 'cancelled', 'returned'];
-    const fetchedStatuses = Array.from(
-      new Set(this.pills.map((pill) => pill.invoice_print_status))
-    );
-    const mergedStatuses = Array.from(
-      new Set([...allStatuses, ...fetchedStatuses])
-    );
+    const allStatuses = ['all', 'hold', 'done', 'cancelled', 'returned'];
 
-    this.pillsByStatus = mergedStatuses.map((status) => {
-      let pillsForStatus;
+    this.pillsByStatus = allStatuses.map((status) => {
+      // 1. If 'all' group, show everything
       if (status === 'all') {
-        pillsForStatus = [...this.pills];
-      } else {
-        pillsForStatus = this.pills.filter(
-          (pill) => pill.invoice_print_status === status
-        );
+        return { status, pills: this.pills };
       }
 
-      // Ensure returned tab only has credit notes
-      if (status === 'returned') {
-        pillsForStatus = pillsForStatus.filter(
-          (pill) => pill.invoice_type === 'credit_note'
-        );
+      // 2. If the current active tab matches this status group, show all items from the server response
+      if (this.selectedStatusLabel === status) {
+        return { status, pills: this.pills };
       }
 
+      // 3. Otherwise, filter locally based on the print status (mainly for the 'All' tab view)
       return {
         status,
-        pills: pillsForStatus,
+        pills: this.pills.filter(
+          (pill) => (pill.invoice_print_status || '').toLowerCase() === status
+        ),
       };
     });
 
-    this.filteredPillsByStatus = [...this.pillsByStatus];
     this.filterPills();
   }
 
@@ -484,20 +526,7 @@ console.log(newOrder);
   filterPills() {
     if (!this.pillsByStatus || this.pillsByStatus.length === 0) return;
 
-    this.filteredPillsByStatus = this.pillsByStatus.map(
-      (statusGroup: { status: string; pills: any[] }) => {
-        let pills = statusGroup.pills;
-
-        pills = pills.filter(
-          (pill) => pill.order_type === this.orderTypeFilter
-        );
-
-        return {
-          status: statusGroup.status,
-          pills,
-        };
-      }
-    );
+    this.filteredPillsByStatus = this.pillsByStatus;
 
     const search = this.searchOrderNumber?.trim().toLowerCase();
     if (search && this.pills.length > 0) {
