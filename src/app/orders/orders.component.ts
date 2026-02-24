@@ -2576,7 +2576,7 @@ export class OrdersComponent implements OnDestroy {
 
       // ✅ التصحيح: استخدام القيمة الصحيحة للكوبون (10%)
       // إذا كان الكوبون "ca01" فهو 10%، نستخدم هذه القيمة مباشرة
-      couponValue = "10"; // 10% مباشرة
+      couponValue = couponData.coupon_value || '0'; // 10% مباشرة
 
       // حساب الخصم بناءً على النسبة
       if (couponType === 'percentage') {
