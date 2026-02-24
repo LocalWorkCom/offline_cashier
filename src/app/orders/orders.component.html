@@ -51,7 +51,7 @@
     <ul class="nav nav-requests mb-4 px-0 w-100 d-flex flex-row justify-content-between" role="tablist">
       <li class="nav-item flex-fill mx-1" role="presentation">
         <button class="nav-link w-100 mb-2" [class.active]="selectedStatus === 'all'" (click)="selectStatus('all')">
-          <span>الكل ({{ getStatusCount("all", selectedOrderTypeStatus) }} من {{ totalOrdersCount }})</span>
+          <span>الكل ({{ orders.length }} من {{ totalOrdersCount }})</span>
         </button>
       </li>
 
