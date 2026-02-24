@@ -624,7 +624,7 @@ export class OrdersComponent implements OnDestroy {
     }
 
     const search = this.searchOrderNumber?.trim().toLowerCase();
-  
+
   if (!search) {
     this.filterOrders();
     return;
@@ -1310,11 +1310,11 @@ export class OrdersComponent implements OnDestroy {
     this.selectedStatus = status;
     if (this.selectedStatus !== 'static') {
       // If we are switching away from static or between dynamic statuses,
-      // but the API doesn't support status filtering yet, we might still 
+      // but the API doesn't support status filtering yet, we might still
       // rely on client-side filtering of the already fetched orders.
       // However, the user asked for "backend side not the front side".
       // Let's assume listv2 also supports &status=... or we just fetch all for that type and filter.
-      // For now, let's just trigger a re-fetch if we change type, 
+      // For now, let's just trigger a re-fetch if we change type,
       // but for status we might still use client side if the API doesn't support it.
       // But let's re-fetch to start from page 1.
       this.fetchOrdersFromAPI();
@@ -2631,23 +2631,26 @@ export class OrdersComponent implements OnDestroy {
   canShowReturnInvoice(order: any): boolean {
     const totalCash = localStorage.getItem('totalcash');
     const totalCredit = localStorage.getItem('totalvisa');
+    console.log("totalCash",totalCash,totalCredit);
 
-
-  
     if (!totalCash && !totalCredit) {
       return false;
     }
-    const cashValue = Number(totalCash);
-    const creditValue = Number(totalCredit);
+    const cashValue = Number(totalCash) || 0;
+    const creditValue = Number(totalCredit) || 0;
     const orderPrice = Number(order.total_price);
-    console.log("orderPrice",orderPrice,cashValue,creditValue);
-    if(order.details_order?.transactions?.[0]?.payment_method == 'credit' || order.details_order?.transactions?.[1]?.payment_method == 'credit') {
-      // console.log('creditdalia');
-      return !isNaN(creditValue) && !isNaN(orderPrice) && (creditValue > orderPrice || cashValue > orderPrice || cashValue + creditValue > orderPrice);
-    }
-        // console.log('cashdalia');
+    // console.log("orderPrice",orderPrice,cashValue,creditValue);
+    // console.log("order.details_order?.transactions",order.details_order?.transactions);
+    // console.log("boolean",cashValue + creditValue >= orderPrice);
+    if (isNaN(orderPrice)) return false;
 
-    return !isNaN(cashValue) && !isNaN(orderPrice) && cashValue > orderPrice ;
+    const isCredit = order.details_order?.transactions?.[0]?.payment_method === 'credit' ||
+      order.details_order?.transactions?.[1]?.payment_method === 'credit';
+
+    if (isCredit) {
+      return cashValue + creditValue >= orderPrice;
+    }
+    return cashValue >= orderPrice;
   }
 
   shouldShowReturnInvoiceSection(order: any): boolean {
