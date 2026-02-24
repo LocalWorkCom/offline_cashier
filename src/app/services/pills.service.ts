@@ -72,7 +72,7 @@ export class PillsService {
   }
   //end dalia
 
-  getPillsV2(page: number = 1, orderNumber: string = '', orderType: string = 'all', perPage: number = 30): Observable<any> {
+  getPillsV2(page: number = 1, orderNumber: string = '', orderType: string = 'all', perPage: number = 28, status: string = 'all'): Observable<any> {
     const token = localStorage.getItem('authToken');
     if (!token) {
       throw new Error('No authentication token found');
@@ -84,6 +84,22 @@ export class PillsService {
     }
     if (orderType && orderType !== 'all') {
       url += `&order_type=${orderType}`;
+    }
+    if (status && status !== 'all') {
+      url += `&status=${status}`;
+    }
+    return this.http.get(url, { headers });
+  }
+
+  getTypeStatusCounts(type: string = 'all'): Observable<any> {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    let url = `${this.apiUrl}/invoices/types-status-counts`;
+    if (type && type !== 'all') {
+      url += `?type=${type}`;
     }
     return this.http.get(url, { headers });
   }
