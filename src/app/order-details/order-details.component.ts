@@ -639,15 +639,6 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   }
 
   onConfirmChangeOrderTypeClickDetails(): void {
-    if (this.selectedNewOrderType === 'Delivery') {
-      const confirmEl = document.getElementById('confirmChangeOrderTypeModalDetails');
-      if (confirmEl) {
-        const inst = bootstrap.Modal.getInstance(confirmEl);
-        inst?.hide();
-      }
-      this.router.navigate(['/orders'], { queryParams: { openOrder: this.orderId, action: 'changeType' } });
-      return;
-    }
     this.submitChangeOrderTypeDetails();
   }
 
@@ -683,8 +674,14 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         if (res?.status) {
           this.errorMessage = res?.message || 'تم تغيير نوع الطلب بنجاح';
           this.status_order = true;
-          setTimeout(() => { this.errorMessage = ''; }, 3000);
           this.fetchOrderDetailsFromAPI();
+          const targetType = newOrderType; // store for use in timeout
+          setTimeout(() => {
+            this.errorMessage = '';
+            if (targetType === 'Delivery') {
+              this.router.navigate(['/orders'], { queryParams: { openOrder: this.orderId, action: 'changeType' } });
+            }
+          }, 2000);
           this.currentOrderForTypeChange = null;
           this.selectedNewOrderType = '';
           this.selectedTableIdForTypeChange = '';
