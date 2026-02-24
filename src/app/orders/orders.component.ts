@@ -4606,10 +4606,14 @@ export class OrdersComponent implements OnDestroy {
       return;
     }
 
-    const body = {
+    const body: Record<string, number | string | undefined> = {
       primary_order_id: this.currentMergeOrder.order_details.order_id,
       secondary_order_id: this.selectedOrderIdForMerge,
     };
+    const paymentStatus = this.currentMergeOrder?.order_details?.payment_status;
+    if (paymentStatus) {
+      body['payment_status'] = paymentStatus;
+    }
 
     // Let the interceptor handle the Authorization header
     this.http
