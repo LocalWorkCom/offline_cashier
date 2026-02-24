@@ -367,15 +367,63 @@ export class PillEditComponent {
       },
     });
   }
-  /** عناصر الطلب ذات كمية أكبر من صفر فقط (بعد التجزئة أو الحذف لا تظهر العناصر المُزالَة) */
+  private safeNum(v: any): number {
+    const n = Number(v);
+    return v != null && !isNaN(n) ? n : 0;
+  }
+
+  /** Whether an order detail item is cancelled (show in different color, exclude from totals). */
+  isItemCancelled(item: any): boolean {
+    const status = (item?.dish_status ?? item?.status ?? '').toString().toLowerCase();
+    return status === 'cancel' || status === 'cancelled';
+  }
+
+  /** عناصر الطلب المعروضة: ذات كمية > 0 أو ملغاة (الملغى يظهر بلون مختلف ولا يُحسب). */
   get activeOrderDetails(): any[] {
     const details = this.orderDetails?.[0];
     if (!details || !Array.isArray(details)) return [];
-    return details.filter((item: any) => (Number(item.quantity) || 0) > 0);
+    return details.filter((item: any) => {
+      const qty = Number(item.quantity) || 0;
+      return qty > 0 || this.isItemCancelled(item);
+    });
   }
-  /** نفس القائمة مصفاة للطباعة (مصفوفة مسطحة) */
+
+  /** ملخص الفاتورة للعرض: يستبعد العناصر الملغاة من المجموع والإجمالي (مثل تفاصيل الطلب وتفاصيل الفاتورة). */
+  get displayInvoiceSummary(): any {
+    const summary = this.invoices?.[0]?.invoice_summary;
+    const items = this.activeOrderDetails || [];
+    if (!summary) return summary;
+    const activeItemsSubtotal = items
+      .filter((item: any) => !this.isItemCancelled(item))
+      .reduce((sum: number, item: any) => sum + this.safeNum(item.total_dish_price), 0);
+    const coupon = this.safeNum(summary.coupon_value);
+    const delivery = this.safeNum(summary.delivery_fees);
+    const servicePct = this.safeNum(summary.service_percentage);
+    let service = this.safeNum(summary.service_fees);
+    if (servicePct > 0) service = (activeItemsSubtotal - coupon) * (servicePct / 100);
+    const taxPct = this.safeNum(summary.tax_percentage);
+    const taxApplication = summary.tax_application ?? false;
+    let tax = this.safeNum(summary.tax_value);
+    if (taxPct > 0 && !taxApplication) {
+      const afterCouponAndService = activeItemsSubtotal - coupon + service;
+      tax = afterCouponAndService * (taxPct / 100);
+    }
+    const total = activeItemsSubtotal - coupon + service + tax + delivery;
+    return {
+      ...summary,
+      subtotal_price_before_coupon: activeItemsSubtotal,
+      service_fees: service,
+      tax_value: tax,
+      total_price: total,
+      total: total,
+    };
+  }
+
+  /** نفس القائمة مصفاة للطباعة: عناصر غير ملغاة وكميتها > 0 فقط. */
   getFilteredOrderDetailsFlat(): any[] {
-    return (this.orderDetails?.flat() || []).filter((item: any) => (Number(item.quantity) || 0) > 0);
+    return (this.orderDetails?.flat() || []).filter(
+      (item: any) => (Number(item.quantity) || 0) > 0 && !this.isItemCancelled(item)
+    );
   }
   hasDeliveryOrDineIn(): boolean {
     return this.invoices?.some((invoice: { order_type: string }) =>
@@ -1472,9 +1520,11 @@ export class PillEditComponent {
     setTimeout(cleanup, 300);
   }
   getInvoiceTotal(): number {
-    // استخدام totalll إذا كان محدثاً (بعد تطبيق الكوبون)، وإلا استخدام invoice_summary.total_price
-    if (this.totalll && this.totalll > 0) {
-      return this.totalll;
+    // بعد تطبيق الكوبون نستخدم totalll؛ وإلا ملخص العرض (يستبعد الملغى) ثم invoice_summary
+    if (this.totalll != null && this.totalll > 0) return this.totalll;
+    const display = this.displayInvoiceSummary;
+    if (display?.total_price != null && !isNaN(Number(display.total_price))) {
+      return Number(display.total_price);
     }
     return this.invoices?.[0]?.invoice_summary?.total_price || 0;
   }
