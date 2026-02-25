@@ -12,6 +12,7 @@ import { IndexeddbService } from '../services/indexeddb.service';
 import { TablesService } from '../services/tables.service';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { EditOrderModalComponent } from '../edit-order-modal/edit-order-modal.component';
+import { PhoneCheckService } from '../services/phoneCheck';
 
 declare var bootstrap: any;
 
@@ -52,6 +53,35 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   availableTables: any[] = [];
   isChangeTypeSubmitting: boolean = false;
 
+  /** Delivery state for change-type → Delivery flow (mirrors OrdersComponent) */
+  deliveryAreas: any[] = [];
+  changeTypeDeliveryName: string = '';
+  changeTypeDeliveryPhone: string = '';
+  changeTypeDeliveryCountryCode: string = '';
+  changeTypeDeliveryCountrySearchTerm: string = '';
+  changeTypeDeliveryFoundAddresses: any[] = [];
+  changeTypeDeliverySelectedAddressId: string = '';
+  changeTypeDeliveryPhoneTouched: boolean = false;
+  changeTypeDeliveryPhoneMessage: string = '';
+  changeTypeDeliverySearchPhoneIdle: boolean = true;
+  changeTypeDeliveryDeliveryFormSubmitted: boolean = false;
+  changeTypeDeliveryAreaId: string = '';
+  changeTypeDeliveryBuildingType: string = 'apartment';
+  changeTypeDeliveryBuilding: string = '';
+  changeTypeDeliveryApartment: string = '';
+  changeTypeDeliveryFloor: string = '';
+  changeTypeDeliveryAddress: string = '';
+  changeTypeDeliveryNotes: string = '';
+  changeTypeDeliveryHotelId: any = '';
+  changeTypeDeliveryHotelName: string = '';
+  changeTypeDeliveryHotels: any[] = [];
+  changeTypeDeliveryUseSameWhatsapp: boolean = true;
+  changeTypeDeliveryWhatsapp: string = '';
+  changeTypeDeliveryWhatsappCode: string = '';
+  changeTypeDeliveryCountryList: any[] = [];
+  changeTypeDeliveryFilteredCountries: any[] = [];
+  changeTypeDeliverySelectedCountry: any = null;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -60,7 +90,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     private location: Location,
     private dbService: IndexeddbService,
     private tablesService: TablesService,
-    private ngbModal: NgbModal
+    private ngbModal: NgbModal,
+    private phoneCheckService: PhoneCheckService
   ) { }
   ngOnInit(): void {
     this.route.paramMap.subscribe({
@@ -639,7 +670,41 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   }
 
   onConfirmChangeOrderTypeClickDetails(): void {
-    this.submitChangeOrderTypeDetails();
+    if (this.selectedNewOrderType === 'Delivery') {
+      // Hide the confirm modal, then open the delivery details modal (same as OrdersComponent)
+      const confirmEl = document.getElementById('confirmChangeOrderTypeModalDetails');
+      if (confirmEl) {
+        const inst = bootstrap.Modal.getInstance(confirmEl);
+        inst?.hide();
+      }
+      setTimeout(() => this.openChangeTypeDeliveryDetailsModal(), 300);
+    } else {
+      this.submitChangeOrderTypeDetails();
+    }
+  }
+
+  openChangeTypeDeliveryDetailsModal(): void {
+    const o = this.currentOrderForTypeChange;
+    this.changeTypeDeliveryPhoneMessage = '';
+    this.changeTypeDeliveryPhoneTouched = false;
+    this.changeTypeDeliveryDeliveryFormSubmitted = false;
+    this.changeTypeDeliveryFoundAddresses = [];
+    this.changeTypeDeliverySelectedAddressId = '';
+    if (o?.order_details) {
+      this.changeTypeDeliveryName = this.changeTypeDeliveryName || o.order_details.client_name || '';
+      this.changeTypeDeliveryPhone = this.changeTypeDeliveryPhone || o.order_details.client_phone || '';
+      this.changeTypeDeliveryCountryCode = (this.changeTypeDeliveryCountryCode || o.order_details.client_country_code || '+20').trim();
+    } else {
+      this.changeTypeDeliveryCountryCode = (this.changeTypeDeliveryCountryCode || '+20').trim();
+    }
+    this.loadDeliveryAreas();
+    this.loadChangeTypeHotels();
+    this.loadChangeTypeDeliveryCountries();
+    const modalEl = document.getElementById('changeTypeDeliveryDetailsModal');
+    if (modalEl) {
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    }
   }
 
   submitChangeOrderTypeDetails(): void {
@@ -662,6 +727,32 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     if (newOrderType === 'dine-in' && this.selectedTableIdForTypeChange) {
       body['table_id'] = parseInt(this.selectedTableIdForTypeChange, 10);
     }
+    // Mirror OrdersComponent: include delivery payload when changing to Delivery
+    if (newOrderType === 'Delivery') {
+      const od = this.currentOrderForTypeChange?.order_details;
+      const addressId = this.changeTypeDeliverySelectedAddressId || od?.client_address_id;
+      if (addressId && !this.changeTypeDeliveryAreaId) {
+        body['client_address'] = addressId;
+      }
+      body['client_name'] = this.changeTypeDeliveryName?.trim() || od?.client_name || '';
+      body['client_phone'] = this.changeTypeDeliveryPhone?.trim() || od?.client_phone || '';
+      body['client_country_code'] = (this.changeTypeDeliverySelectedCountry?.code || this.changeTypeDeliveryCountryCode || od?.client_country_code || '').trim();
+      if (this.changeTypeDeliveryAreaId) {
+        body['area_id'] = parseInt(this.changeTypeDeliveryAreaId, 10);
+        body['delivery_address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || 'عنوان التوصيل';
+        body['address_type'] = this.changeTypeDeliveryBuildingType || 'apartment';
+        body['building'] = this.changeTypeDeliveryBuilding?.trim() || null;
+        body['apartment_number'] = this.changeTypeDeliveryApartment?.trim() || null;
+        body['floor_number'] = this.changeTypeDeliveryFloor?.trim() || null;
+        body['address'] = body['delivery_address'];
+        body['notes'] = this.changeTypeDeliveryNotes?.trim() || null;
+        if (this.changeTypeDeliveryBuildingType === 'hotel' && this.changeTypeDeliveryHotelId) {
+          body['hotel_id'] = parseInt(String(this.changeTypeDeliveryHotelId), 10);
+        }
+        if (this.changeTypeDeliveryWhatsappCode?.trim()) body['whatsapp_number_code'] = this.changeTypeDeliveryWhatsappCode.trim();
+        if (this.changeTypeDeliveryWhatsapp?.trim()) body['whatsapp_number'] = this.changeTypeDeliveryWhatsapp.trim();
+      }
+    }
 
     this.http.post(`${baseUrl}api/orders/changeOrderType`, body, { headers }).subscribe({
       next: (res: any) => {
@@ -671,20 +762,20 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
           const inst = bootstrap.Modal.getInstance(confirmEl);
           inst?.hide();
         }
+        const deliveryEl = document.getElementById('changeTypeDeliveryDetailsModal');
+        if (deliveryEl) {
+          const inst2 = bootstrap.Modal.getInstance(deliveryEl);
+          inst2?.hide();
+        }
         if (res?.status) {
           this.errorMessage = res?.message || 'تم تغيير نوع الطلب بنجاح';
           this.status_order = true;
           this.fetchOrderDetailsFromAPI();
-          const targetType = newOrderType; // store for use in timeout
-          setTimeout(() => {
-            this.errorMessage = '';
-            if (targetType === 'Delivery') {
-              this.router.navigate(['/orders'], { queryParams: { openOrder: this.orderId, action: 'changeType' } });
-            }
-          }, 2000);
+          setTimeout(() => { this.errorMessage = ''; }, 4000);
           this.currentOrderForTypeChange = null;
           this.selectedNewOrderType = '';
           this.selectedTableIdForTypeChange = '';
+          this.resetChangeTypeDeliveryForm();
         } else {
           this.errorMessage = (res?.errorData && typeof res.errorData === 'object' && Object.values(res.errorData).flat().filter(Boolean)[0]) || res?.message || 'حدث خطأ أثناء تغيير نوع الطلب';
           setTimeout(() => { this.errorMessage = ''; }, 4000);
@@ -696,6 +787,209 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         setTimeout(() => { this.errorMessage = ''; }, 4000);
       },
     });
+  }
+
+  submitChangeOrderTypeFromDeliveryModal(): void {
+    this.changeTypeDeliveryDeliveryFormSubmitted = true;
+    this.changeTypeDeliveryPhoneTouched = true;
+    const phoneError = this.getChangeTypeDeliveryPhoneError();
+    if (phoneError) {
+      this.changeTypeDeliveryPhoneMessage = phoneError;
+      return;
+    }
+    this.submitChangeOrderTypeDetails();
+  }
+
+  loadDeliveryAreas(): void {
+    if (this.deliveryAreas.length > 0) return;
+    const branchId = localStorage.getItem('branch_id');
+    if (!branchId) return;
+    this.http.get<any>(`${baseUrl}api/areas/${branchId}`).subscribe({
+      next: (res) => { if (res?.status && Array.isArray(res.data)) this.deliveryAreas = res.data; },
+      error: () => {},
+    });
+  }
+
+  loadChangeTypeHotels(): void {
+    if (this.changeTypeDeliveryHotels.length > 0) return;
+    const token = localStorage.getItem('authToken');
+    this.http.get<any>(`${baseUrl}api/listHotels`, { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) }).subscribe({
+      next: (res) => { this.changeTypeDeliveryHotels = Array.isArray(res?.data) ? res.data : []; },
+      error: () => { this.changeTypeDeliveryHotels = []; },
+    });
+  }
+
+  loadChangeTypeDeliveryCountries(): void {
+    if (this.changeTypeDeliveryCountryList.length > 0) {
+      this.filterChangeTypeDeliveryCountries();
+      this.syncChangeTypeSelectedCountryFromCode();
+      return;
+    }
+    this.http.get<any>(`${baseUrl}api/country`).subscribe({
+      next: (response) => {
+        if (response?.data && Array.isArray(response.data)) {
+          const allowedCodes = ['+20', '+962', '+964', '+212', '+963', '+965', '+966'];
+          this.changeTypeDeliveryCountryList = response.data
+            .map((c: any) => ({
+              code: (c.phone_code || '').trim(),
+              flag: c.image || '',
+              phoneLength: c.length || 10,
+            }))
+            .filter((c: any) => allowedCodes.includes(c.code.replace(/\s+/g, '')));
+          this.filterChangeTypeDeliveryCountries();
+          this.syncChangeTypeSelectedCountryFromCode();
+        }
+      },
+      error: () => {},
+    });
+  }
+
+  private syncChangeTypeSelectedCountryFromCode(): void {
+    const code = (this.changeTypeDeliveryCountryCode || '').trim().replace(/\s+/g, '');
+    if (!code) return;
+    const match = this.changeTypeDeliveryCountryList.find(
+      (c: any) => (c.code || '').replace(/\s+/g, '') === code
+    );
+    if (match) this.changeTypeDeliverySelectedCountry = match;
+  }
+
+  filterChangeTypeDeliveryCountries(): void {
+    const term = (this.changeTypeDeliveryCountrySearchTerm || '').trim().toLowerCase();
+    this.changeTypeDeliveryFilteredCountries = term
+      ? this.changeTypeDeliveryCountryList.filter((c: any) => (c.code || '').toLowerCase().includes(term))
+      : [...this.changeTypeDeliveryCountryList];
+  }
+
+  selectChangeTypeDeliveryCountry(country: any): void {
+    this.changeTypeDeliverySelectedCountry = country;
+    this.changeTypeDeliveryCountryCode = country?.code || '';
+  }
+
+  useSameWhatsappChangeType(value: boolean): void {
+    this.changeTypeDeliveryUseSameWhatsapp = value;
+    if (value) {
+      this.changeTypeDeliveryWhatsapp = '';
+      this.changeTypeDeliveryWhatsappCode = this.changeTypeDeliverySelectedCountry?.code || this.changeTypeDeliveryCountryCode || '';
+    }
+  }
+
+  getChangeTypeDeliveryPhoneError(): string | null {
+    const phone = (this.changeTypeDeliveryPhone || '').trim();
+    const country = this.changeTypeDeliverySelectedCountry;
+    const requiredLength = country?.phoneLength ?? 10;
+    if (!phone) return 'رقم الهاتف مطلوب';
+    if (!/^\d+$/.test(phone)) return 'رقم الهاتف يجب أن يحتوي على أرقام فقط';
+    if (phone.length !== requiredLength) return `رقم الهاتف يجب أن يحتوي على ${requiredLength} رقم فقط`;
+    return null;
+  }
+
+  searchChangeTypeByPhone(): void {
+    this.changeTypeDeliveryPhoneTouched = true;
+    const phone = (this.changeTypeDeliveryPhone || '').trim();
+    const countryCode = this.changeTypeDeliverySelectedCountry?.code || this.changeTypeDeliveryCountryCode || '';
+    const phoneError = this.getChangeTypeDeliveryPhoneError();
+    this.changeTypeDeliveryPhoneMessage = '';
+    this.changeTypeDeliveryFoundAddresses = [];
+    this.changeTypeDeliverySelectedAddressId = '';
+    if (phoneError) { this.changeTypeDeliveryPhoneMessage = phoneError; return; }
+    if (!countryCode) { this.changeTypeDeliveryPhoneMessage = 'يرجى اختيار كود الدولة أولاً'; return; }
+    this.changeTypeDeliverySearchPhoneIdle = false;
+    const body = { country_code: countryCode.trim(), address_phone: phone };
+    this.phoneCheckService.checkPhone(body).subscribe({
+      next: (res: any) => {
+        this.changeTypeDeliverySearchPhoneIdle = true;
+        if (res?.status === true && res?.data != null) {
+          const data = Array.isArray(res.data) ? res.data : [res.data];
+          if (!data.length) { this.changeTypeDeliveryPhoneMessage = 'لا يوجد عميل مسجل بهذا الرقم'; return; }
+          this.changeTypeDeliveryName = data[0].user_name || data[0].client_name || this.changeTypeDeliveryName || '';
+          this.changeTypeDeliveryFoundAddresses = data;
+          if (data.length === 1) {
+            this.applyChangeTypeAddressFromItem(data[0]);
+            this.changeTypeDeliverySelectedAddressId = String(data[0].id);
+          } else {
+            this.changeTypeDeliverySelectedAddressId = String(data[0].id);
+            this.applyChangeTypeAddressFromItem(data[0]);
+          }
+          this.changeTypeDeliveryPhoneMessage = `تم العثور على عميل (${data.length} عنوان)`;
+        } else {
+          this.changeTypeDeliveryPhoneMessage = (res?.message && String(res.message).trim()) || 'لا يوجد عميل مسجل بهذا الرقم';
+        }
+      },
+      error: (err: any) => {
+        this.changeTypeDeliverySearchPhoneIdle = true;
+        this.changeTypeDeliveryPhoneMessage = err?.error?.message || 'حدث خطأ أثناء البحث. تأكد من الرقم وكود الدولة.';
+      }
+    });
+  }
+
+  private applyChangeTypeAddressFromItem(addr: any): void {
+    if (!addr) return;
+    this.changeTypeDeliveryAreaId = addr.area_id != null ? String(addr.area_id) : (addr.area?.id != null ? String(addr.area.id) : this.changeTypeDeliveryAreaId || '');
+    this.changeTypeDeliveryAddress = addr.address || '';
+    this.changeTypeDeliveryBuilding = addr.building || '';
+    this.changeTypeDeliveryApartment = addr.apartment_number || addr.apartment || '';
+    this.changeTypeDeliveryFloor = addr.floor_number || addr.floor || '';
+    this.changeTypeDeliveryNotes = addr.notes || '';
+    const at = (addr.address_type || '').toLowerCase();
+    if (['apartment', 'شقة'].includes(at)) this.changeTypeDeliveryBuildingType = 'apartment';
+    else if (['villa', 'فيلا'].includes(at)) this.changeTypeDeliveryBuildingType = 'villa';
+    else if (['office', 'مكتب'].includes(at)) this.changeTypeDeliveryBuildingType = 'office';
+    else if (['hotel', 'فندق'].includes(at)) {
+      this.changeTypeDeliveryBuildingType = 'hotel';
+      if (addr.hotel_id != null) this.changeTypeDeliveryHotelId = addr.hotel_id;
+    }
+  }
+
+  onChangeTypeDeliveryAddressSelect(): void {
+    const addr = this.changeTypeDeliveryFoundAddresses.find((a: any) => String(a.id) === String(this.changeTypeDeliverySelectedAddressId));
+    if (addr) this.applyChangeTypeAddressFromItem(addr);
+  }
+
+  onChangeTypeHotelSelect(hotelId: string | number): void {
+    if (!hotelId) { this.changeTypeDeliveryHotelName = ''; return; }
+    const hotel = this.changeTypeDeliveryHotels.find((h: any) => String(h.id) === String(hotelId));
+    this.changeTypeDeliveryHotelName = hotel ? (hotel.name_ar || hotel.name_en || hotel.name || '') : '';
+  }
+
+  isDeliveryInfoComplete(): boolean {
+    if (this.selectedNewOrderType !== 'Delivery') return true;
+    const od = this.currentOrderForTypeChange?.order_details;
+    // If phone and name and country code provided, that's enough (address can be existing)
+    const hasPhone = !!(this.changeTypeDeliveryPhone?.trim() || od?.client_phone);
+    const hasName = !!(this.changeTypeDeliveryName?.trim() || od?.client_name);
+    const hasCode = !!(this.changeTypeDeliveryCountryCode?.trim() || this.changeTypeDeliverySelectedCountry?.code || od?.client_country_code);
+    if (!hasPhone || !hasName || !hasCode) return false;
+    // If we have a selected address from phone search, that's sufficient
+    if (this.changeTypeDeliverySelectedAddressId || od?.client_address_id) return true;
+    // Otherwise require area and at least one address field
+    if (!this.changeTypeDeliveryAreaId) return false;
+    if (this.changeTypeDeliveryBuildingType === 'hotel') return !!(this.changeTypeDeliveryHotelId || this.changeTypeDeliveryHotelName?.trim());
+    return !!(this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim());
+  }
+
+  private resetChangeTypeDeliveryForm(): void {
+    this.changeTypeDeliveryName = '';
+    this.changeTypeDeliveryPhone = '';
+    this.changeTypeDeliveryCountryCode = '';
+    this.changeTypeDeliveryAddress = '';
+    this.changeTypeDeliveryAreaId = '';
+    this.changeTypeDeliveryBuilding = '';
+    this.changeTypeDeliveryApartment = '';
+    this.changeTypeDeliveryFloor = '';
+    this.changeTypeDeliveryBuildingType = 'apartment';
+    this.changeTypeDeliveryNotes = '';
+    this.changeTypeDeliveryHotelName = '';
+    this.changeTypeDeliveryHotelId = '';
+    this.changeTypeDeliveryWhatsapp = '';
+    this.changeTypeDeliveryWhatsappCode = '';
+    this.changeTypeDeliveryUseSameWhatsapp = true;
+    this.changeTypeDeliverySelectedCountry = null;
+    this.changeTypeDeliveryCountrySearchTerm = '';
+    this.changeTypeDeliveryFoundAddresses = [];
+    this.changeTypeDeliverySelectedAddressId = '';
+    this.changeTypeDeliveryPhoneMessage = '';
+    this.changeTypeDeliveryPhoneTouched = false;
+    this.changeTypeDeliveryDeliveryFormSubmitted = false;
   }
 
   getOrderTypeShortLabel(type: string): string {
