@@ -2692,9 +2692,16 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       return { isValid: false, errorMessage: this.paymentError };
     }
 
-    // ✅ التحقق من finalTipSummary
+    // ✅ التحقق من finalTipSummary (مع استثناء الدفع المختلط: نعتمد على القيم المدخلة فعلياً)
     if (this.finalTipSummary && this.finalTipSummary.paymentAmount > 0) {
-      const totalEntered = Number(this.finalTipSummary.paymentAmount);
+      let totalEntered: number;
+      if (this.selectedPaymentMethod === 'cash + credit') {
+        const cashAmount = Number(this.cashAmountMixed) || 0;
+        const creditAmount = Number(this.creditAmountMixed) || 0;
+        totalEntered = Number((cashAmount + creditAmount).toFixed(2));
+      } else {
+        totalEntered = Number(this.finalTipSummary.paymentAmount);
+      }
       if (totalEntered < (cartTotal - tolerance)) {
         const remainingBalance = cartTotal - totalEntered;
         return {
@@ -3131,17 +3138,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           let finalCashAmount: number;
           let finalCreditAmount: number;
 
-          // ✅ استخدام finalTipSummary إذا كان موجوداً (يحتوي على الإكرامية)
-          if (this.finalTipSummary && this.finalTipSummary.cashAmountMixed !== undefined && this.finalTipSummary.creditAmountMixed !== undefined) {
-            // ✅ استخدام القيم من finalTipSummary مباشرة (تم حسابها بشكل صحيح مع الإكرامية)
-            finalCashAmount = this.finalTipSummary.cashAmountMixed || 0;
-            finalCreditAmount = this.finalTipSummary.creditAmountMixed || 0;
-          } else {
-            // في حالة عدم وجود finalTipSummary، استخدم القيم المدخلة
-            finalCashAmount = Number(this.cashAmountMixed) || 0;
-            // ✅ في حالة عدم وجود إكرامية: credit_amount = bill_amount - cash_amount
-            finalCreditAmount = Math.max(0, billAmountNum - finalCashAmount);
-          }
+          // ✅ استخدام المبالغ المدخلة فعلياً من المستخدم (كاش + فيزا) لضمان تطابق التحقق مع ما يراه المستخدم
+          const userCashEntered = Number(this.cashAmountMixed) || 0;
+          const userCreditEntered = Number(this.creditAmountMixed) || 0;
+          finalCashAmount = userCashEntered;
+          finalCreditAmount = userCreditEntered;
 
           const totalPaid = Number((finalCashAmount + finalCreditAmount).toFixed(2));
           
@@ -3149,7 +3150,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           const tipAmount = this.finalTipSummary?.tipAmount || 0;
           const requiredAmount = billAmountNum + tipAmount;
 
-          if (totalPaid < billAmountNum) {
+          if (totalPaid < requiredAmount) {
             this.amountError = true;
             this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${requiredAmount.toFixed(2)} ${this.currencySymbol}`;
             this.isLoading = false;
