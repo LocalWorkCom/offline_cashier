@@ -279,21 +279,10 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       });
   }
 
-  /** Show all items: active (qty > 0) and cancelled (so they appear in yellow). Exclude only moved/split (qty 0 and not cancelled). */
+  /** Exclude moved (split) items: only show items with quantity > 0 so original order shows remaining items only. */
   private filterMovedOrderItems(items: any[]): any[] {
     if (!items || !Array.isArray(items)) return [];
-    return items.filter((item: any) => {
-      const qty = Number(item.quantity) || 0;
-      const status = (item.dish_status ?? item.status ?? '').toString().toLowerCase();
-      const isCancelled = status === 'cancel' || status === 'cancelled';
-      return qty > 0 || isCancelled;
-    });
-  }
-
-  /** Whether this item is cancelled (display in yellow, no edit/delete). */
-  isItemCancelled(item: any): boolean {
-    const status = (item?.dish_status ?? item?.status ?? '').toString().toLowerCase();
-    return status === 'cancel' || status === 'cancelled';
+    return items.filter((item: any) => (Number(item.quantity) || 0) > 0);
   }
 
   /**
@@ -302,9 +291,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
    */
   private recalculateSummaryFromDisplayedItems(summary: any, items: any[]): any {
     if (!summary || !items || items.length === 0) return summary;
-    const itemsSubtotal = items
-      .filter((item: any) => !this.isItemCancelled(item))
-      .reduce((sum: number, item: any) => sum + this.safeNum(item.total_dish_price), 0);
+    const itemsSubtotal = items.reduce((sum: number, item: any) => sum + this.safeNum(item.total_dish_price), 0);
     const summarySubtotal = this.safeNum(summary.subtotal_price_before_coupon ?? summary.subtotal ?? summary.total_dish_price);
     const diff = Math.abs(itemsSubtotal - summarySubtotal);
     if (diff < 0.02) return summary;
@@ -410,7 +397,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
           if (response) {
             const order = response.data.orderDetails[0];
             this.currencySymbol = order.currency_symbol;
-            this.paymenMethod = order.transactions?.[0]?.payment_method ?? 'Unknown';
+            this.paymenMethod = order.transactions[0].payment_method;
             this.deliveryData = order.order_type === 'Delivery' ? response.data.orderDetails[0].delivery_data : null;
             const summary = order.order_summary || {};
             const rawFee = summary.delivery_fees ?? 0;
@@ -418,30 +405,17 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
             const applied = this.normalizeSummaryByOrderType(orderType, summary, Number(rawFee));
             this.deliveryFees = applied.deliveryFees;
 
+            console.log(response.data, 'test');
             this.orderDetails = order;
             this.orderItems = this.filterMovedOrderItems(order.order_details || []);
-            // Recalculate summary from displayed items so sub amount matches all items (e.g. after merge/split)
-            this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
-            // After merge (clearCoupon=1): remove coupon from display and recalc total without coupon
-            if (this.clearCouponAfterSplit) {
-              const sub = this.safeNum(this.orderSummary.subtotal ?? this.orderSummary.subtotal_price_before_coupon ?? this.orderSummary.total_dish_price);
-              const service = this.safeNum(this.orderSummary.service_fees);
-              const tax = this.safeNum(this.orderSummary.tax_value);
-              const delivery = this.safeNum(this.orderSummary.delivery_fees);
-              const total = sub + service + tax + delivery;
-              this.orderSummary = {
-                ...this.orderSummary,
-                coupon_id: null,
-                coupon_value: 0,
-                coupon_title: null,
-                total,
-                total_price: total,
-              };
-            }
-            order.order_summary = this.orderSummary;
+            // this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
+            this.orderSummary = response.data.orderDetails[0].order_summary;
             if (this.deliveryData?.delivery_name == ' ') {
               this.deliveryData.delivery_name = 'لا يوجد';
             }
+            console.log(' ordtterSummary :', this.orderDetails);
+
+            console.log(' orderSummary :', this.orderSummary);
             this.loading = false;
           } else {
             this.error = 'No order details available.';
@@ -724,13 +698,9 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     this.router.navigate(['/orders'], { queryParams: { openOrder: this.orderId, action: 'changeType' } });
   }
 
-  /** Whether to show Cancel/Modify item buttons for this line (unpaid, pending/inprogress item). Shown for all order types including talabat (طلبات). */
+  /** Whether to show Cancel/Modify item buttons for this line (unpaid, pending/inprogress item). */
   canShowItemActions(item: any): boolean {
-    const d = this.orderDetails;
-    if (!d) return false;
-    if (d.status === 'cancelled' || d.status === 'cancel') return false;
-    const paymentStatus = d.payment_status ?? d.transactions?.[0]?.payment_status;
-    if (paymentStatus !== 'unpaid') return false;
+    if (!this.canShowOrderActions()) return false;
     const status = item?.dish_status;
     return status === 'pending' || status === 'inprogress';
   }
@@ -750,7 +720,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     const quantity = Number(item?.quantity) || 1;
     const body = {
       order_id: this.orderId,
-      items: [{ item_id: detailId, quantity }],
+      items: [{ order_detail_id: detailId, quantity }],
       type: 'partial',
       reason: 'cashier reason',
       flag: 'cancel',
@@ -774,7 +744,6 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         this.errorMessage = err?.error?.message || 'فشل حذف الصنف';
         this.deleteItemErrMsg = err?.error?.message || 'فشل حذف الصنف';
         setTimeout(() => { this.errorMessage = ''; }, 3000);
-        this.fetchOrderDetailsFromAPI();
       },
     });
   }
@@ -801,10 +770,9 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     this.deleteItemErrMsg = '';
   }
 
-  /** Confirm delete from modal: mark item as cancelled so it turns yellow, then call cancelItem and close modal when done. */
+  /** Confirm delete from modal: call cancelItem then close modal when done. */
   confirmDeleteItem(): void {
     if (!this.itemToDelete) return;
-    this.itemToDelete.dish_status = 'cancel';
     this.cancelItem(this.itemToDelete, () => this.hideDeleteItemModal());
   }
 
