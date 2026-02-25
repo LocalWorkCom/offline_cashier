@@ -480,11 +480,9 @@ export class CartComponent {
 
   /** Whether to show Cancel/Modify item buttons for this line. */
   canShowItemActions(item: any): boolean {
-    if (!this.orderDetails) return false;
+    if (!this.orderDetails || this.isOrderPaid()) return false;
     const d = this.orderDetails;
     if (d.status === 'cancelled' || d.status === 'cancel') return false;
-    const paymentStatus = d.payment_status ?? d.transactions?.[0]?.payment_status;
-    if (paymentStatus !== 'unpaid') return false;
     const status = item?.dish_status;
     return status === 'pending' || status === 'inprogress';
   }
@@ -595,13 +593,22 @@ export class CartComponent {
 
   // === Order Action Methods (from OrderDetails) ===
 
+  isOrderPaid(): boolean {
+    const d = this.orderDetails;
+    if (!d) return false;
+    const paymentStatus = d.payment_status ?? d.transactions?.[0]?.payment_status;
+    return paymentStatus === 'paid';
+  }
+
   /** Whether to show the order actions card (unpaid, pending, not talabat). */
   canShowOrderActions(): boolean {
     const d = this.orderDetails;
-    if (!d) return false;
+    if (!d || this.isOrderPaid()) return false;
     console.log('CartComponent Order Status:', d.status, 'Payment Status:', d.payment_status, 'Type:', d.order_type);
+    
     if (d.status === 'cancelled' || d.status === 'cancel') return false;
     if (d.order_type === 'talabat') return false;
+    
     return true;
   }
 
