@@ -396,3 +396,175 @@
       </div>
     </div>
   </div>
+
+  <!-- Delivery Details Modal (Change Type → Delivery) -->
+  <div class="modal fade" id="changeTypeDeliveryDetailsModal" tabindex="-1" aria-labelledby="changeTypeDeliveryDetailsModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content p-3">
+        <div class="modal-header border-0 d-flex justify-content-between align-items-center" dir="rtl">
+          <div class="d-flex align-items-center gap-2">
+            <span class="rounded-circle p-2 d-inline-flex align-items-center justify-content-center" style="background-color:#e8e0f0">
+              <i class="fa-solid fa-truck" style="color:#9c27b0"></i>
+            </span>
+            <h5 class="modal-title fw-bold mb-0" id="changeTypeDeliveryDetailsModalLabel">بيانات التوصيل</h5>
+          </div>
+          <button type="button" class="btn-close ms-0" data-bs-dismiss="modal" aria-label="إغلاق"></button>
+        </div>
+        <div class="modal-body" dir="rtl">
+          <p class="small text-muted mb-3">أدخل بيانات العميل والعنوان لتحديد رسوم التوصيل حسب المنطقة.</p>
+          <h6 class="fw-bold mb-3">معلومات العميل</h6>
+
+          <div class="mb-3 input-group border rounded">
+            <span class="input-group-text" *ngIf="changeTypeDeliveryName">ادخل اسم العميل</span>
+            <input type="text" class="form-control border-0" [(ngModel)]="changeTypeDeliveryName"
+                   name="ctdName" placeholder="اسم العميل"
+                   [ngClass]="{'has-value': changeTypeDeliveryName}">
+          </div>
+
+          <div class="d-flex gap-2 align-items-stretch mb-3 flex-wrap" dir="rtl">
+            <div class="flex-grow-1" style="min-width:140px">
+              <div class="input-group h-100 border rounded">
+                <span class="input-group-text" *ngIf="changeTypeDeliveryPhone">ادخل رقم العميل</span>
+                <input type="text" class="form-control text-end border-0" [(ngModel)]="changeTypeDeliveryPhone"
+                       name="ctdPhone" placeholder="ادخل رقم الهاتف"
+                       [ngClass]="{'has-value': changeTypeDeliveryPhone, 'is-invalid': (changeTypeDeliveryPhoneTouched || changeTypeDeliveryDeliveryFormSubmitted) && getChangeTypeDeliveryPhoneError()}"
+                       (blur)="changeTypeDeliveryPhoneTouched = true" />
+              </div>
+              <div *ngIf="(changeTypeDeliveryPhoneTouched || changeTypeDeliveryDeliveryFormSubmitted) && getChangeTypeDeliveryPhoneError()" class="invalid-feedback d-block small text-danger mt-1">
+                {{ getChangeTypeDeliveryPhoneError() }}
+              </div>
+            </div>
+            <div class="dropdown change-type-country-dropdown" style="min-width:130px">
+              <button class="change-type-country-btn dropdown-toggle text-muted w-100 h-100 d-flex align-items-center justify-content-between px-3" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <span class="px-1">{{ changeTypeDeliverySelectedCountry?.code || 'اختر الدولة' }}</span>
+                <img *ngIf="changeTypeDeliverySelectedCountry?.flag" [src]="changeTypeDeliverySelectedCountry.flag" class="flag-icon ms-1" style="width:25px;height:15px;object-fit:contain" alt="" />
+              </button>
+              <ul class="dropdown-menu dropdown-list w-100 p-2">
+                <li class="mb-2">
+                  <input type="text" class="form-control form-control-sm" [(ngModel)]="changeTypeDeliveryCountrySearchTerm" (ngModelChange)="filterChangeTypeDeliveryCountries()" placeholder="ابحث" name="ctdCountrySearch" />
+                </li>
+                <li *ngFor="let country of changeTypeDeliveryFilteredCountries" (click)="selectChangeTypeDeliveryCountry(country)" class="dropdown-item d-flex justify-content-between text-muted p-2" style="cursor:pointer">
+                  <span>{{ country.code }}</span>
+                  <img *ngIf="country.flag" [src]="country.flag" class="flag-icon" style="width:25px;height:15px;object-fit:contain" alt="" />
+                </li>
+              </ul>
+            </div>
+            <div style="flex:0 0 auto">
+              <button type="button" class="btn btn-danger px-3 py-2 h-100" (click)="searchChangeTypeByPhone()" [disabled]="!changeTypeDeliverySearchPhoneIdle">
+                <span *ngIf="changeTypeDeliverySearchPhoneIdle">ابحث برقم الهاتف</span>
+                <span *ngIf="!changeTypeDeliverySearchPhoneIdle" class="d-flex align-items-center gap-2">
+                  <span class="spinner-border spinner-border-sm" role="status"></span>
+                  جاري البحث...
+                </span>
+              </button>
+            </div>
+          </div>
+
+          <div *ngIf="changeTypeDeliveryPhoneMessage && !getChangeTypeDeliveryPhoneError()" class="mb-3 small"
+               [class.text-success]="changeTypeDeliveryFoundAddresses.length > 0"
+               [class.text-danger]="changeTypeDeliveryFoundAddresses.length === 0">
+            {{ changeTypeDeliveryPhoneMessage }}
+          </div>
+
+          <div *ngIf="changeTypeDeliveryFoundAddresses.length > 1" class="mb-3">
+            <label class="form-label fw-bold">اختر العنوان</label>
+            <select class="form-select" [(ngModel)]="changeTypeDeliverySelectedAddressId" (ngModelChange)="onChangeTypeDeliveryAddressSelect()" name="ctdAddressSelect">
+              <option *ngFor="let addr of changeTypeDeliveryFoundAddresses" [value]="addr.id">
+                {{ addr.address_type && addr.address ? (addr.address_type + ' - ' + addr.address) : (addr.address || 'عنوان #' + addr.id) }}
+              </option>
+            </select>
+          </div>
+
+          <div class="mb-3">
+            <div class="d-flex align-items-center gap-2 mb-1">
+              <h6 class="mb-0">هل هذا رقم واتساب؟</h6>
+              <a class="text-success fw-bold text-decoration-underline" style="cursor:pointer" (click)="useSameWhatsappChangeType(true)">نعم</a>
+              <a class="text-danger fw-bold text-decoration-underline" style="cursor:pointer" (click)="useSameWhatsappChangeType(false)">لا</a>
+            </div>
+            <div *ngIf="!changeTypeDeliveryUseSameWhatsapp" class="d-flex gap-2 align-items-start">
+              <input type="text" class="form-control flex-grow-1" [(ngModel)]="changeTypeDeliveryWhatsapp" name="ctdWhatsapp" placeholder="رقم الواتساب" />
+              <div class="dropdown" style="min-width:100px">
+                <button class="btn btn-white border dropdown-toggle w-100 py-2" type="button" data-bs-toggle="dropdown">
+                  <span class="text-muted small">{{ changeTypeDeliveryWhatsappCode || 'كود' }}</span>
+                </button>
+                <ul class="dropdown-menu p-2">
+                  <li *ngFor="let c of changeTypeDeliveryFilteredCountries" (click)="changeTypeDeliveryWhatsappCode = c.code" class="dropdown-item text-muted p-2" style="cursor:pointer">{{ c.code }}</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <h6 class="fw-bold mb-3">عنوان التوصيل</h6>
+          <div class="mb-3">
+            <label class="form-label fw-bold">اختر المنطقة</label>
+            <select class="form-select" [(ngModel)]="changeTypeDeliveryAreaId" name="ctdAreaId">
+              <option value="">اختر المنطقة...</option>
+              <option *ngFor="let area of deliveryAreas" [value]="area.id">{{ area.name_ar || area.name_en || area.name }}</option>
+            </select>
+          </div>
+
+          <ul class="nav nav-pills mb-3 flex-wrap gap-1">
+            <li class="nav-item">
+              <button class="nav-link rounded-pill" type="button" [class.active]="changeTypeDeliveryBuildingType === 'apartment'" (click)="changeTypeDeliveryBuildingType = 'apartment'"><i class="fas fa-city me-1"></i>شقة</button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link rounded-pill" type="button" [class.active]="changeTypeDeliveryBuildingType === 'villa'" (click)="changeTypeDeliveryBuildingType = 'villa'"><i class="fas fa-home me-1"></i>فيلا</button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link rounded-pill" type="button" [class.active]="changeTypeDeliveryBuildingType === 'office'" (click)="changeTypeDeliveryBuildingType = 'office'"><i class="fas fa-building me-1"></i>مكتب</button>
+            </li>
+            <li class="nav-item">
+              <button class="nav-link rounded-pill" type="button" [class.active]="changeTypeDeliveryBuildingType === 'hotel'" (click)="changeTypeDeliveryBuildingType = 'hotel'"><i class="fa-solid fa-hotel me-1"></i>فندق</button>
+            </li>
+          </ul>
+
+          <div *ngIf="changeTypeDeliveryBuildingType !== 'hotel'">
+            <div class="mb-3">
+              <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryBuilding" name="ctdBuilding"
+                     [placeholder]="changeTypeDeliveryBuildingType === 'villa' ? 'اسم الفيلا' : changeTypeDeliveryBuildingType === 'office' ? 'اسم المكتب' : 'المبنى'" />
+            </div>
+            <div class="row mb-3" *ngIf="changeTypeDeliveryBuildingType !== 'villa'">
+              <div class="col">
+                <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryApartment" name="ctdApartment"
+                       [placeholder]="changeTypeDeliveryBuildingType === 'office' ? 'رقم المكتب' : 'رقم الشقة'" />
+              </div>
+              <div class="col">
+                <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryFloor" name="ctdFloor" placeholder="الدور" />
+              </div>
+            </div>
+            <div class="mb-3">
+              <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryAddress" name="ctdAddress" placeholder="العنوان بالتفصيل" />
+            </div>
+            <div class="mb-3">
+              <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryNotes" name="ctdNotes" placeholder="علامة مميزة (اختياري)" />
+            </div>
+          </div>
+
+          <div *ngIf="changeTypeDeliveryBuildingType === 'hotel'">
+            <div class="mb-3">
+              <label class="form-label fw-bold">اختر الفندق</label>
+              <select class="form-select" [(ngModel)]="changeTypeDeliveryHotelId" name="ctdHotelId" (ngModelChange)="onChangeTypeHotelSelect($event)">
+                <option value="">اختر الفندق...</option>
+                <option *ngFor="let hotel of changeTypeDeliveryHotels" [value]="hotel.id">{{ hotel.name_ar || hotel.name_en || hotel.name }}</option>
+              </select>
+            </div>
+            <div *ngIf="!changeTypeDeliveryHotels.length" class="mb-3">
+              <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryHotelName" name="ctdHotelName" placeholder="اسم الفندق" />
+            </div>
+            <div class="mb-3">
+              <input type="text" class="form-control" [(ngModel)]="changeTypeDeliveryApartment" name="ctdRoomHotel" placeholder="رقم الغرفة" />
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer border-0 d-flex gap-2 px-4 pb-4 pt-2" style="flex-wrap:nowrap" dir="rtl">
+          <button type="button" class="btn btn-danger rounded-3 py-2" style="flex:0 0 calc(50% - 4px);min-height:44px"
+                  (click)="submitChangeOrderTypeFromDeliveryModal()" [disabled]="!isDeliveryInfoComplete() || isChangeTypeSubmitting">
+            <span *ngIf="isChangeTypeSubmitting" class="spinner-border spinner-border-sm me-2"></span>
+            <i *ngIf="!isChangeTypeSubmitting" class="fa-solid fa-check me-2"></i>
+            تأكيد البيانات
+          </button>
+          <button type="button" class="btn btn-outline-secondary rounded-3 py-2 border" style="flex:0 0 calc(50% - 4px);min-height:44px;background:#fff;color:#495057" data-bs-dismiss="modal">إلغاء</button>
+        </div>
+      </div>
+    </div>
+  </div>
