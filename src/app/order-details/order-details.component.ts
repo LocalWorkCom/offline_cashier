@@ -693,9 +693,10 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     if (o?.order_details) {
       this.changeTypeDeliveryName = this.changeTypeDeliveryName || o.order_details.client_name || '';
       this.changeTypeDeliveryPhone = this.changeTypeDeliveryPhone || o.order_details.client_phone || '';
-      this.changeTypeDeliveryCountryCode = (this.changeTypeDeliveryCountryCode || o.order_details.client_country_code || '+20').trim();
+      const rawCode = (o.order_details.client_country_code || '').trim();
+      this.changeTypeDeliveryCountryCode = this.changeTypeDeliveryCountryCode || rawCode || '+20';
     } else {
-      this.changeTypeDeliveryCountryCode = (this.changeTypeDeliveryCountryCode || '+20').trim();
+      this.changeTypeDeliveryCountryCode = this.changeTypeDeliveryCountryCode || '+20';
     }
     this.loadDeliveryAreas();
     this.loadChangeTypeHotels();
@@ -862,7 +863,9 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
 
   selectChangeTypeDeliveryCountry(country: any): void {
     this.changeTypeDeliverySelectedCountry = country;
-    this.changeTypeDeliveryCountryCode = country?.code || '';
+    this.changeTypeDeliveryCountryCode = (country?.code || '').trim();
+    this.changeTypeDeliveryPhoneTouched = false;
+    this.changeTypeDeliveryPhoneMessage = '';
   }
 
   useSameWhatsappChangeType(value: boolean): void {
@@ -970,7 +973,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   private resetChangeTypeDeliveryForm(): void {
     this.changeTypeDeliveryName = '';
     this.changeTypeDeliveryPhone = '';
-    this.changeTypeDeliveryCountryCode = '';
+    this.changeTypeDeliveryCountryCode = '+20';
     this.changeTypeDeliveryAddress = '';
     this.changeTypeDeliveryAreaId = '';
     this.changeTypeDeliveryBuilding = '';
