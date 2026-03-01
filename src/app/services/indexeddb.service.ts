@@ -371,6 +371,53 @@ export class IndexeddbService {
     });
   }
 
+  /**
+   * حفظ الفواتير في IndexedDB (يُنظّف الـ store ثم يحفظ القائمة).
+   */
+  savePills(pills: any[]): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('pills', 'readwrite');
+        const store = tx.objectStore('pills');
+        store.clear();
+        const toSave = (Array.isArray(pills) ? pills : []).filter(
+          (p) => p != null && (p.invoice_id !== undefined || p.invoice_number !== undefined)
+        );
+        toSave.forEach((p) => {
+          const item = { ...p };
+          if (item.id === undefined) item.id = item.invoice_id ?? item.invoice_number ?? `temp_${Date.now()}_${Math.random()}`;
+          store.put(item);
+        });
+        tx.oncomplete = () => resolve();
+        tx.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  /**
+   * جلب الفواتير من IndexedDB للعرض عند عدم الاتصال.
+   * يُرجع فقط العناصر التي تشبه فاتورة (تحتوي invoice_id أو invoice_number).
+   */
+  getPills(): Promise<any[]> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('pills', 'readonly');
+        const store = tx.objectStore('pills');
+        const request = store.getAll();
+        request.onsuccess = () => {
+          const raw = request.result || [];
+          const valid = raw.filter(
+            (p: any) =>
+              p != null &&
+              (p.invoice_id !== undefined || p.invoice_number !== undefined)
+          );
+          resolve(valid);
+        };
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
   // Mark cart items as synced
   markCartItemsAsSynced(): Promise<void> {
     return this.ensureInit().then(() => {
@@ -455,7 +502,45 @@ export class IndexeddbService {
     return this.setLastSync('orders', timestamp);
   }
 
+  /**
+   * حفظ الطاولات في IndexedDB (للعرض offline).
+   * يُنظّف الـ store ثم يحفظ فقط العناصر التي تحتوي table_number لتفادي حفظ بيانات خاطئة.
+   */
+  saveTables(tables: any[]): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('tables', 'readwrite');
+        const store = tx.objectStore('tables');
+        store.clear();
+        const toSave = (Array.isArray(tables) ? tables : []).filter(
+          (t) => t != null && (t.table_number !== undefined || t.id !== undefined)
+        );
+        toSave.forEach((table) => store.put({ ...table, status: Number(table.status ?? 0) }));
+        tx.oncomplete = () => resolve();
+        tx.onerror = (e) => reject(e);
+      });
+    });
+  }
 
+  /**
+   * جلب الطاولات من IndexedDB للعرض عند عدم الاتصال.
+   * يُرجع فقط العناصر التي تحتوي table_number (لتجنب عرض بيانات خاطئة محفوظة سابقاً).
+   */
+  getTables(): Promise<any[]> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('tables', 'readonly');
+        const store = tx.objectStore('tables');
+        const request = store.getAll();
+        request.onsuccess = () => {
+          const raw = request.result || [];
+          const valid = raw.filter((t: any) => t != null && t.table_number !== undefined);
+          resolve(valid);
+        };
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
 
   // Get last sync time for a specific store
   getLastSync(storeName: string): Promise<number> {
