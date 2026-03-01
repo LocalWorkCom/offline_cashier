@@ -1273,6 +1273,9 @@ export class OrdersComponent implements OnDestroy {
   } {
     const items = this.getDisplayOrderItems(order);
 
+    console.log("items_dalia",items);
+    console.log("order_dalia",order);
+
     let taxTotal = 0;
     let serviceTotal = 0;
     let priceTotal = 0;
@@ -1289,10 +1292,26 @@ export class OrdersComponent implements OnDestroy {
         continue;
       }
 
-      const qty = totalQty || 1;
-      const taxPart = ((item.tax_value ?? 0) / qty) * returnedQty;
-      const servicePart = ((item.service_fees ?? 0) / qty) * returnedQty;
-      const pricePart = ((item.total_dish_price ?? 0) / qty) * returnedQty;
+      // new calculation for the return totals
+      let taxPart : number;
+      let servicePart : number;
+      let pricePart : number;
+      const unitPrice = item.unitPrice;
+      pricePart = unitPrice * returnedQty;
+      if (order.details_order?.order_type === 'dine-in') {
+        servicePart = pricePart * 12 / 100;
+        taxPart = (pricePart + servicePart) * 14/100;
+
+      } else {
+        servicePart =0;
+        taxPart = (pricePart + servicePart) * 14/100;
+
+      }
+
+      // const qty = totalQty || 1;
+      // const taxPart = ((item.tax_value ?? 0) / qty) * returnedQty;
+      // const servicePart = ((item.service_fees ?? 0) / qty) * returnedQty;
+      // const pricePart = ((item.total_dish_price ?? 0) / qty) * returnedQty;
 
       taxTotal += taxPart;
       serviceTotal += servicePart;
@@ -2628,7 +2647,8 @@ export class OrdersComponent implements OnDestroy {
       if (couponType === 'percentage') {
         discountAmount = (couponData.subtotal_price_before_coupon * parseFloat(couponValue)) / 100;
       } else {
-        discountAmount = parseFloat(couponValue);
+        discountAmount = 0;
+        couponValue = '0' ;
       }
 
       console.log('💰 Corrected coupon details (10%):', {
