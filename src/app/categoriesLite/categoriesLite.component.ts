@@ -89,12 +89,12 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
   // }
 
   fetchMenuData() {
-    if (!this.isOnline) {
-      this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
-      return;
+    this.isAllLoading = false;
+    if (this.isOnline) {
+      this.fetchFromAPILite();
+    } else {
+      this.loadCategoriesFromIndexedDB();
     }
-
-    this.fetchFromAPILite();
   }
 
     private fetchFromAPI() {
@@ -134,6 +134,10 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
         this.categories = response.data;
         this.processCategories();
         this.errorMessage = '';
+        // حفظ الـ categories في IndexedDB للعمل offline
+        this.dbService.saveData('categories', this.categories).catch(err =>
+          console.error('Error saving categories to IndexedDB:', err)
+        );
       } else {
         console.error("Invalid response format", response);
         this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
@@ -141,6 +145,28 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
     }, (error) => {
       console.error('API fetch failed, trying offline data:', error);
       this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+      this.isAllLoading = true;
+      this.loadCategoriesFromIndexedDB();
+    });
+  }
+
+  private loadCategoriesFromIndexedDB(): void {
+    this.dbService.getAll('categories').then((categories) => {
+      if (categories && categories.length > 0) {
+        this.categories = categories;
+        this.processCategories();
+        this.errorMessage = '';
+        console.log('Categories loaded from IndexedDB:', categories.length);
+      } else {
+        this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+      }
+      this.isAllLoading = true;
+      this.cdr.detectChanges();
+    }).catch((err) => {
+      console.error('Error loading categories from IndexedDB:', err);
+      this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+      this.isAllLoading = true;
+      this.cdr.detectChanges();
     });
   }
   private processCategories() {
@@ -201,7 +227,12 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
   }
 
   private fetchCategoryDishes(category: any, skipModalClose: boolean): void {
-    if (!category?.id || !this.isOnline) {
+    if (!category?.id) return;
+    // عند العمل offline: استخدام الأطباق المخزنة في الـ category إن وُجدت
+    if (!this.isOnline) {
+      if (Array.isArray(category.dishes) && category.dishes.length > 0) {
+        this.applyCategoryDishes(category, category.dishes, skipModalClose);
+      }
       return;
     }
 

@@ -22,6 +22,16 @@ export class TablesService {
     );
     return this.http.get(`${this.apiUrl}/tables/index`, { headers });
   }
+
+  /** حفظ الطاولات في IndexedDB بعد جلبها من الـ API (للاستخدام offline). */
+  saveTablesToIndexedDB(tables: any[]): void {
+    if (!tables?.length) return;
+    this.db.saveTables(tables).then(() => {
+      console.log('✅ الطاولات محفوظة في IndexedDB:', tables.length);
+    }).catch((err) => {
+      console.error('Error saving tables to IndexedDB:', err);
+    });
+  }
   getOrdersByTableId(tableId: number): Observable<any> {
     const headers = new HttpHeaders().set(
       'Authorization',
@@ -55,9 +65,7 @@ export class TablesService {
               status: Number(table.status),
             }));
             try {
-              console.log('Tables to save:', this.tables);
-
-              this.db.saveData('tables', this.tables);
+              this.db.saveTables(this.tables);
               console.log('Tables saved to IndexedDB');
             } catch (error) {
               console.error('Error saving tables to IndexedDB:', error);
