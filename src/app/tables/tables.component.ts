@@ -7,6 +7,7 @@ import { TableCrudOperationService } from '../services/pusher/tableCrudOperation
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
 import { finalize } from 'rxjs';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { IndexeddbService } from '../services/indexeddb.service';
 
 @Component({
   selector: 'app-tables',
@@ -33,15 +34,16 @@ export class TablesComponent implements OnInit, OnDestroy {
     private router: Router,
     private location: Location,
     private tableOperation: TableCrudOperationService,
-    private NgbModal: NgbModal
+    private NgbModal: NgbModal,
+    private db: IndexeddbService
   ) { }
 
   ngOnInit(): void {
+    this.loading = false;
     if (navigator.onLine) {
       this.fetchTablesData();
-    }
-    else {
-      this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+    } else {
+      this.loadTablesFromIndexedDB();
     }
     this.loadClickedTable();
     this.listenToNewTable();
@@ -61,6 +63,7 @@ export class TablesComponent implements OnInit, OnDestroy {
   /** Fetch tables from API */
   fetchTablesData(): void {
     this.loading = false;
+    this.errorMessage = '';
     this.tablesRequestService
       .getTables()
       .pipe(
@@ -91,16 +94,57 @@ export class TablesComponent implements OnInit, OnDestroy {
               },
             ];
 
-            // Initialize filtered list with all tables
             this.filteredTablesByStatus = JSON.parse(
               JSON.stringify(this.tablesByStatus)
             );
+            this.errorMessage = '';
+            this.tablesRequestService.saveTablesToIndexedDB(this.tables);
           }
         },
         error: (err) => {
           console.error('Error fetching tables:', err);
+          this.loading = true;
+          this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+          this.loadTablesFromIndexedDB();
         },
       });
+  }
+
+  /** تحميل الطاولات من IndexedDB عند العمل offline */
+  private loadTablesFromIndexedDB(): void {
+    this.db.getTables().then((tables) => {
+      if (tables && tables.length > 0) {
+        this.tables = tables.map((t: any) => ({
+          ...t,
+          status: Number(t.status ?? 0),
+        }));
+        this.tabless = [...this.tables];
+        this.tablesByStatus = [
+          {
+            status: 1,
+            label: 'متاحة',
+            tables: this.tables.filter((t) => t.status === 1),
+          },
+          {
+            status: 2,
+            label: 'مشغولة',
+            tables: this.tables.filter((t) => t.status === 2),
+          },
+        ];
+        this.filteredTablesByStatus = JSON.parse(
+          JSON.stringify(this.tablesByStatus)
+        );
+        this.errorMessage = '';
+        console.log('Tables loaded from IndexedDB:', tables.length);
+      } else {
+        this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+      }
+      this.loading = true;
+    }).catch((err) => {
+      console.error('Error loading tables from IndexedDB:', err);
+      this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+      this.loading = true;
+    });
   }
 
   updateTableStatusLists() {

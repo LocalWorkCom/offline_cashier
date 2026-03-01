@@ -2,6 +2,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { AuthService } from './auth.service';
 import { Observable } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { baseUrl } from '../environment';
 import { IndexeddbService } from './indexeddb.service';
 
@@ -88,6 +89,44 @@ fetchAndSaveOrders(): Observable<any> {
     }
 
     return this.http.get(url, { headers });
+  }
+
+  /**
+   * جلب كل الطلبات (كل الصفحات) وحفظها في IndexedDB للعمل offline
+   */
+  fetchAllOrdersAndSaveToIndexedDB(type: string = 'All', status: string = 'all'): Observable<{ count: number }> {
+    return new Observable(observer => {
+      const run = async () => {
+        let page = 1;
+        let allOrders: any[] = [];
+        let hasMore = true;
+        const perPage = 100;
+        try {
+          while (hasMore) {
+            const res = await firstValueFrom(
+              this.getOrdersListV2(type, page, '', perPage, status)
+            );
+            if (!res?.data?.orders?.length) break;
+            allOrders = allOrders.concat(res.data.orders);
+            const total = res.data.pagination?.total ?? res.data.order_counts ?? 0;
+            hasMore = res.data.pagination?.has_more ?? (page * perPage < total);
+            page++;
+          }
+          if (allOrders.length > 0) {
+            await this.db.saveOrders(allOrders);
+            await this.db.setOrdersLastSync(Date.now());
+            console.log('✅ كل الطلبات محفوظة في IndexedDB:', allOrders.length);
+          }
+          observer.next({ count: allOrders.length });
+        } catch (err) {
+          console.error('❌ خطأ في مزامنة كل الطلبات إلى IndexedDB:', err);
+          observer.error(err);
+        } finally {
+          observer.complete();
+        }
+      };
+      run();
+    });
   }
 
   getOrderTypesCounts(): Observable<any> {
