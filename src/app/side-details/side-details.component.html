@@ -368,7 +368,7 @@
         <p>المجموع</p>
         <p class="fw-bold">{{ getTotal().toFixed(2) }} {{ currencySymbol }}</p>
       </li>
-      @if (discountAmount && validCoupon && selectedOrderType !== 'talabat') {
+      @if (discountAmount >= 0 && validCoupon && selectedOrderType !== 'talabat') {
       <li class="order-list">
         <p class="main-color fw-bold">
           كوبون خصم
@@ -385,6 +385,13 @@
             style="cursor: pointer; font-size: 16px;" title="حذف الكوبون"></i>
         </p>
         }
+        @else{
+          <p class="fw-bold main-color">
+            تم تطبيق
+            <span class="btn-static-secondary p-1 rounded">{{this.appliedCoupon.coupon_title}}</span>
+          </p>
+          }
+
       </li>
       } @if (selectedOrderType === 'في المطعم' || selectedOrderType ===
       'dine-in') {

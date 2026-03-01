@@ -215,7 +215,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   tipModalTimeoutDuration: number = 30; // 30 seconds timeout
   tipModalWarningTime: number = 10; // Show warning at 10 seconds remaining
   tipModalWarningShown: boolean = false;
-  
+
   drivers: any[] = [];
   selectedDriverId: number | null = null;
 
@@ -1355,7 +1355,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       // this.dbService.removeFromCart(index);
       localStorage.setItem('cart', JSON.stringify(this.cartItems));
       // If the cart is empty, clear coupon, note, and messages
-      if (this.cartItems.length === 0) {
+      if (this.cartItems.length === 0 && localStorage.getItem('couponValue') != '0') {
         this.appliedCoupon = null;
         this.couponCode = '';
         this.discountAmount = 0;
@@ -3138,7 +3138,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           finalCreditAmount = userCreditEntered;
 
           const totalPaid = Number((finalCashAmount + finalCreditAmount).toFixed(2));
-          
+
           // ✅ حساب المبلغ المطلوب (مع الإكرامية إذا كانت موجودة)
           const tipAmount = this.finalTipSummary?.tipAmount || 0;
           const requiredAmount = billAmountNum + tipAmount;
@@ -3530,7 +3530,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       // get new item IDs from response for selective printing
       const addedItems = (response as any).data?.dish_data?.added_items || [];
       const items_id = addedItems.map((item: any) => item.order_detail_id).filter((id: any) => !!id);
-      
+
       const body = items_id.length > 0 ? { items_id } : {};
 
       this.clearCart();
@@ -6108,7 +6108,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         // إذا كانت الإكرامية أكبر من الكاش المدخل، نضبط القيم
         if (cashFinal < 0) {
           cashFinal = 0;
-          // في هذه الحالة، إذا كانت الإكرامية أكبر من الكاش، 
+          // في هذه الحالة، إذا كانت الإكرامية أكبر من الكاش،
           // يمكن توزيعها على الفيزا (لكن هذا لا يجب أن يحدث عادة)
           // creditFinal = totalWithTip;
         }
