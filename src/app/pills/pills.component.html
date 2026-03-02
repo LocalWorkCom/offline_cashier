@@ -59,7 +59,7 @@
         </button>
       </li>
 
-      
+
     </ul>
 
 
@@ -69,7 +69,7 @@
         <button class="nav-link sub w-100" [ngClass]="{ active: selectedStatus === i }" (click)="selectStatusGroup(i)"
           role="tab" [attr.aria-controls]="'pills-' + statusGroup.status">
           <span>
-            {{ getTranslatedStatus(statusGroup.status) }} 
+            {{ getTranslatedStatus(statusGroup.status) }}
             <ng-container *ngIf="statusGroup.status === 'all'"> ({{ pills.length }} من {{ totalInvoicesCount }})</ng-container>
             <ng-container *ngIf="statusGroup.status !== 'all'"> ({{ getInvoiceStatusCount(statusGroup.status) }})</ng-container>
           </span>
@@ -130,7 +130,7 @@
                   [routerLinkActiveOptions]="{ exact: true }">
                   تفاصيل الفاتورة
                 </a>
-                @if ((pill.invoice_type != 'credit_note') &&  (pill.invoice_print_status !== 'done') && (pill.invoice_print_status !== 'cancelled') && (orderTypeFilter !== 'talabat')) {
+                @if ((pill.invoice_type != 'credit_note') &&  (pill.invoice_print_status !== 'done') && (pill.invoice_print_status !== 'cancelled')) {
                 <a class="btn-static text-main btn-transparent border-1 w-100 py-2"
                   [routerLink]="'/pill-edit/' + pill.invoice_id" routerLinkActive="active"
                   [routerLinkActiveOptions]="{ exact: true }">

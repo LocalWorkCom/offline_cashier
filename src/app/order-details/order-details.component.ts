@@ -499,9 +499,14 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
 
   /** Safe grand total for display (never NaN). */
   get displayTotalPrice(): number {
-    const v = this.orderSummary?.total_price ?? this.orderSummary?.total;
-    const n = Number(v);
-    return v != null && !isNaN(n) ? n : 0;
+    if (this.orderDetails?.status === 'cancelled') {
+      return 0;
+    }
+    else {
+      const v = this.orderSummary?.total_price ?? this.orderSummary?.total;
+      const n = Number(v);
+      return v != null && !isNaN(n) ? n : 0;
+    }
   }
 
   ngOnDestroy(): void {
