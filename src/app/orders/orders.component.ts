@@ -644,6 +644,9 @@ export class OrdersComponent implements OnDestroy {
     this.filterOrders();
   }
   filterOrdersInput(): void {
+    // Strip '#' from search input so users can paste e.g. '#1234'
+    this.searchOrderNumber = this.searchOrderNumber.replace(/#/g, '');
+
     if (this.selectedStatus !== 'static') {
       this.searchSubject.next(this.searchOrderNumber);
       return;
