@@ -34,12 +34,12 @@ export class PillsComponent implements OnInit, OnDestroy {
     hold: 'معلقة',
     done: 'مكتملة',
   };
-  selectedStatusLabel: string = 'all';
+  selectedStatusLabel: string = 'hold';
   searchOrderNumber: string = '';
   searchText: any;
   filteredPillsByStatus: any[] | undefined;
   orderType: any;
-  orderTypeFilter: string = 'all';
+  orderTypeFilter: string = 'dine-in';
   highlightedPillId: string | null = null;
   errorMessage: any;
   invoiceTypeCounts: any = {};
@@ -257,8 +257,8 @@ console.log(newOrder);
     }
 
     const apiStatusMap: any = {
-      'hold': 'unpaid',
-      'done': 'paid',
+      'hold': 'hold',
+      'done': 'completed',
       'cancelled': 'cancelled',
       'returned': 'returned'
     };
@@ -310,6 +310,8 @@ console.log(newOrder);
   }
 
   onSearchChange(): void {
+    // Strip '#' from search input so users can paste e.g. '#1234'
+    this.searchOrderNumber = this.searchOrderNumber.replace(/#/g, '');
     this.searchSubject.next(this.searchOrderNumber);
   }
 
@@ -360,8 +362,8 @@ console.log(newOrder);
       return this.totalInvoicesCount;
     }
     const apiStatusMap: any = {
-      'hold': 'unpaid', 
-      'done': 'paid',
+      'hold': 'hold', 
+      'done': 'completed',
       'cancelled': 'cancelled',
       'returned': 'returned'
     };
@@ -449,8 +451,8 @@ console.log(newOrder);
   // }
   selectStatusGroup(index: number): void {
     this.selectedStatus = index;
-    const allStatuses = ['all', 'hold', 'done', 'cancelled', 'returned'];
-    this.selectedStatusLabel = allStatuses[index] || 'all';
+    const allStatuses = ['hold', 'done', 'cancelled', 'returned'];
+    this.selectedStatusLabel = allStatuses[index] || 'hold';
     this.fetchPillsData();
   }
   // fetchPillsData(): void {
@@ -486,20 +488,15 @@ console.log(newOrder);
   //   this.filterPills();
   // }
   private updatePillsByStatus(): void {
-    const allStatuses = ['all', 'hold', 'done', 'cancelled', 'returned'];
+    const allStatuses = ['hold', 'done', 'cancelled', 'returned'];
 
     this.pillsByStatus = allStatuses.map((status) => {
-      // 1. If 'all' group, show everything
-      if (status === 'all') {
-        return { status, pills: this.pills };
-      }
-
-      // 2. If the current active tab matches this status group, show all items from the server response
+      // If the current active tab matches this status group, show all items from the server response
       if (this.selectedStatusLabel === status) {
         return { status, pills: this.pills };
       }
 
-      // 3. Otherwise, filter locally based on the print status (mainly for the 'All' tab view)
+      // Otherwise, filter locally based on the print status
       return {
         status,
         pills: this.pills.filter(
