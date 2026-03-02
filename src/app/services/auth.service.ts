@@ -10,6 +10,7 @@ import { PillsService } from './pills.service';
 import { ProductsService } from './products.service';
 import { TablesService } from './tables.service';
 import { AddAddressService } from './add-address.service';
+import { IndexeddbService } from './indexeddb.service';
 
 @Injectable({
   providedIn: 'root',
@@ -166,7 +167,12 @@ export class AuthService {
   getCurrentEmployee() {
     return (this.employeeData$ as BehaviorSubject<any>).value;
   }
-  constructor(private http: HttpClient ,  private injector: Injector, private router: Router) {
+  constructor(
+    private http: HttpClient,
+    private injector: Injector,
+    private router: Router,
+    private dbService: IndexeddbService
+  ) {
     window.addEventListener('storage', (event: StorageEvent) => {
       if (event.key === 'authToken') {
         if (event.newValue) {
@@ -269,8 +275,8 @@ export class AuthService {
             this.setStorageItem('branchData', branchDetails, true);
             const currency_symbol = branchDetails.currency_symbol;
             this.setStorageItem('currency_symbol', currency_symbol);
-
-
+            const branchToSave = { ...branchDetails, id: branchDetails.id ?? branchId ?? 'branch' };
+            this.dbService.saveData('branch', branchToSave).catch(() => {});
           } else {
             console.warn('⚠️ No Branch Data Found in Response');
           }
@@ -287,6 +293,11 @@ export class AuthService {
           this.setCountryCode(registeredCountryCode);
           this.setBranch(branch);
           this.setBranchId(branchId);
+          this.dbService.saveData('branch_id', {
+            id: 'current_branch_id',
+            value: branchId,
+            timestamp: new Date().toISOString(),
+          }).catch(() => {});
           this.setScheduleId(scheduleId);
           this.setImageUrl(imageUrl);
 
@@ -366,9 +377,10 @@ export class AuthService {
 
 
 
-  setImageUrl(imageUrl: string): void {
-    this.imageUrlSubject.next(imageUrl);
-    this.setStorageItem('imageUrl', imageUrl);
+  setImageUrl(imageUrl: string | null | undefined): void {
+    const url = imageUrl && imageUrl !== 'null' ? imageUrl : 'assets/images/user.png';
+    this.imageUrlSubject.next(url);
+    this.setStorageItem('imageUrl', url);
   }
 
   fetchUserDetails(): void {

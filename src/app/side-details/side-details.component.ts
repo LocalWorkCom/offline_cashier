@@ -1080,6 +1080,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
           // 🔥 حفظ في localStorage للكارت العادي
           localStorage.setItem('cart', JSON.stringify(this.cartItems));
+          this.dbService.syncCartToIndexedDB(this.cartItems).catch(() => {});
           this.updateTotalPrice();
           return; // 🔥 نخرج من الدالة هنا - لا ندمج مع الكارت العادي
         }
@@ -1125,6 +1126,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     // حفظ الكارت المدمج في localStorage
     localStorage.setItem('cart', JSON.stringify(this.cartItems));
+    this.dbService.syncCartToIndexedDB(this.cartItems).catch(() => {});
     this.updateTotalPrice();
   }
   // دالة مساعدة للتحقق من تكرار العناصر
@@ -1298,9 +1300,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       0
     );
     localStorage.setItem('cart', JSON.stringify(this.cartItems)); // Update local storage
+    this.dbService.syncCartToIndexedDB(this.cartItems).catch(() => {});
   }
   saveCart() {
     localStorage.setItem('cart', JSON.stringify(this.cartItems));
+    this.dbService.syncCartToIndexedDB(this.cartItems).catch(() => {});
   }
   // start hanan
   // saveCart() {
@@ -1354,6 +1358,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.cartItems.splice(index, 1);
       // this.dbService.removeFromCart(index);
       localStorage.setItem('cart', JSON.stringify(this.cartItems));
+      this.dbService.syncCartToIndexedDB(this.cartItems).catch(() => {});
       // If the cart is empty, clear coupon, note, and messages
       if (this.cartItems.length === 0) {
         this.appliedCoupon = null;
@@ -4870,6 +4875,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     // 💾 تحديث localStorage بالكارت الجديد
     localStorage.setItem('cart', JSON.stringify(cart));
+    this.dbService.syncCartToIndexedDB(cart).catch(() => {});
     // this.dbService.removeFromCart(cartItem.cartItemId); // تحديث IndexedDB لو بتستخدميها للكارت
     this.cartItems = cart; // تحديث المتغير المحلي لو عندك واحد
 
@@ -4917,6 +4923,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     console.log('Updated cart item after price sync:', cartItem);
     localStorage.setItem('cart', JSON.stringify(this.cartItems));
+    this.dbService.syncCartToIndexedDB(this.cartItems).catch(() => {});
 
     // 4. إعادة حساب المجموع النهائي بعد التحديث
     this.recalculateTotal(cartItem);
@@ -5088,6 +5095,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.cartItems = updatedCart;
       this.updateTotalPrice();
       localStorage.setItem('cart', JSON.stringify(this.cartItems));
+      this.dbService.syncCartToIndexedDB(this.cartItems).catch(() => {});
     };
   }
   applyNote(): void {
