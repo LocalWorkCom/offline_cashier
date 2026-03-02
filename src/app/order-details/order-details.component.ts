@@ -806,7 +806,12 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     const branchId = localStorage.getItem('branch_id');
     if (!branchId) return;
     this.http.get<any>(`${baseUrl}api/areas/${branchId}`).subscribe({
-      next: (res) => { if (res?.status && Array.isArray(res.data)) this.deliveryAreas = res.data; },
+      next: (res) => {
+        if (res?.status && Array.isArray(res.data)) {
+          this.deliveryAreas = res.data;
+          this.dbService.saveData('areas', res.data).catch(() => {});
+        }
+      },
       error: () => {},
     });
   }
@@ -815,7 +820,11 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     if (this.changeTypeDeliveryHotels.length > 0) return;
     const token = localStorage.getItem('authToken');
     this.http.get<any>(`${baseUrl}api/listHotels`, { headers: new HttpHeaders({ Authorization: `Bearer ${token}` }) }).subscribe({
-      next: (res) => { this.changeTypeDeliveryHotels = Array.isArray(res?.data) ? res.data : []; },
+      next: (res) => {
+        const hotels = Array.isArray(res?.data) ? res.data : [];
+        this.changeTypeDeliveryHotels = hotels;
+        if (hotels.length) this.dbService.saveData('hotels', hotels).catch(() => {});
+      },
       error: () => { this.changeTypeDeliveryHotels = []; },
     });
   }
@@ -837,6 +846,11 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
               phoneLength: c.length || 10,
             }))
             .filter((c: any) => allowedCodes.includes(c.code.replace(/\s+/g, '')));
+          const toSave = response.data.map((c: any, i: number) => ({
+            ...c,
+            code: (c.code || c.phone_code || '').trim() || `country_${i}`,
+          }));
+          if (toSave.length) this.dbService.saveData('countries', toSave).catch(() => {});
           this.filterChangeTypeDeliveryCountries();
           this.syncChangeTypeSelectedCountryFromCode();
         }

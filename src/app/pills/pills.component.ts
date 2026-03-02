@@ -311,8 +311,22 @@ console.log(newOrder);
         },
 
         error: (error) => {
-          console.error('Error fetching pills data:', error);
-          this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+          const status = error?.status;
+          const is401 = status === 401;
+          const is0 = status === 0;
+          console.error('Error fetching pills/invoices:', {
+            status,
+            message: error?.message,
+            error: error?.error,
+            url: error?.url,
+          });
+          if (is401) {
+            this.errorMessage = 'انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.';
+          } else if (is0) {
+            this.errorMessage = 'تعذر الاتصال بالخادم (تحقق من الاتصال أو CORS).';
+          } else {
+            this.errorMessage = error?.error?.message || error?.message || 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+          }
           this.loading = true;
           this.loadFromIndexedDB();
           this.cdr.detectChanges();

@@ -13,6 +13,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { AddAddressService } from '../services/add-address.service';
+import { IndexeddbService } from '../services/indexeddb.service';
 import { AuthService } from '../services/auth.service';
 import { Country } from '../services/profile.service';
 import { Router, RouterModule } from '@angular/router';
@@ -90,7 +91,8 @@ export class DeliveryDetailsComponent implements OnInit {
     private location: Location,
     private http: HttpClient,
     private checkPhoneNum: PhoneCheckService,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private dbService: IndexeddbService
   ) {
     console.log(this.selectedCountry);
   }
@@ -721,6 +723,9 @@ export class DeliveryDetailsComponent implements OnInit {
     console.log('✅ Saving to localStorage:', formDataWithNote);
     localStorage.setItem('form_data', JSON.stringify(formDataWithNote));
     localStorage.setItem('notes', noteValue);
+    this.dbService.saveFormData(formDataWithNote).catch((err) =>
+      console.warn('IndexedDB saveFormData:', err)
+    );
 
     // localStorage.setItem('address_id', 'DUMMY_ID');
     const selectedAreaId = this.form.get('area_id')?.value;
@@ -821,6 +826,7 @@ export class DeliveryDetailsComponent implements OnInit {
           this.areas = res.data;
           this.allAreas = res.data;
           this.areas = [...this.allAreas];
+          this.dbService.saveData('areas', res.data).catch(() => {});
         }
         console.log(this.areas, 'areas');
       },
@@ -896,9 +902,9 @@ export class DeliveryDetailsComponent implements OnInit {
       next: (res: any) => {
         console.log(res.data);
         this.hotels = res.data;
-
         this.allHotels = res.data;
         this.hotels = [...this.allHotels];
+        if (res?.data?.length) this.dbService.saveData('hotels', res.data).catch(() => {});
       },
       error: (err) => {
         console.log(err);

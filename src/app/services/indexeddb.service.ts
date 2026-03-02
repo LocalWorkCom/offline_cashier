@@ -343,6 +343,36 @@ export class IndexeddbService {
     });
   }
 
+  /**
+   * مزامنة السلة من مصدر خارجي (مثل localStorage) إلى IndexedDB للاستخدام offline.
+   * يستخدم transaction واحد لتجنّب تكرار العناصر عند استدعاءات متزامنة.
+   */
+  syncCartToIndexedDB(cart: any[]): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('cart', 'readwrite');
+        const store = tx.objectStore('cart');
+
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+
+        store.clear();
+        if (Array.isArray(cart) && cart.length > 0) {
+          const now = new Date().toISOString();
+          cart.forEach((item) => {
+            const itemWithMetadata = {
+              ...item,
+              addedAt: now,
+              isSynced: navigator.onLine,
+              lastUpdated: now,
+            };
+            store.add(itemWithMetadata);
+          });
+        }
+      });
+    });
+  }
+
   // Clear entire cart
   clearCart(): Promise<void> {
     return this.ensureInit().then(() => {
@@ -513,7 +543,7 @@ export class IndexeddbService {
         const store = tx.objectStore('tables');
         store.clear();
         const toSave = (Array.isArray(tables) ? tables : []).filter(
-          (t) => t != null && (t.table_number !== undefined || t.id !== undefined)
+          (t) => t != null && (t.table_number !== undefined || t.number !== undefined || t.id !== undefined)
         );
         toSave.forEach((table) => store.put({ ...table, status: Number(table.status ?? 0) }));
         tx.oncomplete = () => resolve();
@@ -524,7 +554,7 @@ export class IndexeddbService {
 
   /**
    * جلب الطاولات من IndexedDB للعرض عند عدم الاتصال.
-   * يُرجع فقط العناصر التي تحتوي table_number (لتجنب عرض بيانات خاطئة محفوظة سابقاً).
+   * يُرجع العناصر التي تشبه طاولة (table_number أو number أو id).
    */
   getTables(): Promise<any[]> {
     return this.ensureInit().then(() => {
@@ -534,7 +564,10 @@ export class IndexeddbService {
         const request = store.getAll();
         request.onsuccess = () => {
           const raw = request.result || [];
-          const valid = raw.filter((t: any) => t != null && t.table_number !== undefined);
+          const valid = raw.filter((t: any) =>
+            t != null &&
+            (t.table_number !== undefined || t.number !== undefined || t.id !== undefined)
+          );
           resolve(valid);
         };
         request.onerror = (e) => reject(e);
@@ -2354,6 +2387,25 @@ export class IndexeddbService {
           console.error('❌ Error deleting synced pending order:', e);
           reject(e);
         };
+      });
+    });
+  }
+
+  /** حفظ عملية تغيير نوع الطلب للمزامنة عند عودة الاتصال. */
+  async savePendingChangeOrderType(payload: Record<string, unknown>): Promise<number> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('pendingOperations', 'readwrite');
+        const store = tx.objectStore('pendingOperations');
+        const pending = {
+          ...payload,
+          type: 'changeOrderType',
+          savedAt: new Date().toISOString(),
+          isSynced: false,
+        };
+        const request = store.add(pending);
+        request.onsuccess = () => resolve(request.result as number);
+        request.onerror = (e) => reject(e);
       });
     });
   }
