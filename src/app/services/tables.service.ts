@@ -79,17 +79,19 @@ export class TablesService {
               status: Number(table.status),
             }));
             try {
-              this.db.saveTables(this.tables);
+              await this.db.saveTables(this.tables);
               const available = this.tables.filter((t: any) => Number(t.status) === 1);
-              if (available.length) this.db.saveData('availabletables', available).catch(() => {});
-              console.log('Tables saved to IndexedDB');
+              if (available.length) await this.db.saveData('availabletables', available).catch(() => {});
+              console.log('✅ Tables saved to IndexedDB', this.tables.length);
             } catch (error) {
               console.error('Error saving tables to IndexedDB:', error);
             }
           }
+          observer.next(response);
+          observer.complete();
         },
         error: (err) => {
-          console.error('❌ Failed to fetch pils', err);
+          console.error('❌ Failed to fetch tables', err);
           observer.error(err);
         }
       });

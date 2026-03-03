@@ -816,10 +816,17 @@ export class DeliveryDetailsComponent implements OnInit {
 
     if (!branchId) {
       console.error('branch_id not found in localStorage');
+      this.loadAreasFromIndexedDB();
       return;
     }
-    const url = `${baseUrl}api/areas/${branchId}`;
 
+    // في حالة عدم الاتصال: تحميل المناطق من IndexedDB
+    if (!navigator.onLine) {
+      this.loadAreasFromIndexedDB();
+      return;
+    }
+
+    const url = `${baseUrl}api/areas/${branchId}`;
     this.http.get<any>(url).subscribe({
       next: (res: { status: any; data: any }) => {
         if (res.status && res.data) {
@@ -829,10 +836,32 @@ export class DeliveryDetailsComponent implements OnInit {
           this.dbService.saveData('areas', res.data).catch(() => {});
         }
         console.log(this.areas, 'areas');
+        this.cdr.detectChanges();
       },
       error: (err) => {
-        console.error('خطأ في تحميل المناطق:', err);
+        console.error('خطأ في تحميل المناطق من API، جاري التحميل من الذاكرة المحلية:', err);
+        this.loadAreasFromIndexedDB();
       },
+    });
+  }
+
+  /** تحميل المناطق من IndexedDB (للعمل offline أو عند فشل API) */
+  private loadAreasFromIndexedDB(): void {
+    this.dbService.getAll('areas').then((areas: any[]) => {
+      if (areas && areas.length > 0) {
+        this.areas = areas;
+        this.allAreas = areas;
+        console.log('✅ المناطق محمّلة من IndexedDB:', areas.length);
+      } else {
+        this.areas = [];
+        this.allAreas = [];
+      }
+      this.cdr.detectChanges();
+    }).catch((err) => {
+      console.error('خطأ في قراءة المناطق من IndexedDB:', err);
+      this.areas = [];
+      this.allAreas = [];
+      this.cdr.detectChanges();
     });
   }
   propertyLabels: any = {
