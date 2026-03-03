@@ -336,21 +336,19 @@ export class AuthService {
           next: () => {
             // console.log('✅ Categories fetched and saved after login.');
 
-            // ✅ After categories → load all other data in background
-            // const tablesService = this.injector.get(TablesService);
-            // const addAddressService = this.injector.get(AddAddressService);
+            // ✅ After categories → تحميل كل البيانات اللازمة للعمل offline (مناطق، فنادق، طاولات، طلبات)
+            const tablesService = this.injector.get(TablesService);
+            const addAddressService = this.injector.get(AddAddressService);
             const orderListService = this.injector.get(OrderListService);
-            // const pillService = this.injector.get(PillsService);
 
             forkJoin({
-              // tables: tablesService.fetchAndSave(),
-              // hotels: addAddressService.fetchAndSave(),
-              // areas: addAddressService.fetchAndSaveAreas(),
+              areas: addAddressService.fetchAndSaveAreas(),
+              hotels: addAddressService.fetchAndSave(),
+              tables: tablesService.fetchAndSave(),
               orders: orderListService.fetchAndSaveOrders(),
-              // pills: pillService.fetchAndSave(),
             }).subscribe({
               next: () => {
-                console.log('✅ All background data fetched successfully.');
+                console.log('✅ All background data (areas, hotels, tables, orders) fetched and saved to IndexedDB.');
               },
               error: (err: any) => {
                 console.error('❌ Error fetching background data:', err);
