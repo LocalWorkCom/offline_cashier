@@ -1,4 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
+const WebSocket = require('ws');
+
 const path = require('path');
 const url = require('url');
 const fs = require('fs');
@@ -1240,6 +1242,7 @@ function logoutUser() {
 // ⬅️ App lifecycle
 app.on('ready', async () => {
   await createWindow();
+  startWebSocketServer();
 
   // Optional: auto logout test
   setTimeout(() => {
@@ -1247,6 +1250,58 @@ app.on('ready', async () => {
     logoutUser();
   }, 1000);
 });
+
+// WebSocket Server for Electron
+function startWebSocketServer() {
+  const port = 8081;
+  const wss = new WebSocket.Server({ port });
+  console.log(`🚀 WebSocket server started on ws://localhost:${port}`);
+
+  wss.on('connection', (ws) => {
+    console.log('Client connected to Electron WS Server');
+
+    ws.on('message', (message) => {
+      const messageString = message.toString();
+      
+      try {
+        const data = JSON.parse(messageString);
+        
+        // Log based on type
+        if (data.type === 'subscribe') {
+          console.log(`📺 Frontend Subscribed: ${data.channel} -> ${data.event}`);
+          return; // Don't broadcast subscription meta-messages
+        }
+
+        console.log('📦 Event Received:', data.event || 'No Event Name', 'on', data.channel || 'No Channel');
+
+        // Broadcast to all other clients (e.g., Angular app)
+        wss.clients.forEach((client) => {
+          if (client !== ws && client.readyState === WebSocket.OPEN) {
+            client.send(messageString);
+          }
+        });
+
+        // Also send to Electron Main Process IPC
+        if (mainWindow) {
+           mainWindow.webContents.send('ws-message', data);
+        }
+
+      } catch (e) {
+        console.log('Received (Raw):', messageString);
+        // ... broadcast raw message if needed
+      }
+    });
+
+
+    ws.on('close', () => {
+      console.log('Client disconnected');
+    });
+
+    ws.send(JSON.stringify({ type: 'system', message: 'Connected to Electron Hub' }));
+  });
+
+  app.wss = wss;
+}
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
