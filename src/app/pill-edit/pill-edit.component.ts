@@ -1112,6 +1112,22 @@ export class PillEditComponent {
           // مسح أي أخطاء سابقة
           this.couponError = '';
 
+          // تحديث invoice_summary بالكوبون حتى يظهر في قسم الفاتورة (عنوان + قيمة الخصم) فور التطبيق
+          const couponId = res.data?.coupon_id ?? res.data?.id ?? 'applied_from_edit';
+          const invSummary = this.invoices?.[0]?.invoice_summary;
+          if (invSummary) {
+            invSummary.coupon_id = couponId;
+            invSummary.coupon_title = this.couponTitle;
+            invSummary.coupon_value = this.discountAmount;
+            invSummary.coupon_code = this.couponCode?.trim() ?? '';
+          }
+          if (this.invoiceSummary?.[0]) {
+            this.invoiceSummary[0].coupon_id = couponId;
+            this.invoiceSummary[0].coupon_title = this.couponTitle;
+            this.invoiceSummary[0].coupon_value = this.discountAmount;
+            this.invoiceSummary[0].coupon_code = this.couponCode?.trim() ?? '';
+          }
+
           // حساب المبلغ الجديد مع الضريبة والرسوم
           this.recalcTotalsWithDiscount(
             this.discountAmount,
