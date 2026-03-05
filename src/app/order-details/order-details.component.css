@@ -8,3 +8,13 @@
     outline: 0;
     box-shadow: none !important;
 }
+
+/* تغيير نوع الطلب - إزالة الإطار الأحمر (الـ outline) من الـ label والـ radio */
+#changeOrderTypeModalDetails .order-type-option .form-check-label {
+    outline: none !important;
+}
+#changeOrderTypeModalDetails .order-type-option .form-check-input:focus {
+    outline: none !important;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+    border-color: #86b7fe;
+}

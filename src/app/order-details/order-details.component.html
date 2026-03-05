@@ -272,8 +272,9 @@
             يرجى اختيار نوع الطلب الجديد لهذا الطلب رقم <strong class="text-dark">{{ currentOrderForTypeChange?.order_details?.order_number }}</strong>. سيتم تحديث تفاصيل الفاتورة تلقائياً بناءً على الاختيار.
           </p>
           <div class="d-flex flex-column gap-3" dir="ltr">
-            <div class="form-check rounded-3 p-3 d-flex align-items-center gap-3 transition-all"
-                 [style.border]="selectedNewOrderType === 'dine-in' ? '2px solid #0d6efd' : '1px solid #dee2e6'">
+            <div class="form-check rounded-3 p-3 d-flex align-items-center gap-3 transition-all border order-type-option"
+                 [class.border-primary]="selectedNewOrderType === 'dine-in'"
+                 [class.border-2]="selectedNewOrderType === 'dine-in'">
               <input class="form-check-input flex-shrink-0 ms-3 me-2" type="radio" name="newOrderTypeDetails" id="typeDineInDetails" value="dine-in"
                      [(ngModel)]="selectedNewOrderType">
               <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end">
@@ -284,8 +285,9 @@
                 <i class="fa-solid fa-utensils rounded-circle p-2 text-white flex-shrink-0" style="background-color: #ff9800;"></i>
               </div>
             </div>
-            <div class="form-check rounded-3 p-3 d-flex align-items-center gap-3 transition-all"
-                 [style.border]="selectedNewOrderType === 'Takeaway' ? '2px solid #0d6efd' : '1px solid #dee2e6'">
+            <div class="form-check rounded-3 p-3 d-flex align-items-center gap-3 transition-all border order-type-option"
+                 [class.border-primary]="selectedNewOrderType === 'Takeaway'"
+                 [class.border-2]="selectedNewOrderType === 'Takeaway'">
               <input class="form-check-input flex-shrink-0 ms-3 me-2" type="radio" name="newOrderTypeDetails" id="typeTakeawayDetails" value="Takeaway"
                      [(ngModel)]="selectedNewOrderType">
               <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end">
@@ -296,8 +298,9 @@
                 <i class="fa-solid fa-bag-shopping rounded-circle p-2 text-white bg-primary flex-shrink-0"></i>
               </div>
             </div>
-            <div class="form-check rounded-3 p-3 d-flex align-items-center gap-3 transition-all"
-                 [style.border]="selectedNewOrderType === 'Delivery' ? '2px solid #0d6efd' : '1px solid #dee2e6'">
+            <div class="form-check rounded-3 p-3 d-flex align-items-center gap-3 transition-all border order-type-option"
+                 [class.border-primary]="selectedNewOrderType === 'Delivery'"
+                 [class.border-2]="selectedNewOrderType === 'Delivery'">
               <input class="form-check-input flex-shrink-0 ms-3 me-2" type="radio" name="newOrderTypeDetails" id="typeDeliveryDetails" value="Delivery"
                      [(ngModel)]="selectedNewOrderType">
               <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end">
@@ -318,7 +321,7 @@
           </div>
         </div>
         <div class="modal-footer border-0 d-flex justify-content-between flex-row-reverse">
-          <button type="button" class="btn btn-danger" (click)="openChangeTypeConfirmModalDetails()"
+          <button type="button" class="btn btn-primary" (click)="openChangeTypeConfirmModalDetails()"
                   [disabled]="!selectedNewOrderType || (selectedNewOrderType === 'dine-in' && !selectedTableIdForTypeChange) || isSameOrderTypeSelected()">
             <i class="fa-solid fa-check me-2"></i>
             تأكيد التغيير
@@ -357,9 +360,9 @@
               </div>
               <div class="flex-grow-1 text-center">
                 <div class="small text-muted mb-2">إلى</div>
-                <div class="d-inline-flex align-items-center gap-2 rounded-3 px-3 py-2 bg-white border-2 shadow-sm" style="min-width: 120px; border-color: #dc3545 !important;">
-                  <i class="text-danger" [ngClass]="getOrderTypeIconClass(selectedNewOrderType)"></i>
-                  <span class="text-danger fw-bold">{{ getOrderTypeShortLabel(selectedNewOrderType) }}</span>
+                <div class="d-inline-flex align-items-center gap-2 rounded-3 px-3 py-2 bg-white border-2 border-primary shadow-sm" style="min-width: 120px;">
+                  <i class="text-primary" [ngClass]="getOrderTypeIconClass(selectedNewOrderType)"></i>
+                  <span class="text-primary fw-bold">{{ getOrderTypeShortLabel(selectedNewOrderType) }}</span>
                 </div>
               </div>
             </div>
@@ -375,7 +378,7 @@
         </div>
         <div class="modal-footer border-0 d-flex gap-2 px-4 pb-4 pt-2" style="flex-wrap: nowrap;">
           <button type="button" class="btn rounded-3 py-2 text-center" style="flex: 0 0 calc(50% - 4px); background-color: #fff; color: #495057; border: 1px solid #ced4da; min-height: 44px;" data-bs-dismiss="modal" aria-label="Cancel">إلغاء</button>
-          <button type="button" class="btn btn-danger rounded-3 py-2 text-center" style="flex: 0 0 calc(50% - 4px); min-height: 44px;" (click)="onConfirmChangeOrderTypeClickDetails()" [disabled]="isChangeTypeSubmitting" aria-label="Confirm">
+          <button type="button" class="btn btn-primary rounded-3 py-2 text-center" style="flex: 0 0 calc(50% - 4px); min-height: 44px;" (click)="onConfirmChangeOrderTypeClickDetails()" [disabled]="isChangeTypeSubmitting" aria-label="Confirm">
             <span *ngIf="isChangeTypeSubmitting" class="spinner-border spinner-border-sm me-2"></span>
             <i *ngIf="!isChangeTypeSubmitting" class="fa-solid fa-check me-2"></i>
             تأكيد التغيير
