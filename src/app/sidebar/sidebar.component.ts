@@ -13,6 +13,7 @@ import * as bootstrap from 'bootstrap';
 import { HttpClientModule } from '@angular/common/http';
 import { from, lastValueFrom, Observable } from 'rxjs';
 import { baseUrl } from '../environment';
+import { SyncOfflineService } from '../services/sync-offline.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -86,9 +87,71 @@ export class SidebarComponent implements OnInit {
     private http: HttpClient,
     private balanceService: BalanceService,
     private closeBalanceService: CloseBalanceService,
+    private syncService: SyncOfflineService,
     @Inject(PLATFORM_ID) private platformId: Object,
     private cdr: ChangeDetectorRef
   ) {}
+
+  isSyncing = false;
+  syncMessage: string | null = null;
+  syncStatus: 'success' | 'error' | null = null;
+
+  syncData() {
+    this.isSyncing = true;
+    this.syncMessage = 'جاري مزامنة البيانات...';
+    this.syncStatus = null;
+
+    this.syncService.triggerSync().subscribe({
+      next: (response) => {
+        this.isSyncing = false;
+        this.syncStatus = 'success';
+        this.syncMessage = 'تمت المزامنة بنجاح';
+        setTimeout(() => {
+          this.syncMessage = null;
+          this.syncStatus = null;
+          this.closeSyncModal();
+        }, 2000);
+      },
+      error: (err) => {
+        this.isSyncing = false;
+        this.syncStatus = 'error';
+        this.syncMessage = 'فشلت المزامنة. يرجى المحاولة مرة أخرى.';
+        console.error('Sync error:', err);
+      }
+    });
+  }
+
+  async openSyncModal() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const { Modal } = await import('bootstrap');
+    
+    // Hide logout modal if it's open
+    const logoutModalElement = document.getElementById('logoutModal');
+    if (logoutModalElement) {
+      const logoutInstance = Modal.getInstance(logoutModalElement);
+      if (logoutInstance) logoutInstance.hide();
+    }
+
+    const modalElement = document.getElementById('syncModal');
+    if (modalElement) {
+      this.syncMessage = null;
+      this.syncStatus = null;
+      const modalInstance = Modal.getInstance(modalElement) || new Modal(modalElement);
+      modalInstance.show();
+    }
+  }
+
+  closeSyncModal() {
+    const modalElement = document.getElementById('syncModal');
+    if (modalElement) {
+      import('bootstrap').then(({ Modal }) => {
+        const modalInstance = Modal.getInstance(modalElement);
+        if (modalInstance) {
+          modalInstance.hide();
+        }
+      });
+    }
+  }
 
   ngOnInit() {
 /*      this.printt(2)

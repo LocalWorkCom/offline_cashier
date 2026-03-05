@@ -33,7 +33,7 @@ export class TablesService {
     return this.http.post(`${this.apiUrl}/orders/tableorderDetails`, body, { headers });
   }
   // UPDATE TABLE STATUS
-  updateTableStatus(tableId: number, orderId: number): Observable<any> {
+  updateTableStatus(tableId: number, orderId: string): Observable<any> {
     const headers = new HttpHeaders().set(
       'Authorization',
       `Bearer ${this.token}`
