@@ -25,7 +25,7 @@ export class TableAvailableComponent implements OnInit, OnDestroy {
   searchText: string = '';
   loading: boolean = true;
   errorMessage: any;
-  orderId: number | null = null;
+  orderId: string | null = null;
 
   constructor(
     private tablesRequestService: TablesService,
@@ -40,7 +40,7 @@ export class TableAvailableComponent implements OnInit, OnDestroy {
     // Get order_id from route parameter if available
     this.route.params.subscribe(params => {
       if (params['orderId']) {
-        this.orderId = +params['orderId'];
+        this.orderId = params['orderId']; // UUID — do NOT convert to number
         console.log('Order ID from route:', this.orderId);
       }
     });
