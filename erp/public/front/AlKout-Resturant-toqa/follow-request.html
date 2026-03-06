@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <meta name="author" content="" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta property="og:url" content="" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="" />
+    <meta property="og:description" content="" />
+    <meta property="og:image" content="" />
+    <title>مطعم الكوت</title>
+
+    <link rel="shortcut icon" href="SiteAssets/images/logo.png" sizes="25x25" />
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="SiteAssets/bootstrap-5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="SiteAssets/fontawesome-free-5.15.4-web/css/all.min.css">
+    <link rel="stylesheet" href="SiteAssets/css/animate.min.css">
+    <link rel="stylesheet" href="SiteAssets/aos-master/dist/aos.css">
+
+    <!-- Owl Carousel -->
+    <link rel="stylesheet" href="SiteAssets/OwlCarousel2-2.3.4/dist/assets/owl.carousel.min.css" />
+    <link rel="stylesheet" href="SiteAssets/OwlCarousel2-2.3.4/dist/assets/owl.theme.default.min.css" />
+
+    <!-- include Gallery (lightbox) plugin -->
+    <link rel="stylesheet" href="SiteAssets/lightbox/css/lightbox.min.css" />
+    <!-- Main Style -->
+    <link rel="stylesheet" href="SiteAssets/css/style.css" type="text/css" />
+    <!-- fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <header class="fixed-top">
+        <nav class="navbar navbar-expand-lg navbar-light ">
+            <div class="container second-header">
+                <a class="navbar-service" href="index.html">
+                    <img src="SiteAssets/images/logo-with-white-bg.png">
+                </a>
+                <button class="navbar-toggler" type="button" onclick="openNav()">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0 align-items-center">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <button class="btn white fw-bold d-flex justify-content-between">
+                                    <span><i class="fas fa-map-marker-alt ms-2"></i>
+                                        التوصيل الي
+                                    </span>
+                                    <span class="select-sm">
+                                        اختر
+                                    </span>
+                                </button>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">الرئيسية</a>
+                        </li>
+                        <li class="nav-item active" aria-current="page">
+                            <a class="nav-link" href="shop.html">قائمة الطعام</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="./contact-us.html">تواصل معنا</a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link cart-icon" href="#">
+                                <i class="fas fa-shopping-cart"></i>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                En
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link btn align-items-center" href="#"><i class="fas fa-user-circle"></i>
+                                <span>تسجيل الدخول</span>
+                            </a>
+                        </li>
+
+
+                    </ul>
+                </div>
+
+
+            </div>
+        </nav>
+        <div class="mobNav d-lg-none d-block ">
+            <div id="sidenav" class="sidenav">
+                <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+                <div class="overlay-content">
+                    <a href="index.html"> الرئيسية</a>
+                    <a href="#">قائمة الطعام</a>
+                    <a href="#">تواصل معنا</a>
+                    <a href="#"> <i class="fas fa-shopping-cart"></i>
+                    </a>
+                    <a href="#"> En</a>
+                    <a href="#"> تسجيل الدخول </a>
+                </div>
+            </div>
+        </div>
+
+    </header>
+    <main class="follow-request">
+        <section class="inner-header pt-5 mt-5">
+            <div class="container pt-sm-5 pt-4">
+                <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="index.html">الرئيسية</a></li>
+                        <li class="breadcrumb-item active" aria-current="page"> متابعة الطلب</li>
+                    </ol>
+                </nav>
+            </div>
+
+        </section>
+
+
+        <section>
+            <div class="container py-2">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="card mt-2 p-3">
+                            <div class="card-header bg-white ">
+                                <div class="d-flex justify-content-between">
+                                    <h5 class="card-title fw-bold mb-3">حالة الطلب الحالية</h5>
+                                    <button class="btn reversed main-color d-flex fw-bold" type="button">
+                                        الغاء الطلب </button>
+                                </div>
+                                <h6 class="mb-3">الوقت المتوقع للتوصيل</h6>
+                                <h5 class="main-color fw-bold mb-3 d-flex flex-wrap">
+                                    <span class="to-time">10:30 ص - </span>
+                                    <span class="from-time">11:15 ص </span>
+                                    <span class="p-1 mx-1 bg-warning text-dark rounded"><small>45 دقيقة</small></span>
+                                </h5>
+                                <h5 class="p-1 bg-warning text-dark rounded d-inline-block">رقم الطلب 255454558#</h5>
+                            </div>
+                            <div class="card-body p-0">
+                                <div class="wizard my-3">
+                                    <ul class="nav nav-tabs justify-content-between w-100" id="myTab" role="tablist">
+                                        <li class="nav-item " role="presentation">
+                                            <a class="nav-link active rounded-circle  d-flex align-items-center justify-content-center"
+                                                href="#step1" id="step1-tab" data-bs-toggle="tab" role="tab"
+                                                aria-controls="step1" aria-selected="true">
+                                                <i class="fas fa-mobile-alt"></i>
+                                            </a>
+                                            <span class="d-block mt-2">فى انتظار الموافقه</span>
+
+                                        </li>
+                                        <li class="nav-item " role="presentation">
+                                            <a class="nav-link rounded-circle  d-flex  mx-auto align-items-center justify-content-center"
+                                                href="#step2" id="step2-tab" data-bs-toggle="tab" role="tab"
+                                                aria-controls="step2" aria-selected="false">
+                                                <i class="fas fa-utensils"></i>
+                                            </a>
+                                            <span class="d-block mt-2"> يتم تحضير طلبك </span>
+
+                                        </li>
+                                        <li class="nav-item " role="presentation">
+                                            <a class="nav-link rounded-circle mx-auto d-flex align-items-center justify-content-center"
+                                                href="#step3" id="step3-tab" data-bs-toggle="tab" role="tab"
+                                                aria-controls="step3" aria-selected="false">
+                                                <i class="fas fa-map-marker-alt"></i>
+
+                                            </a>
+                                            <span class="d-block mt-2"> طلبك فى الطريق اليك</span>
+                                        </li>
+                                        <li class="nav-item " role="presentation" data-bs-toggle="modal"
+                                            href="#exampleModalToggle" role="button">
+                                            <a class="nav-link rounded-circle  d-flex align-items-center justify-content-center"
+                                                href="#step4" id="step4-tab" data-bs-toggle="tab" role="tab"
+                                                aria-controls="step4" aria-selected="false">
+                                                <i class="fas fa-check-circle"></i>
+
+                                            </a>
+                                            <span class="d-block mt-2"> تم التوصيل </span>
+                                        </li>
+                                    </ul>
+
+                                    <!-- <div class="tab-content" id="myTabContent">
+                                        <div class="tab-pane fade show active" role="tabpanel" id="step1"
+                                            aria-labelledby="step1-tab">
+                                            <h3>Step 1</h3>
+                                        </div>
+                                        <div class="tab-pane fade" role="tabpanel" id="step2"
+                                            aria-labelledby="step2-tab">
+                                            <h3>Step 2</h3>
+                                        </div>
+                                        <div class="tab-pane fade" role="tabpanel" id="step3"
+                                            aria-labelledby="step3-tab">
+                                            <h3>Step 3</h3>
+                                        </div>
+                                        <div class="tab-pane fade" role="tabpanel" id="step4"
+                                            aria-labelledby="step4-tab">
+                                            <h3>Complete</h3>
+                                            <p>You have successfully completed all steps.</p>
+                                            <div class="d-flex justify-content-between">
+                                                <a class="btn btn-danger next">Submit <i
+                                                        class="fas fa-angle-right"></i></a>
+                                            </div>
+                                        </div>
+                                    </div> -->
+                                </div>
+                                <!-- End of Wizard -->
+                                <div class="bg-dark-gray p-3 my-4">
+                                    <h5 class="fw-bold">ملخص الطلب</h5>
+                                </div>
+                                <div class="bg-dark-gray p-3 my-4">
+                                    <h5 class="fw-bold">
+                                        <i class="fas fa-file-alt main-color fa-xs fs-5 mx-1"></i>
+                                        معلومات التوصيل
+                                    </h5>
+                                    <p>121 مصدق , الدور 2 , شقة 12 ,الدقى , المهندسين ,جيزه</p>
+                                    <p>الاسم:سارة عامر</p>
+                                    <p>رقم الهاتف : 01029061189 </p>
+                                </div>
+                                <div class="bg-dark-gray p-3 my-4">
+                                    <h5 class="fw-bold">
+                                        <i class="fas fa-file-alt main-color fa-xs fs-5 mx-1"></i>
+                                        معلومات الدفع
+                                    </h5>
+                                    <p>الدفع عند الاستلام <span class="p-1 bg-success text-light rounded">الدفع
+                                            نقدا</span></p>
+
+                                </div>
+                                <div class="bg-dark-gray p-3 my-4">
+                                    <h5 class="fw-bold">
+                                        <i class="fas fa-file-alt main-color fa-xs fs-5 mx-1"></i>
+                                        تفاصيل الطلب
+                                    </h5>
+
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                              <span class="p-1 bg-secondary text-light rounded">1</span>
+                                              <span class="mx-1">x</span>
+                                              <span>مجبوس دجاج</span>
+                                              <p class="text-muted mt-1 mb-0 mx-4"> <small>نص فرخة , دقوس ,كولا </small></p>
+                                            </div>
+                                            <p class="mb-0 fw-bold">400 ج.م</p>
+                                          </div>
+
+                                          <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                              <span class="p-1 bg-secondary text-light rounded">1</span>
+                                              <span class="mx-1">x</span>
+                                              <span>مجبوس دجاج</span>
+                                              <p class="text-muted mt-1 mb-0 mx-4"> <small>نص فرخة , دقوس ,كولا </small></p>
+                                            </div>
+                                            <p class="mb-0 fw-bold">400 ج.م</p>
+                                          </div>
+
+                                </div>
+
+                                <div class="bg-dark-gray p-3 my-4">
+                                    <h5 class="fw-bold">
+                                        <i class="fas fa-file-alt main-color fa-xs fs-5 mx-1" aria-hidden="true"></i>
+                                        الفاتورة
+                                    </h5>
+                                    <div class="d-flex justify-content-between">
+                                        <p>مجموع طلبي</p>
+                                        <p>400 ج.م</p>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <p class="main-color">كوبون خصم</p>
+                                        <p class="main-color">-100 ج.م</p>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <p>رسوم التوصيل</p>
+                                        <p>400 ج.م</p>
+                                    </div>
+                                    <div class="d-flex justify-content-between">
+                                        <p>رسوم الخدمة</p>
+                                        <p>400 ج.م</p>
+                                    </div>
+                                    <div class="d-flex justify-content-between border-top pt-2">
+                                        <h5 class="fw-bold">المجموع الكلي</h5>
+                                        <h5 class="fw-bold">1100 ج.م</h5>
+                                    </div>
+                                </div>
+
+
+                            </div> <!-- End of Card Body -->
+                        </div> <!-- End of Card -->
+                    </div> <!-- End of Col-12 -->
+                </div> <!-- End of Row -->
+            </div> <!-- End of Container -->
+
+        </section>
+        <section class="before-footer"></section>
+
+    </main>
+
+    <footer>
+        <div class="footer-curve"></div>
+        <div class="container ">
+            <figure class="footer-logo">
+                <img src="SiteAssets/images/logo-with-white-bg.png" />
+            </figure>
+        </div>
+        <div class="footer">
+            <div class="container py-sm-5 p-4">
+                <div class=" row m-0">
+                    <div class="col-md-3" data-aos="zoom-in">
+                        <h4 class="footer-title"> تواصل معنا </h4>
+                        <ul class="list-unstyled px-0 pt-4">
+                            <li>
+                                <ul class="list-unstyled social-media p-0">
+                                    <li>
+                                        <a href="#" class="ms-3">
+                                            <i class="fab fa-facebook"></i>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="ms-3">
+                                            <i class="fab fa-snapchat"></i>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="ms-3">
+                                            <i class="fab fa-instagram"></i>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="d-flex align-items-center">
+                                <span class="icon ms-2">
+                                    <i class="fas fa-phone"></i>
+                                </span>
+                                <a href="#">
+                                    010265899887
+                                </a>
+                            </li>
+                            <li class="d-flex align-items-center">
+                                <span class="icon ms-2">
+                                    <i class="fas fa-phone"></i>
+                                </span>
+                                <a href="#">
+                                    010265899887
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3" data-aos="zoom-in">
+                        <h4 class="footer-title">روابط سريعة </h4>
+                        <ul class="list-unstyled px-0 pt-4">
+                            <li><a href="#"> القائمة الرئيسية</a></li>
+                            <li><a href="#">العروض</a></li>
+                            <li><a href="#">فروعنا</a></li>
+                            <li><a href="#">الشروط والاحكام</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3" data-aos="zoom-in">
+                        <h4 class="footer-title">المساعدة</h4>
+                        <ul class="list-unstyled px-0 pt-4">
+                            <li><a href="#"> خدمة العملاء </a></li>
+                            <li><a href="#">سياسة الاسترجاع</a></li>
+                            <li><a href="#">سياسة الخصوصية</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3" data-aos="zoom-in">
+                        <h4 class="footer-title mb-4">مواعيد عمل المطعم</h4>
+                        <p>الاحد الى الخميس من الساعه 10صباحا الى 10 مساء</p>
+                        <p>الجمعة الي االسبت من الساعة 1 مساء الي 12 صباحا</p>
+                    </div>
+                </div>
+
+            </div>
+            <div class="copywrite">
+                <p class="m-0">جميع الحقوق محفوظة لصالح <a href="#">الكوت</a> 2024</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- done modal -->
+
+    <div class="modal fade" id="exampleModalToggle" aria-hidden="true" aria-labelledby="exampleModalToggleLabel"
+        tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body register" id="registerBody">
+                    <div class="row justify-content-center text-center">
+                        <div class="col-12">
+                            <i class="fas fa-gift text-warning fs-1 my-3"></i>
+                            <h2 class="fw-bold main-color">مفاجأة</h2>
+                            <h5 class="text-muted">احصل على كوبونات خصم أو توصيل مجاني المرة القادمة</h5>
+                            <h3 class="fw-bold text-dark">هل تم توصيل طلبك بنجاح؟</h3>
+                            <div class="d-flex justify-content-center py-4">
+                                <a href="#" class="btn mx-1 w-50" data-bs-target="#exampleModalToggle2"
+                                    data-bs-toggle="modal" data-bs-dismiss="modal">نعم</a>
+                                <a href="#" class="btn-no-modal mx-1 w-50" data-bs-dismiss="modal"
+                                aria-label="Close">لا</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal fade" id="exampleModalToggle2" aria-hidden="true" aria-labelledby="exampleModalToggleLabel2"
+        tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <button type="button" class="btn btn-close text-light" data-bs-dismiss="modal"
+                        aria-label="Close"></button>
+                </div>
+                <div class="modal-body register" id="registerBody">
+                    <div class="row justify-content-center text-center">
+                        <div class="col-12">
+                            <i class="fas fa-gift text-warning fs-1 my-3"></i>
+                            <h2 class="fw-bold main-color">مبرووك</h2>
+                            <h5 class="text-muted">حصلت على كوبون خصم 10% عند الطلب فى المرة القادمة</h5>
+                            <h4 class="fw-bold">#58768467</h4>
+                            <div class="d-flex justify-content-center py-4">
+                                <a href="#" class="btn mx-1 w-100">نسخ الكوبون</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- end done modal -->
+    <script src="SiteAssets/js/jquery-3.6.0.min.js"></script>
+    <script src="SiteAssets/bootstrap-5.1.3/dist/js/bootstrap.min.js"></script>
+    <script src="SiteAssets/fontawesome-free-5.15.4-web/js/all.min.js"></script>
+
+    <!-- Main js -->
+    <script src="SiteAssets/js/style.js"></script>
+
+    <!-- include Gallery (lightbox) plugin js-->
+    <script src="SiteAssets/lightbox/js/lightbox.min.js"></script>
+
+    <!-- include Owl Carousel plugin js-->
+    <script src="SiteAssets/OwlCarousel2-2.3.4/dist/owl.carousel.min.js"></script>
+    <script src="SiteAssets/aos-master/dist/aos.js"></script>
+    <script>
+        AOS.init();
+    </script>
+
+
+</body>
+
+</html>

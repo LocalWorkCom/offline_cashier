@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <meta name="author" content="" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta property="og:url" content="" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="" />
+    <meta property="og:description" content="" />
+    <meta property="og:image" content="" />
+    <title>مطعم الكوت</title>
+
+    <link rel="shortcut icon" href="SiteAssets/images/logo.png" sizes="25x25" />
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="SiteAssets/bootstrap-5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="SiteAssets/fontawesome-free-5.15.4-web/css/all.min.css">
+    <link rel="stylesheet" href="SiteAssets/css/animate.min.css">
+    <link rel="stylesheet" href="SiteAssets/aos-master/dist/aos.css">
+
+    <!-- Owl Carousel -->
+    <link rel="stylesheet" href="SiteAssets/OwlCarousel2-2.3.4/dist/assets/owl.carousel.min.css" />
+    <link rel="stylesheet" href="SiteAssets/OwlCarousel2-2.3.4/dist/assets/owl.theme.default.min.css" />
+
+    <!-- include Gallery (lightbox) plugin -->
+    <link rel="stylesheet" href="SiteAssets/lightbox/css/lightbox.min.css" />
+    <!-- Main Style -->
+    <link rel="stylesheet" href="SiteAssets/css/style.css" type="text/css" />
+    <!-- fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <header class="fixed-top">
+        <nav class="navbar navbar-expand-lg navbar-light ">
+            <div class="container second-header">
+                <a class="navbar-service" href="index.html">
+                    <img src="SiteAssets/images/logo-with-white-bg.png">
+                </a>
+                <button class="navbar-toggler" type="button" onclick="openNav()">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0 align-items-center">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <button class="btn white fw-bold d-flex justify-content-between">
+                                    <span><i class="fas fa-map-marker-alt ms-2"></i>
+                                        التوصيل الي
+                                    </span>
+                                    <span class="select-sm">
+                                        اختر
+                                    </span>
+                                </button>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">الرئيسية</a>
+                        </li>
+                        <li class="nav-item active" aria-current="page">
+                            <a class="nav-link" href="shop.html">قائمة الطعام</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="./contact-us.html">تواصل معنا</a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link cart-icon" href="#">
+                                <i class="fas fa-shopping-cart"></i>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                En
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link btn align-items-center" href="#"><i class="fas fa-user-circle"></i>
+                                <span>تسجيل الدخول</span>
+                            </a>
+                        </li>
+
+
+                    </ul>
+                </div>
+
+
+            </div>
+        </nav>
+        <div class="mobNav d-lg-none d-block ">
+            <div id="sidenav" class="sidenav">
+                <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+                <div class="overlay-content">
+                    <a href="index.html"> الرئيسية</a>
+                    <a href="#">قائمة الطعام</a>
+                    <a href="#">تواصل معنا</a>
+                    <a href="#"> <i class="fas fa-shopping-cart"></i>
+                    </a>
+                    <a href="#"> En</a>
+                    <a href="#"> تسجيل الدخول </a>
+                </div>
+            </div>
+        </div>
+
+    </header>
+    <main>
+        <section class="inner-header pt-5 mt-5">
+            <div class="container pt-sm-5 pt-4">
+                <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="index.html">الرئيسية</a></li>
+                        <li class="breadcrumb-item"><a href="addresses.html"> عناويني</a></li>
+                        <li class="breadcrumb-item active" aria-current="page"> أضف عنوان جديد </li>
+                    </ol>
+                </nav>
+            </div>
+
+        </section>
+        <section class="addresses">
+            <div class="container pb-sm-5 pb-4">
+                <div class="d-flex justify-content-betw
+                een align-items-center">
+                    <h4 class="my-4 fw-bold">أضف عنوان جديد</h4>
+                </div>
+                <!-- <div class="card p-5 mt-3 mb-5">
+                    <div class="first-phase">
+                        <h5 class="fw-bold">
+                            تحديد موقع التوصيل
+                        </h5>
+                        <div class="search-group ">
+                            <span class="search-icon">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" class="form-control" placeholder="ابحث عن الموقع" />
+                        </div>
+                        <div class="map position-relative my-3">
+                            <iframe
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3453.025253043487!2d31.22420217605614!3d30.064810617604635!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x145841cef6b62cc1%3A0x31bc8779f7ab8dd5!2z2YXYt9i52YUg2KfZhNmD2YjYqg!5e0!3m2!1sen!2seg!4v1734860419141!5m2!1sen!2seg"
+                                width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"
+                                referrerpolicy="no-referrer-when-downgrade">
+                            </iframe>
+                            <div class="notes">
+                                <small> تسجيل الدخول لاستخدام عناوينك المحفوظة</small>
+                                <button class="btn"> تسجيل الدخول</button>
+                            </div>
+                        </div>
+                        <div class="tab-footer justify-content-between d-flex align-items-center">
+                            <div>
+                                <h6 class="fw-bold">
+                                    موقع التوصيل
+                                </h6>
+                                <p>
+                                    <i class="fas fa-map-marker-alt main-color ms-2"></i>
+                                    مصدق الدقى و المهندسين وجيزه
+                                </p>
+                            </div>
+                            <button class="btn reversed main-color fw-bold" type="button">
+                                تعديل
+                            </button>
+                            <button type="submit" class="btn" onclick="showSecondPhase()">تأكيد العنوان</button>
+                        </div>
+                    </div>
+                    <div class="second-phase d-none">
+                        <h6 class="fw-bold">
+                            موقع التوصيل
+                        </h6>
+                        <div class="d-flex justify-content-between">
+                            <p>
+                                <i class="fas fa-map-marker-alt main-color ms-2"></i>
+                                مصدق الدقى و المهندسين وجيزه
+                            </p>
+                            <button class="btn reversed main-color fw-bold" type="button">
+                                تعديل
+                            </button>
+                        </div>
+                        <h6 class="fw-bold mb-3">
+                            أكمل موقع التوصيل
+                        </h6>
+                        <div class="delivery-places px-0 mb-3">
+                            <div class="btn-group" role="group" aria-label="Delivery Place Selector">
+                                <input type="radio" class="btn-check" name="deliveryPlace" id="radio-home"
+                                    autocomplete="off" checked>
+                                <label class="nav-link rounded-pill" for="radio-home">
+                                    <i class="fas fa-city"></i> شقة
+                                </label>
+
+                                <input type="radio" class="btn-check" name="deliveryPlace" id="radio-villa"
+                                    autocomplete="off">
+                                <label class="nav-link rounded-pill" for="radio-villa">
+                                    <i class="fas fa-home"></i> فيلا
+                                </label>
+
+                                <input type="radio" class="btn-check" name="deliveryPlace" id="radio-work"
+                                    autocomplete="off">
+                                <label class="nav-link rounded-pill" for="radio-work">
+                                    <i class="fas fa-building"></i> مكتب
+                                </label>
+                            </div>
+                        </div>
+                        <form>
+                            <div class="mb-3">
+                                <input type="text" class="form-control" placeholder="اسم المبنى, مثال مبني 21">
+                            </div>
+                            <div class="mb-3 d-flex ">
+                                <input type="text" class="form-control " placeholder="رقم الشقة ,مثال  شقة 12">
+                                <input type="text" class="form-control me-4" placeholder="الدور, مثال الدور2">
+
+                            </div>
+                            <div class="mb-3">
+                                <input type="text" class="form-control" placeholder="121 مصدق الدقي ,المهندسين  الجيزه">
+                            </div>
+                            <div class="mb-3">
+                                <input type="text" class="form-control" placeholder="علامة مميزة (اختيارى)">
+                            </div>
+                            <div class="mb-3">
+                                <div class="input-group">
+                                    <input type="text" class="form-control"
+                                        placeholder="  ادخل رقم الهاتف  ,مثال01029063398">
+                                    <select class="form-select country-dropdown me-3" style="max-width: 100px;">
+                                        <option value="eg" selected>+20</option>
+                                        <option value="ae">+971</option>
+                                        <option value="jo">+962</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </form>
+                        <div class="tab-footer justify-content-end d-flex">
+                            <button type="submit" class="btn">حفظ العنوان</button>
+                        </div>
+                    </div>
+                </div> -->
+                <div class="card p-5 mt-3 mb-5">
+                    <div class="first-phase">
+                        <h5 class="fw-bold">
+                            تحديد موقع التوصيل
+                        </h5>
+                        <div class="search-group ">
+                            <span class="search-icon">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" class="form-control" placeholder="ابحث عن الموقع" />
+                        </div>
+                        <div class="map position-relative my-3">
+                            <iframe
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3453.025253043487!2d31.22420217605614!3d30.064810617604635!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x145841cef6b62cc1%3A0x31bc8779f7ab8dd5!2z2YXYt9i52YUg2KfZhNmD2YjYqg!5e0!3m2!1sen!2seg!4v1734860419141!5m2!1sen!2seg"
+                                width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"
+                                referrerpolicy="no-referrer-when-downgrade">
+                            </iframe>
+                            <div class="notes">
+                                <small> تسجيل الدخول لاستخدام عناوينك المحفوظة</small>
+                                <button class="btn"> تسجيل الدخول</button>
+                            </div>
+                        </div>
+                        <div class="tab-footer justify-content-between d-flex align-items-center">
+                            <div>
+                                <h6 class="fw-bold">
+                                    موقع التوصيل
+                                </h6>
+                                <p>
+                                    <i class="fas fa-map-marker-alt main-color ms-2"></i>
+                                    مصدق الدقى و المهندسين وجيزه
+                                </p>
+                            </div>
+                            <button class="btn reversed main-color fw-bold" type="button">
+                                تعديل
+                            </button>
+                            <button type="submit" class="btn" onclick="showSecondPhase()">تأكيد العنوان</button>
+                        </div>
+                    </div>
+                    <div class="second-phase d-none">
+                        <h6 class="fw-bold">
+                            موقع التوصيل
+                        </h6>
+                        <div class="d-flex justify-content-between">
+                            <p>
+                                <i class="fas fa-map-marker-alt main-color ms-2"></i>
+                                مصدق الدقى و المهندسين وجيزه
+                            </p>
+                            <button class="btn reversed main-color fw-bold" type="button">
+                                تعديل
+                            </button>
+                        </div>
+                        <h6 class="fw-bold mb-3">
+                            أكمل موقع التوصيل
+                        </h6>
+                        <div class="delivery-places px-0 mb-3">
+                            <div class="btn-group" role="group" aria-label="Delivery Place Selector">
+                                <input type="radio" class="btn-check" name="deliveryPlace" id="radio-home"
+                                    autocomplete="off" checked>
+                                <label class="nav-link rounded-pill" for="radio-home">
+                                    <i class="fas fa-city"></i> شقة
+                                </label>
+
+                                <input type="radio" class="btn-check" name="deliveryPlace" id="radio-villa"
+                                    autocomplete="off">
+                                <label class="nav-link rounded-pill" for="radio-villa">
+                                    <i class="fas fa-home"></i> فيلا
+                                </label>
+
+                                <!-- Radio Button for Work -->
+                                <input type="radio" class="btn-check" name="deliveryPlace" id="radio-work"
+                                    autocomplete="off">
+                                <label class="nav-link rounded-pill" for="radio-work">
+                                    <i class="fas fa-building"></i> مكتب
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="delivery-content">
+                            <div class="delivery-section home-section active">
+                                <form>
+                                    <div class="mb-3">
+                                        <input type="text" class="form-control" placeholder="اسم المبنى, مثال مبني 21">
+                                    </div>
+                                    <div class="mb-3 d-flex ">
+                                        <input type="text" class="form-control " placeholder="رقم الشقة ,مثال  شقة 12">
+                                        <input type="text" class="form-control me-4" placeholder="الدور, مثال الدور2">
+
+                                    </div>
+                                    <div class="mb-3">
+                                        <input type="text" class="form-control"
+                                            placeholder="121 مصدق الدقي ,المهندسين  الجيزه">
+                                    </div>
+                                    <div class="mb-3">
+                                        <input type="text" class="form-control" placeholder="علامة مميزة (اختيارى)">
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control"
+                                                placeholder="  ادخل رقم الهاتف  ,مثال01029063398">
+                                            <select class="form-select country-dropdown me-3" style="max-width: 100px;">
+                                                <option value="eg" selected>+20</option>
+                                                <option value="ae">+971</option>
+                                                <option value="jo">+962</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="delivery-section villa-section d-none">
+                                <form>
+                                    <div class="mb-3">
+                                        <input type="text" class="form-control"
+                                            placeholder="اسم  الفيلا, مثال فيلا شاهين">
+                                    </div>
+                                    <div class="mb-3">
+                                        <input type="text" class="form-control" placeholder="رقم الفيلا ,مثال  فيلا 12">
+                                    </div>
+                                    <div class="mb-3">
+                                        <input type="text" class="form-control"
+                                            placeholder="121  الدقي ,المهندسين  الجيزه">
+                                    </div>
+                                    <div class="mb-3">
+                                        <input type="text" class="form-control" placeholder="علامة مميزة (اختيارى)">
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control"
+                                                placeholder="  ادخل رقم الهاتف  ,مثال01029063398">
+                                            <select class="form-select country-dropdown me-3" style="max-width: 100px;">
+                                                <option value="eg" selected>+20</option>
+                                                <option value="ae">+971</option>
+                                                <option value="jo">+962</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+
+                            <div class="delivery-section work-section d-none">
+                                <form>
+                                    <div class="mb-3">
+                                        <input type="text" class="form-control" placeholder="اسم المبنى, مثال مبني 21">
+                                    </div>
+                                    <div class="mb-3 d-flex ">
+                                        <input type="text" class="form-control " placeholder="رقم الشقة ,مثال  شقة 12">
+                                        <input type="text" class="form-control me-4" placeholder="الدور, مثال الدور2">
+
+                                    </div>
+                                    <div class="mb-3">
+                                        <input type="text" class="form-control"
+                                            placeholder="121 مصدق الدقي ,المهندسين  الجيزه">
+                                    </div>
+                                    <div class="mb-3">
+                                        <input type="text" class="form-control" placeholder="علامة مميزة (اختيارى)">
+                                    </div>
+                                    <div class="mb-3">
+                                        <div class="input-group">
+                                            <input type="text" class="form-control"
+                                                placeholder="  ادخل رقم الهاتف  ,مثال01029063398">
+                                            <select class="form-select country-dropdown me-3" style="max-width: 100px;">
+                                                <option value="eg" selected>+20</option>
+                                                <option value="ae">+971</option>
+                                                <option value="jo">+962</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+
+                        <div class="tab-footer justify-content-end d-flex">
+                            <button type="submit" class="btn">حفظ العنوان</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="before-footer"></section>
+
+    </main>
+    <footer>
+        <div class="footer-curve"></div>
+        <div class="container ">
+            <figure class="footer-logo">
+                <img src="SiteAssets/images/logo-with-white-bg.png" />
+            </figure>
+        </div>
+        <div class="footer">
+            <div class="container py-sm-5 p-4">
+                <div class=" row m-0">
+                    <div class="col-md-3" data-aos="zoom-in">
+                        <h4 class="footer-title"> تواصل معنا </h4>
+                        <ul class="list-unstyled px-0 pt-4">
+                            <li>
+                                <ul class="list-unstyled social-media p-0">
+                                    <li>
+                                        <a href="#" class="ms-3">
+                                            <i class="fab fa-facebook"></i>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="ms-3">
+                                            <i class="fab fa-snapchat"></i>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="ms-3">
+                                            <i class="fab fa-instagram"></i>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="d-flex align-items-center">
+                                <span class="icon ms-2">
+                                    <i class="fas fa-phone"></i>
+                                </span>
+                                <a>
+                                    010265899887
+                                </a>
+                            </li>
+                            <li class="d-flex align-items-center">
+                                <span class="icon ms-2">
+                                    <i class="fas fa-phone"></i>
+                                </span>
+                                <a>
+                                    010265899887
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3" data-aos="zoom-in">
+                        <h4 class="footer-title">روابط سريعة </h4>
+                        <ul class="list-unstyled px-0 pt-4">
+                            <li><a href="shop.html"> القائمة الرئيسية</a></li>
+                            <li><a data-bs-toggle="modal" data-bs-target="#productModal">العروض</a></li>
+                            <li><a data-bs-toggle="modal" data-bs-target="#branchesModal">فروعنا</a></li>
+                            <li><a href="policy.html">الشروط والاحكام</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3" data-aos="zoom-in">
+                        <h4 class="footer-title">المساعدة</h4>
+                        <ul class="list-unstyled px-0 pt-4">
+                            <li><a href="contact-us.html"> خدمة العملاء </a></li>
+                            <li><a href="policy.html">سياسة الاسترجاع</a></li>
+                            <li><a href="privacy.html">سياسة الخصوصية</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3" data-aos="zoom-in">
+                        <h4 class="footer-title mb-4">مواعيد عمل المطعم</h4>
+                        <p>الاحد الى الخميس من الساعه 10صباحا الى 10 مساء</p>
+                        <p>الجمعة الي االسبت من الساعة 1 مساء الي 12 صباحا</p>
+                    </div>
+                </div>
+
+            </div>
+            <div class="copywrite">
+                <p class="m-0">جميع الحقوق محفوظة لصالح <a href="#">الكوت</a> 2024</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- delivery details modal -->
+    <div class="delivery-modal modal fade" tabindex="-1" id="deliveryModal" aria-labelledby="deliveryModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog  modal-lg">
+            <div class="modal-content">
+                <div class="modal-header border-0">
+                    <button type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Close"
+                        onclick="showFirstPhase()"></button>
+                </div>
+                <div class="modal-body">
+                    <h3 class="text-center fw-bold mb-4"> ابدأ طلبك الان </h3>
+                    <ul class="nav nav-pills main-pills px-0 mb-3 justify-content-center" id="pills-tab" role="tablist">
+                        <li class="nav-item ms-3" role="presentation">
+                            <button class="nav-link active" id="pills-delivery-tab" data-bs-toggle="pill"
+                                data-bs-target="#pills-delivery" type="button" role="tab" aria-controls="pills-delivery"
+                                aria-selected="true">
+                                <div class="icon">
+                                    <img src="SiteAssets/images/delivery-icon.png" alt="" />
+                                </div>
+                                <h6 class="me-2">التوصيل</h6>
+                            </button>
+                        </li>
+                        <li class="nav-item ms-3 " role="presentation">
+                            <button class="nav-link" id="pills-takeaway-tab" data-bs-toggle="pill"
+                                data-bs-target="#pills-takeaway" type="button" role="tab" aria-controls="pills-takeaway"
+                                aria-selected="false">
+                                <div class="icon">
+                                    <img src="SiteAssets/images/takeaway-icon.png" alt="" />
+                                </div>
+                                <h6 class="me-2">الإستلام</h6>
+                            </button>
+                        </li>
+
+                    </ul>
+                    <div class="tab-content" id="pills-tabContent">
+                        <div class="tab-pane fade show active" id="pills-delivery" role="tabpanel"
+                            aria-labelledby="pills-delivery-tab">
+                            <div class="first-phase">
+                                <h5 class="fw-bold">
+                                    تحديد موقع التوصيل
+                                </h5>
+                                <div class="search-group ">
+                                    <span class="search-icon">
+                                        <i class="fas fa-search"></i>
+                                    </span>
+                                    <input type="text" class="form-control" placeholder="ابحث عن الموقع" />
+                                </div>
+                                <div class="map position-relative my-3">
+                                    <iframe
+                                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3453.025253043487!2d31.22420217605614!3d30.064810617604635!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x145841cef6b62cc1%3A0x31bc8779f7ab8dd5!2z2YXYt9i52YUg2KfZhNmD2YjYqg!5e0!3m2!1sen!2seg!4v1734860419141!5m2!1sen!2seg"
+                                        width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"
+                                        referrerpolicy="no-referrer-when-downgrade">
+                                    </iframe>
+                                    <div class="notes">
+                                        <small> تسجيل الدخول لاستخدام عناوينك المحفوظة</small>
+                                        <button class="btn"> تسجيل الدخول</button>
+                                    </div>
+                                </div>
+                                <div class="tab-footer justify-content-between d-flex align-items-center">
+                                    <div>
+                                        <h6 class="fw-bold">
+                                            موقع التوصيل
+                                        </h6>
+                                        <p>
+                                            <i class="fas fa-map-marker-alt main-color ms-2"></i>
+                                            مصدق الدقى و المهندسين وجيزه
+                                        </p>
+                                    </div>
+                                    <button class="btn reversed main-color fw-bold" type="button">
+                                        تعديل
+                                    </button>
+                                    <button type="submit" class="btn" onclick="showSecondPhase()">تأكيد العنوان</button>
+                                </div>
+                            </div>
+                            <div class="second-phase d-none">
+                                <h6 class="fw-bold">
+                                    موقع التوصيل
+                                </h6>
+                                <div class="d-flex justify-content-between">
+                                    <p>
+                                        <i class="fas fa-map-marker-alt main-color ms-2"></i>
+                                        مصدق الدقى و المهندسين وجيزه
+                                    </p>
+                                    <button class="btn reversed main-color fw-bold" type="button">
+                                        تعديل
+                                    </button>
+                                </div>
+                                <h6 class="fw-bold mb-3">
+                                    أكمل موقع التوصيل
+                                </h6>
+                                <ul class="delivery-places nav nav-pills px-0 mb-3" id="pills-tab" role="tablist">
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link active rounded-pill" id="pills-home-tab"
+                                            data-bs-toggle="pill" data-bs-target="#pills-home" type="button" role="tab"
+                                            aria-controls="pills-home" aria-selected="true">
+                                            <i class="fas fa-city"></i> شقة
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link rounded-pill" id="pills-villa-tab" data-bs-toggle="pill"
+                                            data-bs-target="#pills-villa" type="button" role="tab"
+                                            aria-controls="pills-villa" aria-selected="false">
+                                            <i class="fas fa-home"></i> فيلا
+                                        </button>
+                                    </li>
+                                    <li class="nav-item" role="presentation">
+                                        <button class="nav-link rounded-pill" id="pills-work-tab" data-bs-toggle="pill"
+                                            data-bs-target="#pills-work" type="button" role="tab"
+                                            aria-controls="pills-work" aria-selected="false">
+                                            <i class="fas fa-building"></i> مكتب
+                                        </button>
+                                    </li>
+                                </ul>
+                                <div class="tab-content" id="pills-tabContent">
+                                    <div class="tab-pane fade show active" id="pills-home" role="tabpanel"
+                                        aria-labelledby="pills-home-tab">
+                                        <form>
+                                            <div class="mb-3">
+                                                <input type="text" class="form-control"
+                                                    placeholder="اسم  الفيلا, مثال فيلا شاهين">
+                                            </div>
+                                            <div class="mb-3">
+                                                <input type="text" class="form-control"
+                                                    placeholder="رقم الفيلا ,مثال  فيلا 12">
+                                            </div>
+                                            <div class="mb-3">
+                                                <input type="text" class="form-control"
+                                                    placeholder=" 121 مصدق الدقي ,المهندسين  الجيزه">
+                                            </div>
+                                            <div class="mb-3">
+                                                <input type="text" class="form-control"
+                                                    placeholder="علامة مميزة (اختيارى)">
+                                            </div>
+                                            <div class="mb-3">
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control"
+                                                        placeholder="  ادخل رقم الهاتف  ,مثال01029063398">
+                                                    <select class="form-select country-dropdown me-3"
+                                                        style="max-width: 100px;">
+                                                        <option value="eg" selected>+20</option>
+                                                        <option value="ae">+971</option>
+                                                        <option value="jo">+962</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="tab-pane fade" id="pills-villa" role="tabpanel"
+                                        aria-labelledby="pills-villa-tab">
+                                        <form>
+                                            <div class="mb-3">
+                                                <input type="text" class="form-control"
+                                                    placeholder="اسم  الفيلا, مثال فيلا شاهين">
+                                            </div>
+                                            <div class="mb-3">
+                                                <input type="text" class="form-control"
+                                                    placeholder="رقم الفيلا ,مثال  فيلا 12">
+                                            </div>
+                                            <div class="mb-3">
+                                                <input type="text" class="form-control"
+                                                    placeholder=" 121 مصدق الدقي ,المهندسين  الجيزه">
+                                            </div>
+                                            <div class="mb-3">
+                                                <input type="text" class="form-control"
+                                                    placeholder="علامة مميزة (اختيارى)">
+                                            </div>
+                                            <div class="mb-3">
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control"
+                                                        placeholder="  ادخل رقم الهاتف  ,مثال01029063398">
+                                                    <select class="form-select country-dropdown me-3"
+                                                        style="max-width: 100px;">
+                                                        <option value="eg" selected>+20</option>
+                                                        <option value="ae">+971</option>
+                                                        <option value="jo">+962</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                    <div class="tab-pane fade" id="pills-work" role="tabpanel"
+                                        aria-labelledby="pills-work-tab">
+                                        <form>
+                                            <div class="mb-3">
+                                                <input type="text" class="form-control"
+                                                    placeholder="اسم  الفيلا, مثال فيلا شاهين">
+                                            </div>
+                                            <div class="mb-3">
+                                                <input type="text" class="form-control"
+                                                    placeholder="رقم الفيلا ,مثال  فيلا 12">
+                                            </div>
+                                            <div class="mb-3">
+                                                <input type="text" class="form-control"
+                                                    placeholder=" 121 مصدق الدقي ,المهندسين  الجيزه">
+                                            </div>
+                                            <div class="mb-3">
+                                                <input type="text" class="form-control"
+                                                    placeholder="علامة مميزة (اختيارى)">
+                                            </div>
+                                            <div class="mb-3">
+                                                <div class="input-group">
+                                                    <input type="text" class="form-control"
+                                                        placeholder="  ادخل رقم الهاتف  ,مثال01029063398">
+                                                    <select class="form-select country-dropdown me-3"
+                                                        style="max-width: 100px;">
+                                                        <option value="eg" selected>+20</option>
+                                                        <option value="ae">+971</option>
+                                                        <option value="jo">+962</option>
+                                                    </select>
+                                                </div>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                                <div class="tab-footer justify-content-end d-flex">
+                                    <button type="submit" class="btn" onclick="showThirdPhase()">حفظ العنوان</button>
+                                </div>
+                            </div>
+                            <div class="third-phase d-none">
+                                <div>
+                                    <h6 class="fw-bold">
+                                        موقع التوصيل
+                                    </h6>
+                                    <div class="d-flex justify-content-between">
+                                        <p>
+                                            <i class="fas fa-map-marker-alt main-color ms-2"></i>
+                                            مصدق الدقى و المهندسين وجيزه
+                                        </p>
+                                        <button class="btn reversed main-color fw-bold" type="button">
+                                            تعديل
+                                        </button>
+                                    </div>
+
+                                    <p class="text-muted">
+                                        121 مصدق , الدور 2 , شقة 12 ,رقم الهاتف: 01029061189 ,علامة مميزة: امام ماركت
+                                        الصفا
+                                    </p>
+
+                                </div>
+                            </div>
+                            <!-- <div class="fourth-phase">
+                <h5 class="fw-bold">
+                  تحديد موقع التوصيل
+                </h5>
+                <div class="search-group ">
+                  <span class="search-icon">
+                    <i class="fas fa-search"></i>
+                  </span>
+                  <input type="text" class="form-control" placeholder="ابحث عن الموقع" />
+                </div>
+                <div class="d-flex justify-content-between align-items-center">
+                  <h4 class="my-4 fw-bold">عناويني</h4>
+                  <button class="btn fw-bold" type="button">
+                    <span>+</span> أضف عنوان
+                  </button>
+                </div>
+                <ul class="list-unstyled px-0">
+                  <li class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                      <h5>
+                        <i class="fas fa-city text-muted fa-xs ms-2"></i>
+                        شقة
+                      </h5>
+                      <small class="text-muted">
+                        250 معادى السريات-قسم المعادى-محافظة القاهرة
+                      </small>
+                    </div>
+                    <div class="dropdown">
+                      <a id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v"></i>
+                      </a>
+                      <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <li>
+                          <button class="dropdown-item w-100">تعديل </button>
+                        </li>
+                        <li>
+                          <button class="dropdown-item w-100"> حذف</button>
+                        </li>
+                      </ul>
+                    </div>
+                  </li>
+                  <li class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                      <h5>
+                        <i class="fas fa-city text-muted fa-xs ms-2"></i>
+                        فيلا
+                      </h5>
+                      <small class="text-muted">
+                        250 معادى السريات-قسم المعادى-محافظة القاهرة
+                      </small>
+                    </div>
+                    <div class="dropdown">
+                      <a id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v"></i>
+                      </a>
+                      <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <li>
+                          <button class="dropdown-item w-100">تعديل </button>
+                        </li>
+                        <li>
+                          <button class="dropdown-item w-100"> حذف</button>
+                        </li>
+                      </ul>
+                    </div>
+                  </li>
+                  <li class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                      <h5>
+                        <i class="fas fa-city text-muted fa-xs ms-2"></i>
+                        شركة
+                      </h5>
+                      <small class="text-muted">
+                        250 معادى السريات-قسم المعادى-محافظة القاهرة
+                      </small>
+                    </div>
+                    <div class="dropdown">
+                      <a id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-ellipsis-v"></i>
+                      </a>
+                      <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <li>
+                          <button class="dropdown-item w-100">تعديل </button>
+                        </li>
+                        <li>
+                          <button class="dropdown-item w-100"> حذف</button>
+                        </li>
+                      </ul>
+                    </div>
+                  </li>
+                </ul>
+                <div class="tab-footer justify-content-between d-flex align-items-center">
+                  <div>
+                    <h6 class="fw-bold">
+                      موقع التوصيل
+                    </h6>
+                    <p>
+                      <i class="fas fa-map-marker-alt main-color ms-2"></i>
+                      مصدق الدقى و المهندسين وجيزه
+                    </p>
+                  </div>
+                  <button class="btn reversed main-color fw-bold" type="button">
+                    تعديل
+                  </button>
+                  <button type="submit" class="btn" onclick="showSecondPhase()">تأكيد العنوان</button>
+                </div>
+              </div> -->
+                        </div>
+                        <div class="tab-pane fade" id="pills-takeaway" role="tabpanel"
+                            aria-labelledby="pills-takeaway-tab">
+
+                            <div class="bg-dark-gray  py-2">
+                                <h5 class="text-dark fw-bold text-center">ما هو المطعم الذى تريد الاستلام منه؟</h5>
+                            </div>
+                            <div class="d-flex justify-content-end my-2">
+                                <button class="btn btn-no-modal"> استخدم موقعى </button>
+                            </div>
+                            <div class="my-2">
+                                <h5 class="text-dark fw-bold"> موقع الاستلام</h5>
+                                <form class="d-flex mb-1 position-relative search-form">
+                                    <input class="form-control search-input" type="search"
+                                        placeholder="ابحث عن الفرع المناسب لك" aria-label="Search">
+                                    <i class="fas fa-search search-icon"></i>
+                                </form>
+                            </div>
+
+                            <div class="location border-bottom mb-1">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="fw-bold mt-2">
+                                        <i class="fas fa-map-marker-alt main-color mx-2"></i>فرع المهندسين ممشى اهل مصر
+                                    </h6>
+                                    <span class="badge text-success mt-2">مفتوح</span>
+                                </div>
+                                <p class="text-muted mx-2">12 ممشى اهل مصر12 بجوار كريو كافيه</p>
+                                <p class="main-color fw-bold">
+                                    <i class="fas fa-phone mx-2"></i>0123698745269
+                                </p>
+                            </div>
+                            <div class="location mb-1">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="fw-bold mt-2">
+                                        <i class="fas fa-map-marker-alt main-color mx-2"></i>فرع المهندسين ممشى اهل مصر
+                                    </h6>
+                                    <span class="badge text-muted mt-2">مغلق</span>
+                                </div>
+                                <p class="text-muted mx-2">12 ممشى اهل مصر12 بجوار كريو كافيه</p>
+                                <p class="main-color fw-bold">
+                                    <i class="fas fa-phone mx-2"></i>0123698745269
+                                </p>
+                            </div>
+
+                            <div class="location border-red mb-1">
+                                <div class="d-flex justify-content-between">
+                                    <h6 class="fw-bold mt-2">
+                                        <i class="fas fa-map-marker-alt main-color mx-2"></i>فرع المهندسين ممشى اهل مصر
+                                    </h6>
+                                    <span class="badge text-success mt-2">مفتوح</span>
+                                </div>
+                                <p class="text-muted mx-2">12 ممشى اهل مصر12 بجوار كريو كافيه</p>
+                                <p class="main-color fw-bold">
+                                    <i class="fas fa-phone mx-2"></i>0123698745269
+                                </p>
+                            </div>
+                            <div class="d-flex justify-content-end my-2">
+                                <button class="btn"> ابدأ طلبك </button>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- end delivery details modal -->
+
+    <script src="SiteAssets/js/jquery-3.6.0.min.js"></script>
+    <script src="SiteAssets/bootstrap-5.1.3/dist/js/bootstrap.min.js"></script>
+    <script src="SiteAssets/fontawesome-free-5.15.4-web/js/all.min.js"></script>
+
+    <!-- Main js -->
+    <script src="./SiteAssets/js/style.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+
+    <!-- include Gallery (lightbox) plugin js-->
+    <script src="SiteAssets/lightbox/js/lightbox.min.js"></script>
+
+    <!-- include Owl Carousel plugin js-->
+    <script src="SiteAssets/OwlCarousel2-2.3.4/dist/owl.carousel.min.js"></script>
+    <script src="SiteAssets/aos-master/dist/aos.js"></script>
+    <script>
+        AOS.init();
+    </script>
+    <script>
+        document.querySelectorAll('.btn-check').forEach((radio) => {
+            radio.addEventListener('change', () => {
+                document.querySelectorAll('.delivery-section').forEach((section) => {
+                    section.classList.add('d-none');
+                });
+
+                if (radio.id === 'radio-home') {
+                    document.querySelector('.home-section').classList.remove('d-none');
+                } else if (radio.id === 'radio-villa') {
+                    document.querySelector('.villa-section').classList.remove('d-none');
+                } else if (radio.id === 'radio-work') {
+                    document.querySelector('.work-section').classList.remove('d-none');
+                }
+            });
+        });
+
+    </script>
+</body>
+
+</html>

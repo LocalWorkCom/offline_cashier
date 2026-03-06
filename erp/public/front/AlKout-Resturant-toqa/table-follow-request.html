@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <meta name="author" content="" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta property="og:url" content="" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="" />
+    <meta property="og:description" content="" />
+    <meta property="og:image" content="" />
+    <title>مطعم الكوت</title>
+
+    <link rel="shortcut icon" href="SiteAssets/images/logo.png" sizes="25x25" />
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="SiteAssets/bootstrap-5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="SiteAssets/fontawesome-free-5.15.4-web/css/all.min.css">
+    <link rel="stylesheet" href="SiteAssets/css/animate.min.css">
+    <link rel="stylesheet" href="SiteAssets/aos-master/dist/aos.css">
+
+    <!-- Owl Carousel -->
+    <link rel="stylesheet" href="SiteAssets/OwlCarousel2-2.3.4/dist/assets/owl.carousel.min.css" />
+    <link rel="stylesheet" href="SiteAssets/OwlCarousel2-2.3.4/dist/assets/owl.theme.default.min.css" />
+
+    <!-- include Gallery (lightbox) plugin -->
+    <link rel="stylesheet" href="SiteAssets/lightbox/css/lightbox.min.css" />
+    <!-- Main Style -->
+    <link rel="stylesheet" href="SiteAssets/css/style.css" type="text/css" />
+    <!-- fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <header class="fixed-top">
+        <nav class="navbar navbar-expand-lg navbar-light p-0">
+            <div class="container second-header py-2">
+                <a class="navbar-service" href="index.html">
+                    <img src="SiteAssets/images/logo.png">
+                </a>
+                <a class="navbar-toggler" href="#">
+                    En
+                </a>
+                <div class="collapse navbar-collapse flex-column" id="navbarSupportedContent">
+                    <div class="d-flex justify-content-between w-100">
+                        <ul class="navbar-nav mb-2 mb-lg-0 align-items-center">
+                            <li class="nav-item">
+                                <a class="nav-link">
+                                    <button class="btn white fw-bold d-flex justify-content-between align-items-center">
+                                        <figure class="mb-0"><img src="SiteAssets/images/food-delivery 1.svg" alt="">
+                                        </figure>
+                                        <span>التوصيل </span>
+                                    </button>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link">
+                                    <button class="btn white fw-bold d-flex justify-content-between align-items-center"
+                                        data-bs-toggle="modal" data-bs-target="#branchSelectionModal">
+                                        <figure class="mb-0"><img src="SiteAssets/images/take-away 1.svg" alt="">
+                                        </figure>
+                                        <span> الاستلام</span>
+                                    </button>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link">
+                                    <button class="btn white fw-bold d-flex justify-content-between align-items-center"
+                                        data-bs-toggle="modal" data-bs-target="#table-reservation">
+                                        <figure class="mb-0">
+                                            <img src="SiteAssets/images/table 1.svg" alt="">
+                                        </figure>
+                                        <span>حجز طاولة</span>
+                                    </button>
+                                </a>
+                            </li>
+                        </ul>
+                        <ul class="navbar-nav mb-2 mb-lg-0 align-items-center">
+                            <li class="nav-item">
+                                <a class="nav-link" href="#">
+                                    <button class="btn white fw-bold d-flex justify-content-between"
+                                        data-bs-toggle="modal" data-bs-target="#deliveryModal">
+                                        <span>
+                                            <i class="fas fa-map-marker-alt ms-2 main-color"></i>
+                                            ابدأ طلبك
+                                        </span>
+                                        <span class="select-sm">
+                                            اختر
+                                        </span>
+                                    </button>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link btn align-items-center" data-bs-toggle="modal"
+                                    data-bs-target="#loginModal">
+                                    <i class="fas fa-user-circle"></i>
+                                    <span>تسجيل الدخول</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="d-flex justify-content-between w-100">
+                        <ul class="navbar-nav mb-2 mb-lg-0 align-items-center">
+                            <li class="nav-item active" aria-current="page">
+                                <a class="nav-link" href="index.html">الرئيسية</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" data-bs-toggle="modal" data-bs-target="#branchesModal"> الفروع</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="shop.html">قائمة الطعام</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="./contact-us.html">تواصل معنا</a>
+                            </li>
+                        </ul>
+                        <ul class="navbar-nav mb-2 mb-lg-0 align-items-center">
+                            <li class="nav-item">
+                                <a class="nav-link cart-icon" href="cart.html">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="#">
+                                    En
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+
+            </div>
+        </nav>
+        <div class="mobNav d-lg-none d-block ">
+            <div id="sidenav" class="sidenav">
+                <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+                <div class="overlay-content">
+                    <a href="index.html"> الرئيسية</a>
+                    <a href="#">قائمة الطعام</a>
+                    <a href="#">تواصل معنا</a>
+                    <a href="#"> <i class="fas fa-shopping-cart"></i>
+                    </a>
+                    <a href="#"> En</a>
+                    <a href="#"> تسجيل الدخول </a>
+                </div>
+            </div>
+        </div>
+
+    </header>
+    <main class="follow-request">
+        <section class="inner-header pt-5 mt-5">
+            <div class="container pt-sm-5 pt-4">
+                <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="index.html">الرئيسية</a></li>
+                        <li class="breadcrumb-item active" aria-current="page"> متابعة الطلب</li>
+                    </ol>
+                </nav>
+            </div>
+        </section>
+        <section>
+            <div class="container py-2">
+                <div class="card mt-2 p-3">
+                    <div class="card-header bg-white">
+                        <div class="d-flex justify-content-between">
+                            <h5 class="card-title fw-bold mb-3">حالة الطلب الحالية</h5>
+                            <button class="btn reversed main-color d-flex fw-bold" type="button">
+                                الغاء الطلب </button>
+                        </div>
+                        <h6 class="mb-3">الوقت المتوقع للتوصيل</h6>
+                        <h5 class="main-color fw-bold mb-3 d-flex flex-wrap">
+                            <span class="to-time">10:30 ص - </span>
+                            <span class="from-time">11:15 ص </span>
+                            <span class="p-1 mx-1 bg-warning text-dark rounded"><small>45 دقيقة</small></span>
+                        </h5>
+                        <h5 class="p-1 bg-warning text-dark rounded d-inline-block">رقم الحجز 255454558#</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class=" d-flex flex-column align-items-center">
+                            <img src="./SiteAssets/images/donee.png" alt="Done" class="done-img">
+                            <h5 class="fw-bold mt-4">تم تأكيد حجزك بنجاح</h5>
+                        </div>
+                        <div class="bg-dark-gray p-3 my-4">
+                            <h5 class="fw-bold">ملخص الطلب</h5>
+                        </div>
+                        <div class="bg-dark-gray p-3 my-4">
+                            <h5 class="fw-bold">
+                                <i class="fas fa-file-alt main-color fa-xs fs-5 mx-1"></i>
+                                معلومات الدفع
+                            </h5>
+                            <p>الدفع عند الوصول</p>
+                            <div class="d-flex justify-content-between">
+                                <p>دفع عربون اونلاين
+                                    <span class="main-color">
+                                        (500) ج .م
+                                    </span>
+                                </p>
+                                <p class="bg-success text-white px-5">تم الدفع اونلاين</p>
+                            </div>
+                        </div>
+                        <div class="bg-dark-gray p-3 my-4">
+                            <h5 class="fw-bold">
+                                <i class="fas fa-file-alt main-color fa-xs fs-5 mx-1"></i>
+                                تفاصيل الطلب
+                            </h5>
+                            <div class="table-details mt-5 w-50">
+                                <img src="SiteAssets/images/red-table.svg" alt="" />
+                                <h5 class="fw-bold d-inline">طاولة (1)</h5>
+                                <div>
+                                    <img src="SiteAssets/images/clock.svg" alt="" />
+                                    <span class="text-muted mb-0">
+                                        <span>
+                                            الوصول:
+                                        </span>
+                                        12:30 م
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <img src="SiteAssets/images/calender.svg" alt="" />
+                                        <span class="text-muted mb-0">
+                                            8 فبراير , 2025
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <img src="SiteAssets/images/user.svg" alt="" />
+                                        <span class="text-muted mb-0">
+                                            2 شخص , 1طفل
+                                        </span>
+                                    </div>
+
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <div>
+                                        <img src="SiteAssets/images/table.svg" alt="" />
+                                        <span class="text-muted mb-0">
+                                            داخل المطعم
+                                        </span>
+                                    </div>
+                                    <div>
+                                        <img src="SiteAssets/images/red-clock.svg" alt="" />
+                                        <span class="text-muted mb-0 main-color">
+                                            <span>
+                                                المغادرة:
+                                            </span> 2:30 م
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="order bg-white p-4 my-3">
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <span class="p-1 bg-secondary text-light rounded">1</span>
+                                        <span class="mx-1">x</span>
+                                        <span>مجبوس دجاج</span>
+                                        <p class="text-muted mt-1 mb-0 mx-4"> <small>نص فرخة , دقوس ,كولا </small></p>
+                                    </div>
+                                    <p class="mb-0 fw-bold">400 ج.م</p>
+                                </div>
+
+                                <div class="d-flex justify-content-between align-items-center mb-3">
+                                    <div>
+                                        <span class="p-1 bg-secondary text-light rounded">1</span>
+                                        <span class="mx-1">x</span>
+                                        <span>مجبوس دجاج</span>
+                                        <p class="text-muted mt-1 mb-0 mx-4"> <small>نص فرخة , دقوس ,كولا </small></p>
+                                    </div>
+                                    <p class="mb-0 fw-bold">400 ج.م</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="bg-dark-gray p-3 my-4">
+                            <h5 class="fw-bold"> تواصل مع المطعم
+                            </h5>
+                            <div class="d-flex justify-content-between">
+                                <img class="contact-img" src="SiteAssets/images/small-logo.svg" alt="" />
+                                <div class="contact-icons">
+                                    <img src="SiteAssets/images/whatsapp-icon.svg" alt="" />
+                                    <img src="SiteAssets/images/call.svg" alt="" />
+                                </div>
+                            </div>
+                        </div>
+                        <div class="bg-dark-gray p-3 my-4">
+                            <h5 class="fw-bold mb-3">تواصل مع الكابتن
+                            </h5>
+                            <div class="d-flex justify-content-between">
+                                <div class="courier-content">
+                                    <img class="contact-img" src="SiteAssets/images/captain.jpg" alt="" />
+                                    <span class="mx-2">عبدلله محمود</span>
+                                </div>
+                                <div class="contact-icons">
+                                    <button class="btn bg-success rounded-pill">
+                                        <img src="SiteAssets/images/chat-icon.svg" alt="">
+                                        <span>ابدأ
+                                            المحادثة
+                                        </span>
+                                    </button>
+                                    <button class="call btn rounded-pill" data-bs-target="#captainContact"
+                                        data-bs-toggle="modal">
+                                        <img src="SiteAssets/images/circle-call.svg" alt="" />
+                                        <span>اتواصل مع الكابتن
+                                        </span>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="chat-button bg-success" onclick="toggleChat()" id="chatButton">
+                            <img src="SiteAssets/images/chat-icon.svg" alt="" class="default-icon" />
+                            <span class="default-text">ابدأ المحادثة</span>
+
+                            <img src="SiteAssets/images/user.svg" alt="User" class="user-icon d-none" />
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+
+        </section>
+        <section class="before-footer"></section>
+        <button class="chat-button bg-success" onclick="toggleChat()" id="chatButton">
+            <img src="SiteAssets/images/chat-icon.svg" alt="" class="default-icon" />
+            <span class="default-text ">ابدأ المحادثة</span>
+            <img src="SiteAssets/images/user.svg" alt="User" class="user-icon d-none" />
+
+            <!-- Small close button (hidden by default) -->
+            <span class="chat-close-btn d-none" onclick="closeChat(event)">✖</span>
+        </button>
+
+        <div class="chat-box" id="chatBox">
+            <div class="chat-header">
+                <div class="d-flex align-items-center">
+                    <div class="user-img">
+                        <img src="SiteAssets/images/user.svg" alt="User">
+                    </div>
+                    <div class="user-content mx-2">
+                        <h6 class="fw-bold">مصطفى محمد</h6>
+                        <small class="text-muted">سائق</small>
+                    </div>
+                </div>
+
+                <div class="header-buttons">
+                    <button id="minimize"><i class="fas fa-window-minimize main-color"></i></button>
+                    <button onclick="closeChat()"><i class="fas fa-times-circle main-color fs-3"></i></button>
+                </div>
+            </div>
+            <div class="chat-messages" id="chatMessages">
+                <div class="bot-message message">
+                    <img src="SiteAssets/images/user.svg" alt="Bot">
+                    <span> مرحبًا، كيف يمكنني مساعدتك؟
+                    </span>
+                </div>
+            </div>
+            <div class="chat-input">
+                <a href="" class="mx-1">
+                    <img class="chat-icon" src="SiteAssets/images/paperclip.svg" alt="" />
+                </a>
+                <a href="" class="mx-1">
+                    <img class="chat-icon" src="SiteAssets/images/emoji.svg" alt="" />
+                </a>
+                <a class="mx-1" onclick="sendMessage()"><img class="chat-icon" src="SiteAssets/images/send.svg"
+                        alt="" /></a>
+                <input type="text" id="chatInput" class="form-control" placeholder="اكتب رسالة..."
+                    onkeypress="handleKeyPress(event)">
+
+            </div>
+        </div>
+    </main>
+    <footer>
+        <div class="footer-curve"></div>
+        <div class="container ">
+            <figure class="footer-logo">
+                <img src="SiteAssets/images/logo-with-white-bg.png" />
+            </figure>
+        </div>
+        <div class="footer">
+            <div class="container py-sm-5 p-4">
+                <div class=" row m-0">
+                    <div class="col-md-3" data-aos="zoom-in">
+                        <h4 class="footer-title"> تواصل معنا </h4>
+                        <ul class="list-unstyled px-0 pt-4">
+                            <li>
+                                <ul class="list-unstyled social-media p-0">
+                                    <li>
+                                        <a href="#" class="ms-3">
+                                            <i class="fab fa-facebook"></i>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="ms-3">
+                                            <i class="fab fa-snapchat"></i>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="ms-3">
+                                            <i class="fab fa-instagram"></i>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="d-flex align-items-center">
+                                <span class="icon ms-2">
+                                    <i class="fas fa-phone"></i>
+                                </span>
+                                <a href="#">
+                                    010265899887
+                                </a>
+                            </li>
+                            <li class="d-flex align-items-center">
+                                <span class="icon ms-2">
+                                    <i class="fas fa-phone"></i>
+                                </span>
+                                <a href="#">
+                                    010265899887
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3" data-aos="zoom-in">
+                        <h4 class="footer-title">روابط سريعة </h4>
+                        <ul class="list-unstyled px-0 pt-4">
+                            <li><a href="#"> القائمة الرئيسية</a></li>
+                            <li><a href="#">العروض</a></li>
+                            <li><a href="#">فروعنا</a></li>
+                            <li><a href="#">الشروط والاحكام</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3" data-aos="zoom-in">
+                        <h4 class="footer-title">المساعدة</h4>
+                        <ul class="list-unstyled px-0 pt-4">
+                            <li><a href="#"> خدمة العملاء </a></li>
+                            <li><a href="#">سياسة الاسترجاع</a></li>
+                            <li><a href="#">سياسة الخصوصية</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3" data-aos="zoom-in">
+                        <h4 class="footer-title mb-4">مواعيد عمل المطعم</h4>
+                        <p>الاحد الى الخميس من الساعه 10صباحا الى 10 مساء</p>
+                        <p>الجمعة الي االسبت من الساعة 1 مساء الي 12 صباحا</p>
+                    </div>
+                </div>
+
+            </div>
+            <div class="copywrite">
+                <p class="m-0">جميع الحقوق محفوظة لصالح <a href="#">الكوت</a> 2024</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- end done modal -->
+    <script src="SiteAssets/js/jquery-3.6.0.min.js"></script>
+    <script src="SiteAssets/bootstrap-5.1.3/dist/js/bootstrap.min.js"></script>
+    <script src="SiteAssets/fontawesome-free-5.15.4-web/js/all.min.js"></script>
+
+    <!-- Main js -->
+    <script src="SiteAssets/js/style.js"></script>
+
+    <!-- include Gallery (lightbox) plugin js-->
+    <script src="SiteAssets/lightbox/js/lightbox.min.js"></script>
+
+    <!-- include Owl Carousel plugin js-->
+    <script src="SiteAssets/OwlCarousel2-2.3.4/dist/owl.carousel.min.js"></script>
+    <script src="SiteAssets/aos-master/dist/aos.js"></script>
+    <script>
+        AOS.init();
+    </script>
+
+    <script>
+
+        $('#minimize').click(function () {
+            $('.default-icon').addClass('d-none');
+            $('.default-text').addClass('d-none');
+            $('.chat-close-btn').removeClass('d-none');
+            $('.user-icon').removeClass('d-none');
+            $('#chatBox').removeClass('show');
+            $('.chat-button').removeClass('bg-success');
+            $('.chat-button').addClass('bg-white');
+
+        });
+
+        // function minimize() {
+        //     var chatBox = document.getElementById("chatBox");
+        //     var chatButton = document.getElementById("chatButton");
+        //     var closeBtn = document.querySelector(".chat-close-btn");
+        //     var defaultIcon = document.querySelector('.default-icon'); // Fix: Ensure inside button
+        //     var defaultText = document.querySelector('.default-text'); // Fix: Ensure inside button
+        //     var userIcon = document.querySelector('.user-icon');
+
+        //     chatBox.classList.remove("show");
+
+        //     // Show default icon and text again
+        //     defaultIcon.classList.add("d-none");
+        //     defaultText.classList.add("d-none");
+
+        //     // Hide user icon and close button
+        //     userIcon.classList.remove("d-none");
+        //     closeBtn.classList.remove("d-none");
+        //     console.log(chatButton);
+        //     console.log(closeBtn);
+        //     console.log(defaultIcon);
+        //     console.log(defaultText);
+        //     console.log(userIcon);
+        //     chatButton.offsetHeight;
+
+        // }
+        function toggleChat() {
+            var chatBox = document.getElementById("chatBox");
+
+            if (chatBox.classList.contains("show")) {
+                minimize(); // If chat is already open, minimize it
+            } else {
+                chatBox.classList.add("show"); // Show chat box
+                console.log(chatBox, 'test');
+
+                // **Hide user icon and close button**
+                document.querySelector('.user-icon').classList.add("d-none");
+                document.querySelector('.chat-close-btn').classList.add("d-none");
+
+                // **Show default icon and text**
+                document.querySelector('.default-icon').classList.remove("d-none");
+                document.querySelector('.default-text').classList.remove("d-none");
+            }
+        }
+
+
+        function closeChat(event) {
+            event.stopPropagation();
+            var chatBox = document.getElementById("chatBox");
+            var chatButton = document.getElementById("chatButton");
+            var closeBtn = document.querySelector(".chat-close-btn");
+            var defaultIcon = chatButton.querySelector('.default-icon');
+            var defaultText = chatButton.querySelector('.default-text');
+            var userIcon = chatButton.querySelector('.user-icon');
+            chatBox.classList.remove("show");
+
+        }
+
+
+
+    </script>
+</body>
+
+</html>

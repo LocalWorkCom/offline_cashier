@@ -1,0 +1,2093 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\ChatController;
+use Illuminate\Session\Middleware\StartSession;
+use App\Http\Controllers\Api\GetInvoiceController;
+use App\Http\Controllers\Api\HR_APIs\BounsController;
+use App\Http\Controllers\Api\HR_APIs\DelayController;
+use App\Http\Controllers\Api\HR_APIs\ShiftController;
+use App\Http\Controllers\Api\HR_APIs\AbsenceSettingController;
+use App\Http\Controllers\Api\AdminAPIs\RoleController;
+use App\Http\Controllers\Api\HR_APIs\DeviceController;
+use App\Http\Controllers\Api\ClientAPIs\AuthController;
+use App\Http\Controllers\Api\ClientAPIs\HomeController;
+use App\Http\Controllers\Api\ClientAPIs\RateController;
+use App\Http\Controllers\Api\HR_APIs\AdvanceController;
+use App\Http\Controllers\Api\HR_APIs\BioTimeController;
+use App\Http\Controllers\Api\HR_APIs\PayrollController;
+use App\Http\Controllers\Api\HR_APIs\PenaltyController;
+use App\Http\Controllers\Api\ClientAPIs\OfferController;
+use App\Http\Controllers\Api\ClientAPIs\OrderController;
+use App\Http\Controllers\Api\HR_APIs\EmployeeController;
+use App\Http\Controllers\Api\HR_APIs\HrReportController;
+use App\Http\Controllers\Api\HR_APIs\PositionController;
+use App\Http\Controllers\Api\WaiterAPIs\TableController;
+use App\Http\Controllers\Api\ClientAPIs\ClientController;
+use App\Http\Controllers\Api\HR_APIs\DelayTimeController;
+use App\Http\Controllers\Api\HR_APIs\HRRequestController;
+use App\Http\Controllers\Api\HR_APIs\HRServiceController;
+use App\Http\Controllers\Api\HR_APIs\HrSettingController;
+use App\Http\Controllers\Api\HR_APIs\LeaveTypeController;
+use App\Http\Controllers\Api\HR_APIs\PayrollControllerV2;
+use App\Http\Controllers\Api\HR_APIs\TimetableController;
+use App\Http\Controllers\Api\HR_APIs\ViolationController;
+use App\Http\Controllers\Api\HR_APIs\AttendanceController;
+use App\Http\Controllers\Api\HR_APIs\DepartmentController;
+use App\Http\Controllers\Api\InventoryAPIs\LineController;
+use App\Http\Controllers\Api\InventoryAPIs\SizeController;
+use App\Http\Controllers\Api\InventoryAPIs\UnitController;
+use App\Http\Controllers\Api\CashierAPIs\addressController;
+use App\Http\Controllers\Api\ClientAPIs\TakeawayController;
+use App\Http\Controllers\Api\HR_APIs\NationalityController;
+use App\Http\Controllers\Api\InventoryAPIs\ShelfController;
+use App\Http\Controllers\Api\InventoryAPIs\StoreController;
+use App\Http\Controllers\Api\KitchenAPIs\KitchenController;
+use App\Http\Controllers\Api\AdminAPIs\PermissionController;
+use App\Http\Controllers\Api\CashierAPIs\DeliveryController;
+use App\Http\Controllers\Api\HR_APIs\DocumentTypeController;
+use App\Http\Controllers\Api\HR_APIs\EmployeeAuthController;
+use App\Http\Controllers\Api\HR_APIs\LeaveHolidayController;
+use App\Http\Controllers\Api\HR_APIs\LeaveRequestController;
+use App\Http\Controllers\Api\HR_APIs\LeaveSettingController;
+use App\Http\Controllers\Api\HR_APIs\OvertimeTypeController;
+use App\Http\Controllers\Api\InventoryAPIs\VendorController;
+use App\Http\Controllers\Api\ClientAPIs\GoogleAuthController;
+use App\Http\Controllers\Api\ClientAPIs\UserCouponController;
+use App\Http\Controllers\Api\HR_APIs\AlertSettingsController;
+use App\Http\Controllers\Api\HR_APIs\BonusSettingsController;
+use App\Http\Controllers\Api\HR_APIs\CompanyPolicyController;
+use App\Http\Controllers\Api\HR_APIs\ExcuseRequestController;
+use App\Http\Controllers\Api\HR_APIs\ExcuseSettingController;
+use App\Http\Controllers\Api\HR_APIs\PenaltyReasonController;
+use App\Http\Controllers\Api\CashierAPIs\MenuDishesController;
+use App\Http\Controllers\Api\ClientAPIs\MostPopularController;
+use App\Http\Controllers\Api\ClientAPIs\OfferDetailController;
+use App\Http\Controllers\Api\ClientAPIs\OrderRefundController;
+use App\Http\Controllers\Api\HR_APIs\AdvanceRequestController;
+use App\Http\Controllers\Api\HR_APIs\AdvanceSettingController;
+use App\Http\Controllers\Api\HR_APIs\DelayDeductionController;
+use App\Http\Controllers\Api\HR_APIs\EmployeeDeviceController;
+use App\Http\Controllers\Api\HR_APIs\PrivilegeTypesController;
+use App\Http\Controllers\Api\InventoryAPIs\DivisionController;
+use App\Http\Controllers\Api\WaiterAPIs\WaiterOrderController;
+use App\Http\Controllers\Dashboard\NotificationSendController;
+use App\Http\Controllers\Api\ClientAPIs\FacebookAuthController;
+use App\Http\Controllers\Api\DashboardAPIs\ClientApiController;
+use App\Http\Controllers\Api\DashboardAPIs\InsuranceController;
+use App\Http\Controllers\Api\HR_APIs\EmployeeWarningController;
+use App\Http\Controllers\Api\HR_APIs\JobTypesSettingController;
+use App\Http\Controllers\Api\HR_APIs\OvertimeSettingController;
+use App\Http\Controllers\Api\HR_APIs\WarningSettingsController;
+use App\Http\Controllers\Api\CashierAPIs\CashierOrderController;
+use App\Http\Controllers\Api\ClientAPIs\OrderTrackingController;
+use App\Http\Controllers\Api\DashboardAPIs\VehicleApiController;
+use App\Http\Controllers\Api\HR_APIs\EmployeeDocumentController;
+
+use App\Http\Controllers\Api\HR_APIs\EmployeeScheduleController;
+use App\Http\Controllers\Api\HR_APIs\PenaltyDeductionController;
+use App\Http\Controllers\Api\KitchenAPIs\KitchenOrderController;
+use App\Http\Controllers\Api\DashboardAPIs\OrderChangeController;
+use App\Http\Controllers\Api\HR_APIs\JobRelatedPenaltyController;
+use App\Http\Controllers\Api\InventoryAPIs\CustomFieldController;
+
+use App\Http\Controllers\Api\InventoryAPIs\OrderReportController;
+use App\Http\Controllers\Api\InventoryAPIs\SupplyOrderController;
+use App\Http\Controllers\Api\CashierAPIs\CashierBalanceController;
+use App\Http\Controllers\Api\CashierAPIs\CashierInvoiceController;
+use App\Http\Controllers\Api\DashboardAPIs\BranchReportController;
+use App\Http\Controllers\Api\DashboardAPIs\FiledOfStudyController;
+use App\Http\Controllers\Api\DashboardAPIs\InsuranceLogController;
+use App\Http\Controllers\Api\DeliveryAPIs\DeliveryOrderController;
+use App\Http\Controllers\Api\DeliveryAPIs\DeliveryRouteController;
+use App\Http\Controllers\Api\HR_APIs\PerformanceReviewsController;
+use App\Http\Controllers\Api\InventoryAPIs\RejectReasonController;
+use App\Http\Controllers\Api\ClientAPIs\ClientAddressApiController;
+use App\Http\Controllers\Api\ClientAPIs\TableReservationController;
+use App\Http\Controllers\Api\DashboardAPIs\WaiterRequestController;
+use App\Http\Controllers\Api\HR_APIs\EmployeeTerminationController;
+use App\Http\Controllers\Api\HR_APIs\TemporarySuspensionController;
+use App\Http\Controllers\Api\DashboardAPIs\CashierMachineController;
+use App\Http\Controllers\Api\DashboardAPIs\CashierSettingController;
+use App\Http\Controllers\Api\DashboardAPIs\EducationLevelController;
+use App\Http\Controllers\Api\DashboardAPIs\OrderDashboardController;
+use App\Http\Controllers\Api\DashboardAPIs\VehicleSettingController;
+use App\Http\Controllers\Api\DeliveryAPIs\DeliveryBalanceController;
+use App\Http\Controllers\Api\HR_APIs\LateDeductionSettingController;
+
+use App\Http\Controllers\Api\HR_APIs\LeaveSettingPositionController;
+use App\Http\Controllers\Api\HR_APIs\SalaryAdvanceRequestController;
+
+use App\Http\Controllers\Api\HR_APIs\SalaryAdvanceSettingController;
+
+use App\Http\Controllers\Api\InventoryAPIs\StoreInventoryController;
+
+use App\Http\Controllers\Api\DashboardAPIs\OrderComplaintsController;
+use App\Http\Controllers\Api\InventoryAPIs\PurchaseInvoiceController;
+use App\Http\Controllers\Api\KitchenAPIs\KitchenFiltrationController;
+use App\Http\Controllers\Api\CustomerServiceAPIs\ComplaintsController;
+use App\Http\Controllers\Api\DashboardAPIs\MenusIntegrationController;
+
+use App\Http\Controllers\Api\DeliveryAPIs\DeliveryAddressesController;
+use App\Http\Controllers\Api\DeliveryAPIs\DeliveryComplaintController;
+use App\Http\Controllers\Api\HR_APIs\EmployeeOpeningBalanceController;
+use App\Http\Controllers\Api\HR_APIs\NotificationCategoriesController;
+use App\Http\Controllers\Api\InventoryAPIs\OrderTransactionController;
+use App\Http\Controllers\Api\InventoryAPIs\StoreTransactionController;
+use App\Http\Controllers\Api\DashboardAPIs\InsuranceEmployeeController;
+use App\Http\Controllers\Api\InventoryAPIs\CategoryInventoryController;
+
+
+use App\Http\Controllers\Api\InventoryAPIs\SupplyOrderReasonController;
+
+use App\Http\Controllers\Api\DashboardAPIs\CashPaymentSettingController;
+
+use App\Http\Controllers\Api\DashboardAPIs\DeliveryComplaintsController;
+use App\Http\Controllers\Api\DashboardAPIs\ReportsAPIs\BalanceCotroller;
+
+use App\Http\Controllers\Api\InventoryAPIs\ProductTransactionController;
+use App\Http\Controllers\Api\DashboardAPIs\InsuranceEmployeeLogController;
+use App\Http\Controllers\Api\DeliveryAPIs\DeliveryNotificationsController;
+use App\Http\Controllers\Api\DashboardAPIs\CashierBalancesReportsController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\FAQController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\CityController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\GiftController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\LogoController;
+use App\Http\Controllers\Api\DashboardAPIs\KitchenPerformanceReportController;
+use App\Http\Controllers\Api\DashboardAPIs\KitchenSettingsAPIs\DishController;
+use App\Http\Controllers\Api\DashboardAPIs\KitchenSettingsAPIs\MenuController;
+use App\Http\Controllers\Api\CustomerServiceAPIs\CustomerServiceChatController;
+use App\Http\Controllers\Api\DashboardAPIs\CashierPerformanceReportsController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\BrandController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\ColorController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\FloorController;
+use App\Http\Controllers\Api\DashboardAPIs\KitchenSettingsAPIs\AddonController;
+use App\Http\Controllers\Api\DashboardAPIs\OrderReturnInvoiceRequestController;
+use App\Http\Controllers\Api\DashboardAPIs\ReportsAPIs\OrdersReportsController;
+
+use App\Http\Controllers\Api\CustomerServiceAPIs\CustomerServiceOrderController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\BranchController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\CouponController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\pointsController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\SliderController;
+
+use App\Http\Controllers\Api\DashboardAPIs\KitchenSettingsAPIs\RecipeController;
+
+use App\Http\Controllers\Api\DashboardAPIs\ReportsAPIs\FeedbackReportController;
+use App\Http\Controllers\Api\DashboardAPIs\CustomerDeliveryOrderReportController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\ApiCodeController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\CountryController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\RegionsController;
+use App\Http\Controllers\Api\DashboardAPIs\KitchenSettingsAPIs\CuisineController;
+use App\Http\Controllers\Api\CustomerServiceAPIs\AddressCustomerServiceController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\BankNameController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\DiscountController;
+use App\Http\Controllers\Api\DashboardAPIs\KitchenSettingsAPIs\CategoryController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\BranchMenuController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\StaticPageController;
+use App\Http\Controllers\Api\DashboardAPIs\DeliveryEearningsPaymentsReportController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\PaymentTypeController;
+use App\Http\Controllers\Api\DashboardAPIs\ReportsAPIs\HangingOrdersReportController;
+use App\Http\Controllers\Api\DashboardAPIs\ReportsAPIs\OrdersReportsCancelController;
+use App\Http\Controllers\Api\DashboardAPIs\ReportsAPIs\WaiterRequestReportController;
+use App\Http\Controllers\Api\DashboardAPIs\DeliveryPerformanceMetricsReportController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\ReturnPolicyController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\TableGeneralController;
+use App\Http\Controllers\Api\DashboardAPIs\KitchenSettingsAPIs\DishCategoryController;
+use App\Http\Controllers\Api\DashboardAPIs\ReportsAPIs\BestSellerDishReportController;
+use App\Http\Controllers\Api\DashboardAPIs\ReportsAPIs\BookingRevenueReportController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\BranchSettingController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\MaritalStatusController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\PrivacyPolicyController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\UniversityApiController;
+use App\Http\Controllers\Api\DashboardAPIs\KitchenSettingsAPIs\AddonCategoryController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\BranchMenuSizeController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\EmployeeStatusController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\FloorPartitionController;
+use App\Http\Controllers\Api\DashboardAPIs\ReportsAPIs\TableReservationReportController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\BranchMenuAddonController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\PaymentPoliciesController;
+use App\Http\Controllers\Api\DashboardAPIs\HomeController as DashboardAPIsHomeController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\BusinessActivityController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\EthnicBackgroundController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\PaymentFrequencyController;
+use App\Http\Controllers\Api\DashboardAPIs\ReportsAPIs\WaiterTableServiceReportController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\BranchMenuCategoryController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\TermsAndConditionsController;
+use App\Http\Controllers\Api\DashboardAPIs\ReportsAPIs\BookingCancellationReportApiController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\CompanyProfileSettingController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\MilitaryServiceStatusController;
+use App\Http\Controllers\Api\DashboardAPIs\ReportsAPIs\CancelledDeliveryOrdersReportController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\BranchMenuAddonCategoryController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\OrderCancellationReasonController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\PolicyPaymentReservationController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\ContactInformationSettingController;
+use App\Http\Controllers\Api\DashboardAPIs\GeneralSettingsAPIs\SocialMediaInformationSettingController;
+use Illuminate\Support\Facades\File;
+
+$basePath = base_path("routes");
+
+if (File::exists("{$basePath}/inventory.php")) {
+    require "{$basePath}/inventory.php";
+}
+/////////////////////////////////////Chat API & Firebase///////////////////////////////////////////////////
+
+Route::post('/chat/sender', [ChatController::class, 'store']);
+Route::post('setToken', [NotificationSendController::class, 'setToken'])->name('firebase.token');
+Route::controller(ChatController::class)
+    ->prefix('chat')
+    ->name('api.chat.')
+    ->group(function () {
+        Route::post('/markAsRead', 'markAsRead')->name('markAsRead');
+        Route::get('/messages/{channel_id}', 'getChatMessages')->name('messages');
+        Route::get('/close/{channel_id}', 'closeChat')->name('closeChat');
+    });
+/////////////////////////////////////Chat API///////////////////////////////////////////////////
+
+Route::prefix('ordercancel')->group(function () {
+    Route::get('/list', [OrdersReportsCancelController::class, 'list']);
+    Route::get('/show', [OrdersReportsCancelController::class, 'show']);
+});
+
+/////////////////////////////////////////////////////// Start General routes for all users (uses without auth) /////////////////////////////////////
+//Start Country Apis
+Route::get('delivery/citiesandareas', [DeliveryAddressesController::class, 'getCitiesAndAreas']);
+Route::post('/search-branches', [TakeawayController::class, 'searchBranches']);
+Route::post('/checkAvailability', [TakeawayController::class, 'checkAvailability']);
+Route::post('/checkOrderCapacity', [TakeawayController::class, 'checkOrderCapacity']);
+
+//end Country
+Route::get('/areas/{channel_id}', [addressController::class, 'getAreasByBranch']);
+Route::get('/listHotels', [addressController::class, 'listHotel']);
+
+// Start Discounts
+Route::group(['prefix' => 'discounts'], function () {
+    Route::get('discountList', [DiscountController::class, 'index']);
+    Route::get('showDiscount/{id}', [DiscountController::class, 'show']);
+    Route::post('addDiscount', [DiscountController::class, 'store']);
+    Route::put('updateDiscount/{id}', [DiscountController::class, 'update']);
+    Route::delete('deleteDiscount/{id}', [DiscountController::class, 'destroy']);
+    Route::post('restoreDiscount/{id}', [DiscountController::class, 'restore']);
+});
+// End Discounts
+//Start Coupons
+Route::group(['prefix' => 'coupons'], function () {
+    Route::get('couponList', [CouponController::class, 'index']);
+    Route::get('validateCoupon/{id}', [CouponController::class, 'isCouponValid']);
+    Route::post('check-coupon', [CouponController::class, 'isCouponValid']);
+});
+// End Coupons
+
+//table-reservations
+Route::controller(TableReservationController::class)
+    ->prefix('table-reservations')
+    ->group(function () {
+        Route::post('get-session', 'getSession')->name('table-reservations.get-session');
+        Route::post('check-reservation', 'checkReservation')->name('table-reservations.check-reservation');
+        Route::post('checkout', 'checkout')->name('table-reservations.checkout');
+    });
+// Static Pages
+Route::get('/static-page', [StaticPageController::class, 'index'])->name('api.static.pages');
+
+// Most Popular
+Route::get('/popular', [MostPopularController::class, 'getMostPopular'])->name('api.popular');
+
+// Slider
+Route::get('/slider', [SliderController::class, 'index'])->name('api.slider');
+
+// Dish Menu related routes grouped by DishCategoryController
+Route::controller(DishCategoryController::class)->group(function () {
+    Route::get('/dish-menu', 'menuDishes')->name('api.dish.menu');
+    Route::get('/dish-menu-details', 'menuDishesDetails')->name('api.dish.menu.details');
+});
+
+// Branch related routes
+Route::get('/branch-near', [BranchController::class, 'listBranchAndNearFilter'])->name('api.branch.near');
+
+// Home
+Route::get('/home', [HomeController::class, 'index'])->name('api.home');
+
+// User Coupon related routes grouped by UserCouponController
+Route::controller(UserCouponController::class)->prefix('user-coupon')->name('api.user_coupon.')->group(function () {
+    Route::get('/', 'index')->name('list');
+    Route::get('/{id}', 'show')->name('show');
+});
+
+//Rates
+Route::prefix('rates')->controller(RateController::class)->group(function () {
+    Route::get('/', 'index');
+    Route::get('show/{id}', 'show');
+    Route::post('restore/{id}', 'restore');
+});
+//payment-policies
+Route::prefix('payment-policies')->controller(PaymentPoliciesController::class)->group(function () {
+    Route::get('types', 'policies_types');
+    Route::get('reservation', 'policies_reservation');
+});
+
+//apis for menu dishes
+Route::get('/menu-categories-lite', [MenuDishesController::class, 'categoriesByBranch'])->name('api.menu.categories.lite');
+Route::get('/menu-dishes-lite', [MenuDishesController::class, 'categoryDishesByBranch'])->name('api.menu.categories.lite.category');
+
+
+Route::get('/menu-dishes', [MenuDishesController::class, 'index'])->name('api.menu.dishes');
+// hanan inifinite scroll
+
+Route::get('/menu-dishesE', [MenuDishesController::class, 'indexOptimized'])->name('api.indexOptimized');
+Route::get('/menu-ultrafast', [MenuDishesController::class, 'indexUltraFast'])->name('api.menu.ultrafast');
+Route::get('/menu-categories', [MenuDishesController::class, 'categories'])->name('api.menu.categories');
+Route::get('/dish/details', [MenuDishesController::class, 'getDishDetails']);
+/////////////////////////////////////////////////////// End General routes for all users (uses without auth) /////////////////////////////////////
+Route::post('create-password-first-login', [EmployeeAuthController::class, 'createPassword'])->name('createPassword');
+Route::post('employees/resetpassword', [EmployeeAuthController::class, 'resetPassword']);
+
+Route::post('orders/request-cancel/change-status', [CashierInvoiceController::class, 'requestChangeStatus']);
+Route::get('country', [CountryController::class, 'index']);
+Route::post('hr-app-login', [EmployeeAuthController::class, 'login'])->name('login.hr_app');
+
+Route::post('dashboard-login', [EmployeeAuthController::class, 'login'])->name('login.dashboard');
+Route::middleware(['auth:employee'])->group(function () {
+    Route::get('employee_logout',  [EmployeeAuthController::class, 'logout'])->name('logout.dashboard');
+
+    Route::post('employees/changepassword', [EmployeeAuthController::class, 'changePassword']);
+
+    Route::post('/assign-to-modules', [PermissionController::class, 'assignPermissionsToModules']);
+
+    //module
+    Route::group(['prefix' => 'modules'], function () {
+        Route::get('/', [PermissionController::class, 'listModules']);
+    });
+
+    // End Product
+    Route::post('orders/cashier/request-cancel', [CashierOrderController::class, 'requestCancellation']);
+    Route::post('/hierarchies', [EmployeeController::class, 'getHierarchies']);
+    Route::get('/getAreas/{id}', [addressController::class, 'getAreas']);
+    Route::get('/getAllAreas', [addressController::class, 'getAllAreas']);
+    Route::post('/check_available_areas', [addressController::class, 'check_available_areas']);
+
+    Route::group(['prefix' => 'performance_reviews'], function () {
+        Route::get('list', [PerformanceReviewsController::class, 'index']);
+        Route::post('add', [PerformanceReviewsController::class, 'add'])->middleware('role_or_permission_api:add performance_reviews');
+        Route::get('report', [PerformanceReviewsController::class, 'report']);
+    });
+
+    Route::group(['prefix' => 'temporary_suspensions'], function () {
+        Route::get('list', [TemporarySuspensionController::class, 'index']);
+        Route::post('add', [TemporarySuspensionController::class, 'add'])->middleware('role_or_permission_api:add temporary_suspensions');
+        Route::post('update/{id}', [TemporarySuspensionController::class, 'update'])->middleware('role_or_permission_api:approval_status temporary_suspensions');
+        Route::get('report', [TemporarySuspensionController::class, 'report']);
+    });
+
+    Route::group(['prefix' => 'payroll'], function () {
+        Route::get('/payroll_sheets/list', [PayrollControllerV2::class, 'index'])->middleware('role_or_permission_api:list payroll_sheets');
+        Route::post('/approve/{id}', [PayrollControllerV2::class, 'approve'])->middleware('role_or_permission_api:approve payroll_sheets');
+        Route::post('/returnCorrection/{id}', [PayrollControllerV2::class, 'returnCorrection'])->middleware('role_or_permission_api:returnCorrection payroll_sheets');
+        Route::post('/resubmit/{id}', [PayrollControllerV2::class, 'resubmit'])->middleware('role_or_permission_api:resubmit payroll_sheets');
+        Route::post('/updatePayrollItem/{id}', [PayrollControllerV2::class, 'updatePayrollItem'])->middleware('role_or_permission_api:updatePayrollItem payroll_sheets');
+    });
+
+    //bank_names
+    Route::group(['prefix' => 'bank_name'], function () {
+        Route::get('/index', [BankNameController::class, 'index'])->middleware('role_or_permission_api:view bank_names');
+        Route::post('store', [BankNameController::class, 'store'])->middleware('role_or_permission_api:create bank_names');
+        Route::get('show/{id}', [BankNameController::class, 'show'])->middleware('role_or_permission_api:view bank_names');
+        Route::post('update/{id}', [BankNameController::class, 'update'])->middleware('role_or_permission_api:update bank_names');
+        Route::delete('delete/{id}', [BankNameController::class, 'delete'])->middleware('role_or_permission_api:delete bank_names');
+    });
+
+    //education_level
+    Route::group(['prefix' => 'education_level'], function () {
+        Route::get('/', [EducationLevelController::class, 'index'])->middleware('role_or_permission_api:view education_level');
+        Route::get('/{id}', [EducationLevelController::class, 'show'])->middleware('role_or_permission_api:view education_level');
+        Route::post('/', [EducationLevelController::class, 'store'])->middleware('role_or_permission_api:create education_level');
+        Route::post('/update/{id}', [EducationLevelController::class, 'update'])->middleware('role_or_permission_api:update education_level');
+        Route::delete('/{id}', [EducationLevelController::class, 'delete'])->middleware('role_or_permission_api:delete education_level');
+    });
+
+    //ethnic_backgrounds
+    Route::group(['prefix' => 'ethnic_background'], function () {
+        Route::get('/index', [EthnicBackgroundController::class, 'index'])->middleware('role_or_permission_api:view ethnic_backgrounds');
+        Route::post('store', [EthnicBackgroundController::class, 'store'])->middleware('role_or_permission_api:create ethnic_backgrounds');
+        Route::get('show/{id}', [EthnicBackgroundController::class, 'show'])->middleware('role_or_permission_api:view ethnic_backgrounds');
+        Route::post('update/{id}', [EthnicBackgroundController::class, 'update'])->middleware('role_or_permission_api:update ethnic_backgrounds');
+        Route::delete('delete/{id}', [EthnicBackgroundController::class, 'delete'])->middleware('role_or_permission_api:delete ethnic_backgrounds');
+    });
+
+    //employee_status
+    Route::group(['prefix' => 'employee_status'], function () {
+        Route::post('store', [EmployeeStatusController::class, 'store'])->middleware('role_or_permission_api:create employee_status');
+        Route::get('show/{id}', [EmployeeStatusController::class, 'show'])->middleware('role_or_permission_api:view ethnic_backgrounds');
+        Route::get('/index', [EmployeeStatusController::class, 'index'])->middleware('role_or_permission_api:view employee_status');
+        Route::post('update/{id}', [EmployeeStatusController::class, 'update'])->middleware('role_or_permission_api:update employee_status');
+        Route::delete('delete/{id}', [EmployeeStatusController::class, 'delete'])->middleware('role_or_permission_api:delete employee_status');
+    });
+
+    // nationalities
+    Route::group(['prefix' => 'nationality'], function () {
+        Route::get('/index', [NationalityController::class, 'index'])->middleware('role_or_permission_api:view nationalities');
+        Route::get('/show/{id}', [NationalityController::class, 'show'])->middleware('role_or_permission_api:view nationalities');
+        Route::post('store', [NationalityController::class, 'store'])->middleware('role_or_permission_api:create nationalities');
+        Route::post('update/{id}', [NationalityController::class, 'update'])->middleware('role_or_permission_api:update nationalities');
+        Route::delete('delete/{id}', [NationalityController::class, 'destroy'])->middleware('role_or_permission_api:delete nationalities');
+    });
+
+    // countries
+    Route::group(['prefix' => 'countries'], function () {
+        Route::get('/', [CountryController::class, 'index'])->middleware('role_or_permission_api:view countries');
+
+        Route::get('/show/{id}', [CountryController::class, 'show'])->middleware('role_or_permission_api:view countries');
+        Route::post('store', [CountryController::class, 'store'])->middleware('role_or_permission_api:create countries');
+        Route::post('update/{id}', [CountryController::class, 'update'])->middleware('role_or_permission_api:update countries');
+        Route::delete('delete/{id}', [CountryController::class, 'destroy'])->middleware('role_or_permission_api:delete countries');
+    });
+    // city
+    Route::group(['prefix' => 'city'], function () {
+        Route::get('/', [CityController::class, 'index'])->middleware('role_or_permission_api:view cities');
+        Route::get('/show/{id}', [CityController::class, 'show'])->middleware('role_or_permission_api:view cities');
+        Route::post('store', [CityController::class, 'store'])->middleware('role_or_permission_api:create cities');
+        Route::post('update/{id}', [CityController::class, 'update'])->middleware('role_or_permission_api:update cities');
+        Route::delete('delete/{id}', [CityController::class, 'destroy'])->middleware('role_or_permission_api:delete cities');
+    });
+
+    // region
+    Route::group(['prefix' => 'region'], function () {
+        Route::get('/',  [RegionsController::class, 'index'])->middleware('role_or_permission_api:view regions');
+        Route::get('/show/{id}', [RegionsController::class, 'show'])->middleware('role_or_permission_api:view regions');
+        Route::post('store', [RegionsController::class, 'store'])->middleware('role_or_permission_api:create regions');
+        Route::post('update/{id}', [RegionsController::class, 'update'])->middleware('role_or_permission_api:update regions');
+        Route::delete('delete/{id}', [RegionsController::class, 'destroy'])->middleware('role_or_permission_api:delete regions');
+    });
+
+    Route::group(['prefix' => 'menus-integration'], function () {
+        Route::get('index', [MenusIntegrationController::class, 'index'])->middleware('role_or_permission_api:view dashboard');
+    });
+
+    Route::group(['prefix' => 'profile'], function () {
+        Route::get('/show', [EmployeeController::class, 'show'])->name('employees.profile.show')->middleware('role_or_permission_api:view profile');
+        Route::post('/update', [EmployeeController::class, 'updateProfile'])->name('employees.profile.update')->middleware('role_or_permission_api:update profile');
+    });
+
+    //Business Activity
+    Route::group(['prefix' => 'business_activity'], function () {
+        Route::get('index', [BusinessActivityController::class, 'index'])->middleware('role_or_permission_api:view business_activity');
+        Route::post('store', [BusinessActivityController::class, 'store'])->middleware('role_or_permission_api:create business_activity');
+        Route::get('show/{id}', [BusinessActivityController::class, 'show'])->middleware('role_or_permission_api:view business_activity');
+        Route::post('update/{id}', [BusinessActivityController::class, 'update'])->middleware('role_or_permission_api:update business_activity');
+        Route::delete('delete/{id}', [BusinessActivityController::class, 'delete'])->middleware('role_or_permission_api:delete business_activity');
+    });
+    //Company Profile Settings
+    Route::group(['prefix' => 'company_profile_setting'], function () {
+        Route::get('/index', [CompanyProfileSettingController::class, 'index'])->middleware('role_or_permission_api:view company_profile_setting');
+        Route::post('store', [CompanyProfileSettingController::class, 'store'])->middleware('role_or_permission_api:create company_profile_setting');
+        Route::get('show/{id}', [CompanyProfileSettingController::class, 'show'])->middleware('role_or_permission_api:view company_profile_setting');
+        Route::post('update/{id}', [CompanyProfileSettingController::class, 'update'])->middleware('role_or_permission_api:update company_profile_setting');
+        Route::delete('delete/{id}', [CompanyProfileSettingController::class, 'delete'])->middleware('role_or_permission_api:delete company_profile_setting');
+    });
+
+    //Contact Information Setting
+    Route::group(['prefix' => 'contact_information_setting'], function () {
+        Route::get('/index', [ContactInformationSettingController::class, 'index'])->middleware('role_or_permission_api:view company_profile_setting');
+        Route::post('store', [ContactInformationSettingController::class, 'store'])->middleware('role_or_permission_api:create company_profile_setting');
+        Route::get('show/{id}', [ContactInformationSettingController::class, 'show'])->middleware('role_or_permission_api:view company_profile_setting');
+        Route::post('update/{id}', [ContactInformationSettingController::class, 'update'])->middleware('role_or_permission_api:update company_profile_setting');
+        Route::delete('delete/{id}', [ContactInformationSettingController::class, 'delete'])->middleware('role_or_permission_api:delete company_profile_setting');
+    });
+
+    //Social Media Information Setting
+    Route::group(['prefix' => 'social_media_information_setting'], function () {
+        Route::get('/index', [SocialMediaInformationSettingController::class, 'index'])->middleware('role_or_permission_api:view company_profile_setting');
+        Route::post('store', [SocialMediaInformationSettingController::class, 'store'])->middleware('role_or_permission_api:create company_profile_setting');
+        Route::get('show/{id}', [SocialMediaInformationSettingController::class, 'show'])->middleware('role_or_permission_api:view company_profile_setting');
+        Route::post('update/{id}', [SocialMediaInformationSettingController::class, 'update'])->middleware('role_or_permission_api:update company_profile_setting');
+        Route::delete('delete/{id}', [SocialMediaInformationSettingController::class, 'delete'])->middleware('role_or_permission_api:delete company_profile_setting');
+    });
+
+    Route::group(['prefix' => '/reports/table_reservations'], function () {
+        Route::get('/index', [TableReservationReportController::class, 'index'])->middleware('role_or_permission_api:view report_table_reservations');
+        Route::get('/show/{id}', [TableReservationReportController::class, 'show'])->middleware('role_or_permission_api:detail report_table_reservations');
+    });
+    Route::group(['prefix' => '/reports/feedbacks'], function () {
+        Route::get('/index', [FeedbackReportController::class, 'index'])->middleware('role_or_permission_api:view report_feedbacks');
+        Route::get('/show/{id}', [FeedbackReportController::class, 'show'])->middleware('role_or_permission_api:detail report_feedbacks');
+    });
+    Route::get('/notifications', [DeliveryNotificationsController::class, 'getNotifications']);
+    Route::get('/notification/{id}', [DeliveryNotificationsController::class, 'markNotificationAsRead']);
+
+    Route::get('deliveries', [DeliveryController::class, 'index'])->name('deliveries.list');
+    Route::post('/orders/change-status/{id}', [DeliveryOrderController::class, 'updateTrackingStatus']);
+    Route::post('/customer-service/address/check', [AddressCustomerServiceController::class, 'check']);
+    //tables
+    Route::group(['prefix' => 'tables'], function () {
+        Route::get('index', [TableGeneralController::class, 'index']);
+        Route::get('show/{id}', [TableGeneralController::class, 'show']);
+        Route::post('add', [TableGeneralController::class, 'add'])->middleware('role_or_permission_api:add tables');
+        Route::post('edit', [TableGeneralController::class, 'edit'])->middleware('role_or_permission_api:update tables');
+        Route::get('delete/{id}', [TableGeneralController::class, 'delete'])->middleware('role_or_permission_api:delete tables');
+    });
+
+    //Start Size
+    Route::group(['prefix' => 'size'], function () {
+        Route::any('/', [SizeController::class, 'index']);
+        Route::any('/add', [SizeController::class, 'store']);
+        Route::any('/get', [SizeController::class, 'show']);
+        Route::any('/edit', [SizeController::class, 'update']);
+        Route::any('/delete', [SizeController::class, 'destroy']);
+    });
+    //end Size
+    //floor
+    Route::group(['prefix' => 'floors'], function () {
+        Route::get('index', [FloorController::class, 'index'])->middleware('role_or_permission_api:view floors');
+        Route::get('show/{id}', [FloorController::class, 'show'])->middleware('role_or_permission_api:view floors');
+        Route::post('add', [FloorController::class, 'add'])->middleware('role_or_permission_api:add floors');
+        Route::post('edit', [FloorController::class, 'edit'])->middleware('role_or_permission_api:update floors');
+        Route::get('delete/{id}', [FloorController::class, 'delete'])->middleware('role_or_permission_api:delete floors');
+    });
+    Route::group(['prefix' => 'orders'], function () {
+        Route::post('/change-Status/{id}', [OrderChangeController::class, 'changeStatus']);
+    });
+
+    //floor-partitions
+    Route::group(['prefix' => 'floor-partitions'], function () {
+        Route::get('index', [FloorPartitionController::class, 'index'])->middleware('role_or_permission_api:view floor-partitions');
+        Route::get('show/{id}', [FloorPartitionController::class, 'show'])->middleware('role_or_permission_api:view floor-partitions');
+        Route::post('add', [FloorPartitionController::class, 'add'])->middleware('role_or_permission_api:add floor-partitions');
+        Route::post('edit', [FloorPartitionController::class, 'edit'])->middleware('role_or_permission_api:update floor-partitions');
+        Route::get('delete/{id}', [FloorPartitionController::class, 'delete'])->middleware('role_or_permission_api:delete floor-partitions');
+    });
+    //branch setting
+    Route::group(['prefix' => 'branch-setting'], function () {
+        Route::get('index', [BranchSettingController::class, 'index'])->middleware('role_or_permission_api:view branch-setting');
+        Route::get('show/{id}', [BranchSettingController::class, 'show'])->middleware('role_or_permission_api:view branch-setting');
+        Route::post('add', [BranchSettingController::class, 'add'])->middleware('role_or_permission_api:add branch-setting');
+        Route::post('edit/{id}', [BranchSettingController::class, 'edit'])->middleware('role_or_permission_api:update branch-setting');
+        Route::delete('delete/{id}', [BranchSettingController::class, 'delete'])->middleware('role_or_permission_api:delete branch-setting');
+    });
+
+    //insurances
+    Route::prefix('insurances')->group(function () {
+        Route::get('/log', [InsuranceLogController::class, 'index'])->middleware('role_or_permission_api:log insurance');
+        Route::get('/', [InsuranceController::class, 'index'])->middleware('role_or_permission_api:view insurance');
+        Route::post('/', [InsuranceController::class, 'store'])->middleware('role_or_permission_api:create insurance');
+        Route::delete('/{insurance_id}', [InsuranceController::class, 'destroy'])->middleware('role_or_permission_api:delete insurance');
+        Route::put('/{insurance_id}', [InsuranceController::class, 'update'])->middleware('role_or_permission_api:edit insurance');
+    });
+
+    // insurance employees
+    Route::prefix('insurance_employees')->group(function () {
+        Route::get('/log', [InsuranceEmployeeLogController::class, 'index'])->middleware('role_or_permission_api:insurance_employee.log');
+        Route::get('/', [InsuranceEmployeeController::class, 'index'])->middleware('role_or_permission_api:insurance_employee.view');
+        Route::post('/', [InsuranceEmployeeController::class, 'store'])->middleware('role_or_permission_api:insurance_employee.create');
+        Route::delete('/{insurance_employee_id}', [InsuranceEmployeeController::class, 'destroy'])->middleware('role_or_permission_api:insurance_employee.delete');
+        Route::put('/{insurance_employee_id}', [InsuranceEmployeeController::class, 'update'])->middleware('role_or_permission_api:insurance_employee.edit');
+    });
+
+    // Start branches
+    Route::group(['prefix' => 'branches'], function () {
+        Route::get('branchList', [BranchController::class, 'index'])->middleware('role_or_permission_api:view branches');
+        Route::get('showBranch/{id}', [BranchController::class, 'show'])->middleware('role_or_permission_api:view branches');
+        Route::post('addBranch', [BranchController::class, 'store'])->middleware('role_or_permission_api:add branches'); // admin only
+        Route::put('updateBranch/{id}', [BranchController::class, 'update'])->middleware('role_or_permission_api:update branches');
+        Route::delete('deleteBranch/{id}', [BranchController::class, 'destroy'])->middleware('role_or_permission_api:delete branches'); // admin only
+        Route::get('changeStatus/{id}', [BranchController::class, 'change_status'])->middleware('role_or_permission_api:view branches'); //new
+        Route::get('sync/{id}', [BranchController::class, 'sync'])->name('branch.sync2')->middleware('role_or_permission_api:view branches'); //new
+
+        // Route::get('/categories', [BranchMenuCategoryController::class, 'index'])->name('branch.categories.list');
+        Route::group(['prefix' => 'categories'], function () {
+            Route::get('show/{id}', [BranchMenuCategoryController::class, 'show'])->middleware('role_or_permission_api:show branch_categories');; //categories show
+            Route::get('showAll/{branch_id}', [BranchMenuCategoryController::class, 'show_branch'])->middleware('role_or_permission_api:view branch_categories');; //categories all
+            Route::get('changeStatus/{id}', [BranchMenuCategoryController::class, 'change_status'])->middleware('role_or_permission_api:change branch_categories'); //categories active
+        });
+
+        // Route::get('/menus', [BranchMenuController::class, 'index'])->name('branch.menus.list');
+        Route::group(['prefix' => 'menus'], function () {
+            Route::get('show/{id}', [BranchMenuController::class, 'show'])->middleware('role_or_permission_api:show branch_menus'); //menus show
+            Route::put('update/{id}', [BranchMenuController::class, 'update'])->middleware('role_or_permission_api:update branch_menus'); //menus update
+            Route::get('showAll/{branch_id}', [BranchMenuController::class, 'show_branch'])->middleware('role_or_permission_api:view branch_menus'); //menus all
+            Route::get('changeStatus/{id}', [BranchMenuController::class, 'change_status'])->middleware('role_or_permission_api:change branch_menus'); //menus active
+        });
+
+        Route::group(['prefix' => 'menu/addon/categories'], function () {
+            Route::get('show/{id}', [BranchMenuAddonCategoryController::class, 'show'])->middleware('role_or_permission_api:show branch_menu_addon_categories'); //addonsCategories show
+            Route::get('showAll/{branch_id}', [BranchMenuAddonCategoryController::class, 'show_branch'])->middleware('role_or_permission_api:view branch_menu_addon_categories'); //addonsCategories all
+            Route::get('changeStatus/{id}', [BranchMenuAddonCategoryController::class, 'change_status'])->middleware('role_or_permission_api:change branch_menu_addon_categories'); //addonsCategories active
+        });
+        Route::group(['prefix' => 'menu/addons'], function () {
+            Route::get('show/{id}', [BranchMenuAddonController::class, 'show'])->middleware('role_or_permission_api:view branch_menu_addons');; //addons show
+            Route::put('update/{id}', [BranchMenuAddonController::class, 'update'])->middleware('role_or_permission_api:update branch_menu_addons'); //addons update
+            Route::get('showAll/{branch_id}', [BranchMenuAddonController::class, 'show_branch'])->middleware('role_or_permission_api:view branch_menu_addons'); //addons all
+            Route::get('changeStatus/{id}', [BranchMenuAddonController::class, 'change_status'])->middleware('role_or_permission_api:change branch_menu_addons'); //addons active
+        });
+        Route::group(['prefix' => 'menu/sizes'], function () {
+            Route::get('show/{id}', [BranchMenuSizeController::class, 'show'])->middleware('role_or_permission_api:view branch_menu_sizes'); //sizes show
+            Route::put('update/{id}', [BranchMenuSizeController::class, 'update'])->middleware('role_or_permission_api:update branch_menu_sizes'); //sizes update
+            Route::get('showAll/{branch_id}', [BranchMenuSizeController::class, 'show_branch'])->middleware('role_or_permission_api:view branch_menu_sizes'); //sizes all
+            Route::get('changeStatus/{id}', [BranchMenuSizeController::class, 'change_status'])->middleware('role_or_permission_api:change branch_menu_sizes'); //sizes active
+        });
+    });
+    // End branches
+    Route::get('/contact-us', [DeliveryComplaintController::class, 'contactUs']);
+    Route::get('list-branches',  [CustomerServiceOrderController::class, 'listBranches']);
+
+    //Start Color
+    Route::group(['prefix' => 'color'], function () {
+        Route::get('/', [ColorController::class, 'index'])->middleware('role_or_permission_api:view color');
+        Route::post('/add', [ColorController::class, 'store'])->middleware('role_or_permission_api:create color');
+        Route::get('/get', [ColorController::class, 'show'])->middleware('role_or_permission_api:view color');
+        Route::post('/edit', [ColorController::class, 'update'])->middleware('role_or_permission_api:update color');
+        Route::delete('/delete', [ColorController::class, 'destroy'])->middleware('role_or_permission_api:delete color');
+    });
+
+    // Start unit
+    Route::group(['prefix' => 'unit'], function () {
+        Route::get('/', [UnitController::class, 'index']);
+        Route::post('store', [UnitController::class, 'store']);
+        Route::post('update/{id}', [UnitController::class, 'update']);
+        Route::delete('delete/{id}', [UnitController::class, 'delete']);
+    });
+    // End unit
+
+    //
+
+    //marital_statuses
+    Route::group(['prefix' => 'marital_statuses'], function () {
+        Route::get('/', [MaritalStatusController::class, 'index'])->middleware('role_or_permission_api:view marital_statuses');
+        Route::get('/{id}', [MaritalStatusController::class, 'show'])->middleware('role_or_permission_api:view marital_statuses');
+        Route::post('store', [MaritalStatusController::class, 'store'])->middleware('role_or_permission_api:create marital_statuses');
+        Route::post('update/{id}', [MaritalStatusController::class, 'update'])->middleware('role_or_permission_api:update marital_statuses');
+        Route::delete('delete/{id}', [MaritalStatusController::class, 'delete'])->middleware('role_or_permission_api:delete marital_statuses');
+    });
+
+    //military_service_statuses
+    Route::group(['prefix' => 'military_service_statuses'], function () {
+        Route::get('/', [MilitaryServiceStatusController::class, 'index'])->middleware('role_or_permission_api:view military_service_statuses');
+        Route::get('/{id}', [MilitaryServiceStatusController::class, 'show'])->middleware('role_or_permission_api:view military_service_statuses');
+        Route::post('store', [MilitaryServiceStatusController::class, 'store'])->middleware('role_or_permission_api:create military_service_statuses');
+        Route::post('update/{id}', [MilitaryServiceStatusController::class, 'update'])->middleware('role_or_permission_api:update military_service_statuses');
+        Route::delete('delete/{id}', [MilitaryServiceStatusController::class, 'delete'])->middleware('role_or_permission_api:delete military_service_statuses');
+    });
+
+    //payment-types
+    Route::group(['prefix' => 'payment-type'], function () {
+        Route::get('/', [PaymentTypeController::class, 'index'])->middleware('role_or_permission_api:view payment_types');
+        Route::post('store', [PaymentTypeController::class, 'store'])->middleware('role_or_permission_api:create payment_types');
+        Route::get('show/{id}', [PaymentTypeController::class, 'show'])->middleware('role_or_permission_api:view payment_types');
+        Route::post('update/{id}', [PaymentTypeController::class, 'update'])->middleware('role_or_permission_api:update payment_types');
+        Route::delete('delete/{id}', [PaymentTypeController::class, 'delete'])->middleware('role_or_permission_api:delete payment_types');
+    });
+
+    //payment-frequencies
+    Route::group(['prefix' => 'payment-frequency'], function () {
+        Route::get('/', [PaymentFrequencyController::class, 'index'])->middleware('role_or_permission_api:view payment_frequencies');
+        Route::post('store', [PaymentFrequencyController::class, 'store'])->middleware('role_or_permission_api:create payment_frequencies');
+        Route::get('show/{id}', [PaymentFrequencyController::class, 'show'])->middleware('role_or_permission_api:view payment_frequencies');
+        Route::post('update/{id}', [PaymentFrequencyController::class, 'update'])->middleware('role_or_permission_api:update payment_frequencies');
+        // Route::delete('delete/{id}', [PaymentFrequencyController::class, 'delete'])->middleware('role_or_permission_api:delete payment_frequencies');
+    });
+
+    Route::group(['prefix' => 'vehicle-settings'], function () {
+        Route::get('/', [VehicleSettingController::class, 'index'])->middleware('role_or_permission_api:view vehicle_settings');
+        Route::post('/update/{id}', [VehicleSettingController::class, 'update'])->middleware('role_or_permission_api:update vehicle_settings');
+        Route::get('/show/{id}', [VehicleSettingController::class, 'show'])->middleware('role_or_permission_api:view vehicle_settings');
+    });
+
+
+    Route::group(['prefix' => 'vehicles'], function () {
+        Route::get('/list', [VehicleApiController::class, 'index'])->middleware('role_or_permission_api:view vehicles');
+        Route::get('/show/{id}', [VehicleApiController::class, 'show'])->middleware('role_or_permission_api:view vehicles');
+
+        Route::post('store', [VehicleApiController::class, 'store'])->middleware('role_or_permission_api:create vehicles');
+        Route::post('update/{id}', [VehicleApiController::class, 'update'])->middleware('role_or_permission_api:update vehicles');
+        Route::delete('delete/{id}', [VehicleApiController::class, 'destroy'])->middleware('role_or_permission_api:delete vehicles');
+    });
+    Route::group(['prefix' => 'cash-setting'], function () {
+        Route::get('/', [CashPaymentSettingController::class, 'index'])->middleware('role_or_permission_api:view cashPaymentSetting');
+        Route::post('add', [CashPaymentSettingController::class, 'store'])->middleware('role_or_permission_api:create cashPaymentSetting');
+        Route::get('/show/{id}', [CashPaymentSettingController::class, 'show'])->middleware('role_or_permission_api:view cashPaymentSetting');
+        Route::post('edit', [CashPaymentSettingController::class, 'update'])->middleware('role_or_permission_api:update cashPaymentSetting');
+        Route::delete('delete', [CashPaymentSettingController::class, 'destroy'])->middleware('role_or_permission_api:delete cashPaymentSetting');
+    });
+
+    //leave-types
+    Route::group(['prefix' => 'leaves-type'], function () {
+        Route::get('index', [LeaveTypeController::class, 'index']); //->middleware('role_or_permission_api:view leave_types');
+        Route::post('add', [LeaveTypeController::class, 'add'])->middleware('role_or_permission_api:create leave_types');
+        Route::post('edit/{id}', [LeaveTypeController::class, 'edit'])->middleware('role_or_permission_api:update leave_types');
+        Route::get('delete/{id}', [LeaveTypeController::class, 'delete'])->middleware('role_or_permission_api:delete leave_types');
+        Route::get('show/{id}', [LeaveTypeController::class, 'show'])->middleware('role_or_permission_api:view leave_types');
+    });
+
+    //leaves-setting
+    Route::group(['prefix' => 'leaves-setting'], function () {
+        Route::get('index', [LeaveSettingController::class, 'index'])->middleware('role_or_permission_api:view leave_settings');
+        Route::post('add', [LeaveSettingController::class, 'add'])->middleware('role_or_permission_api:create leave_settings');
+        Route::post('edit', [LeaveSettingController::class, 'edit'])->middleware('role_or_permission_api:update leave_settings');
+        Route::get('delete/{id}', [LeaveSettingController::class, 'delete'])->middleware('role_or_permission_api:delete leave_settings');
+    });
+
+    // leave-setting-positions
+    Route::group(['prefix' => 'leave-setting-positions'], function () {
+        Route::get('index', [LeaveSettingPositionController::class, 'index'])->middleware('role_or_permission_api:view leave_setting_positions');
+        Route::post('add', [LeaveSettingPositionController::class, 'add'])->middleware('role_or_permission_api:create leave_setting_positions');
+        Route::post('edit', [LeaveSettingPositionController::class, 'edit'])->middleware('role_or_permission_api:update leave_setting_positions');
+        Route::get('delete/{id}', [LeaveSettingPositionController::class, 'delete'])->middleware('role_or_permission_api:delete leave_setting_positions');
+    });
+
+    //leave-holidays
+    Route::group(['prefix' => 'leave-holidays'], function () {
+        Route::post('index_calender', [LeaveHolidayController::class, 'index_calender']);
+        Route::post('index', [LeaveHolidayController::class, 'index']);
+        Route::post('edit/{id}', [LeaveHolidayController::class, 'edit']);
+        Route::post('change-status', [LeaveHolidayController::class, 'change_status']);
+    });
+
+    //leave-request
+    Route::group(['prefix' => 'leave-request'], function () {
+        Route::post('index', [LeaveRequestController::class, 'index'])->middleware('role_or_permission_api:view leave_requests');
+        Route::post('add', [LeaveRequestController::class, 'add']);
+        Route::get('show/{id}', [LeaveRequestController::class, 'show'])->middleware('role_or_permission_api:view leave_requests');
+        Route::delete('delete/{id}', [LeaveRequestController::class, 'delete'])->middleware('role_or_permission_api:delete leave_requests');
+        Route::post('edit/{id}', [LeaveRequestController::class, 'edit'])->middleware('role_or_permission_api:update leave_requests');
+        Route::post('change-status', [LeaveRequestController::class, 'change_status'])->middleware('role_or_permission_api:update leave_requests');
+        Route::get('employee-leaves', [LeaveRequestController::class, 'employee_leaves'])->middleware('role_or_permission_api:view leave_requests');
+        Route::get('/employee-leaves-month/{employee_id}/{form}/{to}', [LeaveRequestController::class, 'employee_leaves_month'])->middleware('role_or_permission_api:view leave_requests');
+    });
+
+    // positions
+    Route::group(['prefix' => 'positions'], function () {
+        Route::get('index', [PositionController::class, 'index'])->middleware('role_or_permission_api:view positions');
+        Route::get('show/{id}', [PositionController::class, 'show'])->middleware('role_or_permission_api:view positions');
+        Route::post('add', [PositionController::class, 'store'])->middleware('role_or_permission_api:create positions');
+        Route::post('edit/{id}', [PositionController::class, 'update'])->middleware('role_or_permission_api:update positions');
+        Route::delete('delete/{id}', [PositionController::class, 'delete'])->middleware('role_or_permission_api:delete positions');
+    });
+
+
+    Route::get('/dashboard/home', [DashboardAPIsHomeController::class, 'index'])->middleware('role_or_permission_api:view dashboard');
+    Route::post('/report/branches', [BranchReportController::class, 'index'])->middleware('role_or_permission_api:view report_branches');
+    Route::get('/report/branches/{id}', [BranchReportController::class, 'show'])->middleware('role_or_permission_api:view report_branches');
+    Route::post('/report/customer-service-delivery-orders', [CustomerDeliveryOrderReportController::class, 'list'])->middleware('role_or_permission_api:view report_customer_service_delivery_orders');
+
+    //termination
+    Route::prefix('termination')->group(function () {
+        Route::post('employee/{id}', [EmployeeTerminationController::class, 'viewed_notification'])->middleware('role_or_permission_api:viewed notification');
+        Route::post('/approval-request/{id}', [EmployeeTerminationController::class, 'approval_request_change_status'])->middleware('role_or_permission_api:approval request of termination');
+    });
+    Route::prefix('warning_settings')->group(function () {
+        Route::get('/', [WarningSettingsController::class, 'index'])
+            ->name('warning_settings.index')
+            ->middleware('role_or_permission_api:view warning_settings');
+    });
+
+    Route::prefix('store')->group(function () {
+        Route::post('/color', [CustomFieldController::class, 'storeColor']);
+        Route::post('/size', [CustomFieldController::class, 'storeSize']);
+    });
+
+    Route::get('/filed_of_study', [FiledOfStudyController::class, 'index']);
+    Route::group(['prefix' => 'filed_of_study'], function () {
+        Route::post('store', [FiledOfStudyController::class, 'store']);
+        Route::post('update/{id}', [FiledOfStudyController::class, 'update']);
+        Route::delete('delete/{id}', [FiledOfStudyController::class, 'delete']);
+    });
+    //university
+    Route::get('/university', [UniversityApiController::class, 'index'])->middleware('role_or_permission_api:view university');
+    Route::group(['prefix' => 'university'], function () {
+        Route::get('/show/{id}', [UniversityApiController::class, 'show'])->middleware('role_or_permission_api:view university');
+
+        Route::post('store', [UniversityApiController::class, 'store'])->middleware('role_or_permission_api:create university');
+        Route::post('update/{id}', [UniversityApiController::class, 'update'])->middleware('role_or_permission_api:update university');
+        Route::delete('delete/{id}', [UniversityApiController::class, 'destroy'])->middleware('role_or_permission_api:delete university');
+    });
+
+    //salary advance settings
+    Route::group(['prefix' => 'salary-advance-settings'], function () {
+        Route::get('/', [SalaryAdvanceSettingController::class, 'index'])->middleware('role_or_permission_api:view salary_advance_settings');
+        Route::post('/', [SalaryAdvanceSettingController::class, 'store'])->middleware('role_or_permission_api:create salary_advance_settings');
+        Route::get('/{id}', [SalaryAdvanceSettingController::class, 'show'])->middleware('role_or_permission_api:view salary_advance_settings');
+        Route::post('/{id}', [SalaryAdvanceSettingController::class, 'update'])->middleware('role_or_permission_api:update salary_advance_settings');
+        Route::delete('/{id}', [SalaryAdvanceSettingController::class, 'destroy'])->middleware('role_or_permission_api:delete salary_advance_settings');
+    });
+
+    //job type settings
+    Route::group(['prefix' => 'job-types-settings'], function () {
+        Route::get('/', [JobTypesSettingController::class, 'index'])->middleware('role_or_permission_api:view job-types-settings');
+        Route::post('/', [JobTypesSettingController::class, 'store'])->middleware('role_or_permission_api:create job-types-settings');
+        Route::get('/{id}', [JobTypesSettingController::class, 'show'])->middleware('role_or_permission_api:view job-types-settings');
+        Route::post('/{id}', [JobTypesSettingController::class, 'update'])->middleware('role_or_permission_api:update job-types-settings');
+        Route::delete('/{id}', [JobTypesSettingController::class, 'destroy'])->middleware('role_or_permission_api:delete job-types-settings');
+    });
+    Route::get('/view/DepartmentHierarchy', [EmployeeController::class, 'getDepartmentHierarchy']);
+
+    Route::prefix('employees')->group(function () {
+        Route::get('/', [EmployeeController::class, 'getEmployees']);
+        Route::get('/view/roleandpermission', [EmployeeController::class, 'getEmployeeRoleAndPermission']);
+
+        Route::post('/assigncuisine', [EmployeeController::class, 'assignCuisine'])->middleware('role_or_permission_api:view chef-cuisine');
+        Route::get('/cuisineCategories/list', [EmployeeController::class, 'listCuisineCategories']);
+        Route::get('/ChefAssignedCuisines/list', [EmployeeController::class, 'getChefAssignedCuisines'])->middleware('role_or_permission_api:view chef-cuisine');
+        Route::delete('/unassignchef/{id}', [EmployeeController::class, 'unassignChef'])->middleware('role_or_permission_api:delete chef-cuisine');
+
+        Route::get('/chefs/list', [EmployeeController::class, 'listChefs']);
+        Route::post('/create/dashboardAccount', [EmployeeController::class, 'createAccessDashboard'])->middleware('role_or_permission_api:create AccessDashboard');
+        Route::post('/changeSttatus/dashboardAccount', [EmployeeController::class, 'toggleDashboardAccess'])->middleware('role_or_permission_api:changeStatus AccessDashboard');
+
+        Route::get('/cuisine-category-dishes/list/{categoryId}', [EmployeeController::class, 'listCuisineCategoryDishes']);
+        Route::get('/list', [EmployeeController::class, 'index'])->middleware('role_or_permission_api:view employees');
+        Route::get('/show/{id}', [EmployeeController::class, 'show'])->middleware('role_or_permission_api:view employees');
+        Route::post('/create', [EmployeeController::class, 'store'])->middleware('role_or_permission_api:create employees');
+        Route::post('/update/{id}', [EmployeeController::class, 'update'])->middleware('role_or_permission_api:update employees');
+        Route::delete('/delete/{id}', [EmployeeController::class, 'destroy'])->middleware('role_or_permission_api:delete employees');
+        Route::post('/restore/{id}', [EmployeeController::class, 'restore'])->middleware('role_or_permission_api:restore employees');
+    });
+    // Bonus Settings Routes
+    Route::prefix('bonus-settings')->group(function () {
+        Route::get('index', [BonusSettingsController::class, 'index'])->middleware('role_or_permission_api:view bonus_settings');
+        Route::get('show/{id}', [BonusSettingsController::class, 'show'])->middleware('role_or_permission_api:view bonus_settings');
+        Route::post('add', [BonusSettingsController::class, 'store'])->middleware('role_or_permission_api:create bonus_settings');
+        Route::post('edit/{id}', [BonusSettingsController::class, 'update'])->middleware('role_or_permission_api:update bonus_settings');
+        Route::get('delete/{id}', [BonusSettingsController::class, 'destroy'])->middleware('role_or_permission_api:delete bonus_settings');
+    });
+
+    // WarningSettings Routes
+    Route::prefix('warning_settings')->group(function () {
+
+        Route::post('/', [WarningSettingsController::class, 'store'])
+            ->name('warning_settings.store')
+            ->middleware('role_or_permission_api:create warning_settings');
+
+        Route::put('/update/{warningSettings}', [WarningSettingsController::class, 'update'])
+            ->name('warning_settings.update')
+            ->middleware('role_or_permission_api:update warning_settings');
+        Route::delete('/{warningSettings}', [WarningSettingsController::class, 'destroy'])
+            ->name('warning_settings.destroy')
+            ->middleware('role_or_permission_api:delete warning_settings');
+    });
+
+    Route::prefix('violations')->group(function () {
+        Route::get('/', [ViolationController::class, 'index'])->middleware('role_or_permission_api:view violations');
+        Route::get('/report', [ViolationController::class, 'frequentViolatorsReport'])->name('violations.report')->middleware('role_or_permission_api:view violation_report');
+        Route::post('/create', [ViolationController::class, 'store'])->name('violations.store')->middleware('role_or_permission_api:create violations');
+        Route::post('/assign/employee', [ViolationController::class, 'assignEmployee'])->name('violations.assign.employee')->middleware('role_or_permission_api:assign violations');
+        Route::put('/update/{id}', [ViolationController::class, 'update'])->name('violations.update')->middleware('role_or_permission_api:update violations');
+        Route::get('/employee', [ViolationController::class, 'listForEmployee'])->name('violations.listForEmployee');
+    });
+
+    Route::prefix('notifications')->group(function () {
+        Route::post('/send', [NotificationSendController::class, 'send'])->name('notification.send');
+        Route::prefix('categories')->group(function () {
+            Route::get('/list', [NotificationCategoriesController::class, 'index'])->middleware('role_or_permission_api:view notification_categories');
+            Route::get('/show/{id}', [NotificationCategoriesController::class, 'show'])->middleware('role_or_permission_api:view notification_categories');
+            Route::post('/create', [NotificationCategoriesController::class, 'store'])->middleware('role_or_permission_api:create notification_categories');
+            Route::post('/update/{id}', [NotificationCategoriesController::class, 'update'])->middleware('role_or_permission_api:update notification_categories');
+        });
+    });
+
+    // penalties
+    Route::group(['prefix' => 'penalties'], function () {
+        // Penalty reasons
+        Route::get('reasons/', [PenaltyReasonController::class, 'index'])->middleware('role_or_permission_api:view penalty_reasons');
+        Route::post('reasons/store', [PenaltyReasonController::class, 'store'])->middleware('role_or_permission_api:create penalty_reasons');
+        Route::get('reasons/{id}', [PenaltyReasonController::class, 'show'])->middleware('role_or_permission_api:view penalty_reasons');
+        Route::put('reasons/update/{id}', [PenaltyReasonController::class, 'update'])->middleware('role_or_permission_api:update penalty_reasons');
+        Route::delete('reasons/delete/{id}', [PenaltyReasonController::class, 'destroy'])->middleware('role_or_permission_api:delete penalty_reasons');
+        Route::post('reasons/restore/{id}', [PenaltyReasonController::class, 'restore'])->middleware('role_or_permission_api:update penalty_reasons');
+        // Penalties
+        Route::get('/', [PenaltyController::class, 'index'])->middleware('role_or_permission_api:view penalties');
+        Route::post('/store', [PenaltyController::class, 'store'])->middleware('role_or_permission_api:create penalties');
+        Route::get('/{id}', [PenaltyController::class, 'show'])->middleware('role_or_permission_api:view penalties');
+        Route::put('/update/{id}', [PenaltyController::class, 'update'])->middleware('role_or_permission_api:update penalties');
+        Route::delete('/delete/{id}', [PenaltyController::class, 'destroy'])->middleware('role_or_permission_api:delete penalties');
+        Route::post('/restore/{id}', [PenaltyController::class, 'restore'])->middleware('role_or_permission_api:update penalties');
+        Route::get('/approval-request/list', [PenaltyController::class, 'get_approvals'])->middleware('role_or_permission_api:view employee penalty requests');
+        Route::post('/approval-request/{id}', [PenaltyController::class, 'approval_request_change_status'])->middleware('role_or_permission_api:update employee penalty requests');
+        Route::get('/report/data', [PenaltyController::class, 'penaltyReport'])->middleware('role_or_permission_api:view penalties report');
+    });
+
+    // deductions
+    Route::group(['prefix' => 'deductions'], function () {
+        // Penalties Deductions
+        Route::get('penalties/', [PenaltyDeductionController::class, 'index'])->middleware('role_or_permission_api:view penalty_deductions');
+        Route::post('penalties/store', [PenaltyDeductionController::class, 'save'])->middleware('role_or_permission_api:create penalty_deductions');
+        Route::get('penalties/{id}', [PenaltyDeductionController::class, 'show'])->middleware('role_or_permission_api:view penalty_deductions');
+        Route::put('penalties/update/{id}', [PenaltyDeductionController::class, 'save'])->middleware('role_or_permission_api:update penalty_deductions');
+        Route::delete('penalties/delete/{id}', [PenaltyDeductionController::class, 'destroy'])->middleware('role_or_permission_api:delete penalty_deductions');
+        Route::post('penalties/restore/{id}', [PenaltyDeductionController::class, 'restore'])->middleware('role_or_permission_api:update penalty_deductions');
+        // Delays Deductions
+        Route::get('delays/', [DelayDeductionController::class, 'index'])->middleware('role_or_permission_api:view delay_deductions');
+        Route::post('delays/store', [DelayDeductionController::class, 'save'])->middleware('role_or_permission_api:create delay_deductions');
+        Route::get('delays/{id}', [DelayDeductionController::class, 'show'])->middleware('role_or_permission_api:view delay_deductions');
+        Route::put('delays/update/{id}', [DelayDeductionController::class, 'save'])->middleware('role_or_permission_api:update delay_deductions');
+        Route::delete('delays/delete/{id}', [DelayDeductionController::class, 'destroy'])->middleware('role_or_permission_api:delete delay_deductions');
+        Route::post('delays/restore/{id}', [DelayDeductionController::class, 'restore'])->middleware('role_or_permission_api:update delay_deductions');
+    });
+
+    //termination
+    Route::prefix('termination')->group(function () {
+        Route::get('/', [EmployeeTerminationController::class, 'allTermination'])->middleware('role_or_permission_api:all termination');
+        Route::get('/{id}', [EmployeeTerminationController::class, 'showTermination'])->middleware('role_or_permission_api:show termination');
+        Route::post('/', [EmployeeTerminationController::class, 'addTermination'])->middleware('role_or_permission_api:add termination');
+        Route::post('update/{id}', [EmployeeTerminationController::class, 'updateTermination'])->middleware('role_or_permission_api:update termination');
+        Route::delete('/{id}', [EmployeeTerminationController::class, 'deleteTermination'])->middleware('role_or_permission_api:delete termination');
+        Route::post('/approval-request/{id}', [EmployeeTerminationController::class, 'approval_request_change_status'])->middleware('role_or_permission_api:approval request of termination');
+        Route::get('/show/report', [EmployeeTerminationController::class, 'generate_termination_report'])->middleware('role_or_permission_api:generate termination report');
+    });
+
+    //Alert
+    Route::get('/type-notification', [AlertSettingsController::class, 'typeNotificationAllow'])->middleware('role_or_permission_api:show notification active');
+    Route::prefix('alert')->group(callback: function () {
+        Route::get('/', [AlertSettingsController::class, 'allTypeAlert'])->middleware('role_or_permission_api:view type alert');
+        Route::get('/attendance-events', [AlertSettingsController::class, 'showAttendanceEvents'])->middleware('role_or_permission_api:all attendance event');
+        Route::post('/', [AlertSettingsController::class, 'sendNotification'])->middleware('role_or_permission_api:send alert');
+    });
+
+    Route::prefix('company-policies')->group(function () {
+        Route::get('/', [CompanyPolicyController::class, 'index'])
+            ->middleware('role_or_permission_api:view company_policies');
+        Route::get('/{id}', [CompanyPolicyController::class, 'show'])
+            ->middleware('role_or_permission_api:view company_policies');
+        Route::get('/{id}/acknowledgements', [CompanyPolicyController::class, 'acknowledgements'])
+            ->middleware('role_or_permission_api:view company_policies_acknowledgements');
+        Route::post('/', [CompanyPolicyController::class, 'store'])
+            ->middleware('role_or_permission_api:create company_policies');
+        Route::post('/{id}', [CompanyPolicyController::class, 'update'])
+            ->middleware('role_or_permission_api:update company_policies');
+        Route::delete('/{id}', [CompanyPolicyController::class, 'destroy'])
+            ->middleware('role_or_permission_api:delete company_policies');
+    });
+
+    Route::prefix('employee-warnings')->group(function () {
+        Route::get('/', [EmployeeWarningController::class, 'index'])
+            ->middleware('role_or_permission_api:view warnings');
+        Route::get('/track-employee-warnings', [EmployeeWarningController::class, 'employeeWarnings'])
+            ->middleware('role_or_permission_api:view employee_warnings');
+        Route::get('/{id}', [EmployeeWarningController::class, 'show'])
+            ->middleware('role_or_permission_api:view warnings');
+        Route::post('/', [EmployeeWarningController::class, 'store'])
+            ->middleware('role_or_permission_api:create warnings');
+        Route::post('/{id}', [EmployeeWarningController::class, 'update'])
+            ->middleware('role_or_permission_api:update warnings');
+        Route::post('/{id}/acknowledge', [EmployeeWarningController::class, 'acknowledge'])
+            ->middleware('role_or_permission_api:acknowledge warnings');
+        Route::post('/{id}/confirm-delivery', [EmployeeWarningController::class, 'confirmDelivery'])
+            ->middleware('role_or_permission_api:confirm warnings_delivery');
+        Route::delete('/{id}', [EmployeeWarningController::class, 'destroy'])
+            ->middleware('role_or_permission_api:delete warnings');
+    });
+
+    //overtime-type
+    Route::group(['prefix' => 'overtime-type'], function () {
+        Route::get('index', [OvertimeTypeController::class, 'index']);
+        Route::post('add', [OvertimeTypeController::class, 'add']);
+        Route::post('edit', [OvertimeTypeController::class, 'edit']);
+        Route::get('delete/{id}', [OvertimeTypeController::class, 'delete']);
+    });
+
+    //OvertimeSetting
+    Route::group(['prefix' => 'overtime-setting'], function () {
+        Route::get('index', [OvertimeSettingController::class, 'index']);
+        Route::post('add', [OvertimeSettingController::class, 'add']);
+        Route::post('edit', [OvertimeSettingController::class, 'edit']);
+        Route::get('delete/{id}', [OvertimeSettingController::class, 'delete']);
+    });
+
+    //excuses requests
+    Route::prefix('excuse-requests')->group(function () {
+        Route::get('list', [ExcuseRequestController::class, 'index'])->name('excuse_requests.index');
+        Route::get('view/{id}', [ExcuseRequestController::class, 'show'])->name('excuse_requests.show');
+        Route::post('create', [ExcuseRequestController::class, 'store'])->name('excuse_requests.store');
+        Route::get('/pending', [ExcuseRequestController::class, 'pendingRequests'])->name('excuse-requests.pending');
+        Route::put('approve/{id}', [ExcuseRequestController::class, 'approve'])->name('excuse_requests.approve');
+        Route::put('reject/{id}', [ExcuseRequestController::class, 'reject'])->name('excuse_requests.reject');
+        Route::put('cancel/{id}', [ExcuseRequestController::class, 'cancel'])->name('excuse_requests.cancel');
+        Route::post('restore/{id}', [ExcuseRequestController::class, 'restore'])->name('excuse_requests.restore');
+        Route::put('{id}/update', [ExcuseRequestController::class, 'update'])->name('excuse-requests.update');
+    });
+
+    // Excuse Settings Routes
+    Route::prefix('excuse-settings')->group(function () {
+        Route::get('/show', [ExcuseSettingController::class, 'show'])->name('excuse-settings.show');
+        Route::put('/update', [ExcuseSettingController::class, 'update'])->name('excuse-settings.update');
+    });
+
+    Route::prefix('timetables')->group(function () {
+        Route::get('/list', [TimetableController::class, 'index'])->middleware('role_or_permission_api:view timetables');
+        Route::post('/create', [TimetableController::class, 'store'])->middleware('role_or_permission_api:create timetables');
+        Route::get('/show/{id}', [TimetableController::class, 'show'])->middleware('role_or_permission_api:view timetables');
+        Route::put('/update/{id}', [TimetableController::class, 'update'])->middleware('role_or_permission_api:update timetables');
+        Route::delete('/delete/{id}', [TimetableController::class, 'destroy'])->middleware('role_or_permission_api:delete timetables');
+        Route::post('/restore/{id}', [TimetableController::class, 'restore'])->middleware('role_or_permission_api:restore timetables');
+    });
+
+    Route::prefix('shifts')->group(function () {
+        Route::get('/list', [ShiftController::class, 'index'])->middleware('role_or_permission_api:view shifts');
+        Route::post('/create', [ShiftController::class, 'store'])->middleware('role_or_permission_api:create shifts');
+        Route::get('/show/{id}', [ShiftController::class, 'show'])->middleware('role_or_permission_api:view shifts');
+        Route::put('/update/{id}', [ShiftController::class, 'update'])->middleware('role_or_permission_api:update shifts');
+        Route::delete('/delete/{id}', [ShiftController::class, 'destroy'])->middleware('role_or_permission_api:delete shifts');
+        Route::post('/restore/{id}', [ShiftController::class, 'restore']);
+    });
+
+    Route::prefix('employee-schedules')->group(function () {
+        Route::get('/list', [EmployeeScheduleController::class, 'index'])->name('employee-schedules.index');
+        Route::post('/create', [EmployeeScheduleController::class, 'store'])->name('employee-schedules.store');
+        Route::post('/create-default', [EmployeeScheduleController::class, 'setDefault'])->name('employee-schedules.storeDefault');
+        Route::get('/show/{id}', [EmployeeScheduleController::class, 'show'])->name('employee-schedules.show');
+        Route::put('/update/{id}', [EmployeeScheduleController::class, 'update'])->name('employee-schedules.update');
+        Route::delete('/delete/{id}', [EmployeeScheduleController::class, 'destroy'])->name('employee-schedules.destroy');
+        Route::post('/restore/{id}', [EmployeeScheduleController::class, 'restore'])->name('employee-schedules.restore');
+        Route::get('/my-schedules', [EmployeeScheduleController::class, 'getEmployeeSchedules'])->name('employee-schedules.mySchedules');
+    });
+
+    Route::group(['prefix' => 'biotime'], function () {
+        Route::post('/clock-in-out', [BioTimeController::class, 'clockInOut']);
+    });
+
+    // Attendance
+    Route::group(['prefix' => 'attendance'], function () {
+        Route::get('/my', [AttendanceController::class, 'getMyAttendance']);
+        Route::get('/lastActivity', [AttendanceController::class, 'lastActivity']);
+        Route::get('/my/summary', [AttendanceController::class, 'getMyAttendanceSummary']);
+        Route::get('/employee/{employeeId}', [AttendanceController::class, 'getAttendanceByEmployee'])->middleware('role_or_permission_api:view attendance');
+        Route::get('/all', [AttendanceController::class, 'getAllAttendance'])->middleware('role_or_permission_api:view attendance');
+        Route::get('/summary', [AttendanceController::class, 'getAttendanceSummary'])->middleware('role_or_permission_api:view attendance');
+        Route::get('/daily-report', [AttendanceController::class, 'getDailyAttendanceReport'])->middleware('role_or_permission_api:view attendance');
+    });
+    // Route::get('/range-report', [AttendanceController::class, 'generateRangeReport'])->middleware('role_or_permission_api:view attendance');
+
+    Route::prefix('late-deduction-settings')->group(function () {
+        Route::get('/', [LateDeductionSettingController::class, 'index']);
+        Route::get('/{id}', [LateDeductionSettingController::class, 'show']);
+        Route::post('/', [LateDeductionSettingController::class, 'store']);
+        Route::put('/{id}', [LateDeductionSettingController::class, 'update']);
+        Route::delete('/{id}', [LateDeductionSettingController::class, 'destroy']);
+    });
+    Route::prefix('absence-settings')->group(function () {
+        Route::get('/', [AbsenceSettingController::class, 'index']);
+        Route::get('/{id}', [AbsenceSettingController::class, 'show']);
+        Route::post('/', [AbsenceSettingController::class, 'store']);
+        Route::put('/{id}', [AbsenceSettingController::class, 'update']);
+        Route::delete('/{id}', [AbsenceSettingController::class, 'destroy']);
+    });
+    Route::group(['prefix' => 'hr-settings'], function () {
+        Route::get('/', [HrSettingController::class, 'index'])->middleware('role_or_permission_api:view hr_settings');
+        Route::post('/', [HrSettingController::class, 'store'])->middleware('role_or_permission_api:create hr_settings');
+        Route::get('/branch/{branchId}', [HrSettingController::class, 'getByBranch'])->middleware('role_or_permission_api:view hr_settings');
+        Route::post('/branch/{branchId}', [HrSettingController::class, 'updateByBranch'])->middleware('role_or_permission_api:update hr_settings');
+        Route::delete('/branch/{branchId}', [HrSettingController::class, 'destroy'])->middleware('role_or_permission_api:delete hr_settings');
+    });
+
+    Route::group(['prefix' => 'kitchen_performance'], function () {
+        Route::get('/list', [KitchenPerformanceReportController::class, 'index']);
+        Route::get('/show/{id}', [KitchenPerformanceReportController::class, 'show']);
+    });
+    Route::group(['prefix' => 'cashier-performance'], function () {
+        Route::get('/list', [CashierPerformanceReportsController::class, 'list']);
+        Route::get('/show/{id}', [CashierPerformanceReportsController::class, 'show']);
+    });
+    Route::group(['prefix' => 'delivery_performance_metrics_report'], function () {
+        Route::get('/list', [DeliveryPerformanceMetricsReportController::class, 'index']);
+        Route::get('/show/{id}', [DeliveryPerformanceMetricsReportController::class, 'show']);
+    });
+
+    Route::group(['prefix' => 'reports'], function () {
+        Route::group(['prefix' => 'cashier-balances'], function () {
+            Route::get('/list', [CashierBalancesReportsController::class, 'index']);
+            Route::get('/show/{id}', [CashierBalancesReportsController::class, 'show']);
+        });
+    });
+
+
+    Route::group(['prefix' => 'delivery_earnings_payments_report'], function () {
+        Route::get('/list', [DeliveryEearningsPaymentsReportController::class, 'index']);
+        Route::get('/show/{id}', [DeliveryEearningsPaymentsReportController::class, 'show']);
+    });
+    Route::group(['prefix' => 'penalties'], function () {
+        // Penalty reasons
+        Route::get('reasons/', [PenaltyReasonController::class, 'index']);
+        Route::post('reasons/store', [PenaltyReasonController::class, 'store']);
+        Route::get('reasons/{id}', [PenaltyReasonController::class, 'show']);
+        Route::put('reasons/update/{id}', [PenaltyReasonController::class, 'update']);
+        Route::delete('reasons/delete/{id}', [PenaltyReasonController::class, 'destroy']);
+        Route::post('reasons/restore/{id}', [PenaltyReasonController::class, 'restore']);
+        // Penalties
+        Route::get('/', [PenaltyController::class, 'index']);
+        Route::post('/store', [PenaltyController::class, 'store']);
+        Route::get('/{id}', [PenaltyController::class, 'show']);
+        Route::put('/update/{id}', [PenaltyController::class, 'update']);
+        Route::delete('/delete/{id}', [PenaltyController::class, 'destroy']);
+        Route::post('/restore/{id}', [PenaltyController::class, 'restore']);
+        Route::post('/approval-request/{id}', [PenaltyController::class, 'approval_request_change_status']);
+        Route::post('/request', [PenaltyController::class, 'getRequest']);
+    });
+
+    Route::group(['prefix' => 'delays'], function () {
+        // Delay times
+        Route::get('times/', [DelayTimeController::class, 'index']);
+        Route::post('times/store', [DelayTimeController::class, 'store']);
+        Route::get('times/{id}', [DelayTimeController::class, 'show']);
+        Route::put('times/update/{id}', [DelayTimeController::class, 'update']);
+        Route::delete('times/delete/{id}', [DelayTimeController::class, 'destroy']);
+        Route::post('times/restore/{id}', [DelayTimeController::class, 'restore']);
+        // Delays
+        Route::get('/', [DelayController::class, 'index']);
+        Route::post('/store', [DelayController::class, 'store']);
+        Route::get('/{id}', [DelayController::class, 'show']);
+        Route::put('/update/{id}', [DelayController::class, 'update']);
+        Route::delete('/delete/{id}', [DelayController::class, 'destroy']);
+        Route::post('/restore/{id}', [DelayController::class, 'restore']);
+    });
+
+    Route::group(['prefix' => 'advances'], function () {
+        // Advance Settings
+        Route::get('settings/', [AdvanceSettingController::class, 'index']);
+        Route::post('settings/store', [AdvanceSettingController::class, 'store']);
+        Route::get('settings/{id}', [AdvanceSettingController::class, 'show']);
+        Route::put('settings/update/{id}', [AdvanceSettingController::class, 'update']);
+        Route::delete('settings/delete/{id}', [AdvanceSettingController::class, 'destroy']);
+        Route::post('settings/restore/{id}', [AdvanceSettingController::class, 'restore']);
+        // Advance Requests
+        Route::get('requests/', [AdvanceRequestController::class, 'index']);
+        Route::post('requests/store', [AdvanceRequestController::class, 'save']);
+        Route::get('requests/{id}', [AdvanceRequestController::class, 'show']);
+        Route::put('requests/update/{id}', [AdvanceRequestController::class, 'save']);
+        Route::delete('requests/delete/{id}', [AdvanceRequestController::class, 'destroy']);
+        Route::post('requests/restore/{id}', [AdvanceRequestController::class, 'restore']);
+        // Advance
+        Route::get('/', [AdvanceController::class, 'index']);
+        Route::post('/store', [AdvanceController::class, 'save']);
+        Route::get('/{id}', [AdvanceController::class, 'show']);
+        Route::put('/update/{id}', [AdvanceController::class, 'save']);
+        Route::delete('/delete/{id}', [AdvanceController::class, 'destroy']);
+        Route::post('/restore/{id}', [AdvanceController::class, 'restore']);
+    });
+
+    Route::group(['prefix' => 'deductions'], function () {
+        // Penalties Deductions
+        Route::get('penalties/', [PenaltyDeductionController::class, 'index']);
+        Route::post('penalties/store', [PenaltyDeductionController::class, 'save']);
+        Route::get('penalties/{id}', [PenaltyDeductionController::class, 'show']);
+        Route::put('penalties/update/{id}', [PenaltyDeductionController::class, 'save']);
+        Route::delete('penalties/delete/{id}', [PenaltyDeductionController::class, 'destroy']);
+        Route::post('penalties/restore/{id}', [PenaltyDeductionController::class, 'restore']);
+        // Delays Deductions
+        Route::get('delays/', [DelayDeductionController::class, 'index']);
+        Route::post('delays/store', [DelayDeductionController::class, 'save']);
+        Route::get('delays/{id}', [DelayDeductionController::class, 'show']);
+        Route::put('delays/update/{id}', [DelayDeductionController::class, 'save']);
+        Route::delete('delays/delete/{id}', [DelayDeductionController::class, 'destroy']);
+        Route::post('delays/restore/{id}', [DelayDeductionController::class, 'restore']);
+    });
+
+    //Payroll
+    Route::group(['prefix' => 'payrolls'], function () {
+        Route::get('/', [PayrollController::class, 'index']);
+        Route::post('/store', [PayrollController::class, 'save']);
+        Route::get('/{id}', [PayrollController::class, 'show']);
+        Route::get('employee/{id}', [PayrollController::class, 'showEmployee']);
+        Route::put('/update/{id}', [PayrollController::class, 'save']);
+        Route::delete('/delete/{id}', [PayrollController::class, 'destroy']);
+        Route::post('/restore/{id}', [PayrollController::class, 'restore']);
+        Route::post('/termination/{id}', [PayrollController::class, 'PayrollTermination']);
+    });
+
+    Route::prefix('devices')->group(function () {
+        Route::get('/', [DeviceController::class, 'index'])->name('devices.index');
+        Route::get('/{id}', [DeviceController::class, 'show'])->name('devices.show');
+        Route::post('/', [DeviceController::class, 'store'])->name('devices.store');
+        Route::put('/{id}', [DeviceController::class, 'update'])->name('devices.update');
+        Route::delete('/{id}', [DeviceController::class, 'destroy'])->name('devices.destroy');
+    });
+
+    Route::post('/biotime/add-employee', [EmployeeDeviceController::class, 'addEmployeeToDevice'])->name('biotime.add_employee');
+    // HR Reports routes
+    Route::controller(HrReportController::class)
+        ->prefix('hr-reports')
+        ->group(function () {
+            Route::get('delays', 'listDelaysReport');
+            Route::get('delays/{id}', 'employeeDelaysReport');
+            Route::get('penalties', 'listPenaltiesReport');
+            Route::get('penalties/{id}', 'employeePenaltiesReport');
+            Route::get('advances', 'listAdvancesReport');
+            Route::get('advances/{id}', 'employeeAdvancesReport');
+            Route::get('payrolls', 'listPayrollsReport');
+            Route::get('payrolls/{id}', 'employeePayrollsReport');
+            Route::get('payroll/{id}', 'employeePayrollReport');
+            Route::get('employees/details', 'listEmployeesReport');
+            Route::get('employees/details/{id}', 'employeeReport');
+        });
+    //Roles
+    Route::group(['prefix' => 'roles'], function () {
+        Route::get('/', [RoleController::class, 'index'])->middleware('role_or_permission_api:view roles');
+        Route::post('store', [RoleController::class, 'store'])->middleware('role_or_permission_api:create roles');
+        Route::post('update/{id}', [RoleController::class, 'update'])->middleware('role_or_permission_api:update roles');
+        Route::post('/employee/assign-role', [RoleController::class, 'assignRole'])->middleware('role_or_permission_api:assign roles');
+        Route::get('show/{id}', [RoleController::class, 'show'])->middleware('role_or_permission_api:view roles');
+        Route::get('delete/{id}', [RoleController::class, 'destroy'])->middleware('role_or_permission_api:delete roles');
+    });
+    //Permissions
+    Route::group(['prefix' => 'permissions'], function () {
+        Route::get('/', [PermissionController::class, 'index']);
+        Route::get('/{guard}', [PermissionController::class, 'listOfPermissions']);
+        Route::get('/module/{module}', [PermissionController::class, 'listOfPermissionsModule']);
+
+        Route::post('store', [PermissionController::class, 'store'])->middleware('role_or_permission_api:create permissions');
+        Route::get('show/{id}', [PermissionController::class, 'show'])->middleware('role_or_permission_api:view permissions');
+        Route::post('update/{id}', [PermissionController::class, 'update']);
+        Route::post('assignemployeepermission', [PermissionController::class, 'assignEmployeePermission']);
+        // Route::post('updateEmployeePermission', [PermissionController::class, 'updateEmployeePermission']);
+
+        Route::get('delete/{id}', [PermissionController::class, 'destroy'])->middleware('role_or_permission_api:delete permissions');
+    });
+    //API_codes
+    Route::group(['prefix' => 'api_code'], function () {
+        Route::get('/', [ApiCodeController::class, 'index']);
+        Route::post('store', [ApiCodeController::class, 'store']);
+        Route::post('update/{id}', [ApiCodeController::class, 'update']);
+    });
+
+    //purchase_invoice
+    Route::prefix('purchase-invoices')->group(function () {
+        Route::get('/', [PurchaseInvoiceController::class, 'index'])->name('purchase-invoices.index');
+        Route::post('/', [PurchaseInvoiceController::class, 'store'])->name('purchase-invoices.store');
+        Route::put('/{id}', [PurchaseInvoiceController::class, 'update'])->name('purchase-invoices.update');
+        Route::get('/{id}', [PurchaseInvoiceController::class, 'show'])->name('purchase-invoices.show');
+    });
+
+    //Reports
+    Route::prefix('reports')->group(function () {
+
+        Route::get('customers/list/orders', [CustomerServiceOrderController::class, 'mostcustomers'])->middleware('role_or_permission_api:view report_customers');
+
+        //To be removed
+        Route::prefix('/ordercancel')->group(function () {
+            Route::get('/list', [OrdersReportsCancelController::class, 'list'])->middleware('role_or_permission_api:view order_cancel_report');
+            Route::get('/show/{id}', [OrdersReportsCancelController::class, 'show'])->middleware('role_or_permission_api:view order_cancel_report');
+        });
+        //New
+        Route::prefix('/cancelled-delivery-orders')->group(function () {
+            Route::get('/list', [CancelledDeliveryOrdersReportController::class, 'list'])->middleware('role_or_permission_api:view order_cancel_report');
+            Route::get('/show/{id}', [CancelledDeliveryOrdersReportController::class, 'show'])->middleware('role_or_permission_api:view order_cancel_report');
+        });
+        //purchase-invoices Reports
+        Route::prefix('purchase-invoices')->group(function () {
+            Route::get('/', [PurchaseInvoiceController::class, 'getPurchaseInvoiceReport']);
+        });
+        Route::group(['prefix' => 'orders'], function () {
+            Route::get('list', [OrdersReportsController::class, 'list'])->middleware('role_or_permission_api:view report_orders');
+            Route::get('detail/{id}', [OrdersReportsController::class, 'show'])->middleware('role_or_permission_api:detail report_orders');
+        });
+        Route::group(['prefix' => 'hanging-orders'], function () {
+            Route::get('list', [HangingOrdersReportController::class, 'hangingOrders'])->middleware('role_or_permission_api:view report_orders');
+            Route::get('detail/{id}', [HangingOrdersReportController::class, 'hangingOrdersDetails'])->middleware('role_or_permission_api:detail report_orders');
+        });
+        Route::group(['prefix' => 'branch-safe'], function () {
+            Route::get('/', [BalanceCotroller::class, 'index'])->middleware('role_or_permission_api:access reports branch safe');
+            Route::get('/show/{id}', [BalanceCotroller::class, 'show'])->middleware('role_or_permission_api:access reports branch safe');
+            Route::get('/cashier-balance', [BalanceCotroller::class, 'indexCashierBalance'])->middleware('role_or_permission_api:access reports branch safe');
+            Route::get('/cashier-balance/{id}', [BalanceCotroller::class, 'showCashierBalance'])->middleware('role_or_permission_api:access reports branch safe');
+            Route::get('/cashier-balance-transaction/{id}', [BalanceCotroller::class, 'showCashierBalanceTransaction'])->middleware('role_or_permission_api:access reports branch safe');
+        });
+
+        Route::group(['prefix' => 'waiter_table_service_report'], function () {
+            Route::post('list', [WaiterTableServiceReportController::class, 'index'])->middleware('role_or_permission_api:view waiter_table_service_report');
+            Route::get('/{id}', [WaiterTableServiceReportController::class, 'show'])->middleware('role_or_permission_api:detail waiter_table_service_report');
+        });
+
+        Route::group(['prefix' => 'waiter_requests'], function () {
+            Route::get('list', [WaiterRequestReportController::class, 'index'])->middleware('role_or_permission_api:view report_waiter_requests');
+            Route::post('/search', [WaiterRequestReportController::class, 'search'])->middleware('role_or_permission_api:view report_waiter_requests');
+        });
+
+        Route::group(['prefix' => 'booking_revenue'], function () {
+            Route::get('list', [BookingRevenueReportController::class, 'index'])->middleware('role_or_permission_api:view report_booking_revenue');
+            Route::get('show/{id}', [BookingRevenueReportController::class, 'show'])->middleware('role_or_permission_api:detail report_booking_revenue');
+        });
+
+        Route::group(['prefix' => 'booking-cancellations'], function () {
+            Route::get('list', [BookingCancellationReportApiController::class, 'index'])->middleware('role_or_permission_api:view report_booking_cancellation');
+            Route::get('/{id}', [BookingCancellationReportApiController::class, 'show'])->middleware('role_or_permission_api:detail report_booking_cancellation');
+        });
+    });
+    Route::get('cashiers/list', [BalanceCotroller::class, 'allcashiers']);
+    Route::get('waiters/list', [WaiterTableServiceReportController::class, 'allwaiters']);
+
+    Route::group(['prefix' => 'order_refund'], function () {
+        Route::get('/', [OrderRefundController::class, 'index']);
+        Route::post('store', [OrderRefundController::class, 'store']);
+        Route::post('change_status', [OrderRefundController::class, 'change_status']);
+    });
+
+    Route::group(['prefix' => 'order_tracking'], function () {
+        Route::post('/', [OrderTrackingController::class, 'index']);
+        Route::post('store', [OrderTrackingController::class, 'store']);
+    });
+
+    Route::group(['prefix' => 'order_transaction'], function () {
+        Route::post('/', [OrderTransactionController::class, 'index']);
+        Route::post('store', [OrderTransactionController::class, 'store']);
+    });
+
+    Route::group(['prefix' => 'order-report'], function () {
+        Route::post('/', [OrderReportController::class, 'OrderReport']);
+        Route::post('/details', [OrderReportController::class, 'OrderReportDetails']);
+        Route::post('/refund', [OrderReportController::class, 'OrderRefundReport']);
+        Route::post('/refund/details', [OrderReportController::class, 'OrderRefundReportDetails']);
+    });
+    // Start Category
+    Route::group(['prefix' => 'category'], function () {
+        Route::get('/', [CategoryController::class, 'index']);
+        Route::post('store', [CategoryController::class, 'store']);
+        Route::post('update/{id}', [CategoryController::class, 'update']);
+        Route::get('delete/{id}', [CategoryController::class, 'delete']);
+        Route::get('{id}/inventory', [CategoryInventoryController::class, 'getInventory']);
+        Route::post('product-brand-category-colors', [CategoryController::class, 'product_color_store']);
+        Route::post('product-brand-size-colors', [CategoryController::class, 'product_size_store']);
+    });
+
+    // vendors
+    Route::group(['prefix' => 'vendors'], function () {
+        Route::get('vendorList', [VendorController::class, 'index']);
+        Route::get('showVendor/{id}', [VendorController::class, 'show']);
+        Route::post('addVendor', [VendorController::class, 'store']);
+        Route::put('updateVendor/{id}', [VendorController::class, 'update']);
+        Route::delete('deleteVendor/{id}', [VendorController::class, 'destroy']);
+        Route::post('restoreVendor/{id}', [VendorController::class, 'restore']);
+    });
+
+
+    //Lines
+    Route::group(['prefix' => 'lines'], function () {
+        Route::get('lineList', [LineController::class, 'index']);
+        Route::get('showLine/{id}', [LineController::class, 'show']);
+        Route::post('addLine', [LineController::class, 'store']);
+        Route::put('updateLine/{id}', [LineController::class, 'update']);
+        Route::delete('deleteLine/{id}', [LineController::class, 'destroy']);
+        Route::post('restoreLine/{id}', [LineController::class, 'restore']); // Restore soft-deleted line
+    });
+
+
+    // Divisions
+    Route::group(['prefix' => 'divisions'], function () {
+        Route::get('divisionList', [DivisionController::class, 'index']);
+        Route::get('showDivision/{id}', [DivisionController::class, 'show']);
+        Route::post('addDivision', [DivisionController::class, 'store']);
+        Route::put('updateDivision/{id}', [DivisionController::class, 'update']);
+        Route::delete('deleteDivision/{id}', [DivisionController::class, 'destroy']);
+        Route::post('restoreDivision/{id}', [DivisionController::class, 'restore']); // Restore route
+    });
+
+
+    Route::get('itemCode/list', [RecipeController::class, 'itemCodeList'])->name('itemCodeList.index');
+    Route::get('recipes/list/products', [RecipeController::class, 'listProducts']);
+
+    Route::prefix('recipes')->group(function () {
+        Route::get('/list', [RecipeController::class, 'index'])->name('recipes.index')->middleware('role_or_permission_api:view recipes');
+        Route::post('/create', [RecipeController::class, 'store'])->name('recipes.store')->middleware('role_or_permission_api:create recipes');
+        Route::get('/view/{id}', [RecipeController::class, 'show'])->name('recipes.show')->middleware('role_or_permission_api:view recipes');
+        Route::post('/update/{id}', [RecipeController::class, 'update'])->name('recipes.update')->middleware('role_or_permission_api:update recipes');
+        Route::delete('/delete/{id}', [RecipeController::class, 'destroy'])->name('recipes.destroy')->middleware('role_or_permission_api:delete recipes');
+    });
+
+
+    //cuisines
+    Route::prefix('cuisines')->group(function () {
+        Route::get('cuisineList', [CuisineController::class, 'index'])->name('cuisines.list')->middleware('role_or_permission_api:view cuisines');
+        Route::post('addCuisine', [CuisineController::class, 'store'])->name('cuisines.add')->middleware('role_or_permission_api:create cuisines');
+        Route::get('showCuisine/{id}', [CuisineController::class, 'show'])->name('cuisines.show')->middleware('role_or_permission_api:view cuisines');
+        Route::post('updateCuisine/{id}', [CuisineController::class, 'update'])->name('cuisines.update')->middleware('role_or_permission_api:update cuisines');
+        Route::delete('deleteCuisine/{id}', [CuisineController::class, 'destroy'])->name('cuisines.delete')->middleware('role_or_permission_api:delete cuisines');
+        Route::post('restoreCuisine/{id}', [CuisineController::class, 'restore'])->name('cuisines.restore')->middleware('role_or_permission_api:restore cuisines');
+        Route::post('assign-dish-categories/{id}', [CuisineController::class, 'assignDishCategories'])->middleware('role_or_permission_api:delete cuisines');
+    });
+
+    //Dish Categories
+    Route::prefix('dish-categories')->group(function () {
+        Route::get('/', [DishCategoryController::class, 'index'])->name('dish_categories.index')->middleware('role_or_permission_api:view dish_categories');
+        Route::post('/', [DishCategoryController::class, 'store'])->name('dish_categories.store')->middleware('role_or_permission_api:create dish_categories');
+        Route::post('/{id}', [DishCategoryController::class, 'update'])->name('dish_categories.update')->middleware('role_or_permission_api:update dish_categories');
+        Route::delete('/{id}', [DishCategoryController::class, 'delete'])->name('dish_categories.delete')->middleware('role_or_permission_api:delete dish_categories');
+        Route::get('/show/{id}', [DishCategoryController::class, 'show'])->name('dish_categories.show')->middleware('role_or_permission_api:view dish_categories');
+    });
+
+    //dishes
+    Route::prefix('dishes')->group(function () {
+        Route::get('/list', [DishController::class, 'index'])->name('dishes.index')->middleware('role_or_permission_api:view dishes');
+        Route::post('/create', [DishController::class, 'store'])->name('dishes.store');
+        Route::get('/view/{id}', [DishController::class, 'show'])->name('dishes.show')->middleware('role_or_permission_api:view dishes');
+        Route::post('/update/{id}', [DishController::class, 'update'])->name('dishes.update')->middleware('role_or_permission_api:update dishes');
+        Route::delete('/delete/{id}', [DishController::class, 'destroy'])->name('dishes.destroy')->middleware('role_or_permission_api:delete dishes');
+        Route::post('/restore/{id}', [DishController::class, 'restore'])->name('dishes.restore')->middleware('role_or_permission_api:restore dishes');
+        Route::post('/save-ingredient', [DishController::class, 'saveIngredient'])->name('dishes.save-ingredient')->middleware('role_or_permission_api:create dishes');
+    });
+
+    // Best Seller Dish Report
+    Route::prefix('report/best-seller-dishes')->group(function () {
+        Route::get('/', [BestSellerDishReportController::class, 'index'])->middleware('role_or_permission_api:view best_seller_dish_report');
+        Route::get('/{id}', [BestSellerDishReportController::class, 'show'])->middleware('role_or_permission_api:view best_seller_dish_report');
+    });
+
+    //addons
+    Route::prefix('addons')->group(function () {
+        Route::get('/list', [AddonController::class, 'index'])->middleware('role_or_permission_api:view addons');
+        Route::get('/show/{id}', [AddonController::class, 'show'])->middleware('role_or_permission_api:view addons');
+        Route::post('/add', [AddonController::class, 'store'])->middleware('role_or_permission_api:create addons');
+        Route::post('/update/{id}', [AddonController::class, 'update'])->middleware('role_or_permission_api:update addons');
+        Route::delete('/delete/{id}', [AddonController::class, 'destroy'])->middleware('role_or_permission_api:delete addons');
+    });
+    Route::prefix('payment_policies')->group(function () {
+        Route::get('/list', [PaymentPoliciesController::class, 'index'])->middleware('role_or_permission_api:view payment_policies');
+        Route::get('/show/{id}', [PaymentPoliciesController::class, 'show'])->middleware('role_or_permission_api:view payment_policies');
+        Route::post('/add', [PaymentPoliciesController::class, 'store'])->middleware('role_or_permission_api:create payment_policies');
+        Route::post('/update/{id}', [PaymentPoliciesController::class, 'update'])->middleware('role_or_permission_api:update payment_policies');
+        Route::delete('/delete/{id}', [PaymentPoliciesController::class, 'destroy'])->middleware('role_or_permission_api:delete payment_policies');
+    });
+    Route::prefix('logo')->group(function () {
+        Route::get('/list', [LogoController::class, 'index'])->middleware('role_or_permission_api:view logos');
+        Route::get('/show/{id}', [LogoController::class, 'show'])->middleware('role_or_permission_api:view logos');
+        Route::post('/add', [LogoController::class, 'store'])->middleware('role_or_permission_api:create logos');
+        Route::post('/update/{id}', [LogoController::class, 'update'])->middleware('role_or_permission_api:update logos');
+        Route::delete('/delete/{id}', [LogoController::class, 'destroy'])->middleware('role_or_permission_api:delete logos');
+    });
+    Route::prefix('slider')->group(function () {
+        Route::get('/list', [SliderController::class, 'index'])->middleware('role_or_permission_api:view sliders');
+        Route::get('/show/{id}', [SliderController::class, 'show'])->middleware('role_or_permission_api:view sliders');
+        Route::post('/add', [SliderController::class, 'store'])->middleware('role_or_permission_api:create sliders');
+        Route::post('/update/{id}', [SliderController::class, 'update'])->middleware('role_or_permission_api:update sliders');
+        Route::delete('/delete/{id}', [SliderController::class, 'destroy'])->middleware('role_or_permission_api:delete sliders');
+    });
+
+    Route::prefix('termsandconditions')->group(function () {
+        Route::get('/list', [TermsAndConditionsController::class, 'index'])->middleware('role_or_permission_api:view terms');
+        Route::get('/show/{id}', [TermsAndConditionsController::class, 'show'])->middleware('role_or_permission_api:view terms');
+        Route::post('/add', [TermsAndConditionsController::class, 'store'])->middleware('role_or_permission_api:create terms');
+        Route::post('/update/{id}', [TermsAndConditionsController::class, 'update'])->middleware('role_or_permission_api:update terms');
+        Route::delete('/delete/{id}', [TermsAndConditionsController::class, 'destroy'])->middleware('role_or_permission_api:delete terms');
+    });
+    Route::prefix('cancel_reasons')->group(function () {
+        Route::get('/list', [OrderCancellationReasonController::class, 'index'])->middleware('role_or_permission_api:view cancellation_reasons');
+        Route::get('/show/{id}', [OrderCancellationReasonController::class, 'show'])->middleware('role_or_permission_api:view cancellation_reasons');
+        Route::post('/add', [OrderCancellationReasonController::class, 'store'])->middleware('role_or_permission_api:create cancellation_reasons');
+        Route::post('/update/{id}', [OrderCancellationReasonController::class, 'update'])->middleware('role_or_permission_api:update cancellation_reasons');
+        Route::delete('/delete/{id}', [OrderCancellationReasonController::class, 'destroy'])->middleware('role_or_permission_api:delete cancellation_reasons');
+    });
+
+
+    Route::group(['prefix' => 'privacy'], function () {
+        Route::get('/list', [PrivacyPolicyController::class, 'index'])->middleware('role_or_permission_api:view privacies');
+        Route::post('/add', [PrivacyPolicyController::class, 'store'])->middleware('role_or_permission_api:create privacies');
+        Route::get('/show/{id}', [PrivacyPolicyController::class, 'show'])->middleware('role_or_permission_api:view privacies');
+        Route::post('/update/{id}', [PrivacyPolicyController::class, 'update'])->middleware('role_or_permission_api:update privacies');
+        Route::delete('/delete/{id}', [PrivacyPolicyController::class, 'destroy'])->middleware('role_or_permission_api:delete privacies');
+    });
+
+
+    Route::group(['prefix' => 'return'], function () {
+        Route::get('/list', [ReturnPolicyController::class, 'index'])->middleware('role_or_permission_api:view returns');
+        Route::post('/add', [ReturnPolicyController::class, 'store'])->middleware('role_or_permission_api:create returns');
+        Route::get('/show/{id}', [ReturnPolicyController::class, 'show'])->middleware('role_or_permission_api:view returns');
+        Route::post('/update/{id}', [ReturnPolicyController::class, 'update'])->middleware('role_or_permission_api:update returns');
+        Route::delete('/delete/{id}', [ReturnPolicyController::class, 'destroy'])->middleware('role_or_permission_api:delete returns');
+    });
+
+    Route::group(['prefix' => 'payment_reservation'], function () {
+        Route::get('/list', [PolicyPaymentReservationController::class, 'index'])->middleware('role_or_permission_api:view payment_reservation_policies');
+        Route::post('/add', [PolicyPaymentReservationController::class, 'store'])->middleware('role_or_permission_api:create payment_reservation_policies');
+        Route::get('/show/{id}', [PolicyPaymentReservationController::class, 'show'])->middleware('role_or_permission_api:view payment_reservation_policies');
+        Route::post('/update/{id}', [PolicyPaymentReservationController::class, 'update'])->middleware('role_or_permission_api:update payment_reservation_policies');
+        Route::delete('/delete/{id}', [PolicyPaymentReservationController::class, 'destroy'])->middleware('role_or_permission_api:delete payment_reservation_policies');
+    });
+
+    Route::group(['prefix' => 'faq'], function () {
+        Route::get('/list', [FAQController::class, 'index'])->middleware('role_or_permission_api:view faqs');
+        Route::post('/add', [FAQController::class, 'store'])->middleware('role_or_permission_api:create faqs');
+        Route::get('/show/{id}', [FAQController::class, 'show'])->middleware('role_or_permission_api:view faqs');
+        Route::post('/update/{id}', [FAQController::class, 'update'])->middleware('role_or_permission_api:update faqs');
+        Route::delete('/delete/{id}', [FAQController::class, 'destroy'])->middleware('role_or_permission_api:delete faqs');
+    });
+
+
+    // point-system
+    Route::prefix('point_system')->group(function () {
+        Route::get('/', [pointsController::class, 'index']);
+        Route::post('/', [pointsController::class, 'store']); // it not allow to add any system
+        Route::get('/{id}/{branch}', [pointsController::class, 'show']);
+        Route::post('/{id}', [pointsController::class, 'update']);
+        Route::delete('/{id}', [pointsController::class, 'destroy']);
+        Route::prefix('transactions')->group(function () {});
+    });
+
+    //brands
+    Route::prefix('brands')->group(function () {
+        Route::get('/list', [BrandController::class, 'index'])->name('brands.index');
+        Route::get('/show/{id}', [BrandController::class, 'show'])->name('brands.show');
+        Route::post('/create', [BrandController::class, 'store'])->name('brands.store');
+        Route::put('/update/{id}', [BrandController::class, 'update'])->name('brands.update');
+        Route::delete('/delete/{id}', [BrandController::class, 'destroy'])->name('brands.destroy');
+        Route::post('/restore/{id}', [BrandController::class, 'restore'])->name('brands.restore');
+    });
+
+    // Gifts
+    Route::group(['prefix' => 'gifts'], function () {
+        Route::get('/', [GiftController::class, 'index'])->name('gifts.index');
+        Route::get('/{id}', [GiftController::class, 'show'])->name('gifts.show');
+        Route::post('/', [GiftController::class, 'store'])->name('gifts.store');
+        Route::put('/{id}', [GiftController::class, 'update'])->name('gifts.update');
+        Route::delete('/{id}', [GiftController::class, 'destroy'])->name('gifts.destroy');
+        Route::post('/apply-to-users', [GiftController::class, 'applyGiftToUsers']);
+        Route::post('/apply-to-branch', [GiftController::class, 'applyGiftByBranch']);
+    });
+
+
+    //table-reservations
+    Route::group(['prefix' => 'table-reservations'], function () {
+        Route::post('index', [TableReservationController::class, 'index']);
+        Route::post('add', [TableReservationController::class, 'add']);
+        Route::post('edit', [TableReservationController::class, 'edit']);
+        Route::get('delete/{id}', [TableReservationController::class, 'delete']);
+        Route::post('change-status', [TableReservationController::class, 'change_status']);
+    });
+    Route::prefix('menu')->group(function () {
+        Route::get('/list', [MenuController::class, 'index'])->name('menu.index');
+        Route::get('/show/{branch_id}', [MenuController::class, 'show'])->name('menu.show');
+        Route::post('/create', [MenuController::class, 'store'])->name('menu.store');     //clone menu
+        Route::put('/update/{branch_id}', [MenuController::class, 'update'])->name('menu.update');
+        Route::delete('/delete', [MenuController::class, 'destroy'])->name('menu.destroy');
+        Route::post('/restore', [MenuController::class, 'restore'])->name('menu.restore');
+    });
+
+    //employee-opening-balances
+    Route::group(['prefix' => 'employee-opening-balances'], function () {
+        Route::post('open-day-balance', [EmployeeOpeningBalanceController::class, 'open_day_balance']);
+        Route::post('close-day-balance', [EmployeeOpeningBalanceController::class, 'close_day_balance']);
+    });
+
+    // Google and Facebook auth
+    Route::middleware([StartSession::class])->group(function () {
+        // Google Auth
+        Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('google.redirect');
+        Route::get('/auth/google/call-back', [GoogleAuthController::class, 'callback'])->name('google.callback');
+        // Facebook Auth
+        Route::get('/auth/facebook/redirect', [FacebookAuthController::class, 'redirect'])->name('facebook.redirect');
+        Route::get('/auth/facebook/call-back', [FacebookAuthController::class, 'callback'])->name('facebook.callback');
+    });
+
+
+
+    // Offers routes
+    Route::controller(OfferController::class)
+        ->prefix('offers')
+        ->name('offers.')
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('store', 'save')->name('store');
+            Route::get('{id}', 'show')->name('show');
+            Route::put('update/{id}', 'save')->name('update');
+            Route::delete('delete/{id}', 'destroy')->name('destroy');
+            Route::post('restore/{id}', 'restore')->name('restore');
+        });
+
+    // Offer details routes
+    Route::controller(OfferDetailController::class)
+        ->prefix('offer/details')
+        ->name('offer.details.')
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('store', 'save')->name('store');
+            Route::get('{id}', 'show')->name('show');
+            Route::put('update/{id}', 'save')->name('update');
+            Route::delete('delete/{id}', 'destroy')->name('destroy');
+            Route::post('restore/{id}', 'restore')->name('restore');
+        });
+
+    // Addon Categories routes
+    Route::prefix('addonCategories')->name('api.addon_categories.')->group(function () {
+        Route::get('/list', [AddonCategoryController::class, 'index'])->name('index');
+        Route::get('show/{id}', [AddonCategoryController::class, 'show'])->name('show');
+        Route::post('/add', [AddonCategoryController::class, 'store'])->name('store');
+        Route::post('update/{id}', [AddonCategoryController::class, 'update'])->name('update');
+        Route::delete('delete/{id}', [AddonCategoryController::class, 'destroy'])->name('destroy');
+        Route::post('{id}/restore', [AddonCategoryController::class, 'restore'])->name('restore');
+    });
+
+    Route::post('/employees/by-department', [EmployeeController::class, 'getEmployeeByDepartment']);
+    Route::post('/children/employees', [EmployeeController::class, 'getChildrenEmployee']);
+
+    Route::group(['prefix' => 'departments'], function () {
+
+        Route::post('/', [DepartmentController::class, 'index']);
+        Route::get('/list', [DepartmentController::class, 'list'])->middleware('role_or_permission_api:view departments');
+        Route::get('/show/{id}', [DepartmentController::class, 'show'])->middleware('role_or_permission_api:view departments');
+        Route::post('/add', [DepartmentController::class, 'store'])->middleware('role_or_permission_api:create departments');
+        Route::post('/update/{id}', [DepartmentController::class, 'update'])->middleware('role_or_permission_api:update departments');
+        Route::delete('/delete/{id}', [DepartmentController::class, 'destroy'])->middleware('role_or_permission_api:delete departments');
+    });
+    Route::group(['prefix' => 'bonus_requests'], function () {
+
+        Route::get('/', [BounsController::class, 'index'])->middleware('role_or_permission_api:view bonus_requests');
+        Route::post('/create', [BounsController::class, 'create'])->middleware('role_or_permission_api:create bonus_request');
+        Route::post('/change_status/{id}', [BounsController::class, 'changeStatus'])->middleware('role_or_permission_api:change bonus_request_status');
+    });
+    // Show available HR services (Leave Request, Salary Advance, etc.)
+
+    Route::prefix('hr-requests')->group(function () {
+        // Get all HR requests
+        Route::get('/', [HRRequestController::class, 'index']);
+
+        // Get a single HR request by ID
+        Route::get('/show/{id}', [HRRequestController::class, 'show']);
+
+        // Create a new HR request
+        // Route::post('/store', [HRRequestController::class, 'store']);
+
+        // Update an existing HR request
+        // Route::post('/update/{id}', [HRRequestController::class, 'update']);
+
+        // Delete an HR request
+        // Route::post('/delete/{id}', [HRRequestController::class, 'destroy']);
+    });
+
+
+    Route::prefix('hr-services')->group(function () {
+        // Get all HR services
+        Route::get('/', [HRServiceController::class, 'index']);
+
+        // Get a single HR service by ID
+        Route::get('/show/{id}', [HRServiceController::class, 'show']);
+
+        // Create a new HR service
+        Route::post('/store', [HRServiceController::class, 'store']);
+
+        // Update an existing HR service
+        Route::post('/update/{id}', [HRServiceController::class, 'update']);
+
+        // Delete an HR service
+        Route::post('/delete/{id}', [HRServiceController::class, 'destroy']);
+    });
+
+
+    Route::prefix('salary-advance-requests')->group(function () {
+        // Get all requests
+        Route::get('/', [SalaryAdvanceRequestController::class, 'index']);
+
+        // Get a single request by ID
+        Route::get('/show/{id}', [SalaryAdvanceRequestController::class, 'show']);
+
+        // Create a new request
+        Route::post('/store', [SalaryAdvanceRequestController::class, 'store']);
+
+        Route::post('/change_status/{id}', [SalaryAdvanceRequestController::class, 'changeStatus']);
+        // Update a request by ID
+        Route::post('/update/{id}', [SalaryAdvanceRequestController::class, 'update']);
+
+        // Delete a request by ID
+        Route::post('/delete/{id}', [SalaryAdvanceRequestController::class, 'destroy']);
+    });
+
+
+    Route::prefix('document_types')->controller(DocumentTypeController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::post('/store', 'store');
+    });
+    Route::prefix('employee_documents')->controller(EmployeeDocumentController::class)->group(function () {
+        Route::get('/', 'index');
+        Route::post('/store', 'store');
+    });
+
+
+    //return invoice request
+    Route::prefix('return-invoice-request')->group(function () {
+        Route::get('invoice/{id}', [OrderReturnInvoiceRequestController::class, 'showInvoice']);
+        Route::get('/', [OrderReturnInvoiceRequestController::class, 'index']);
+        Route::get('/{id}', [OrderReturnInvoiceRequestController::class, 'show']);
+        Route::post('/{id}', [OrderReturnInvoiceRequestController::class, 'update']);
+    });
+
+    //complaints
+    Route::get('/complaints', [OrderComplaintsController::class, 'index'])->middleware('role_or_permission_api:access complaints');
+    Route::group(['prefix' => 'complaints'], function () {
+        Route::get('show/{id}', [OrderComplaintsController::class, 'show'])->middleware('role_or_permission_api:access complaints');
+        Route::put('update/{id}', [OrderComplaintsController::class, 'changeStatus'])->middleware('role_or_permission_api:access complaints');
+        Route::delete('delete/{id}', [OrderComplaintsController::class, 'delete'])->middleware('role_or_permission_api:access complaints');
+    });
+
+    //privilege-type
+    Route::group(['prefix' => 'privilege-types'], function () {
+        Route::get('/', [PrivilegeTypesController::class, 'index'])->middleware('role_or_permission_api:view privilege types');
+        Route::get('/{id}', [PrivilegeTypesController::class, 'show'])->middleware('role_or_permission_api:view privilege types');
+        Route::post('/', [PrivilegeTypesController::class, 'add'])->middleware('role_or_permission_api:add privilege types');
+        Route::post('/{id}', [PrivilegeTypesController::class, 'edit'])->middleware('role_or_permission_api:update privilege types');
+        Route::delete('/{id}', [PrivilegeTypesController::class, 'delete'])->middleware('role_or_permission_api:delete privilege types');
+    });
+
+    //job-related-penalty
+    Route::group(['prefix' => 'job-related-penalty'], function () {
+        Route::get('/', [JobRelatedPenaltyController::class, 'index']);
+        Route::get('/report', [JobRelatedPenaltyController::class, 'report']);
+        Route::get('/{id}', [JobRelatedPenaltyController::class, 'show']);
+        Route::post('/', [JobRelatedPenaltyController::class, 'add']);
+        Route::post('/changeStatus/{id}', [JobRelatedPenaltyController::class, 'changeStatus']);
+        Route::post('/{id}', [JobRelatedPenaltyController::class, 'update']);
+        Route::delete('/{id}', [JobRelatedPenaltyController::class, 'delete']);
+    });
+
+    //change table
+    Route::post('/order/changetable', [OrderComplaintsController::class, 'changeOrderTable'])->middleware('role_or_permission_api:changeTable');
+    Route::get('/list/orders', [OrderDashboardController::class, 'listOrders'])->middleware('role_or_permission_api:listOrders');
+    Route::get('/orderDetails/{id}', [OrdersReportsController::class, 'show'])->middleware('role_or_permission_api:detailsOrder');
+    Route::get('cashier-branch-safe/{id}', [CashierBalanceController::class, 'showCashierData'])->name('cashier.showCashierData');
+
+    Route::group(['prefix' => 'coupons'], function () {
+        Route::get('list', [CouponController::class, 'index'])->middleware('role_or_permission_api:view coupons');
+        Route::get('show/{id}', [CouponController::class, 'show'])->middleware('role_or_permission_api:view coupons');
+        Route::post('add', [CouponController::class, 'store'])->middleware('role_or_permission_api:create coupons');
+        Route::put('update/{id}', [CouponController::class, 'update'])->middleware('role_or_permission_api:update coupons');
+        Route::delete('delete/{id}', [CouponController::class, 'destroy'])->middleware('role_or_permission_api:delete coupons');
+        Route::post('restore/{id}', [CouponController::class, 'restore'])->middleware('role_or_permission_api:update coupons');
+    });
+
+    //hanging-orders
+    Route::get('/hanging-orders', [DeliveryComplaintsController::class, 'index'])->middleware('role_or_permission_api:access hanging-orders');
+    Route::group(['prefix' => 'hanging-orders'], function () {
+        Route::get('show/{id}', [DeliveryComplaintsController::class, 'show'])->middleware('role_or_permission_api:access hanging-orders');
+        Route::put('update/{id}', [DeliveryComplaintsController::class, 'changeStatus'])->middleware('role_or_permission_api:access hanging-orders');
+        Route::delete('delete/{id}', [DeliveryComplaintsController::class, 'delete'])->middleware('role_or_permission_api:access hanging-orders');
+    });
+
+    //waiter-requests
+    Route::get('/waiter-requests', [WaiterRequestController::class, 'index']);
+    Route::get('/waiter-requests/{id}', [WaiterRequestController::class, 'showInvoice']);
+    Route::post('/reject/request', [WaiterRequestController::class, 'rejectRequest']);
+    Route::get('/accept/request/{id}', [WaiterRequestController::class, 'acceptRequest']);
+    Route::get('/request/ajax-print', [WaiterRequestController::class, 'ajaxPrint']);
+
+    //cashier-machine
+    Route::prefix('cashier_machines')->group(function () {
+        Route::get('/', [CashierMachineController::class, 'index'])->middleware('role_or_permission_api:view cashier_machines');
+        Route::get('/{id}', [CashierMachineController::class, 'show'])->middleware('role_or_permission_api:view cashier_machines');
+        Route::post('/', [CashierMachineController::class, 'store'])->middleware('role_or_permission_api:create cashier_machines');
+        Route::post('/{id}', [CashierMachineController::class, 'update'])->middleware('role_or_permission_api:update cashier_machines');
+        Route::delete('/{id}', [CashierMachineController::class, 'destroy'])->middleware('role_or_permission_api:delete cashier_machines');
+    });
+
+    //electronic-invoices
+    Route::prefix('electronic_invoices')->group(function () {
+        Route::get('/', [CashierSettingController::class, 'index'])->middleware('role_or_permission_api:view einvoices_superadmin');
+        Route::get('/show/{id}', [CashierSettingController::class, 'show'])->middleware('role_or_permission_api:view einvoices_superadmin');
+        Route::get('/employees', [CashierSettingController::class, 'createSetting'])->middleware('role_or_permission_api:create officer_assign_setting');
+        Route::post('/', [CashierSettingController::class, 'store'])->middleware('role_or_permission_api:create officer_assign_setting');
+        Route::get('/setting', [CashierSettingController::class, 'setting'])->middleware('role_or_permission_api:view officer_assign_setting');
+        Route::post('/update/{id}', [CashierSettingController::class, 'update'])->middleware('role_or_permission_api:update officer_assign_setting');
+    });
+
+    // clients
+    Route::group(['prefix' => 'clients'], function () {
+        Route::get('list', [ClientApiController::class, 'index'])->middleware('role_or_permission_api:view clients');
+        Route::get('show/{id}', [ClientApiController::class, 'show'])->middleware('role_or_permission_api:view clients');
+        Route::post('addNew', [ClientApiController::class, 'store'])->middleware('role_or_permission_api:create clients');
+        Route::post('updateUser/{id}', [ClientApiController::class, 'update'])->middleware('role_or_permission_api:update clients');
+        Route::delete('deleteUser/{id}', [ClientApiController::class, 'destroy'])->middleware('role_or_permission_api:delete clients');
+        Route::post('restore/{id}', [ClientApiController::class, 'restore'])->middleware('role_or_permission_api:update clients');
+    });
+});
+Route::post('waiter-login', [EmployeeAuthController::class, 'login'])->name('login.waiter');
+
+Route::middleware(['employee.auth', 'employee.flag:waiter'])->group(function () {
+
+    Route::post('waiter/table/change-status/{id}', [TableController::class, 'update']);
+
+
+    Route::get('waiter-logout',  [EmployeeAuthController::class, 'logout'])->name('logout.waiter');
+
+    Route::post('waiter/update-profile', [EmployeeAuthController::class, 'updateProfile'])->name('update.waiter');
+    Route::get('waiter/update-profile', [EmployeeAuthController::class, 'updateProfile'])->name('get.profile.waiter');
+
+    Route::post('waiter/request/split/order',  [WaiterOrderController::class, 'requestSplit']);
+    Route::post('waiter/request/merge/order',  [WaiterOrderController::class, 'requestMerge']);
+
+
+    Route::group(['prefix' => 'waiter/orders'], function () {
+        Route::get('/list', [WaiterOrderController::class, 'listOrders']);
+        Route::get('/order-details/{id}', [WaiterOrderController::class, 'orderDetails']);
+        Route::get('/order-invoice/{id}', [WaiterOrderController::class, 'orderInvoice']);
+        Route::post('/order-place/{type}', [WaiterOrderController::class, 'orderPlace_v2']);
+        Route::post('/order-view-item/{type}/{id}', [WaiterOrderController::class, 'orderViewItem']);
+        Route::post('/order-edit-item/{type}', [WaiterOrderController::class, 'orderEditItem']);
+        Route::post('/order-cancel', [WaiterOrderController::class, 'orderCancel']);
+        Route::post('/order-change-table', [WaiterOrderController::class, 'changeOrderTable']);
+    });
+
+    Route::post('waiter/send-order-to-cashier', [WaiterOrderController::class, 'sendOrderToCashier']);
+});
+
+Route::post('delivery-login', [EmployeeAuthController::class, 'login'])->name('login.delivery');
+Route::middleware(['employee.auth', 'employee.flag:driver'])->group(function () {
+    Route::group(['prefix' => 'orders'], function () {
+        Route::get('/order-location/{id}', [DeliveryOrderController::class, 'orderLocation']);
+        Route::get('/order-details/{id}', [DeliveryOrderController::class, 'orderDetails']);
+        Route::get('/active-orders', [DeliveryOrderController::class, 'activeOrders']);
+        Route::get('/past-orders', [DeliveryOrderController::class, 'pastOrders']);
+        Route::get('/recent-orders', [DeliveryOrderController::class, 'recentOrders']);
+    });
+
+
+    Route::get('delivery-route', [DeliveryRouteController::class, 'getOptimizedRoute']);
+
+    Route::get('delivery/current-balance', [DeliveryBalanceController::class, 'getCurrent'])->name('currentBalance.delivery');
+
+    Route::post('delivery/close-balance', [DeliveryBalanceController::class, 'closeBalance'])->name('closeBalance.delivery');
+
+    Route::get('delivery-logout', [EmployeeAuthController::class, 'logout'])->name('logout.delivery');
+
+    Route::post('delivery/update-profile', [EmployeeAuthController::class, 'updateProfile'])->name('update.delivery');
+    Route::get('delivery/update-profile', [EmployeeAuthController::class, 'updateProfile'])->name('get.profile.delivery');
+    Route::get('delivery/notifications', [DeliveryNotificationsController::class, 'getNotifications']);
+
+    Route::post('delivery/complaint', [DeliveryComplaintController::class, 'store'])->name('delivery.complaint');
+});
+
+Route::get('delivery/complaint-reasons', [DeliveryComplaintController::class, 'index'])->name('delivery.complaint.reasons');
+
+Route::post('cashier-login', [EmployeeAuthController::class, 'login'])->name('login.cashier');
+
+Route::middleware(['employee.auth', 'employee.flag:cashier'])->group(function () {
+    Route::get('cashier-logout', [EmployeeAuthController::class, 'logout'])->name('logout.cashier');
+
+    // Route::group(['prefix' => 'orders'], function () {
+    //     Route::get('/', [CashierOrderController::class, 'listOrders']);
+    //     Route::get('/list', [CashierOrderController::class, 'listOrdersDetails']);
+    //     Route::get('/orderDetails/{id}', [CashierOrderController::class, 'orderDetails']);
+    //     Route::post('/cashier/store/{type}', [CashierOrderController::class, 'placeOrder_v2']);
+    //     Route::post('/cashier/update/order', [CashierOrderController::class, 'updateOrder']);
+    //     Route::post('/change-orderStatus/{id}', [CashierOrderController::class, 'updateOrderStatus']);
+    //     Route::get('/cancel', [CashierOrderController::class, 'cancel']);
+    //     Route::post('/cashier/order-cancel', [CashierOrderController::class, 'orderCancel']);
+    //     Route::post('/cashier/order-edit-item/{type}', [CashierOrderController::class, 'orderEditItem']);
+    //     Route::get('/cashier/order-view-item/{type}/{id}', [CashierOrderController::class, 'orderViewItem']);
+    // });
+
+    Route::group(['prefix' => 'orders'], function () {
+        Route::get('/', [CashierOrderController::class, 'listOrders']);
+        Route::get('/list', [CashierOrderController::class, 'listOrdersDetails']);
+        Route::get('/listE', [CashierOrderController::class, 'listOrdersDetailsEnchance']);
+        Route::get('/orderDetails/{id}', [CashierOrderController::class, 'orderDetails']);
+        Route::post('/cashier/store/{type}', [CashierOrderController::class, 'placeOrder_v2']);
+        Route::post('/cashier/update/order', [CashierOrderController::class, 'updateOrder']);
+        Route::post('/change-orderStatus/{id}', [CashierOrderController::class, 'updateOrderStatus']);
+        Route::get('/cancel', [CashierOrderController::class, 'cancel']);
+        Route::post('/cashier/order-cancel', [CashierOrderController::class, 'orderCancel']);
+        Route::post('/cashier/order-edit-item/{type}', [CashierOrderController::class, 'orderEditItem']);
+        Route::get('/cashier/order-view-item/{type}/{id}', [CashierOrderController::class, 'orderViewItem']);
+    });
+
+    Route::group(['prefix' => 'invoices'], function () {
+        Route::get('/', [CashierInvoiceController::class, 'listOrdersInvoices']);
+        // listOrdersInvoicesEnchance
+        Route::get('/d', [CashierInvoiceController::class, 'listOrdersInvoicesEnchance']);
+
+        Route::get('/invoice-details/{id}', [CashierInvoiceController::class, 'orderInvoiceDetails']);
+        Route::get('/invoice/{id}', [CashierInvoiceController::class, 'invoiceDetails']);
+        Route::post('/update/{id}', [CashierInvoiceController::class, 'updateOrderInvoice']);
+        Route::post('/print', [CashierInvoiceController::class, 'printInvoice']);
+    });
+
+    Route::post('cashier/add/address', [addressController::class, 'store'])->name('cashier.add.address');
+
+
+    Route::post('cashier/update-profile', [EmployeeAuthController::class, 'updateProfile'])->name('update.cashier');
+    Route::get('cashier/update-profile', [EmployeeAuthController::class, 'updateProfile'])->name('get.profile.cashier');
+
+    Route::post('cashier/get-open-balance', [CashierBalanceController::class, 'getOpenBalance'])->name('get.openBalance.cashier');
+    Route::post('cashier/open-balance', [CashierBalanceController::class, 'openBalance'])->name('openBalance.cashier');
+
+    Route::post('cashier/get-close-balance', [CashierBalanceController::class, 'getCloseBalance'])->name('get.closeBalance.cashier');
+    Route::post('cashier/get-current-balance', [CashierBalanceController::class, 'getCurrentBalance'])->name('get.currentBalance.cashier');
+    Route::post('cashier/close-balance', [CashierBalanceController::class, 'closeBalance'])->name('closeBalance.cashier');
+
+    Route::post('cashier/balances', [CashierBalanceController::class, 'getBalancesForBranchSafe'])->name('cashier.balancesForBranchSafe');
+    Route::post('cashier/send-branch-safe', [CashierBalanceController::class, 'sendToBranchSafe'])->name('cashier.sendToBranchSafe');
+    Route::get('cashier/branch-safe/{id}', [CashierBalanceController::class, 'showCashierData']);
+
+    Route::get('cashier/shift-orders-count/{cashierMachineId}', [CashierBalanceController::class, 'getOrderCountsForShift'])->name('cashier.getShiftOrdersCount');
+
+    Route::post('makeCancelRequest', [GetInvoiceController::class, 'cancel']);
+});
+Route::post('customer-service-login', [EmployeeAuthController::class, 'login'])->name('login.customer-service');
+
+Route::middleware(['employee.auth', 'employee.flag:customer_service'])->group(function () {
+    Route::get('customer-service-logout',  [EmployeeAuthController::class, 'logout'])->name('logout.customer-service');
+    Route::post('customer-service/update-profile', [EmployeeAuthController::class, 'updateProfile'])->name('update.customer-service');
+    Route::get('customer-service/update-profile', [EmployeeAuthController::class, 'updateProfile'])->name('get.profile.customer-service');
+
+
+    Route::group(['prefix' => 'customer-service'], function () {
+        Route::group(['prefix' => '/orders'], function () {
+            Route::get('/list', [CustomerServiceOrderController::class, 'listOrders']);
+            Route::get('/order-details/{id}', [CustomerServiceOrderController::class, 'orderDetails']);
+            Route::post('/store/api', [CustomerServiceOrderController::class, 'placeOrder']);
+        });
+        Route::get('/chats', [CustomerServiceChatController::class, 'getActiveChats']);
+        Route::get('/notifications', [NotificationSendController::class, 'index'])->name('customer-service.notifications');
+        Route::post('/notifications', [NotificationSendController::class, 'read'])->name('customer-service.notifications.read');
+
+        Route::get('/hanging-orders', [CustomerServiceOrderController::class, 'hangingOrders']);
+        Route::get('/hanging-orders-details', [CustomerServiceOrderController::class, 'hangingOrdersDetails']);
+        Route::post('/hanging-orders/change-status', [CustomerServiceOrderController::class, 'changeStatus'])->name('customer-service.hanging-order.change-status');
+        Route::post('/hanging-orders/send-manager', [CustomerServiceOrderController::class, 'sendRequest'])->name('customer-service.hanging-order.send-manager');
+
+
+        Route::group(['prefix' => '/complaints'], function () {
+            Route::get('/list', [ComplaintsController::class, 'index'])->name('customer-service.complaints.list');
+            Route::post('/store', [ComplaintsController::class, 'store'])->name('customer-service.complaints.store');
+            Route::post('/add-comment', [ComplaintsController::class, 'addComment'])->name('customer-service.add-comment');
+            Route::post('/change-status', [ComplaintsController::class, 'changeStatus'])->name('customer-service.change-status');
+            Route::post('/send-manager', [ComplaintsController::class, 'sendRequest'])->name('customer-service.send-manager');
+        });
+        Route::group(['prefix' => '/address'], function () {
+            Route::get('/check/{id}', [AddressCustomerServiceController::class, 'checkDelivery']);
+            Route::post('/add', [AddressCustomerServiceController::class, 'store']);
+        });
+
+        Route::get('/citiesandareas', [AddressCustomerServiceController::class, 'getCitiesAndAreas']);
+        Route::get('sent/cashier/{id}',  [CustomerServiceOrderController::class, 'sendToCashier']);
+    });
+});
+Route::post('kitchen-login', [EmployeeAuthController::class, 'login'])->name('login.kitchen');
+
+Route::middleware(['employee.auth', 'employee.flag:Head Chef'])->group(function () {
+    Route::get('kitchen-logout',  [EmployeeAuthController::class, 'logout'])->name('logout.kitchen');
+
+    Route::group(['prefix' => 'kitchen/dish-filtration'], function () {
+        Route::post('add', [KitchenFiltrationController::class, 'dishFiltration'])->name('kitchen.dish-filtration.add');
+        Route::get('get', [KitchenFiltrationController::class, 'getDishFiltration'])->name('kitchen.get-dish-filtration.get');
+    });
+
+    //Route::get('kitchen/split-dishes-on-order', [KitchenFiltrationController::class, 'splitDishesOnOrders'])->name('kitchen.split-dishes-on-order');
+    Route::get('kitchen/split-dishes-on-order', [KitchenFiltrationController::class, 'splitDishesOnOrders'])->name('kitchen.split-dishes-on-order');
+    Route::post('kitchen/split-dishes-on-all-order', [KitchenFiltrationController::class, 'splitDishesOnAllOrders'])->name('kitchen.split-dishes-on-all-order');
+    Route::get('kitchen/profile', [KitchenFiltrationController::class, 'profile'])->name('kitchen.profile');
+
+
+    Route::group(['prefix' => 'kitchen'], function () {
+        Route::group(['prefix' => '/orders'], function () {
+            Route::get('/list', [KitchenOrderController::class, 'listOrders']);
+            Route::post('/update-dish-status', [KitchenOrderController::class, 'updateDishStatus']);
+            Route::get('/order-details/{id}', [KitchenOrderController::class, 'orderDetails']);
+            Route::post('/order-dish-details', [KitchenController::class, 'orderDishDetails']);
+        });
+        Route::post('/dish-ingrediant', [KitchenController::class, 'getDishIngrediant']);
+        Route::post('/dish-ingrediant/steps', [KitchenController::class, 'getIngrediantSteps']);
+    });
+});
+
+
+/////////////////////////////////////////////////////// Start routes for Client App (uses api guard auth) /////////////////////////////////////
+
+/////////////////////////////////////Auth Client API///////////////////////////////////////////////////
+
+Route::post('register', [AuthController::class, 'register']);
+Route::post('login', [AuthController::class, 'login'])->name('login');
+Route::post('/verify-phone', [AuthController::class, 'verifyPhone']);
+Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+/////////////////////////////////////Auth Client API///////////////////////////////////////////////////
+
+Route::group(['middleware' => ['auth:api']], function () {
+    //auth apis
+    Route::any('logout', [AuthController::class, 'logout']);
+    // User Favourites
+    Route::controller(HomeController::class)->group(function () {
+        Route::get('/favourite-user', 'showFavorites')->name('favourite.user');
+        Route::post('/favourite-user', 'storeFavorite')->name('favourite.user.store');
+        Route::delete('/unfavourite-user/{id}', 'deleteFavorite')->name('unfavourite.user');
+    });
+
+
+    Route::group(['prefix' => 'order'], function () {
+        Route::get('/', [OrderController::class, 'index']);
+        Route::post('store', [OrderController::class, 'store']);
+        Route::get('reOrder', [OrderController::class, 'reOrder']);
+        Route::get('cancel', [OrderController::class, 'cancel']);
+        Route::post('invoice', [OrderController::class, 'orderInvoice']);
+        Route::post('refund', [OrderController::class, 'orderRefund']);
+        Route::post('paymentTransaction', [OrderController::class, 'paymentTransaction']);
+    });
+    Route::prefix('user')->group(function () {
+        // User Profile
+        Route::controller(ClientController::class)
+            ->group(function () {
+                Route::get('profile', 'viewProfile');
+                Route::post('profile/update', 'updateProfile');
+                Route::post('profile/deactivate', 'deactivateProfile');
+                Route::post('changePassword', 'changePassword');
+            });
+
+        // User Orders
+        Route::controller(OrderTrackingController::class)
+            ->group(function () {
+                Route::get('orders', 'listOrders');
+                Route::get('orders/statuses', 'ordersStatuses');
+                Route::get('orders/track/{id}', 'trackOrder');
+                Route::get('order/paymentDetails/{id}', 'paymentDetails');
+            });
+    });
+
+    // User order checkout
+    Route::post('checkout', [OrderController::class, 'Checkout']);
+
+    // User Reservation
+    Route::controller(TableReservationController::class)
+        ->prefix('table-reservations')
+        ->name('table-reservations.')
+        ->group(function () {
+            Route::get('reservation/track/{id}', 'trackReservation')->name('track');
+            Route::get('reservation/paymentDetails/{id}', 'reservationPaymentDetails')->name('paymentDetails');
+            Route::get('reservation/cancel/{id}', 'cancelReservation')->name('cancel');
+            Route::post('place-reservation', 'placeReservation')->name('place-reservation');
+            Route::post('place_order', 'store')->name('place-order');
+        });
+    //  address
+    Route::controller(ClientAddressApiController::class)
+        ->prefix('address')
+        ->name('address.')
+        ->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('show/{id}', 'show')->name('show');
+            Route::post('store', 'store')->name('store');
+            Route::post('update/{id}', 'update')->name('update');
+            Route::delete('delete/{id}', 'destroy')->name('destroy');
+            Route::post('restore/{id}', 'restore')->name('restore');
+            Route::get('default/{id}', 'makeDefault')->name('makeDefault');
+        });
+
+
+    //  Transactions
+    Route::prefix('transactions')->group(function () {
+        // Store Transactions
+        Route::controller(StoreTransactionController::class)->group(function () {
+            Route::get('store', 'index')->name('transactions.store.index');
+            Route::post('add', 'store')->name('transactions.store.add');
+            Route::get('showStore/{id}', 'show')->name('transactions.store.show');
+        });
+
+        // Product Transactions
+        Route::controller(ProductTransactionController::class)->group(function () {
+            Route::get('products', 'index')->name('transactions.products.index');
+            Route::get('showProduct/{id}', 'show')->name('transactions.products.show');
+        });
+    });
+    //Rates
+    Route::prefix('rates')->controller(RateController::class)->group(function () {
+        Route::post('store', 'store');
+        Route::put('update/{id}', 'update');
+        Route::delete('delete/{id}', 'destroy');
+    });
+});
+/////////////////////////////////////////////////////// End routes for Client App (uses api guard auth) /////////////////////////////////////
+
+
+Route::post('editInvoice', [GetInvoiceController::class, 'edit']);
+Route::post('getInvoice', [GetInvoiceController::class, 'index']);
+Route::post('mergeInvoiceDetails', [GetInvoiceController::class, 'mergeInvoiceDetails']);
+
+
+// E-Receipt routes
+// Route::get('/test/{id}', [EReceiptController::class, 'invoiceSubmission']);

@@ -1,0 +1,37 @@
+<?php
+
+return [
+    'home' => 'Home',
+    'cart' => 'Shopping Cart',
+    'payment' => 'Payment',
+    'delivery_address' => 'Delivery Address',
+    'edit' => 'Edit',
+    'choose_payment' => 'Choose Payment Method',
+    'cash_on_delivery' => 'Cash on Delivery',
+    'credit_card' => 'Credit Card',
+    'order_summary' => 'Order Summary',
+    'total' => 'Total',
+    'place_order' => 'Place Order',
+    'order_total' => 'Order Total',
+    'coupon' => 'Coupon Discount',
+    'delivery_fee' => 'Delivery Fee',
+    'service_fee' => 'Service Fee',
+    'tax_message' => 'Includes 14% VAT, equivalent to',
+    'final_total' => 'Final Total',
+    'means' => 'another mean',
+    'on_invoice' => 'on invoice',
+    'phone_number' => 'Phone Number',
+    'street' => 'Building',
+    'floor' => 'Floor',
+    'apartment' => 'Apartment',
+    'landmark' => 'Landmark',
+    'no_notes' => 'No notes available',
+    'receive_address' => 'Receive location',
+    'change_branch' => 'Change branch',
+    'villa' => 'villa',
+    'office' => 'office',
+    'number' => 'number',
+    'villaname' => 'villa name',
+    'alert' => 'Alert'
+
+];

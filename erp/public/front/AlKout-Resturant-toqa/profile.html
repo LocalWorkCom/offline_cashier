@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <meta name="author" content="" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta property="og:url" content="" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="" />
+    <meta property="og:description" content="" />
+    <meta property="og:image" content="" />
+    <title>مطعم الكوت</title>
+
+    <link rel="shortcut icon" href="SiteAssets/images/logo.png" sizes="25x25" />
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="SiteAssets/bootstrap-5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="SiteAssets/fontawesome-free-5.15.4-web/css/all.min.css">
+    <link rel="stylesheet" href="SiteAssets/css/animate.min.css">
+    <link rel="stylesheet" href="SiteAssets/aos-master/dist/aos.css">
+
+    <!-- Owl Carousel -->
+    <link rel="stylesheet" href="SiteAssets/OwlCarousel2-2.3.4/dist/assets/owl.carousel.min.css" />
+    <link rel="stylesheet" href="SiteAssets/OwlCarousel2-2.3.4/dist/assets/owl.theme.default.min.css" />
+
+    <!-- include Gallery (lightbox) plugin -->
+    <link rel="stylesheet" href="SiteAssets/lightbox/css/lightbox.min.css" />
+    <!-- Main Style -->
+    <link rel="stylesheet" href="SiteAssets/css/style.css" type="text/css" />
+    <!-- fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <header class="fixed-top">
+        <nav class="navbar navbar-expand-lg navbar-light ">
+            <div class="container second-header">
+                <a class="navbar-service" href="index.html">
+                    <img src="SiteAssets/images/logo-with-white-bg.png">
+                </a>
+                <button class="navbar-toggler" type="button" onclick="openNav()">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0 align-items-center">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <button class="btn white fw-bold d-flex justify-content-between">
+                                    <span><i class="fas fa-map-marker-alt ms-2"></i>
+                                        التوصيل الي
+                                    </span>
+                                    <span class="select-sm">
+                                        اختر
+                                    </span>
+                                </button>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">الرئيسية</a>
+                        </li>
+                        <li class="nav-item active" aria-current="page">
+                            <a class="nav-link" href="shop.html">قائمة الطعام</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="./contact-us.html">تواصل معنا</a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link cart-icon" href="#">
+                                <i class="fas fa-shopping-cart"></i>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                En
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link btn align-items-center" href="#"><i class="fas fa-user-circle"></i>
+                                <span>تسجيل الدخول</span>
+                            </a>
+                        </li>
+
+
+                    </ul>
+                </div>
+
+
+            </div>
+        </nav>
+        <div class="mobNav d-lg-none d-block ">
+            <div id="sidenav" class="sidenav">
+                <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+                <div class="overlay-content">
+                    <a href="index.html"> الرئيسية</a>
+                    <a href="#">قائمة الطعام</a>
+                    <a href="#">تواصل معنا</a>
+                    <a href="#"> <i class="fas fa-shopping-cart"></i>
+                    </a>
+                    <a href="#"> En</a>
+                    <a href="#"> تسجيل الدخول </a>
+                </div>
+            </div>
+        </div>
+
+    </header>
+    <main>
+        <section class="inner-header pt-5 mt-5">
+            <div class="container pt-sm-5 pt-4">
+                <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="index.html">الرئيسية</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">حسابي </li>
+                    </ol>
+                </nav>
+            </div>
+
+        </section>
+        <section class="profile">
+            <div class="container pb-sm-5 pb-4">
+                <h4 class="my-4 fw-bold">الملف الشخصي </h4>
+                <div class="row justify-content-between">
+                    <div class="col-lg-3">
+                        <div class="card p-3">
+                            <div class="nav flex-column nav-pills" id="v-pills-tab" role="tablist"
+                                aria-orientation="vertical">
+                                <button class="nav-link active" id="v-pills-profile-tab" data-bs-toggle="pill"
+                                    data-bs-target="#v-pills-profile" type="button" role="tab"
+                                    aria-controls="v-pills-profile" aria-selected="false">تعديل الملف الشخصى</button>
+                                <button class="nav-link " id="v-pills-pass-tab" data-bs-toggle="pill"
+                                    data-bs-target="#v-pills-pass" type="button" role="tab" aria-controls="v-pills-pass"
+                                    aria-selected="true">تعديل كلمة المرور</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-lg-9">
+                        <div class="card p-4">
+                            <div class="tab-content" id="v-pills-tabContent">
+                                <div class="tab-pane fade show active" id="v-pills-profile" role="tabpanel"
+                                    aria-labelledby="v-pills-profile-tab">
+                                    <form>
+                                        <div class="mb-3">
+                                            <input type="text" id="name" class="form-control" placeholder="سارة عامر">
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="input-group">
+                                                <input type="text" id="mobile" class="form-control"
+                                                    placeholder="01029063398 ">
+                                                <select class="form-select country-dropdown me-3" style="max-width: 100px;">
+                                                    <option value="eg" selected>+20</option>
+                                                    <option value="ae">+971</option>
+                                                    <option value="jo">+962</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="mb-3 position-relative">
+                                            <input type="email" id="email" class="form-control"
+                                                placeholder="saamer2019@gmail.com ">
+                                            <i class="fas fa-envelope form-icon"></i>
+                                        </div>
+
+                                        <div class="mb-3 position-relative">
+                                            <input type="text" id="birthday" class="form-control"
+                                                placeholder="تاريخ الميلاد ,مثال 6-11-1999 ">
+                                            <i class="fas fa-calendar-alt form-icon"></i>
+                                        </div>
+
+                                        <!-- Buttons -->
+                                        <div class="mt-4">
+                                            <button type="button" class="btn reversed main-color w-25 ms-3">إلغاء</button>
+                                            <button type="submit" class="btn w-25">حفظ </button>
+                                        </div>
+                                    </form>
+                                </div>
+                                <div class="tab-pane fade" id="v-pills-pass" role="tabpanel"
+                                    aria-labelledby="v-pills-pass-tab">
+                                    <form>
+                                        <div class="mb-3 position-relative">
+                                            <input type="password" class="form-control" id="passwordInput" placeholder="ادخل كلمة المرور الجديدة">
+                                              <i class="fas fa-eye form-icon"></i>
+                                          </div>
+
+                                          <div class="mb-3 position-relative">
+                                            <input type="password" class="form-control" id="passwordInput" placeholder="تأكيد كلمة المرور الجديدة">
+                                              <i class="fas fa-eye-slash form-icon"></i>
+                                          </div>
+
+                                        <!-- Buttons -->
+                                        <div class="mt-4">
+                                            <button type="button" class="btn reversed main-color w-25 ms-3">إلغاء</button>
+                                            <button type="submit" class="btn w-25">حفظ </button>
+                                        </div>
+                                    </form>
+       
+                                
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+        <section class="before-footer"></section>
+
+    </main>
+    <footer>
+        <div class="footer-curve"></div>
+        <div class="container ">
+            <figure class="footer-logo">
+                <img src="SiteAssets/images/logo-with-white-bg.png" />
+            </figure>
+        </div>
+        <div class="footer">
+            <div class="container py-sm-5 p-4">
+                <div class=" row m-0">
+                    <div class="col-md-3" data-aos="zoom-in">
+                        <h4 class="footer-title"> تواصل معنا </h4>
+                        <ul class="list-unstyled px-0 pt-4">
+                            <li>
+                                <ul class="list-unstyled social-media p-0">
+                                    <li>
+                                        <a href="#" class="ms-3">
+                                            <i class="fab fa-facebook"></i>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="ms-3">
+                                            <i class="fab fa-snapchat"></i>
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="#" class="ms-3">
+                                            <i class="fab fa-instagram"></i>
+                                        </a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <li class="d-flex align-items-center">
+                                <span class="icon ms-2">
+                                    <i class="fas fa-phone"></i>
+                                </span>
+                                <a href="#">
+                                    010265899887
+                                </a>
+                            </li>
+                            <li class="d-flex align-items-center">
+                                <span class="icon ms-2">
+                                    <i class="fas fa-phone"></i>
+                                </span>
+                                <a href="#">
+                                    010265899887
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3" data-aos="zoom-in">
+                        <h4 class="footer-title">روابط سريعة </h4>
+                        <ul class="list-unstyled px-0 pt-4">
+                            <li><a href="#"> القائمة الرئيسية</a></li>
+                            <li><a href="#">العروض</a></li>
+                            <li><a href="#">فروعنا</a></li>
+                            <li><a href="#">الشروط والاحكام</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3" data-aos="zoom-in">
+                        <h4 class="footer-title">المساعدة</h4>
+                        <ul class="list-unstyled px-0 pt-4">
+                            <li><a href="#"> خدمة العملاء </a></li>
+                            <li><a href="#">سياسة الاسترجاع</a></li>
+                            <li><a href="#">سياسة الخصوصية</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-md-3" data-aos="zoom-in">
+                        <h4 class="footer-title mb-4">مواعيد عمل المطعم</h4>
+                        <p>الاحد الى الخميس من الساعه 10صباحا الى 10 مساء</p>
+                        <p>الجمعة الي االسبت من الساعة 1 مساء الي 12 صباحا</p>
+                    </div>
+                </div>
+
+            </div>
+            <div class="copywrite">
+                <p class="m-0">جميع الحقوق محفوظة لصالح <a href="#">الكوت</a> 2024</p>
+            </div>
+        </div>
+    </footer>
+
+
+
+    <script src="SiteAssets/js/jquery-3.6.0.min.js"></script>
+    <script src="SiteAssets/bootstrap-5.1.3/dist/js/bootstrap.min.js"></script>
+    <script src="SiteAssets/fontawesome-free-5.15.4-web/js/all.min.js"></script>
+
+    <!-- Main js -->
+    <script src="SiteAssets/js/style.js"></script>
+
+    <!-- include Gallery (lightbox) plugin js-->
+    <script src="SiteAssets/lightbox/js/lightbox.min.js"></script>
+
+    <!-- include Owl Carousel plugin js-->
+    <script src="SiteAssets/OwlCarousel2-2.3.4/dist/owl.carousel.min.js"></script>
+    <script src="SiteAssets/aos-master/dist/aos.js"></script>
+    <script>
+        AOS.init();
+    </script>
+
+
+</body>
+
+</html>
