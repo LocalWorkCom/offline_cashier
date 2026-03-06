@@ -1,0 +1,44 @@
+<?php
+return [
+    'Terms' => 'Terms And Conditions',//
+    'Term' => 'Terms And Conditions',//
+    'Privacys' => 'Privacy Policies',//
+    'Privacy' => 'Privacy Policy',//
+    'Returns' => 'Return Policies',//
+    'Return' => 'Return Policy',//
+    'FAQs' => 'FAQs',//
+    'FAQ' => 'FAQ',//
+    'ArabicName' => 'Arabic Name',//
+    'EnglishName' => 'English Name',//
+    'ArabicDescription' => 'Arabic Description',//
+    'EnglishDescription' => 'English Description',//
+    'ArabicQuestion' => 'Arabic Question',//
+    'EnglishQuestion' => 'English Question',//
+    'ArabicAnswer' => 'Arabic Answer',//
+    'EnglishAnswer' => 'English Answer',//
+    'AddTerm'=>'Add Terms And Conditions',//
+    'EditTerm'=>'Edit Terms And Conditions',//
+    'ShowTerm'=>'Show Terms And Conditions',//
+    'AddPrivacy'=>'Add Privacy Policy',//
+    'EditPrivacy'=>'Edit Privacy Policy',//
+    'ShowPrivacy'=>'Show Privacy Policy',//
+    'AddReturn'=>'Add Return Policy',//
+    'EditReturn'=>'Edit Return Policy',//
+    'ShowReturn'=>'Show Return Policy',//
+    'AddFAQ'=>'Add FAQ',//
+    'EditFAQ'=>'Edit FAQ',//
+    'ShowFAQ'=>'Show FAQ',//
+    'active' => 'Is Active',//
+    'Active' => 'Active',//
+    'Inactive' => 'Inactive',//
+    'Home' => 'Home',//
+    'ContactUs' => 'Contact us',//
+    'ContactUsTrough' => 'Contact us through',//
+    'NeedContactUs' => 'You need someone to contact with, you can reach us',//
+    'YourRating' => 'Rating',//
+    'RatesAndComments' => 'Rates and comments',//
+    'RateYourExperience' => 'Rate your experience',//
+    'SendYourNotes' => 'Send your notes',//
+    'WriteYourNote' => 'Write your note ',//
+    'YourNotes' => 'Your notes are valuable,  tell us about your experience',//
+];

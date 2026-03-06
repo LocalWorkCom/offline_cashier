@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <meta name="author" content="" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta property="og:url" content="" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="" />
+    <meta property="og:description" content="" />
+    <meta property="og:image" content="" />
+    <title>مطعم الكوت</title>
+
+    <link rel="shortcut icon" href="SiteAssets/images/logo.png" sizes="25x25" />
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="SiteAssets/bootstrap-5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="SiteAssets/fontawesome-free-5.15.4-web/css/all.min.css">
+
+    <link rel="stylesheet" href="SiteAssets/css/animate.min.css">
+    <link rel="stylesheet" href="SiteAssets/aos-master/dist/aos.css">
+
+    <!-- Owl Carousel -->
+    <link rel="stylesheet" href="SiteAssets/OwlCarousel2-2.3.4/dist/assets/owl.carousel.min.css" />
+    <link rel="stylesheet" href="SiteAssets/OwlCarousel2-2.3.4/dist/assets/owl.theme.default.min.css" />
+
+    <!-- include Gallery (lightbox) plugin -->
+    <link rel="stylesheet" href="SiteAssets/lightbox/css/lightbox.min.css" />
+    <!-- Main Style -->
+    <link rel="stylesheet" href="SiteAssets/css/style.css" type="text/css" />
+    <!-- fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body class="position-relative bg-gray">
+    <header class="fixed-top">
+        <nav class="navbar navbar-expand-lg navbar-light ">
+            <div class="container second-header">
+                <a class="navbar-service" href="index.html">
+                    <img src="SiteAssets/images/logo-with-white-bg.png">
+                </a>
+                <button class="navbar-toggler" type="button" onclick="openNav()">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0 align-items-center">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <button class="btn white fw-bold d-flex justify-content-between">
+                                    <span><i class="fas fa-map-marker-alt ms-2"></i>
+                                        التوصيل الي
+                                    </span>
+                                    <span class="select-sm">
+                                        اختر
+                                    </span>
+                                </button>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">الرئيسية</a>
+                        </li>
+                        <li class="nav-item active" aria-current="page">
+                            <a class="nav-link" href="shop.html">قائمة الطعام</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="./contact-us.html">تواصل معنا</a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link cart-icon" href="cart.html">
+                                <i class="fas fa-shopping-cart"></i>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                En
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link btn align-items-center" href="#"><i class="fas fa-user-circle"></i>
+                                <span>تسجيل الدخول</span>
+                            </a>
+                        </li>
+
+
+                    </ul>
+                </div>
+
+
+            </div>
+        </nav>
+        <div class="mobNav d-lg-none d-block ">
+            <div id="sidenav" class="sidenav">
+                <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+                <div class="overlay-content">
+                    <a href="index.html"> الرئيسية</a>
+                    <a href="#">قائمة الطعام</a>
+                    <a href="#">تواصل معنا</a>
+                    <a href="#"> <i class="fas fa-shopping-cart"></i>
+                    </a>
+                    <a href="#"> En</a>
+                    <a href="#"> تسجيل الدخول </a>
+                </div>
+            </div>
+        </div>
+
+    </header>
+
+    <main>
+        <section class="forget-pass">
+            <div class="body-images">
+                <img src="./SiteAssets/images/meat-bg.png" class="position-absolute meat ">
+
+                <img src="./SiteAssets/images/spoon-bg.png" class="position-absolute spoon ">
+            </div>
+        </section>
+
+        <section class="inner-header pt-5 mt-5">
+            <div class="container pt-sm-5 pt-4">
+                <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="index.html">الرئيسية</a></li>
+                        <li class="breadcrumb-item active" aria-current="page"> تقييمك</li>
+                    </ol>
+                </nav>
+            </div>
+        </section>
+
+        <section class="comments">
+            <div class="container mb-3">
+                <div class="row">
+                    <div class="col-md-12">
+                        <h4 class="fw-bold ">التقييمات والتعليقات</h4>
+                        <div class="card mt-4 p-4 ">
+                            <div class="row">
+                                <div class="col-md-4 offset-md-1 rate-side py-md-3">
+                                    <div class="container-faces">
+                                        <div class="feedback">
+                                            <div class="rating">
+                                                <input type="radio" name="rating" id="rating-5">
+                                                <label for="rating-5"></label>
+                                                <input type="radio" name="rating" id="rating-4">
+                                                <label for="rating-4"></label>
+                                                <input type="radio" name="rating" id="rating-3">
+                                                <label for="rating-3"></label>
+                                                <input type="radio" name="rating" id="rating-2">
+                                                <label for="rating-2"></label>
+                                                <input type="radio" name="rating" id="rating-1">
+                                                <label for="rating-1"></label>
+                                                <div class="emoji-wrapper">
+                                                    <div class="emoji">
+                                                        <svg class="rating-0" xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 512 512">
+                                                            <circle cx="256" cy="256" r="256" fill="#ffd93b" />
+                                                            <path
+                                                                d="M512 256c0 141.44-114.64 256-256 256-80.48 0-152.32-37.12-199.28-95.28 43.92 35.52 99.84 56.72 160.72 56.72 141.36 0 256-114.56 256-256 0-60.88-21.2-116.8-56.72-160.72C474.8 103.68 512 175.52 512 256z"
+                                                                fill="#f4c534" />
+                                                            <ellipse
+                                                                transform="scale(-1) rotate(31.21 715.433 -595.455)"
+                                                                cx="166.318" cy="199.829" rx="56.146" ry="56.13"
+                                                                fill="#fff" />
+                                                            <ellipse transform="rotate(-148.804 180.87 175.82)"
+                                                                cx="180.871" cy="175.822" rx="28.048" ry="28.08"
+                                                                fill="#3e4347" />
+                                                            <ellipse transform="rotate(-113.778 194.434 165.995)"
+                                                                cx="194.433" cy="165.993" rx="8.016" ry="5.296"
+                                                                fill="#5a5f63" />
+                                                            <ellipse
+                                                                transform="scale(-1) rotate(31.21 715.397 -1237.664)"
+                                                                cx="345.695" cy="199.819" rx="56.146" ry="56.13"
+                                                                fill="#fff" />
+                                                            <ellipse transform="rotate(-148.804 360.25 175.837)"
+                                                                cx="360.252" cy="175.84" rx="28.048" ry="28.08"
+                                                                fill="#3e4347" />
+                                                            <ellipse
+                                                                transform="scale(-1) rotate(66.227 254.508 -573.138)"
+                                                                cx="373.794" cy="165.987" rx="8.016" ry="5.296"
+                                                                fill="#5a5f63" />
+                                                            <path
+                                                                d="M370.56 344.4c0 7.696-6.224 13.92-13.92 13.92H155.36c-7.616 0-13.92-6.224-13.92-13.92s6.304-13.92 13.92-13.92h201.296c7.696.016 13.904 6.224 13.904 13.92z"
+                                                                fill="#3e4347" />
+                                                        </svg>
+                                                        <svg class="rating-1" xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 512 512">
+                                                            <circle cx="256" cy="256" r="256" fill="#ffd93b" />
+                                                            <path
+                                                                d="M512 256A256 256 0 0 1 56.7 416.7a256 256 0 0 0 360-360c58.1 47 95.3 118.8 95.3 199.3z"
+                                                                fill="#f4c534" />
+                                                            <path
+                                                                d="M328.4 428a92.8 92.8 0 0 0-145-.1 6.8 6.8 0 0 1-12-5.8 86.6 86.6 0 0 1 84.5-69 86.6 86.6 0 0 1 84.7 69.8c1.3 6.9-7.7 10.6-12.2 5.1z"
+                                                                fill="#3e4347" />
+                                                            <path
+                                                                d="M269.2 222.3c5.3 62.8 52 113.9 104.8 113.9 52.3 0 90.8-51.1 85.6-113.9-2-25-10.8-47.9-23.7-66.7-4.1-6.1-12.2-8-18.5-4.2a111.8 111.8 0 0 1-60.1 16.2c-22.8 0-42.1-5.6-57.8-14.8-6.8-4-15.4-1.5-18.9 5.4-9 18.2-13.2 40.3-11.4 64.1z"
+                                                                fill="#f4c534" />
+                                                            <path
+                                                                d="M357 189.5c25.8 0 47-7.1 63.7-18.7 10 14.6 17 32.1 18.7 51.6 4 49.6-26.1 89.7-67.5 89.7-41.6 0-78.4-40.1-82.5-89.7A95 95 0 0 1 298 174c16 9.7 35.6 15.5 59 15.5z"
+                                                                fill="#fff" />
+                                                            <path
+                                                                d="M396.2 246.1a38.5 38.5 0 0 1-38.7 38.6 38.5 38.5 0 0 1-38.6-38.6 38.6 38.6 0 1 1 77.3 0z"
+                                                                fill="#3e4347" />
+                                                            <path
+                                                                d="M380.4 241.1c-3.2 3.2-9.9 1.7-14.9-3.2-4.8-4.8-6.2-11.5-3-14.7 3.3-3.4 10-2 14.9 2.9 4.9 5 6.4 11.7 3 15z"
+                                                                fill="#fff" />
+                                                            <path
+                                                                d="M242.8 222.3c-5.3 62.8-52 113.9-104.8 113.9-52.3 0-90.8-51.1-85.6-113.9 2-25 10.8-47.9 23.7-66.7 4.1-6.1 12.2-8 18.5-4.2 16.2 10.1 36.2 16.2 60.1 16.2 22.8 0 42.1-5.6 57.8-14.8 6.8-4 15.4-1.5 18.9 5.4 9 18.2 13.2 40.3 11.4 64.1z"
+                                                                fill="#f4c534" />
+                                                            <path
+                                                                d="M155 189.5c-25.8 0-47-7.1-63.7-18.7-10 14.6-17 32.1-18.7 51.6-4 49.6 26.1 89.7 67.5 89.7 41.6 0 78.4-40.1 82.5-89.7A95 95 0 0 0 214 174c-16 9.7-35.6 15.5-59 15.5z"
+                                                                fill="#fff" />
+                                                            <path
+                                                                d="M115.8 246.1a38.5 38.5 0 0 0 38.7 38.6 38.5 38.5 0 0 0 38.6-38.6 38.6 38.6 0 1 0-77.3 0z"
+                                                                fill="#3e4347" />
+                                                            <path
+                                                                d="M131.6 241.1c3.2 3.2 9.9 1.7 14.9-3.2 4.8-4.8 6.2-11.5 3-14.7-3.3-3.4-10-2-14.9 2.9-4.9 5-6.4 11.7-3 15z"
+                                                                fill="#fff" />
+                                                        </svg>
+                                                        <svg class="rating-2" xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 512 512">
+                                                            <circle cx="256" cy="256" r="256" fill="#ffd93b" />
+                                                            <path
+                                                                d="M512 256A256 256 0 0 1 56.7 416.7a256 256 0 0 0 360-360c58.1 47 95.3 118.8 95.3 199.3z"
+                                                                fill="#f4c534" />
+                                                            <path
+                                                                d="M336.6 403.2c-6.5 8-16 10-25.5 5.2a117.6 117.6 0 0 0-110.2 0c-9.4 4.9-19 3.3-25.6-4.6-6.5-7.7-4.7-21.1 8.4-28 45.1-24 99.5-24 144.6 0 13 7 14.8 19.7 8.3 27.4z"
+                                                                fill="#3e4347" />
+                                                            <path
+                                                                d="M276.6 244.3a79.3 79.3 0 1 1 158.8 0 79.5 79.5 0 1 1-158.8 0z"
+                                                                fill="#fff" />
+                                                            <circle cx="340" cy="260.4" r="36.2" fill="#3e4347" />
+                                                            <g fill="#fff">
+                                                                <ellipse transform="rotate(-135 326.4 246.6)" cx="326.4"
+                                                                    cy="246.6" rx="6.5" ry="10" />
+                                                                <path
+                                                                    d="M231.9 244.3a79.3 79.3 0 1 0-158.8 0 79.5 79.5 0 1 0 158.8 0z" />
+                                                            </g>
+                                                            <circle cx="168.5" cy="260.4" r="36.2" fill="#3e4347" />
+                                                            <ellipse transform="rotate(-135 182.1 246.7)" cx="182.1"
+                                                                cy="246.7" rx="10" ry="6.5" fill="#fff" />
+                                                        </svg>
+                                                        <svg class="rating-3" xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 512 512">
+                                                            <circle cx="256" cy="256" r="256" fill="#ffd93b" />
+                                                            <path
+                                                                d="M407.7 352.8a163.9 163.9 0 0 1-303.5 0c-2.3-5.5 1.5-12 7.5-13.2a780.8 780.8 0 0 1 288.4 0c6 1.2 9.9 7.7 7.6 13.2z"
+                                                                fill="#3e4347" />
+                                                            <path
+                                                                d="M512 256A256 256 0 0 1 56.7 416.7a256 256 0 0 0 360-360c58.1 47 95.3 118.8 95.3 199.3z"
+                                                                fill="#f4c534" />
+                                                            <g fill="#fff">
+                                                                <path
+                                                                    d="M115.3 339c18.2 29.6 75.1 32.8 143.1 32.8 67.1 0 124.2-3.2 143.2-31.6l-1.5-.6a780.6 780.6 0 0 0-284.8-.6z" />
+                                                                <ellipse cx="356.4" cy="205.3" rx="81.1" ry="81" />
+                                                            </g>
+                                                            <ellipse cx="356.4" cy="205.3" rx="44.2" ry="44.2"
+                                                                fill="#3e4347" />
+                                                            <g fill="#fff">
+                                                                <ellipse transform="scale(-1) rotate(45 454 -906)"
+                                                                    cx="375.3" cy="188.1" rx="12" ry="8.1" />
+                                                                <ellipse cx="155.6" cy="205.3" rx="81.1" ry="81" />
+                                                            </g>
+                                                            <ellipse cx="155.6" cy="205.3" rx="44.2" ry="44.2"
+                                                                fill="#3e4347" />
+                                                            <ellipse transform="scale(-1) rotate(45 454 -421.3)"
+                                                                cx="174.5" cy="188" rx="12" ry="8.1" fill="#fff" />
+                                                        </svg>
+                                                        <svg class="rating-4" xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 512 512">
+                                                            <circle cx="256" cy="256" r="256" fill="#ffd93b" />
+                                                            <path
+                                                                d="M512 256A256 256 0 0 1 56.7 416.7a256 256 0 0 0 360-360c58.1 47 95.3 118.8 95.3 199.3z"
+                                                                fill="#f4c534" />
+                                                            <path
+                                                                d="M232.3 201.3c0 49.2-74.3 94.2-74.3 94.2s-74.4-45-74.4-94.2a38 38 0 0 1 74.4-11.1 38 38 0 0 1 74.3 11.1z"
+                                                                fill="#e24b4b" />
+                                                            <path
+                                                                d="M96.1 173.3a37.7 37.7 0 0 0-12.4 28c0 49.2 74.3 94.2 74.3 94.2C80.2 229.8 95.6 175.2 96 173.3z"
+                                                                fill="#d03f3f" />
+                                                            <path
+                                                                d="M215.2 200c-3.6 3-9.8 1-13.8-4.1-4.2-5.2-4.6-11.5-1.2-14.1 3.6-2.8 9.7-.7 13.9 4.4 4 5.2 4.6 11.4 1.1 13.8z"
+                                                                fill="#fff" />
+                                                            <path
+                                                                d="M428.4 201.3c0 49.2-74.4 94.2-74.4 94.2s-74.3-45-74.3-94.2a38 38 0 0 1 74.4-11.1 38 38 0 0 1 74.3 11.1z"
+                                                                fill="#e24b4b" />
+                                                            <path
+                                                                d="M292.2 173.3a37.7 37.7 0 0 0-12.4 28c0 49.2 74.3 94.2 74.3 94.2-77.8-65.7-62.4-120.3-61.9-122.2z"
+                                                                fill="#d03f3f" />
+                                                            <path
+                                                                d="M411.3 200c-3.6 3-9.8 1-13.8-4.1-4.2-5.2-4.6-11.5-1.2-14.1 3.6-2.8 9.7-.7 13.9 4.4 4 5.2 4.6 11.4 1.1 13.8z"
+                                                                fill="#fff" />
+                                                            <path
+                                                                d="M381.7 374.1c-30.2 35.9-75.3 64.4-125.7 64.4s-95.4-28.5-125.8-64.2a17.6 17.6 0 0 1 16.5-28.7 627.7 627.7 0 0 0 218.7-.1c16.2-2.7 27 16.1 16.3 28.6z"
+                                                                fill="#3e4347" />
+                                                            <path
+                                                                d="M256 438.5c25.7 0 50-7.5 71.7-19.5-9-33.7-40.7-43.3-62.6-31.7-29.7 15.8-62.8-4.7-75.6 34.3 20.3 10.4 42.8 17 66.5 17z"
+                                                                fill="#e24b4b" />
+                                                        </svg>
+                                                        <svg class="rating-5" xmlns="http://www.w3.org/2000/svg"
+                                                            viewBox="0 0 512 512">
+                                                            <g fill="#ffd93b">
+                                                                <circle cx="256" cy="256" r="256" />
+                                                                <path
+                                                                    d="M512 256A256 256 0 0 1 56.8 416.7a256 256 0 0 0 360-360c58 47 95.2 118.8 95.2 199.3z" />
+                                                            </g>
+                                                            <path
+                                                                d="M512 99.4v165.1c0 11-8.9 19.9-19.7 19.9h-187c-13 0-23.5-10.5-23.5-23.5v-21.3c0-12.9-8.9-24.8-21.6-26.7-16.2-2.5-30 10-30 25.5V261c0 13-10.5 23.5-23.5 23.5h-187A19.7 19.7 0 0 1 0 264.7V99.4c0-10.9 8.8-19.7 19.7-19.7h472.6c10.8 0 19.7 8.7 19.7 19.7z"
+                                                                fill="#e9eff4" />
+                                                            <path
+                                                                d="M204.6 138v88.2a23 23 0 0 1-23 23H58.2a23 23 0 0 1-23-23v-88.3a23 23 0 0 1 23-23h123.4a23 23 0 0 1 23 23z"
+                                                                fill="#45cbea" />
+                                                            <path
+                                                                d="M476.9 138v88.2a23 23 0 0 1-23 23H330.3a23 23 0 0 1-23-23v-88.3a23 23 0 0 1 23-23h123.4a23 23 0 0 1 23 23z"
+                                                                fill="#e84d88" />
+                                                            <g fill="#38c0dc">
+                                                                <path
+                                                                    d="M95.2 114.9l-60 60v15.2l75.2-75.2zM123.3 114.9L35.1 203v23.2c0 1.8.3 3.7.7 5.4l116.8-116.7h-29.3z" />
+                                                            </g>
+                                                            <g fill="#d23f77">
+                                                                <path
+                                                                    d="M373.3 114.9l-66 66V196l81.3-81.2zM401.5 114.9l-94.1 94v17.3c0 3.5.8 6.8 2.2 9.8l121.1-121.1h-29.2z" />
+                                                            </g>
+                                                            <path
+                                                                d="M329.5 395.2c0 44.7-33 81-73.4 81-40.7 0-73.5-36.3-73.5-81s32.8-81 73.5-81c40.5 0 73.4 36.3 73.4 81z"
+                                                                fill="#3e4347" />
+                                                            <path
+                                                                d="M256 476.2a70 70 0 0 0 53.3-25.5 34.6 34.6 0 0 0-58-25 34.4 34.4 0 0 0-47.8 26 69.9 69.9 0 0 0 52.6 24.5z"
+                                                                fill="#e24b4b" />
+                                                            <path
+                                                                d="M290.3 434.8c-1 3.4-5.8 5.2-11 3.9s-8.4-5.1-7.4-8.7c.8-3.3 5.7-5 10.7-3.8 5.1 1.4 8.5 5.3 7.7 8.6z"
+                                                                fill="#fff" opacity=".2" />
+                                                        </svg>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                              <h4 class="fw-bold pt-md-3">قييم تجربتك </h4>
+                                        </div>
+                                    </div>
+                             </div>
+                                <div class="col-md-7 py-md-3">
+                                  <h4 class="fw-bold">أرسل ملاحظاتك</h4>
+                                  <h6 class="text-muted">ملاحظاتك قيمة بالنسبة لنا أخبرنا عن تجربتك</h6>
+                                  <div class="my-3">
+                                    <textarea class="form-control" rows="3" placeholder="اكتب ملاحظتك"></textarea>
+                                  </div>
+                                  <button type="submit" class="btn   w-100">ارسال</button>
+
+                                </div>
+
+                                <!-- <div class="col-12">
+                                    <div class="accordion mt-3" id="accordionExample">
+                                      <div class="accordion-item">
+                                        <h2 class="accordion-header" id="headingOne">
+                                          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                            <i class="fas fa-file-alt main-color fa-xs"></i>
+                                            <strong class="text-dark px-2">تفاصيل الطلب</strong>             
+                                            
+                                         
+                                             </button>
+                                        </h2>
+                                        <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#accordionExample">
+                                          <div class="accordion-body">
+                                            This is the first item's accordion body.
+                                          </div>
+                                        </div>
+                                      </div>
+                                     
+                                    </div> -->
+                                   
+                                  </div>
+                                  
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+    <footer>
+        <div class="footer-curve"></div>
+        <div class="container ">
+          <figure class="footer-logo">
+            <img src="SiteAssets/images/logo-with-white-bg.png" />
+          </figure>
+        </div>
+        <div class="footer">
+          <div class="container py-sm-5 p-4">
+            <div class=" row m-0">
+              <div class="col-md-3" data-aos="zoom-in">
+                <h4 class="footer-title"> تواصل معنا </h4>
+                <ul class="list-unstyled px-0 pt-4">
+                  <li>
+                    <ul class="list-unstyled social-media p-0">
+                      <li>
+                        <a href="#" class="ms-3">
+                          <i class="fab fa-facebook"></i>
+                        </a>
+                      </li>
+                      <li>
+                        <a href="#" class="ms-3">
+                          <i class="fab fa-snapchat"></i>
+                        </a>
+                      </li>
+                      <li>
+                        <a href="#" class="ms-3">
+                          <i class="fab fa-instagram"></i>
+                        </a>
+                      </li>
+                    </ul>
+                  </li>
+                  <li class="d-flex align-items-center">
+                    <span class="icon ms-2">
+                      <i class="fas fa-phone"></i>
+                    </span>
+                    <a >
+                      010265899887
+                    </a>
+                  </li>
+                  <li class="d-flex align-items-center">
+                    <span class="icon ms-2">
+                      <i class="fas fa-phone"></i>
+                    </span>
+                    <a >
+                      010265899887
+                    </a>
+                  </li>
+                </ul>
+              </div>
+              <div class="col-md-3" data-aos="zoom-in">
+                <h4 class="footer-title">روابط سريعة </h4>
+                <ul class="list-unstyled px-0 pt-4">
+                  <li><a href="shop.html"> القائمة الرئيسية</a></li>
+                  <li><a data-bs-toggle="modal" data-bs-target="#productModal">العروض</a></li>
+                  <li><a  data-bs-toggle="modal" data-bs-target="#branchesModal">فروعنا</a></li>
+                  <li><a href="policy.html">الشروط والاحكام</a></li>
+                </ul>
+              </div>
+              <div class="col-md-3" data-aos="zoom-in">
+                <h4 class="footer-title">المساعدة</h4>
+                <ul class="list-unstyled px-0 pt-4">
+                  <li><a href="contact-us.html"> خدمة العملاء </a></li>
+                  <li><a href="policy.html">سياسة الاسترجاع</a></li>
+                  <li><a href="privacy.html">سياسة الخصوصية</a></li>
+                </ul>
+              </div>
+              <div class="col-md-3" data-aos="zoom-in">
+                <h4 class="footer-title mb-4">مواعيد عمل المطعم</h4>
+                <p>الاحد الى الخميس من الساعه 10صباحا الى 10 مساء</p>
+                <p>الجمعة الي االسبت من الساعة 1 مساء الي 12 صباحا</p>
+              </div>
+            </div>
+    
+          </div>
+          <div class="copywrite">
+            <p class="m-0">جميع الحقوق محفوظة لصالح <a href="#">الكوت</a> 2024</p>
+          </div>
+        </div>
+      </footer>
+      <!-- modals -->
+    
+      <!-- login modal -->
+      <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+          <div class="modal-content">
+            <div class="modal-header border-0">
+              <button type="button" class="btn btn-close text-light" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <!-- body-register  -->
+            <div class="modal-body register px-4" id="registerBody">
+              <div class="row">
+                <div class="col-12 d-flex justify-content-center">
+                  <img src="./SiteAssets/images/logo-with-white-bg.png" alt="Logo" height="110">
+                </div>
+    
+                <div class="col-md-7 right-side p-3">
+                  <h2 class="main-color fw-bold">مرحبا بك!</h2>
+                  <h5> يمكنك انشاء حساب بكل سهولة</h5>
+    
+                  <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="nameInput" placeholder="ادخل الاسم كامـلا ,مثال سارة عامر">
+                  </div>
+    
+                  <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="phoneInput" placeholder="ادخل رقم الهاتف ,مثال01029063398">
+                    <button class="country-dropdown me-2" data-bs-toggle="dropdown" aria-expanded="false"> +02 <img
+                        src="./SiteAssets/images/egypt.png" alt=""></button>
+                    <ul class="dropdown-menu">
+                      <li><a class="dropdown-item" href="#"> <small> +02</small> <img src="./SiteAssets/images/egypt.png"
+                            alt=""></a></li>
+                    </ul>
+                  </div>
+    
+                  <div class="input-group mb-3">
+                    <input type="email" class="form-control" id="emailInput"
+                      placeholder="ادخل البريد الالكترونى ,مثال saamer2019@gmail.com">
+                  </div>
+    
+                  <div class="input-group position-relative mb-3">
+                    <input type="password" class="form-control" id="passwordInput" placeholder="ادخل كلمة المرور">
+                    <button class="input-group-eye position-absolute" type="button" id="togglePassword">
+                      <i class="fas fa-eye" id="eyeIcon"></i>
+                    </button>
+                  </div>
+    
+    
+                  <button type="submit" class="btn mb-2 w-100">انشاء حساب</button>
+    
+                  <p class="text-center">
+                    <small>
+                      هل لديك حساب بالفعل؟
+                      <a href="#" class="main-color text-decoration-underline" id="showLoginLink"
+                        aria-label="تسجيل الدخول">تسجيل دخول</a>
+                    </small>
+                  </p>
+    
+                  <p class="text-center">
+                    <small>
+                      <span class="text-muted">عند انشاء حساب انت توافق علي</span>
+    
+                      <a class="main-color text-decoration-underline" href="./privacy.html">سياسة الخصوصية</a> و <a
+                        class="main-color text-decoration-underline" href="./policy.html"> الشروط و الاحكام</a>
+    
+                    </small>
+                  </p>
+                </div>
+    
+                <div class="col-md-5 login-background">
+                  <img src="./SiteAssets/images/login-chef-backgound.png" alt="">
+                </div>
+              </div>
+            </div>
+            <!-- body-login  -->
+            <div class="modal-body login d-none px-4" id="loginBody">
+              <div class="row">
+                <div class="col-12 d-flex justify-content-center">
+                  <img src="./SiteAssets/images/logo-with-white-bg.png" alt="Logo" height="110">
+                </div>
+    
+                <div class="col-md-7 right-side p-3">
+                  <h2 class="main-color fw-bold">مرحبا بك!</h2>
+                  <h5>تسجيل الدخول لتستمتع بتجربة طلب معدة خصيصا لك </h5>
+    
+                  <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="phoneInput" placeholder="ادخل رقم الهاتف ,مثال01029063398">
+                    <button class="country-dropdown me-2" data-bs-toggle="dropdown" aria-expanded="false"><small>
+                        +02</small> <img src="./SiteAssets/images/egypt.png" alt=""></button>
+                    <ul class="dropdown-menu">
+                      <li><a class="dropdown-item" href="#"> +02 <img src="./SiteAssets/images/egypt.png" alt=""></a></li>
+                    </ul>
+                  </div>
+    
+                  <div class="input-group position-relative mb-3">
+                    <input type="password" class="form-control" id="passwordInput" placeholder="ادخل كلمة المرور الجديدة">
+                    <button class="input-group-eye position-absolute" type="button" id="togglePassword">
+                      <i class="fas fa-eye" id="eyeIcon"></i>
+                    </button>
+                  </div>
+    
+    
+    
+                  <a id="showforgetLink"> <small> هل نسيت كلمة المرور؟ </small></a>
+    
+                  <button type="submit" class="btn  my-2 w-100"> تسجيل الدخول</button>
+    
+                  <p class="text-center">
+                    <small>
+                      تسجيل الدخول باستخدام شبكات التواصل
+    
+                    </small>
+                  </p>
+    
+                  <div class="d-flex justify-content-center gap-lg-3">
+                    <a class="social-media-btn d-flex align-items-center " href="#">
+                      <img src="./SiteAssets/images/facebook-icon.png" alt="Facebook" class="ms-2" height="20">
+                      <span>فيس بوك</span>
+                    </a>
+    
+                    <a class="social-media-btn d-flex align-items-center " href="#">
+                      <img src="./SiteAssets/images/google-icon.png" alt="Google" class="ms-2" height="20">
+                      <span>جوجل</span>
+                    </a>
+                  </div>
+                  <p class="text-center">
+                    <small>
+                      <span class="text-dark"> مستخدم جديد؟ </span>
+                      <a href="#" class="main-color text-decoration-underline" id="showRegisterLink"
+                        aria-label="تسجيل حساب">تسجيل حساب</a>
+    
+                    </small>
+                  </p>
+                </div>
+    
+                <div class="col-md-5 login-background">
+                  <img src="./SiteAssets/images/login-chef-backgound.png" alt="">
+                </div>
+              </div>
+            </div>
+            <!-- Forget Body -->
+            <div class="modal-body forget d-none px-4" id="forgetBody">
+              <div class="row">
+                <div class="col-12 d-flex justify-content-center">
+                  <img src="./SiteAssets/images/logo-with-white-bg.png" alt="Logo" height="110">
+                </div>
+    
+                <div class="col-md-7 right-side p-3">
+                  <h2 class="main-color fw-bold py-3">نسيت كلمة المرور؟</h2>
+                  <h5>لإعادة تعيين كلمة المرور الرجاء ادخال رقم الهاتف</h5>
+                  <div class="input-group py-md-4 py-sm-2">
+                    <input type="text" class="form-control py-2" id="phoneInput"
+                      placeholder="ادخل رقم الهاتف ,مثال01029063398">
+                    <button class="country-dropdown me-2" data-bs-toggle="dropdown" aria-expanded="false">
+                      <small>+02</small>
+                      <img src="./SiteAssets/images/egypt.png" alt="">
+                    </button>
+                    <ul class="dropdown-menu">
+                      <li><a class="dropdown-item" href="#"> <small> +02</small> <img src="./SiteAssets/images/egypt.png"
+                            alt=""></a></li>
+                    </ul>
+                  </div>
+                  <button type="submit" class="btn w-100" id="sendForgetButton">ارسال</button>
+                </div>
+                <div class="col-md-5 login-background">
+                  <img src="./SiteAssets/images/login-chef-backgound.png" alt="">
+                </div>
+              </div>
+            </div>
+    
+            <!-- OTP-sent Body -->
+            <div class="modal-body otp-sent d-none px-4" id="otpBody">
+              <div class="row">
+                <div class="col-12 d-flex justify-content-center">
+                  <img src="./SiteAssets/images/logo-with-white-bg.png" alt="Logo" height="110">
+                </div>
+    
+                <div class="col-md-7 right-side p-3">
+                  <h2 class="main-color fw-bold py-3">تأكيد رقم الهاتف</h2>
+                  <h5>تم ارسال كود لرقم الهاتف المسجل لدينا عن طريق الواتس اب</h5>
+                  <h4 class="main-color fw-bold py-3">+0201165998745</h4>
+                  <div class="code-input" id="codeInputForm">
+                    <input class="m-1" type="text" maxlength="1" id="digit1" onkeyup="moveToNext(this, 'digit2')">
+                    <input class="m-1" type="text" maxlength="1" id="digit2" onkeyup="moveToNext(this, 'digit3')"
+                      onkeydown="moveToPrevious(event, 'digit1')">
+                    <input class="m-1" type="text" maxlength="1" id="digit3" onkeyup="moveToNext(this, 'digit4')"
+                      onkeydown="moveToPrevious(event, 'digit2')">
+                    <input class="m-1" type="text" maxlength="1" id="digit4" onkeydown="moveToPrevious(event, 'digit3')">
+                  </div>
+                  <p class="py-2" id="timer"></p>
+                  <div class="d-flex justify-content-between flex-wrap">
+                    <p class="text-muted">لم أتلقى رمز التفعيل ؟</p>
+                    <a href="#" class="main-color">اعادة ارسال رمز التفعيل</a>
+                  </div>
+                  <button type="submit" class="btn w-100" id="sendOtpButton">ارسال</button>
+                </div>
+                <div class="col-md-5 login-background">
+                  <img src="./SiteAssets/images/login-chef-backgound.png" alt="">
+                </div>
+              </div>
+            </div>
+    
+            <!-- OTP-done Body -->
+            <div class="modal-body otp-done d-none px-4" id="otpDoneBody">
+              <div class="row">
+                <div class="col-12 d-flex justify-content-center">
+                  <img src="./SiteAssets/images/logo-with-white-bg.png" alt="Logo" height="110">
+                </div>
+    
+                <div class="col-md-7 right-side p-3">
+                  <h2 class="main-color fw-bold py-3">تأكيد رقم الهاتف</h2>
+                  <h5>تم ارسال كود لرقم الهاتف المسجل لدينا عن طريق الواتس اب</h5>
+                  <h4 class="main-color fw-bold py-3">+0201165998745</h4>
+                  <div class="text-center">
+                    <img src="./SiteAssets/images/donee.png" alt="" height="100" class="mb-3">
+                    <p class="fw-bold">تم التحقق بنجاح</p>
+                  </div>
+                </div>
+                <div class="col-md-5 login-background">
+                  <img src="./SiteAssets/images/login-chef-backgound.png" alt="">
+                </div>
+              </div>
+            </div>
+            <!-- Reset Body -->
+            <div class="modal-body reset-pass d-none px-4" id="resetBody">
+              <div class="row">
+                <div class="col-12 d-flex justify-content-center">
+                  <img src="./SiteAssets/images/logo-with-white-bg.png" alt="Logo" height="110">
+                </div>
+                <div class="col-md-7 right-side p-3">
+                  <h2 class="main-color fw-bold py-3">ادخل كلمة مرور جديدة</h2>
+                  <div class="input-group position-relative mb-3">
+                    <input type="password" class="form-control" id="passwordInput" placeholder="ادخل كلمة المرور الجديدة">
+                    <button class="input-group-eye position-absolute" type="button" id="togglePassword">
+                      <i class="fas fa-eye" id="eyeIcon"></i>
+                    </button>
+                  </div>
+    
+                  <div class="input-group position-relative mb-3">
+                    <input type="password" class="form-control" id="passwordInput2" placeholder="ادخل كلمة المرور الجديدة">
+                    <button class="input-group-eye position-absolute" type="button" id="togglePassword2">
+                      <i class="fas fa-eye" id="eyeIcon2"></i>
+                    </button>
+                  </div>
+    
+                  <button type="submit" class="btn w-100">تأكيد</button>
+                </div>
+                <div class="col-md-5 login-background">
+                  <img src="./SiteAssets/images/login-chef-backgound.png" alt="">
+                </div>
+              </div>
+            </div>
+    
+          </div>
+        </div>
+      </div>
+      <!-- end login modal -->
+      <!-- product details modal -->
+      <div class="modal fade" tabindex="-1" id="productModal" aria-labelledby="productModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+          <div class="modal-content">
+            <div class="modal-header border-0">
+              <button type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <h2 class="text-center mb-4"> من فضلك قم بتخصيص وجبتك </h2>
+              <div class="row mx-0">
+                <div class="col-md-6">
+                  <div class="product-details ">
+                    <h4>اختيارات من الحجم
+                    </h4>
+                    <div class="choices my-3">
+                      <form>
+                        <div class="form-check">
+                          <div>
+                            <input class="form-check-input" type="radio" name="options" id="option1" value="option1">
+                            <label class="form-check-label" for="option1">
+                              ربع فرخة
+                            </label>
+                          </div>
+                          <span>100 ج.م</span>
+    
+                        </div>
+                        <div class="form-check">
+                          <div>
+                            <input class="form-check-input" type="radio" name="options" id="option2" value="option2">
+                            <label class="form-check-label" for="option2">
+                              نص فرخة
+                            </label>
+                          </div>
+                          <span>200 ج.م</span>
+                        </div>
+                        <div class="form-check">
+                          <div>
+                            <input class="form-check-input" type="radio" name="options" id="option3" value="option3">
+                            <label class="form-check-label" for="option3">
+                              فرخة كاملة
+                            </label>
+                          </div>
+                          <span>400 ج.م</span>
+    
+                        </div>
+                      </form>
+                    </div>
+                    <h4> اضافات
+                    </h4>
+                    <div class="choices my-3">
+                      <form>
+                        <div class="form-check">
+                          <div>
+                            <input class="form-check-input" type="checkbox" name="options" id="option11" value="option11">
+    
+                            <label class="form-check-label" for="option11">
+                              دقوس </label>
+                          </div>
+                          <span>100 ج.م</span>
+    
+                        </div>
+                        <div class="form-check">
+                          <div>
+                            <input class="form-check-input" type="checkbox" name="options" id="option22" value="option22">
+                            <label class="form-check-label" for="option22">
+                              جمبري
+                            </label>
+                          </div>
+                          <span>200 ج.م</span>
+                        </div>
+                        <div class="form-check">
+                          <div>
+                            <input class="form-check-input" type="checkbox" name="options" id="option33" value="option33">
+                            <label class="form-check-label" for="option33">
+                              رز
+                            </label>
+                          </div>
+                          <span>400 ج.م</span>
+    
+                        </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-md-6">
+                  <div class="product">
+                    <figure class="product-img m-0">
+                      <img src="SiteAssets/images/plate1.png" alt="">
+                      <figcaption class="pt-3">
+                        <h5>كبسة فراخ </h5>
+                        <span class="badge bg-warning text-dark">
+                          <i class="fas fa-star"></i>
+                          الاعلى تقييم
+                        </span>
+                        <small class="text-muted d-block py-2">
+                          عيش مع نصف دجاجه يقدم مع معبوج أخضر ومعبوج أحمر ودقوس او مرق باميه
+                        </small>
+                        <h4 class="fw-bold"> 300 ج . م</h4>
+                        <div class="qty mt-3 d-flex justify-content-center align-items-center">
+                          <span class="pro-dec me-3" onclick="decreaseQuantity()">
+                            <i class="fa fa-trash" aria-hidden="true"></i>
+                          </span>
+                          <span class="num fs-4" id="quantity">1</span>
+                          <span class="pro-inc ms-3" onclick="increaseQuantity()">
+                            <i class="fa fa-plus" aria-hidden="true"></i>
+                          </span>
+                        </div>
+    
+    
+                      </figcaption>
+                    </figure>
+                  </div>
+                  <div class="notes my-3">
+                    <h4>
+                      <i class="fas fa-file-alt main-color fa-xs"></i>
+                      لديك اى ملاحظات اضافيه؟
+                    </h4>
+                    <div class="form-floating mt-3">
+                      <textarea class="form-control" placeholder="من فضلك اكتب ملاحظتك" id="floatingTextarea2"
+                        style="height: 100px"></textarea>
+                      <label for="floatingTextarea2">من فضلك اكتب ملاحظتك</label>
+                    </div>
+                  </div>
+                  <button class="btn w-100 d-flex justify-content-between mt-3">
+                    <span> + أضف الي العربة
+                      (1)</span>
+                    <span>300 ج . م</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- end product details modal -->
+      <!-- delivery details modal -->
+      <div class="delivery-modal modal fade" tabindex="-1" id="deliveryModal" aria-labelledby="deliveryModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog  modal-lg">
+          <div class="modal-content">
+            <div class="modal-header border-0">
+              <button type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Close"
+                onclick="showFirstPhase()"></button>
+            </div>
+            <div class="modal-body">
+              <h3 class="text-center fw-bold mb-4"> ابدأ طلبك الان </h3>
+              <ul class="nav nav-pills main-pills px-0 mb-3 justify-content-center" id="pills-tab" role="tablist">
+                <li class="nav-item ms-3" role="presentation">
+                  <button class="nav-link active" id="pills-delivery-tab" data-bs-toggle="pill"
+                    data-bs-target="#pills-delivery" type="button" role="tab" aria-controls="pills-delivery"
+                    aria-selected="true">
+                    <div class="icon">
+                      <img src="SiteAssets/images/delivery-icon.png" alt="" />
+                    </div>
+                    <h6 class="me-2">التوصيل</h6>
+                  </button>
+                </li>
+                <li class="nav-item ms-3 " role="presentation">
+                  <button class="nav-link" id="pills-takeaway-tab" data-bs-toggle="pill" data-bs-target="#pills-takeaway"
+                    type="button" role="tab" aria-controls="pills-takeaway" aria-selected="false">
+                    <div class="icon">
+                      <img src="SiteAssets/images/takeaway-icon.png" alt="" />
+                    </div>
+                    <h6 class="me-2">الإستلام</h6>
+                  </button>
+                </li>
+    
+              </ul>
+              <div class="tab-content" id="pills-tabContent">
+                <div class="tab-pane fade show active" id="pills-delivery" role="tabpanel"
+                  aria-labelledby="pills-delivery-tab">
+                  <div class="first-phase">
+                    <h5 class="fw-bold">
+                      تحديد موقع التوصيل
+                    </h5>
+                    <div class="search-group ">
+                      <span class="search-icon">
+                        <i class="fas fa-search"></i>
+                      </span>
+                      <input type="text" class="form-control" placeholder="ابحث عن الموقع" />
+                    </div>
+                    <div class="map position-relative my-3">
+                      <iframe
+                        src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3453.025253043487!2d31.22420217605614!3d30.064810617604635!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x145841cef6b62cc1%3A0x31bc8779f7ab8dd5!2z2YXYt9i52YUg2KfZhNmD2YjYqg!5e0!3m2!1sen!2seg!4v1734860419141!5m2!1sen!2seg"
+                        width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade">
+                      </iframe>
+                      <div class="notes">
+                        <small> تسجيل الدخول لاستخدام عناوينك المحفوظة</small>
+                        <button class="btn"> تسجيل الدخول</button>
+                      </div>
+                    </div>
+                    <div class="tab-footer justify-content-between d-flex align-items-center">
+                      <div>
+                        <h6 class="fw-bold">
+                          موقع التوصيل
+                        </h6>
+                        <p>
+                          <i class="fas fa-map-marker-alt main-color ms-2"></i>
+                          مصدق الدقى و المهندسين وجيزه
+                        </p>
+                      </div>
+                      <button class="btn reversed main-color fw-bold" type="button">
+                        تعديل
+                      </button>
+                      <button type="submit" class="btn" onclick="showSecondPhase()">تأكيد العنوان</button>
+                    </div>
+                  </div>
+                  <div class="second-phase d-none">
+                    <h6 class="fw-bold">
+                      موقع التوصيل
+                    </h6>
+                    <div class="d-flex justify-content-between">
+                      <p>
+                        <i class="fas fa-map-marker-alt main-color ms-2"></i>
+                        مصدق الدقى و المهندسين وجيزه
+                      </p>
+                      <button class="btn reversed main-color fw-bold" type="button">
+                        تعديل
+                      </button>
+                    </div>
+                    <h6 class="fw-bold mb-3">
+                      أكمل موقع التوصيل
+                    </h6>
+                    <ul class="delivery-places nav nav-pills px-0 mb-3" id="pills-tab" role="tablist">
+                      <li class="nav-item" role="presentation">
+                        <button class="nav-link active rounded-pill" id="pills-home-tab" data-bs-toggle="pill"
+                          data-bs-target="#pills-home" type="button" role="tab" aria-controls="pills-home"
+                          aria-selected="true">
+                          <i class="fas fa-city"></i> شقة
+                        </button>
+                      </li>
+                      <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-pill" id="pills-villa-tab" data-bs-toggle="pill"
+                          data-bs-target="#pills-villa" type="button" role="tab" aria-controls="pills-villa"
+                          aria-selected="false">
+                          <i class="fas fa-home"></i> فيلا
+                        </button>
+                      </li>
+                      <li class="nav-item" role="presentation">
+                        <button class="nav-link rounded-pill" id="pills-work-tab" data-bs-toggle="pill"
+                          data-bs-target="#pills-work" type="button" role="tab" aria-controls="pills-work"
+                          aria-selected="false">
+                          <i class="fas fa-building"></i> مكتب
+                        </button>
+                      </li>
+                    </ul>
+                    <div class="tab-content" id="pills-tabContent">
+                      <div class="tab-pane fade show active" id="pills-home" role="tabpanel"
+                        aria-labelledby="pills-home-tab">
+                        <form>
+                          <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="اسم  الفيلا, مثال فيلا شاهين">
+                          </div>
+                          <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="رقم الفيلا ,مثال  فيلا 12">
+                          </div>
+                          <div class="mb-3">
+                            <input type="text" class="form-control" placeholder=" 121 مصدق الدقي ,المهندسين  الجيزه">
+                          </div>
+                          <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="علامة مميزة (اختيارى)">
+                          </div>
+                          <div class="mb-3">
+                            <div class="input-group">
+                              <input type="text" class="form-control" placeholder="  ادخل رقم الهاتف  ,مثال01029063398">
+                              <select class="form-select country-dropdown me-3" style="max-width: 100px;">
+                                <option value="eg" selected>+20</option>
+                                <option value="ae">+971</option>
+                                <option value="jo">+962</option>
+                              </select>
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                      <div class="tab-pane fade" id="pills-villa" role="tabpanel" aria-labelledby="pills-villa-tab">
+                        <form>
+                          <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="اسم  الفيلا, مثال فيلا شاهين">
+                          </div>
+                          <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="رقم الفيلا ,مثال  فيلا 12">
+                          </div>
+                          <div class="mb-3">
+                            <input type="text" class="form-control" placeholder=" 121 مصدق الدقي ,المهندسين  الجيزه">
+                          </div>
+                          <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="علامة مميزة (اختيارى)">
+                          </div>
+                          <div class="mb-3">
+                            <div class="input-group">
+                              <input type="text" class="form-control" placeholder="  ادخل رقم الهاتف  ,مثال01029063398">
+                              <select class="form-select country-dropdown me-3" style="max-width: 100px;">
+                                <option value="eg" selected>+20</option>
+                                <option value="ae">+971</option>
+                                <option value="jo">+962</option>
+                              </select>
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                      <div class="tab-pane fade" id="pills-work" role="tabpanel" aria-labelledby="pills-work-tab">
+                        <form>
+                          <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="اسم  الفيلا, مثال فيلا شاهين">
+                          </div>
+                          <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="رقم الفيلا ,مثال  فيلا 12">
+                          </div>
+                          <div class="mb-3">
+                            <input type="text" class="form-control" placeholder=" 121 مصدق الدقي ,المهندسين  الجيزه">
+                          </div>
+                          <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="علامة مميزة (اختيارى)">
+                          </div>
+                          <div class="mb-3">
+                            <div class="input-group">
+                              <input type="text" class="form-control" placeholder="  ادخل رقم الهاتف  ,مثال01029063398">
+                              <select class="form-select country-dropdown me-3" style="max-width: 100px;">
+                                <option value="eg" selected>+20</option>
+                                <option value="ae">+971</option>
+                                <option value="jo">+962</option>
+                              </select>
+                            </div>
+                          </div>
+                        </form>
+                      </div>
+                    </div>
+                    <div class="tab-footer justify-content-end d-flex">
+                      <button type="submit" class="btn" onclick="showThirdPhase()">حفظ العنوان</button>
+                    </div>
+                  </div>
+                  <div class="third-phase d-none">
+                    <div>
+                      <h6 class="fw-bold">
+                        موقع التوصيل
+                      </h6>
+                      <div class="d-flex justify-content-between">
+                        <p>
+                          <i class="fas fa-map-marker-alt main-color ms-2"></i>
+                          مصدق الدقى و المهندسين وجيزه
+                        </p>
+                        <button class="btn reversed main-color fw-bold" type="button">
+                          تعديل
+                        </button>
+                      </div>
+    
+                      <p class="text-muted">
+                        121 مصدق , الدور 2 , شقة 12 ,رقم الهاتف: 01029061189 ,علامة مميزة: امام ماركت الصفا
+                      </p>
+    
+                    </div>
+                  </div>
+                  <!-- <div class="fourth-phase">
+                    <h5 class="fw-bold">
+                      تحديد موقع التوصيل
+                    </h5>
+                    <div class="search-group ">
+                      <span class="search-icon">
+                        <i class="fas fa-search"></i>
+                      </span>
+                      <input type="text" class="form-control" placeholder="ابحث عن الموقع" />
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                      <h4 class="my-4 fw-bold">عناويني</h4>
+                      <button class="btn fw-bold" type="button">
+                        <span>+</span> أضف عنوان
+                      </button>
+                    </div>
+                    <ul class="list-unstyled px-0">
+                      <li class="d-flex justify-content-between align-items-start mb-4">
+                        <div>
+                          <h5>
+                            <i class="fas fa-city text-muted fa-xs ms-2"></i>
+                            شقة
+                          </h5>
+                          <small class="text-muted">
+                            250 معادى السريات-قسم المعادى-محافظة القاهرة
+                          </small>
+                        </div>
+                        <div class="dropdown">
+                          <a id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v"></i>
+                          </a>
+                          <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            <li>
+                              <button class="dropdown-item w-100">تعديل </button>
+                            </li>
+                            <li>
+                              <button class="dropdown-item w-100"> حذف</button>
+                            </li>
+                          </ul>
+                        </div>
+                      </li>
+                      <li class="d-flex justify-content-between align-items-start mb-4">
+                        <div>
+                          <h5>
+                            <i class="fas fa-city text-muted fa-xs ms-2"></i>
+                            فيلا
+                          </h5>
+                          <small class="text-muted">
+                            250 معادى السريات-قسم المعادى-محافظة القاهرة
+                          </small>
+                        </div>
+                        <div class="dropdown">
+                          <a id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v"></i>
+                          </a>
+                          <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            <li>
+                              <button class="dropdown-item w-100">تعديل </button>
+                            </li>
+                            <li>
+                              <button class="dropdown-item w-100"> حذف</button>
+                            </li>
+                          </ul>
+                        </div>
+                      </li>
+                      <li class="d-flex justify-content-between align-items-start mb-4">
+                        <div>
+                          <h5>
+                            <i class="fas fa-city text-muted fa-xs ms-2"></i>
+                            شركة
+                          </h5>
+                          <small class="text-muted">
+                            250 معادى السريات-قسم المعادى-محافظة القاهرة
+                          </small>
+                        </div>
+                        <div class="dropdown">
+                          <a id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-ellipsis-v"></i>
+                          </a>
+                          <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            <li>
+                              <button class="dropdown-item w-100">تعديل </button>
+                            </li>
+                            <li>
+                              <button class="dropdown-item w-100"> حذف</button>
+                            </li>
+                          </ul>
+                        </div>
+                      </li>
+                    </ul>
+                    <div class="tab-footer justify-content-between d-flex align-items-center">
+                      <div>
+                        <h6 class="fw-bold">
+                          موقع التوصيل
+                        </h6>
+                        <p>
+                          <i class="fas fa-map-marker-alt main-color ms-2"></i>
+                          مصدق الدقى و المهندسين وجيزه
+                        </p>
+                      </div>
+                      <button class="btn reversed main-color fw-bold" type="button">
+                        تعديل
+                      </button>
+                      <button type="submit" class="btn" onclick="showSecondPhase()">تأكيد العنوان</button>
+                    </div>
+                  </div> -->
+                </div>
+                <div class="tab-pane fade" id="pills-takeaway" role="tabpanel" aria-labelledby="pills-takeaway-tab">
+                 
+                <div class="bg-dark-gray  py-2">
+                  <h5 class="text-dark fw-bold text-center">ما هو المطعم الذى تريد الاستلام منه؟</h5>
+                </div>
+                   <div class="d-flex justify-content-end my-2">
+                      <button class="btn btn-no-modal"> استخدم موقعى </button>
+                    </div> 
+                     <div class="my-2">
+                  <h5 class="text-dark fw-bold"> موقع الاستلام</h5>
+                  <form class="d-flex mb-1 position-relative search-form">
+                    <input class="form-control search-input" type="search" placeholder="ابحث عن الفرع المناسب لك"
+                      aria-label="Search">
+                    <i class="fas fa-search search-icon"></i>
+                  </form>
+                </div>
+       
+                    <div class="location border-bottom mb-1">
+                      <div class="d-flex justify-content-between">
+                        <h6 class="fw-bold mt-2">
+                          <i class="fas fa-map-marker-alt main-color mx-2"></i>فرع المهندسين ممشى اهل مصر
+                        </h6>
+                        <span class="badge text-success mt-2">مفتوح</span>
+                      </div>
+                      <p class="text-muted mx-2">12 ممشى اهل مصر12 بجوار كريو كافيه</p>
+                      <p class="main-color fw-bold">
+                        <i class="fas fa-phone mx-2"></i>0123698745269
+                      </p>
+                    </div>
+                    <div class="location mb-1">
+                      <div class="d-flex justify-content-between">
+                        <h6 class="fw-bold mt-2">
+                          <i class="fas fa-map-marker-alt main-color mx-2"></i>فرع المهندسين ممشى اهل مصر
+                        </h6>
+                        <span class="badge text-muted mt-2">مغلق</span>
+                      </div>
+                      <p class="text-muted mx-2">12 ممشى اهل مصر12 بجوار كريو كافيه</p>
+                      <p class="main-color fw-bold">
+                        <i class="fas fa-phone mx-2"></i>0123698745269
+                      </p>
+                    </div>
+    
+                    <div class="location border-red mb-1">
+                      <div class="d-flex justify-content-between">
+                        <h6 class="fw-bold mt-2">
+                          <i class="fas fa-map-marker-alt main-color mx-2"></i>فرع المهندسين ممشى اهل مصر
+                        </h6>
+                        <span class="badge text-success mt-2">مفتوح</span>
+                      </div>
+                      <p class="text-muted mx-2">12 ممشى اهل مصر12 بجوار كريو كافيه</p>
+                      <p class="main-color fw-bold">
+                        <i class="fas fa-phone mx-2"></i>0123698745269
+                      </p>
+                    </div>
+                    <div class="d-flex justify-content-end my-2">
+                      <button class="btn">  ابدأ طلبك </button>
+                    </div> 
+               
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <!-- end delivery details modal -->
+      <!-- branches  modal -->
+      <div class="branches-modal modal fade" tabindex="-1" id="branchesModal" aria-labelledby="branchesModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <!-- <div class="modal-header border-0">
+                <button type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+              </div> -->
+            <div class="modal-body">
+              <form class="d-flex mb-1 position-relative search-form">
+                <input class="form-control search-input" type="search" placeholder="ابحث عن الفرع المناسب لك"
+                  aria-label="Search">
+                <i class="fas fa-search search-icon"></i>
+              </form>
+    
+              <div class="location border-bottom mb-1">
+                <div class="d-flex justify-content-between">
+                  <h6 class="fw-bold mt-2">
+                    <i class="fas fa-map-marker-alt main-color mx-2"></i>فرع المهندسين ممشى اهل مصر
+                  </h6>
+                  <span class="badge text-success mt-2">مفتوح</span>
+                </div>
+                <p class="text-muted mx-2">12 ممشى اهل مصر12 بجوار كريو كافيه</p>
+                <p class="main-color fw-bold">
+                  <i class="fas fa-phone mx-2"></i>0123698745269
+                </p>
+              </div>
+              <div class="location mb-1">
+                <div class="d-flex justify-content-between">
+                  <h6 class="fw-bold mt-2">
+                    <i class="fas fa-map-marker-alt main-color mx-2"></i>فرع المهندسين ممشى اهل مصر
+                  </h6>
+                  <span class="badge text-muted mt-2">مغلق</span>
+                </div>
+                <p class="text-muted mx-2">12 ممشى اهل مصر12 بجوار كريو كافيه</p>
+                <p class="main-color fw-bold">
+                  <i class="fas fa-phone mx-2"></i>0123698745269
+                </p>
+              </div>
+              <div class="d-flex justify-content-end">
+                <button class="btn btn-no-modal"> استخدم موقعى </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    
+      <!-- end branches details modal -->
+      <!-- Profile modal -->
+      <div class="modal fade" tabindex="-1" id="profileModal" aria-labelledby="profileModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered ">
+          <div class="modal-content">
+            <div class="modal-header border-0">
+              <button type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+              <div class="d-flex justify-content-between align-items-start border-bottom pb-2">
+                <div>
+                  <h5 class="fw-bold mb-3">
+                    <i class="fas fa-user-circle main-color"></i>
+                    <span>سارة عامر </span>
+                  </h5>
+                  <small class="text-muted" dir="ltr">
+                    <img src="SiteAssets/images/egypt.png" alt="" />
+                    <span>+20-1029061193</span>
+                  </small>
+                  <small class="text-muted d-block">
+                    saamer2019@gmail.com
+                  </small>
+                </div>
+                <a class="btn reversed main-color" href="profile.html">تعديل الملف الشخصى </a>
+              </div>
+              <ul class="profile-list list-unstyled px-0 pt-4">
+                <li>
+                  <a href="">
+                    <h6 class="fw-bold">
+                      <i class="fas fa-clipboard-list main-color ms-2"></i>
+                      الطلبات السابقة
+                    </h6>
+                  </a>
+                </li>
+                <li>
+                  <a href="follow-request.html">
+                    <h6 class="fw-bold">
+                      <i class="fas fa-map-marked-alt main-color ms-2"></i>
+                      تتبع الطلب
+                    </h6>
+                  </a>
+                </li>
+                <li>
+                  <a href="addresses.html">
+                    <h6 class="fw-bold">
+                      <i class="fas fa-map-marker-alt main-color ms-2"></i>
+                      عناوينى
+                    </h6>
+                  </a>
+                </li>
+                <li>
+                  <a href="comment-rate.html">
+                    <h6 class="fw-bold">
+                      <i class="fas fa-star main-color ms-2"></i>
+                      قيم تجربتك
+                    </h6>
+                  </a>
+                </li>
+                <li>
+                  <a href="favourites.html">
+                    <h6 class="fw-bold">
+                      <i class="fas fa-heart main-color ms-2"></i>
+                      مفضلاتى
+                    </h6>
+                  </a>
+                </li>
+                <li>
+                  <a href="">
+                    <h6 class="fw-bold">
+                      <i class="fas fa-bell main-color ms-2"></i>
+                      اشعارات التسويق
+                    </h6>
+                  </a>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="flexSwitchCheckDefault">
+                  </div>
+                </li>
+                <li>
+                  <a href="questions.html">
+                    <h6 class="fw-bold">
+                      <i class="fas fa-file-alt main-color ms-2"></i>
+                      الاسئلة المتكررة
+                    </h6>
+                  </a>
+                </li>
+                <li>
+                  <a href="policy.html">
+                    <h6 class="fw-bold">
+                      <i class="fas fa-file-alt main-color ms-2"></i>
+                      الشروط والاحكام
+                    </h6>
+                  </a>
+                </li>
+                <li>
+                  <a href="privacy.html">
+                    <h6 class="fw-bold">
+                      <i class="fas fa-clipboard-list main-color ms-2"></i>
+                      سياسة الخصوصيه
+                    </h6>
+                  </a>
+                </li>
+                <li>
+                  <a href="">
+                    <h6 class="fw-bold">
+                      <i class="fas fa-headset main-color ms-2"></i>
+                      الدعم
+                    </h6>
+                  </a>
+                  <img src="SiteAssets/images/logos_whatsapp-icon.png" />
+                </li>
+                <li>
+                  <a href="">
+                    <h6 class="fw-bold">
+                      <i class="fas fa-sign-out-alt main-color ms-2"></i>
+                      تسجيل خروج
+                    </h6>
+                  </a>
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    <script src="SiteAssets/js/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.11.6/dist/umd/popper.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.min.js"></script>
+    <script src="SiteAssets/fontawesome-free-5.15.4-web/js/all.min.js"></script>
+    <script src="SiteAssets/js/style.js"></script>
+    <script src="SiteAssets/lightbox/js/lightbox.min.js"></script>
+    <script src="SiteAssets/OwlCarousel2-2.3.4/dist/owl.carousel.min.js"></script>
+    <script src="SiteAssets/aos-master/dist/aos.js"></script>
+    <script>
+        AOS.init();
+    </script>
+    
+  
+    
+    
+    
+    </body>
+    
+    </html>
+
+
+
+
+
+
+
+
+
+
+
+   

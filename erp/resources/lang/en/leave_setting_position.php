@@ -1,0 +1,70 @@
+<?php
+
+return [
+    'LeaveSettingPosition' => 'Leave Setting Position',
+    'LeaveType' => 'Leave Type',
+    'ShowLeaveSettingPosition' => 'Show Leave Setting Position',
+    'EditLeaveSettingPosition' => 'Edit Leave Setting Position',
+    'AddLeaveSettingPosition' => 'Add Leave Setting Position',
+    'ShowPartition' => 'Show Partition',
+    'EditPartition' => 'Edit Partition',
+    'AddPartition' => 'Add Partition',
+    'ShowTable' => 'Show Table',
+    'EditTable' => 'Edit Table',
+    'AddTable' => 'Add Table',
+    'ID' => 'ID',
+    'ArabicName' => 'Arabic Name',
+    'EnglishName' => 'English Name',
+    'Actions' => 'Actions',
+    'TableNumber' => 'Table Number',
+    'Type' => 'Type',
+    'Status' => 'Status',
+    'Smoking' => 'Smoking',
+    'Leaves' => 'Leaves',
+    'Indoor' => 'Indoor',
+    'Outdoor' => 'Outdoor',
+    'Available' => 'Available',
+    'Occupied' => 'Occupied',
+    'Reserved' => 'Reserved',
+    'Smokin' => 'Smokin',
+    'NoSmokin' => 'NoSmokin',
+    'Capacity' => 'Capacity',
+    'Both' => 'Both',
+    'ChooseBranch' => 'Choose Branch',
+    'ChoosePartition' => 'Choose Partition',
+    'DishesCategory' => 'Dishes Category',
+    'LeaveTypeName' => 'Leave Type',
+    'CountryName' => 'Country',
+    'Minmum' => 'Minmum',
+    'Maxmum' => 'Maxmum',
+    'ChooseLeaveType' => 'Choose Leave Type',
+
+    'Country' => ' Country',
+    'ChooseCountry' => 'Choose Country',
+    'leave' => 'Leaves',
+    'choose_leave' => 'Choose Leave',
+    'position' => 'Position',
+    'choose_position' => 'Choose Position',
+    'day_count' => 'Day count',
+
+    'leave_pattern' => 'Leave pattern',
+    'consecutive' => 'Consecutive',
+    'split' => 'Split',
+    'split_max' => 'Split max',
+    'hr_approve' => 'Hr approve',
+
+    'higher_position_approve' => 'Approval of the highest job title',
+    'higher_position_setting' => 'Top job title settings for approval',
+    'one' => 'One',
+    'all' => 'All',
+    'yes' => 'Yes',
+    'no' => 'No',
+    'roles_assign' => 'Assign leave permissions',
+    'roles_view' => 'View leave permissions',
+
+
+
+    
+
+
+];

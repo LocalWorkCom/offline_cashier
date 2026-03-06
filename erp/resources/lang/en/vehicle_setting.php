@@ -1,0 +1,26 @@
+<?php
+
+return [
+    'VehicleSettings' => 'Vehicle Settings',
+    'vehicle_type' => 'vehicle type',
+    'vehicle_max' => 'vehicle max',
+    'vehicle_min' => 'vehicle min',
+    'vehicle_min_greater_than_max' => 'vehicle min_greater than_max',
+    'car' => 'car',
+    'motorcycle' => 'motorcycle',
+    'ID' => 'ID',
+    'CreatedAt' => 'Created At',
+    'Actions' => 'Actions',
+    'EditVehicleSetting' => 'Edit Vehicle Setting',
+'vehicles_add' => 'Add Vehicle',
+    'vehicles_edit' => 'Edit Vehicle',
+    'vehicle_number' => 'Vehicle Number',
+    'type' => 'Vehicle Type',
+    'license' => 'License',
+    'employee' => 'Employee',
+    'choose_employee' => 'Choose Employee',
+    'warning_title' => 'Are you sure?',
+    'delete_confirmation' => 'This action cannot be undone.',
+    'delete_success' => 'Vehicle deleted successfully!',
+    'delete_error' => 'Error deleting vehicle.',
+];

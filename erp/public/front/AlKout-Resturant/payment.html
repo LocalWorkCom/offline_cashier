@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="description" content="" />
+    <meta name="keywords" content="" />
+    <meta name="author" content="" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta property="og:url" content="" />
+    <meta property="og:type" content="article" />
+    <meta property="og:title" content="" />
+    <meta property="og:description" content="" />
+    <meta property="og:image" content="" />
+    <title>مطعم الكوت</title>
+
+    <link rel="shortcut icon" href="SiteAssets/images/logo.png" sizes="25x25" />
+
+    <!-- Stylesheets -->
+    <link rel="stylesheet" href="SiteAssets/bootstrap-5.1.3/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="SiteAssets/fontawesome-free-5.15.4-web/css/all.min.css">
+    <link rel="stylesheet" href="SiteAssets/css/animate.min.css">
+    <link rel="stylesheet" href="SiteAssets/aos-master/dist/aos.css">
+
+    <!-- Owl Carousel -->
+    <link rel="stylesheet" href="SiteAssets/OwlCarousel2-2.3.4/dist/assets/owl.carousel.min.css" />
+    <link rel="stylesheet" href="SiteAssets/OwlCarousel2-2.3.4/dist/assets/owl.theme.default.min.css" />
+
+    <!-- include Gallery (lightbox) plugin -->
+    <link rel="stylesheet" href="SiteAssets/lightbox/css/lightbox.min.css" />
+    <!-- Main Style -->
+    <link rel="stylesheet" href="SiteAssets/css/style.css" type="text/css" />
+    <!-- fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+</head>
+
+<body>
+
+    <header class="fixed-top">
+        <nav class="navbar navbar-expand-lg navbar-light ">
+            <div class="container second-header">
+                <a class="navbar-service" href="index.html">
+                    <img src="SiteAssets/images/logo-with-white-bg.png">
+                </a>
+                <button class="navbar-toggler" type="button" onclick="openNav()">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav mx-auto mb-2 mb-lg-0 align-items-center">
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                <button class="btn white fw-bold d-flex justify-content-between">
+                                    <span><i class="fas fa-map-marker-alt ms-2"></i>
+                                        التوصيل الي
+                                    </span>
+                                    <span class="select-sm">
+                                        اختر
+                                    </span>
+                                </button>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="index.html">الرئيسية</a>
+                        </li>
+                        <li class="nav-item active" aria-current="page">
+                            <a class="nav-link" href="shop.html">قائمة الطعام</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="./contact-us.html">تواصل معنا</a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link cart-icon" href="#">
+                                <i class="fas fa-shopping-cart"></i>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#">
+                                En
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link btn align-items-center" href="#"><i class="fas fa-user-circle"></i>
+                                <span>تسجيل الدخول</span>
+                            </a>
+                        </li>
+
+
+                    </ul>
+                </div>
+
+
+            </div>
+        </nav>
+        <div class="mobNav d-lg-none d-block ">
+            <div id="sidenav" class="sidenav">
+                <a href="javascript:void(0)" class="closebtn" onclick="closeNav()">&times;</a>
+                <div class="overlay-content">
+                    <a href="index.html"> الرئيسية</a>
+                    <a href="#">قائمة الطعام</a>
+                    <a href="#">تواصل معنا</a>
+                    <a href="#"> <i class="fas fa-shopping-cart"></i>
+                    </a>
+                    <a href="#"> En</a>
+                    <a href="#"> تسجيل الدخول </a>
+                </div>
+            </div>
+        </div>
+
+    </header>
+    <div class="mobile-nav d-lg-none d-flex fixed-bottom w-100">
+        <div class="row m-0 w-100">
+          <div class="col-2 nav-item active" aria-current="page">
+            <a class="nav-link" href="index.html">
+              <i class="fas fa-home"></i>
+              <span>الرئيسية</span>
+            </a>
+          </div>
+          <div class="col-3 nav-item">
+            <a class="nav-link" href="shop.html">
+              <i class="fas fa-clipboard-list"></i>
+              <span> قائمة الطعام</span>
+    
+            </a>
+          </div>
+          <div class="col-2 nav-item">
+            <a class="nav-link" href="cart.html">
+              <i class="fas fa-shopping-cart"></i>
+              <span> السلة</span>
+    
+            </a>
+          </div>
+          <!-- <div class="col-2 nav-item">
+            <a class="nav-link" data-bs-toggle="modal" data-bs-target="#branchesModal">
+              <i class="fas fa-map-marked-alt"></i>
+              <span> الفروع</span>
+            </a>
+          </div> -->
+          <div class="col-3 nav-item">
+            <a class="nav-link" data-bs-toggle="modal" data-bs-target="#loginModal">
+              <i class="fas fa-user-circle"></i>
+              <span>تسجيل الدخول</span>
+            </a>
+          </div>
+          <div class="col-2 nav-item">
+            <a class="nav-link" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasBottom"
+              aria-controls="offcanvasBottom">
+              <i class="fas fa-layer-group"></i>
+              <span>
+                المزيد
+              </span>
+            </a>
+          </div>
+        </div>
+      </div>
+    
+    <main>
+        <section class="inner-header pt-5 mt-5">
+            <div class="container pt-sm-5 pt-4">
+                <nav style="--bs-breadcrumb-divider: '>';" aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="index.html">الرئيسية</a></li>
+                        <li class="breadcrumb-item"><a href="cart.html"> عربة التسوق</a></li>
+                        <li class="breadcrumb-item active" aria-current="page"> الدفع </li>
+                    </ol>
+                </nav>
+            </div>
+        </section>
+        <section class="payment-page">
+            <div class="container py-sm-4 py-2">
+                <div class="row mx-0">
+                    <div class="col-md-8">
+                        <div class="card">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title fw-bold"> تفاصيل الدفع</h5>
+                                <button class="btn reversed main-color fw-bold" type="button">
+                                    تعديل
+                                </button>
+
+                            </div>
+                            <div class="card-body ">
+                                 <h5 class=" fw-bold ">
+                                     <i class="fas fa-user-circle main-color "></i>سارة عامر
+                                   </h5>
+                                
+                                <p class="text-muted"> رقم الهاتف : <span>0112325541</span></p>
+                                 </div>
+                        </div>
+                        <div class="card my-4">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <h5 class="card-title fw-bold">  عنوان توصيل الطلب</h5>
+                                <button class="btn reversed main-color fw-bold" type="button">
+                                    تعديل
+                                </button>
+                            </div>
+                            <div class="card-body ">
+                                 <h5 class=" fw-bold ">
+                                    <i class="fas fa-map-marker-alt main-color "></i> مصدق الدقى و المهندسين وجيزه
+                                   </h5>
+                                <p class="text-muted">  121 مصدق , الدور 2 , شقة 12 , </p>
+
+                                <p class="text-muted">  علامة مميزة : <span>امام ماركت الصفا</span></p>
+                                 </div>
+                        </div>
+                        <div class="card my-4">
+                            <div class="card-body p-4">
+                                <div class="notes">
+                                    <h4>اختر طريقة الدفع
+                                      </h4>
+                                           <div class="form-check payment-way">
+                                            <label class="form-check-label fw-bold" for="flexRadioDefault2">
+                                            <img src="./SiteAssets/images/money.png" alt="money" height="30">     التوصيل عند الاستلام
+                                            </label>                                         
+                                           <input class="form-check-input" type="radio" name="flexRadioDefault" id="flexRadioDefault2" checked>
+
+                                         
+                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                    <div class="col-md-4">
+                        <div class="card ">
+                            <div class="card-header">
+                                <h5 class="card-title fw-bold"> ملخص الطلب </h5>
+                            </div>
+                            <div class="card-body p-4">
+                                <ul class="list-unstyled p-0">
+                                    <li class="order-list">
+                                        <p>
+                                            مجموع طلبي
+                                        </p>
+                                        <p class="fw-bold">
+                                            550 ج.م
+                                        </p>
+                                    </li>
+                                    <li class="order-list">
+                                        <p class="main-color">
+                                            كوبون خصم </p>
+                                        <p class="fw-bold main-color">
+                                            -50 ج.م
+                                        </p>
+                                    </li>
+                                    <li class="order-list">
+                                        <p>
+                                            رسوم التوصيل
+                                        </p>
+                                        <p class="fw-bold">
+                                            40 ج.م
+                                        </p>
+                                    </li>
+                                    <li class="order-list">
+                                        <p>
+                                            رسوم الخدمة
+                                        </p>
+                                        <p class="fw-bold">
+                                            40 ج.م
+                                        </p>
+                                    </li>
+                                </ul>
+
+                            </div>
+                            <div class="card-footer p-4">
+                                <div class="total">
+                                    <p class="fw-bold">
+                                        المجموع الكلى
+                                    </p>
+                                    <p class="fw-bold">
+                                        580 ج.م
+                                    </p>
+                                </div>
+                                <div class="message bg-warning p-2 rounded-3">
+                                    <small>
+                                        يشتمل على ضريبة القيمة المضافة 14% بمعنى آخر 29.23EGP
+                                    </small>
+                                </div>
+
+                            </div>
+                        </div>
+                        <button class="btn w-100 mt-5">
+                           تنفيذ الطلب 
+                        </button>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+        <section class="before-footer"></section>
+
+    </main>
+    <footer class="p-sm-0 m-sm-0">
+      <div class="footer-curve"></div>
+      <div class="container">
+        <figure class="footer-logo ">
+          <img src="SiteAssets/images/logo-with-white-bg.png" />
+        </figure>
+      </div>
+      <div class="footer overflow-hidden">
+        <div class="container d-inline p-4">
+          <div class="row ">
+  
+            <!-- First Column - تواصل معنا -->
+            <div class="col  ms-2" data-aos="zoom-in">
+              <h4 class="footer-title  px-2 px-sm-0">تواصل معنا</h4>
+              <ul class="  list-unstyled px-0 pt-2 d-flex flex-row flex-sm-column align-items-start mx-2 ">
+                <li class="d-flex align-items-center ms-2 ms-sm-1">
+                  <ul class=" list-unstyled social-media p-0 d-flex flex-row flex-sm-row align-items-center">
+                    <li class="col-sm-4">
+                      <a href="#" class="ms-2 ms-sm-1">
+                        <i class="fab fa-facebook fs-4 fs-sm-2"></i>
+                      </a>
+                    </li>
+                    
+                    <li class="col-sm-4 ">
+                      <a href="#" class="ms-3">
+                        <i class="fab fa-snapchat fs-4 fs-sm-2"></i>
+                      </a>
+                    </li>
+                    <li class="col-sm-4 ">
+                      <a href="#" class="ms-3">
+                        <i class="fab fa-instagram fs-4 fs-sm-2"></i>
+                      </a>
+                    </li>
+                  </ul>
+                </li>
+                <li class="  d-flex align-items-center ms-2 ms-sm-1">
+                  <span class="icon">
+                    <i class="fas fa-phone "></i>
+                  </span>
+                  <a href="tel:010265899887" class="ms-2">
+                    010265899887
+                  </a>
+                </li>
+                <li class="d-flex  align-items-center ms-2 ms-sm-1">
+                  <span class="icon ">
+                    <i class="fas fa-phone"></i>
+                  </span>
+                  <a href="tel:010265899887" class="ms-5">
+                    010265899887
+                  </a>
+                </li>
+              </ul>
+              
+              
+            </div>
+  
+            <!-- Second Column - روابط سريعة -->
+            <div class="col  d-none d-sm-block" data-aos="zoom-in">
+              <h4 class="footer-title">روابط سريعة</h4>
+              <ul class="list-unstyled px-0 pt-4">
+                <li><a href="shop.html">القائمة الرئيسية</a></li>
+                <li><a data-bs-toggle="modal" data-bs-target="#productModal">العروض</a></li>
+                <li><a data-bs-toggle="modal" data-bs-target="#branchesModal">فروعنا</a></li>
+                <li><a href="policy.html">الشروط والاحكام</a></li>
+              </ul>
+            </div>
+  
+            <!-- Third Column - المساعدة -->
+            <div class="col  d-none d-sm-block" data-aos="zoom-in">
+              <h4 class="footer-title">المساعدة</h4>
+              <ul class="list-unstyled px-0 pt-4">
+                <li><a href="contact-us.html">خدمة العملاء</a></li>
+                <li><a href="policy.html">سياسة الاسترجاع</a></li>
+                <li><a href="privacy.html">سياسة الخصوصية</a></li>
+              </ul>
+            </div>
+  
+            <!-- Fourth Column - مواعيد عمل المطعم -->
+            <div class="col   d-none d-sm-block" data-aos="zoom-in">
+              <h4 class="footer-title mb-4">مواعيد عمل المطعم</h4>
+              <p>الاحد الى الخميس من الساعه 10 صباحا الى 10 مساء</p>
+              <p>الجمعة الى السبت من الساعة 1 مساء الى 12 صباحا</p>
+            </div>
+  
+          </div>
+        </div>
+  
+      </div>
+  
+      <div class="copywrite text-center">
+        <p class="m-0">جميع الحقوق محفوظة لصالح <a href="#">الكوت</a> 2024</p>
+      </div>
+      </div>
+    </footer>
+  
+    <script src="SiteAssets/js/jquery-3.6.0.min.js"></script>
+    <script src="SiteAssets/bootstrap-5.1.3/dist/js/bootstrap.min.js"></script>
+    <script src="SiteAssets/fontawesome-free-5.15.4-web/js/all.min.js"></script>
+
+    <!-- Main js -->
+    <script src="SiteAssets/js/style.js"></script>
+
+    <!-- include Gallery (lightbox) plugin js-->
+    <script src="SiteAssets/lightbox/js/lightbox.min.js"></script>
+
+    <!-- include Owl Carousel plugin js-->
+    <script src="SiteAssets/OwlCarousel2-2.3.4/dist/owl.carousel.min.js"></script>
+    <script src="SiteAssets/aos-master/dist/aos.js"></script>
+    <script>
+        AOS.init();
+    </script>
+
+
+</body>
+
+</html>
