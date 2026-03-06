@@ -64,7 +64,7 @@ fetchAndSaveOrders(): Observable<any> {
 }
 //end dalia
 
-  getOrdersListV2(type: string = 'All', page: number = 1, orderNumber: string = '', perPage: number = 30): Observable<any> {
+  getOrdersListV2(type: string = 'All', page: number = 1, orderNumber: string = '', perPage: number = 30, status: string = 'all'): Observable<any> {
     const token = localStorage.getItem('authToken');
 
     if (!token) {
@@ -74,14 +74,17 @@ fetchAndSaveOrders(): Observable<any> {
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
     let url = `${this.apiUrl}/orders/listv2?page=${page}&per_page=${perPage}`;
     
-    if (type && type !== 'All') {
-      // Use lower case for the type parameter as requested
+    if (type && type !== 'All' && type !== 'all') {
       const typeParam = type.toLowerCase();
       url += `&type=${typeParam}`;
     }
 
     if (orderNumber) {
       url += `&order_number=${orderNumber}`;
+    }
+
+    if (status && status !== 'all') {
+      url += `&status=${status}`;
     }
 
     return this.http.get(url, { headers });
@@ -94,5 +97,18 @@ fetchAndSaveOrders(): Observable<any> {
     }
     const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
     return this.http.get(`${this.apiUrl}/orders/types-counts`, { headers });
+  }
+
+  getTypeStatusCounts(type: string = 'all'): Observable<any> {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+    const headers = new HttpHeaders().set('Authorization', `Bearer ${token}`);
+    let url = `${this.apiUrl}/orders/types-status-counts`;
+    if (type && type !== 'all') {
+      url += `?type=${type}`;
+    }
+    return this.http.get(url, { headers });
   }
 }

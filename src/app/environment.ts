@@ -1,26 +1,28 @@
 //  export const baseUrl ='https://erp-cashier.testdomain100.online/'
 //  export const baseUrlForWebSocket ='https://erpfortest.testdomain100.online/'
 
- export const baseUrl ='http://127.0.0.1:8000/'
-  export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
+//  export const baseUrl ='https://erp-cashier.testdomain100.online/'
+export const baseUrl ='http://192.168.11.228:8000/'
+//  export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
+ export const baseUrl2 ='http://192.168.11.228:8000/api'
 
 //test
-// export const environment = {
-//   production: false,
-//   pusher: {
-//     key: 'cfd52a74b92f9e278f2d',
-//     cluster: 'mt1',
-//   }
-// };
-
-//localhost
 export const environment = {
   production: false,
   pusher: {
-    key: '45700f4c3cc882528180',
-    cluster: 'eu',
+    key: 'cfd52a74b92f9e278f2d',
+    cluster: 'mt1',
   }
 };
+
+// //localhost
+// export const environment = {
+//   production: false,
+//   pusher: {
+//     key: '45700f4c3cc882528180',
+//     cluster: 'eu',
+//   }
+// };
 
 export const environment2 = {
   production: false,

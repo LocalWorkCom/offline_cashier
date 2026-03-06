@@ -215,7 +215,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   tipModalTimeoutDuration: number = 30; // 30 seconds timeout
   tipModalWarningTime: number = 10; // Show warning at 10 seconds remaining
   tipModalWarningShown: boolean = false;
-  
+
   drivers: any[] = [];
   selectedDriverId: number | null = null;
 
@@ -1355,7 +1355,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       // this.dbService.removeFromCart(index);
       localStorage.setItem('cart', JSON.stringify(this.cartItems));
       // If the cart is empty, clear coupon, note, and messages
-      if (this.cartItems.length === 0) {
+      if (this.cartItems.length === 0 && localStorage.getItem('couponValue') != '0') {
         this.appliedCoupon = null;
         this.couponCode = '';
         this.discountAmount = 0;
@@ -3131,25 +3131,19 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           let finalCashAmount: number;
           let finalCreditAmount: number;
 
-          // ✅ استخدام finalTipSummary إذا كان موجوداً (يحتوي على الإكرامية)
-          if (this.finalTipSummary && this.finalTipSummary.cashAmountMixed !== undefined && this.finalTipSummary.creditAmountMixed !== undefined) {
-            // ✅ استخدام القيم من finalTipSummary مباشرة (تم حسابها بشكل صحيح مع الإكرامية)
-            finalCashAmount = this.finalTipSummary.cashAmountMixed || 0;
-            finalCreditAmount = this.finalTipSummary.creditAmountMixed || 0;
-          } else {
-            // في حالة عدم وجود finalTipSummary، استخدم القيم المدخلة
-            finalCashAmount = Number(this.cashAmountMixed) || 0;
-            // ✅ في حالة عدم وجود إكرامية: credit_amount = bill_amount - cash_amount
-            finalCreditAmount = Math.max(0, billAmountNum - finalCashAmount);
-          }
+          // ✅ استخدام المبالغ المدخلة فعلياً من المستخدم (كاش + فيزا) لضمان تطابق التحقق مع ما يراه المستخدم
+          const userCashEntered = Number(this.cashAmountMixed) || 0;
+          const userCreditEntered = Number(this.creditAmountMixed) || 0;
+          finalCashAmount = userCashEntered;
+          finalCreditAmount = userCreditEntered;
 
           const totalPaid = Number((finalCashAmount + finalCreditAmount).toFixed(2));
-          
+
           // ✅ حساب المبلغ المطلوب (مع الإكرامية إذا كانت موجودة)
           const tipAmount = this.finalTipSummary?.tipAmount || 0;
           const requiredAmount = billAmountNum + tipAmount;
 
-          if (totalPaid < billAmountNum) {
+          if (totalPaid < requiredAmount) {
             this.amountError = true;
             this.falseMessage = `المبلغ المدفوع غير كافي. المطلوب: ${requiredAmount.toFixed(2)} ${this.currencySymbol}`;
             this.isLoading = false;
@@ -3536,7 +3530,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       // get new item IDs from response for selective printing
       const addedItems = (response as any).data?.dish_data?.added_items || [];
       const items_id = addedItems.map((item: any) => item.order_detail_id).filter((id: any) => !!id);
-      
+
       const body = items_id.length > 0 ? { items_id } : {};
 
       this.clearCart();
@@ -6114,7 +6108,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         // إذا كانت الإكرامية أكبر من الكاش المدخل، نضبط القيم
         if (cashFinal < 0) {
           cashFinal = 0;
-          // في هذه الحالة، إذا كانت الإكرامية أكبر من الكاش، 
+          // في هذه الحالة، إذا كانت الإكرامية أكبر من الكاش،
           // يمكن توزيعها على الفيزا (لكن هذا لا يجب أن يحدث عادة)
           // creditFinal = totalWithTip;
         }

@@ -12,12 +12,16 @@ import { CartItemsModalComponent } from '../cart-items-modal/cart-items-modal.co
 import { Router } from '@angular/router';
 import { OrderListDetailsService } from '../services/order-list-details.service';
 import { baseUrl } from '../environment';
+import { finalize } from 'rxjs/operators';
+import { IndexeddbService } from '../services/indexeddb.service';
+import { EditOrderModalComponent } from '../edit-order-modal/edit-order-modal.component';
+import { TablesService } from '../services/tables.service';
 
 declare var bootstrap: any;
 
 @Component({
   selector: 'app-cart',
-  imports: [FormsModule, CommonModule],
+  imports: [FormsModule, CommonModule, EditOrderModalComponent],
   standalone: true,
   templateUrl: './cart.component.html',
   styleUrl: './cart.component.css',
@@ -56,6 +60,22 @@ export class CartComponent {
   isLoadingDrivers: boolean = false;
   isSavingDriver: boolean = false;
   changeDriverModal: any;
+
+  /** Loading state for cancel-item request (set to order_detail_id while loading). */
+  removeItemLoading: number | null = null;
+  /** Delete item confirmation modal */
+  itemToDelete: any = null;
+  deleteItemErrMsg: string = '';
+
+  /** Change Order Type modal properties */
+  currentOrderForTypeChange: any = null;
+  selectedNewOrderType: string = '';
+  selectedTableIdForTypeChange: string = '';
+  availableTables: any[] = [];
+  isChangeTypeSubmitting: boolean = false;
+  errorMessage: string = '';
+  status_order: any;
+
   constructor(
     private productsService: ProductsService,
     private http: HttpClient,
@@ -64,6 +84,8 @@ export class CartComponent {
     private router: Router,
     private route: ActivatedRoute,
     private orderListById: OrderListDetailsService,
+    private dbService: IndexeddbService,
+    private tablesService: TablesService,
     private cdr: ChangeDetectorRef
   ) {
     const navigation = this.router.getCurrentNavigation();
@@ -446,5 +468,341 @@ export class CartComponent {
         this.isSavingDriver = false;
       }
     });
+  }
+
+  // === Item Action Methods ===
+
+  /** Whether this item is cancelled (display in yellow, no edit/delete). */
+  isItemCancelled(item: any): boolean {
+    const status = (item?.dish_status ?? item?.status ?? '').toString().toLowerCase();
+    return status === 'cancel' || status === 'cancelled';
+  }
+
+  /** Whether to show Cancel/Modify item buttons for this line. */
+  canShowItemActions(item: any): boolean {
+    if (!this.orderDetails || this.isOrderPaid()) return false;
+    const d = this.orderDetails;
+    if (d.status === 'cancelled' || d.status === 'cancel') return false;
+    const status = item?.dish_status;
+    return status === 'pending' || status === 'inprogress';
+  }
+
+  /** Cancel a single item (partial cancel). */
+  cancelItem(item: any, onDone?: () => void): void {
+    const detailId = item?.id ?? item?.order_detail_id;
+    if (detailId == null || !this.cartId) return;
+
+    this.removeItemLoading = detailId;
+    this.deleteItemErrMsg = '';
+    const url = `${baseUrl}api/orders/cashier/request-cancel`;
+    const token = localStorage.getItem('authToken');
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+    });
+    const quantity = Number(item?.quantity) || 1;
+    const body = {
+      order_id: this.cartId,
+      items: [{ item_id: detailId, quantity }],
+      type: 'partial',
+      reason: 'cashier reason',
+      flag: 'cancel',
+    };
+
+    if (this.dbService) {
+      this.dbService.saveOrderToPrintkitchen(this.cartId, 'cancel').then(() => {}).catch(() => {});
+    }
+
+    this.http.post(url, body, { headers }).pipe(
+      finalize(() => {
+        this.removeItemLoading = null;
+        onDone?.();
+      })
+    ).subscribe({
+      next: (res: any) => {
+        this.message = res?.message || 'تم حذف الصنف بنجاح';
+        setTimeout(() => { this.message = ''; }, 2000);
+        this.fetchOrderDetails();
+      },
+      error: (err) => {
+        this.error = err?.error?.message || 'فشل حذف الصنف';
+        this.deleteItemErrMsg = err?.error?.message || 'فشل حذف الصنف';
+        setTimeout(() => { this.error = ''; }, 3000);
+        this.fetchOrderDetails();
+      },
+    });
+  }
+
+  /** Open delete-item confirmation modal. */
+  openDeleteItemModal(item: any): void {
+    this.itemToDelete = item;
+    this.deleteItemErrMsg = '';
+    const el = document.getElementById('deleteItemConfirmModalDetails');
+    if (el) {
+      const modalInstance = (bootstrap as any).Modal.getOrCreateInstance(el);
+      modalInstance.show();
+    }
+  }
+
+  /** Hide delete-item modal and clear selection. */
+  hideDeleteItemModal(): void {
+    const el = document.getElementById('deleteItemConfirmModalDetails');
+    if (el) {
+      const modalInstance = (bootstrap as any).Modal.getInstance(el);
+      if (modalInstance) modalInstance.hide();
+    }
+    this.itemToDelete = null;
+    this.deleteItemErrMsg = '';
+  }
+
+  /** Confirm delete from modal. */
+  confirmDeleteItem(): void {
+    if (!this.itemToDelete) return;
+    this.itemToDelete.dish_status = 'cancel';
+    this.cancelItem(this.itemToDelete, () => this.hideDeleteItemModal());
+  }
+
+  /** Open edit-item modal. */
+  openEditModalFromDetails(item: any): void {
+    const detailId = item?.order_detail_id ?? item?.id;
+    if (detailId == null || !this.cartId) return;
+
+    const hasExtraData = item.size || (item.addons && item.addons.length > 0);
+    const modalSize = hasExtraData ? 'lg' : 'md';
+
+    const editModal = this.modalService.open(EditOrderModalComponent, {
+      size: modalSize,
+      centered: true,
+    });
+    editModal.componentInstance.itemId = detailId;
+
+    if (this.dbService) {
+      this.dbService.saveOrderToPrintkitchen(this.cartId, 'edit').then(() => {}).catch(() => {});
+    }
+
+    editModal.result.then(
+      (result) => {
+        if (result) {
+          this.message = 'تم تحديث الطلب بنجاح';
+          setTimeout(() => { this.message = ''; }, 2000);
+          this.fetchOrderDetails();
+        }
+      },
+      () => {}
+    );
+  }
+
+  // === Order Action Methods (from OrderDetails) ===
+
+  isOrderPaid(): boolean {
+    const d = this.orderDetails;
+    if (!d) return false;
+    const paymentStatus = d.payment_status ?? d.transactions?.[0]?.payment_status;
+    return paymentStatus === 'paid';
+  }
+
+  /** Whether to show the order actions card (unpaid, pending, not talabat). */
+  canShowOrderActions(): boolean {
+    const d = this.orderDetails;
+    if (!d || this.isOrderPaid()) return false;
+    console.log('CartComponent Order Status:', d.status, 'Payment Status:', d.payment_status, 'Type:', d.order_type);
+    
+    if (d.status === 'cancelled' || d.status === 'cancel') return false;
+    if (d.order_type === 'talabat') return false;
+    
+    return true;
+  }
+
+  isDineIn(): boolean {
+    return this.orderDetails?.order_type === 'dine-in';
+  }
+
+  cancelOrder(): void {
+    if (!this.cartId) return;
+
+    const cancelUrl = `${baseUrl}api/orders/cashier/request-cancel`;
+    const token = localStorage.getItem('authToken');
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+    });
+    const body = {
+      order_id: this.cartId,
+      type: "full",
+      items: this.cartItems,
+      reason: "fff",
+    };
+
+    this.http.post(cancelUrl, body, { headers }).subscribe({
+      next: (response: any) => {
+        console.log('Order cancelled successfully:', response);
+        this.message = response.message;
+        this.status_order = response.status;
+        setTimeout(() => {
+          this.message = '';
+        }, 2000);
+        this.fetchOrderDetails();
+      },
+      error: (error) => {
+        console.error('Failed to cancel order:', error);
+      },
+    });
+  }
+
+  openChangeOrderTypeModalFromDetails(): void {
+    const paymentStatus = this.orderDetails?.payment_status ?? this.orderDetails?.transactions?.[0]?.payment_status;
+    if (paymentStatus === 'paid') {
+      const warningEl = document.getElementById('changeTypePaidWarningModalDetails');
+      if (warningEl) {
+        const modal = new bootstrap.Modal(warningEl);
+        modal.show();
+      }
+      return;
+    }
+    const rawType = this.orderDetails?.order_type || '';
+    this.selectedNewOrderType = rawType === 'reservation-table' ? 'dine-in' : (['Delivery', 'Takeaway', 'dine-in'].includes(rawType) ? rawType : '');
+    this.selectedTableIdForTypeChange = this.orderDetails?.table_id ? String(this.orderDetails.table_id) : '';
+    this.currentOrderForTypeChange = {
+      order_details: {
+        order_id: this.cartId,
+        order_number: this.orderSummary?.order_number ?? this.orderDetails?.order_number ?? this.cartId,
+        order_type: this.orderDetails?.order_type,
+        payment_status: paymentStatus,
+        table_id: this.orderDetails?.table_id,
+        table_number: this.orderDetails?.table_number,
+      },
+    };
+    this.fetchAvailableTablesForChangeType();
+    const modalEl = document.getElementById('changeOrderTypeModalDetails');
+    if (modalEl) {
+      const modal = new bootstrap.Modal(modalEl);
+      modal.show();
+    }
+  }
+
+  fetchAvailableTablesForChangeType(): void {
+    this.tablesService.getTables().subscribe({
+      next: (response: any) => {
+        if (response?.status && response?.data && Array.isArray(response.data)) {
+          this.availableTables = response.data.map((table: any) => ({
+            id: table.id,
+            number: table.number ?? table.table_number ?? table.id,
+            status: table.status ?? 1,
+          }));
+        }
+      },
+      error: () => { this.availableTables = []; },
+    });
+  }
+
+  get availableTablesForTypeChange(): any[] {
+    if (!this.availableTables?.length) return [];
+    const currentTableId = this.currentOrderForTypeChange?.order_details?.table_id;
+    return this.availableTables.filter(
+      (t: any) => t.status === 1 || (currentTableId != null && Number(t.id) === Number(currentTableId))
+    );
+  }
+
+  isSameOrderTypeSelected(): boolean {
+    const current = this.currentOrderForTypeChange?.order_details?.order_type;
+    if (!current || !this.selectedNewOrderType) return false;
+    const normalizedCurrent = current === 'reservation-table' ? 'dine-in' : current;
+    return normalizedCurrent === this.selectedNewOrderType;
+  }
+
+  openChangeTypeConfirmModalDetails(): void {
+    const modalEl = document.getElementById('changeOrderTypeModalDetails');
+    if (modalEl) {
+      const inst = bootstrap.Modal.getInstance(modalEl);
+      inst?.hide();
+    }
+    setTimeout(() => {
+      const confirmEl = document.getElementById('confirmChangeOrderTypeModalDetails');
+      if (confirmEl) {
+        const modal = new bootstrap.Modal(confirmEl);
+        modal.show();
+      }
+    }, 300);
+  }
+
+  onConfirmChangeOrderTypeClickDetails(): void {
+    if (this.selectedNewOrderType === 'Delivery') {
+      const confirmEl = document.getElementById('confirmChangeOrderTypeModalDetails');
+      if (confirmEl) {
+        const inst = bootstrap.Modal.getInstance(confirmEl);
+        inst?.hide();
+      }
+      this.router.navigate(['/orders'], { queryParams: { openOrder: this.cartId, action: 'changeType' } });
+      return;
+    }
+    this.submitChangeOrderTypeDetails();
+  }
+
+  submitChangeOrderTypeDetails(): void {
+    if (!this.currentOrderForTypeChange) return;
+    const newOrderType = this.selectedNewOrderType;
+    if (!newOrderType || !['Delivery', 'Takeaway', 'dine-in'].includes(newOrderType)) return;
+    if (newOrderType === 'dine-in' && !this.selectedTableIdForTypeChange) return;
+
+    this.isChangeTypeSubmitting = true;
+    const token = localStorage.getItem('authToken');
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      lang: 'ar',
+    });
+    const body: Record<string, unknown> = {
+      order_id: this.currentOrderForTypeChange.order_details.order_id,
+      new_order_type: newOrderType,
+    };
+    if (newOrderType === 'dine-in' && this.selectedTableIdForTypeChange) {
+      body['table_id'] = parseInt(this.selectedTableIdForTypeChange, 10);
+    }
+
+    this.http.post(`${baseUrl}api/orders/changeOrderType`, body, { headers }).subscribe({
+      next: (res: any) => {
+        this.isChangeTypeSubmitting = false;
+        const confirmEl = document.getElementById('confirmChangeOrderTypeModalDetails');
+        if (confirmEl) {
+          const inst = bootstrap.Modal.getInstance(confirmEl);
+          inst?.hide();
+        }
+        if (res?.status) {
+          this.message = res?.message || 'تم تغيير نوع الطلب بنجاح';
+          this.status_order = true;
+          setTimeout(() => { this.message = ''; }, 3000);
+          this.fetchOrderDetails();
+          this.currentOrderForTypeChange = null;
+          this.selectedNewOrderType = '';
+          this.selectedTableIdForTypeChange = '';
+        } else {
+          this.message = (res?.errorData && typeof res.errorData === 'object' && Object.values(res.errorData).flat().filter(Boolean)[0]) || res?.message || 'حدث خطأ أثناء تغيير نوع الطلب';
+          setTimeout(() => { this.message = ''; }, 4000);
+        }
+      },
+      error: (err: any) => {
+        this.isChangeTypeSubmitting = false;
+        this.message = err?.error?.message || err?.error?.errorData || 'حدث خطأ أثناء تغيير نوع الطلب';
+        setTimeout(() => { this.message = ''; }, 4000);
+      },
+    });
+  }
+
+  getOrderTypeShortLabel(type: string): string {
+    if (!type) return '';
+    const short: Record<string, string> = {
+      'dine-in': 'محلي',
+      'Takeaway': 'استلام',
+      'Delivery': 'توصيل',
+    };
+    return short[type] || type;
+  }
+
+  getOrderTypeIconClass(type: string): string {
+    if (!type) return 'fa-solid fa-circle';
+    const icons: Record<string, string> = {
+      'dine-in': 'fa-solid fa-utensils',
+      'Takeaway': 'fa-solid fa-bag-shopping',
+      'Delivery': 'fa-solid fa-truck',
+    };
+    return icons[type] || 'fa-solid fa-circle';
   }
 }

@@ -129,7 +129,7 @@
         {{ addresDetails.client_address ?? "غير متوفر" }}
         {{ addresDetails.branch_name ?? "" }}
       </p>
-  
+
       <p *ngIf="addresDetails?.address_phone">
         <span class="fw-bold">رقم الهاتف :</span>
         {{ addresDetails.address_phone }}
@@ -154,9 +154,10 @@
             data-bs-parent="#accordionFlushExample">
             <div class="accordion-body">
               <div *ngFor="let item of activeOrderDetails"
-                class="d-flex justify-content-between px-1 mb-1 align-items-start">
-                <div class="d-flex flex-column">
-                  <h6>
+                class="d-flex justify-content-between px-1 mb-1 align-items-start"
+                [ngClass]="{'text-warning': isItemCancelled(item)}">
+                <div class="d-flex flex-column" [ngClass]="{'text-warning': isItemCancelled(item)}">
+                  <h6 [style.text-decoration]="isItemCancelled(item) ? 'line-through' : null">
                     <span class="badge bg-lightgray text-dark ms-2">
                       {{ item.quantity }}
                     </span>
@@ -167,8 +168,8 @@
                     الحجم: {{ item.size }}
                   </h6>
                   <h6 class="text-muted mx-5 fw-medium" *ngIf="item?.addons?.length>0"> الاضافات :
-                    <span *ngFor="let addon of item?.addons; let last = last">
-                      <span>{{ addon?.addon_name }}<span *ngIf="!last">، </span></span>
+                    <span *ngFor="let addon of item.addons; let last = last">
+                      <span>{{ addon.addon_name }}<span *ngIf="!last">، </span></span>
                     </span>
 
                   </h6>
@@ -176,7 +177,7 @@
                     ملاحظات: {{ item.note }}
                   </h6>
                 </div>
-                <h6 class="fw-bold">
+                <h6 class="fw-bold" [style.text-decoration]="isItemCancelled(item) ? 'line-through' : null">
                   <span *ngIf="invoiceSummary && invoiceSummary.length > 0">{{ item.total_dish_price }}
                     {{ invoiceSummary[0].currency_symbol }}</span>
                 </h6>
@@ -187,7 +188,7 @@
       </div>
     </div>
     <!-- Coupon / Discount for unpaid orders -->
-    <div *ngIf="invoices?.[0]?.transactions?.[0]?.payment_status !== 'paid'" class="card px-4 py-3 my-2">
+    <div *ngIf="(invoices?.[0]?.transactions?.[0]?.payment_status !== 'paid') && invoices?.[0]?.order_type !== 'talabat'" class="card px-4 py-3 my-2">
       <h5 class="fw-bold mb-2"><i class="fas fa-percent me-2"></i> الكوبون / الخصم</h5>
 
       <!-- زر إضافة كوبون - يظهر فقط إذا لم يكن هناك كوبون مطبق -->
@@ -212,7 +213,8 @@
     </div>
 
       <!-- عرض الكوبون المطبق - لا يظهر بعد التجزئة لأن الطلب الأصلي لا يكون عليه كوبون -->
-      <div *ngIf="invoices?.length > 0 && invoices[0]?.invoice_summary?.coupon_id && (discountAmount > 0 || (invoices[0]?.invoice_summary?.coupon_value && invoices[0].invoice_summary.coupon_value > 0))"
+      <!-- يظهر فور تطبيق الكوبون (من السلة أو من تعديل الفاتورة) حتى قبل الضغط على دفع -->
+      <div *ngIf="invoices?.length > 0 && (invoices[0]?.invoice_summary?.coupon_id || discountAmount > 0 || couponTitle) && (discountAmount > 0 || (invoices[0]?.invoice_summary?.coupon_value && invoices[0].invoice_summary.coupon_value > 0))"
         class="mt-3 p-3 bg-light rounded">
         <div class="d-flex justify-content-between align-items-center mb-2">
           <span class="fw-bold">الكوبون المطبق:</span>
@@ -247,7 +249,7 @@
         ">
         <div
           *ngIf="invoices[0].order_type === 'Takeaway' ||invoices[0].order_type === 'dine-in' || invoices[0].order_type === 'Delivery'">
-          <div class="d-flex gap-4" *ngIf="invoices[0]?.transactions"> 
+          <div class="d-flex gap-4" *ngIf="invoices[0]?.transactions">
             <button class="fs-6 rounded-4 w-50 btn" [ngClass]="{
               'btn-static-main text-white': paymentStatus === 'unpaid' || (invoices[0]?.transactions[0]?.payment_status === 'unpaid' && paymentStatus !== 'paid'),
               'btn-transparent border-1': paymentStatus !== 'unpaid' || invoices[0]?.transactions[0]?.payment_status !== 'unpaid'
@@ -531,15 +533,14 @@
       <div class="d-flex justify-content-between px-2 mb-1 align-items-center">
         <h6 class="mb-0">مجموع الطلب</h6>
         <h6 class="mb-0 text-end" *ngIf="invoices[0]?.invoice_summary">
-          <span>{{ (invoices[0].invoice_summary.subtotal_price_before_coupon || invoices[0].invoice_summary.total_price
-            || 0).toFixed(2) }}
+          <span>{{ (displayInvoiceSummary?.subtotal_price_before_coupon ?? invoices[0].invoice_summary.subtotal_price_before_coupon ?? invoices[0].invoice_summary.total_price ?? 0) | number:'1.2-2' }}
             {{ item.currency_symbol }}</span>
         </h6>
       </div>
 
-      <!-- عرض الكوبون إذا كان موجوداً - لا يظهر بعد التجزئة (coupon_id يكون null) -->
+      <!-- عرض الكوبون إذا كان موجوداً (من السلة أو من تعديل الفاتورة) -->
       <div class="d-flex justify-content-between px-2 mb-1 main-color align-items-center" *ngIf="
-          invoices[0]?.invoice_summary?.coupon_id &&
+          (invoices[0]?.invoice_summary?.coupon_id || discountAmount > 0 || couponTitle) &&
           ((item.coupon_value && item.coupon_value !== '0.00' && item.coupon_value !== 0) ||
           (discountAmount > 0) ||
           (invoices[0]?.invoice_summary?.coupon_value && invoices[0].invoice_summary.coupon_value !== 0))
@@ -547,7 +548,7 @@
         <h6 class="mb-0">
           كوبون خصم
           <span class="btn-static-secondary p-1 rounded ms-2" *ngIf="invoices[0]?.invoice_summary?.coupon_title || couponTitle">
-            {{ invoices[0]?.invoice_summary?.coupon_title || couponTitle }}
+            {{ invoices[0]?.invoice_summary?.coupon_title || couponTitle || 'كوبون خصم' }}
           </span>
         </h6>
         <h6 class="text-danger fw-bold mb-0 text-end">
@@ -560,7 +561,7 @@
       <div class="d-flex justify-content-between px-2 mb-1 align-items-center" *ngIf="item.service_percentage">
         <h6 class="mb-0">الخدمة <span class="main-color">{{item.service_percentage}}%</span></h6>
         <h6 class="mb-0 text-end">
-          <span>{{ item.service_fees | number:'1.2-2' }} {{ item.currency_symbol }}</span>
+          <span>{{ (displayInvoiceSummary?.service_fees ?? item.service_fees) | number:'1.2-2' }} {{ item.currency_symbol }}</span>
         </h6>
       </div>
       <div class="d-flex justify-content-between px-2 mb-1 align-items-center" *ngIf="item.delivery_fees">
@@ -576,7 +577,7 @@
       <div class="d-flex justify-content-between px-2 mb-1 align-items-center" *ngIf="!item.tax_application && item.tax_percentage">
         <h6 class="mb-0">ضريبة القيمة المضافة <span class="main-color">{{ item.tax_percentage }}%</span></h6>
         <h6 class="mb-0 text-end">
-          <span>{{ item.tax_value | number:'1.2-2' }} {{ item.currency_symbol }}</span>
+          <span>{{ (item.tax_value ) | number:'1.2-2' }} {{ item.currency_symbol }}</span>
         </h6>
       </div>
       <div class="d-flex flex-column">
@@ -587,8 +588,8 @@
             المجموع الكلى
           </h4>
           <h6 class="fw-bold mb-0 fs-4 text-end" *ngIf="invoices[0]?.invoice_summary">
-            <!-- استخدام totalll إذا كان محدثاً (بعد تطبيق الكوبون)، وإلا استخدام invoice_summary.total_price -->
-            <span>{{ (totalll !== null && totalll !== undefined ? totalll : invoices[0].invoice_summary.total_price) | number:'1.2-2' }} {{ invoices[0].currency_symbol }}</span>
+            <!-- ملخص العرض يستبعد العناصر الملغاة؛ totalll بعد الكوبون -->
+            <span>{{ (totalll !== null && totalll !== undefined ? totalll : (displayInvoiceSummary?.total_price ?? invoices[0].invoice_summary.total_price)) | number:'1.2-2' }} {{ invoices[0].currency_symbol }}</span>
           </h6>
         </div>
       </div>
@@ -617,7 +618,7 @@
         </button>
       </div>
 
-      
+
     </div>
   </div>
 </div>
@@ -770,7 +771,7 @@
             <span class="fw-bold bg_black">{{ item.subtotal_price_before_coupon }} {{ item.currency_symbol }}</span>
           </div>
           <div class="d-flex justify-content-between mb-1 fw-bold" *ngIf="
-              invoices[0]?.invoice_summary?.coupon_id &&
+              (invoices[0]?.invoice_summary?.coupon_id || discountAmount > 0 || couponTitle) &&
               ((item.coupon_value && item.coupon_value !== '0.00' && item.coupon_value !== 0) ||
               (discountAmount > 0) ||
               (invoices[0]?.invoice_summary?.coupon_value && invoices[0].invoice_summary.coupon_value !== 0))
@@ -778,7 +779,7 @@
             <h6>
               تخفيض:
               <span class="btn-static-secondary p-1 rounded ms-2" *ngIf="invoices[0]?.invoice_summary?.coupon_title || couponTitle">
-                {{ invoices[0]?.invoice_summary?.coupon_title || couponTitle }}
+                {{ invoices[0]?.invoice_summary?.coupon_title || couponTitle || 'كوبون خصم' }}
               </span>
             </h6>
             <span class="text-danger fw-bold">

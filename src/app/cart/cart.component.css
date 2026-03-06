@@ -26,8 +26,8 @@
 }
 
 .form-check-input:checked {
-    background-color: #FE0000;
-    border-color: #FE0000;
+    /* background-color: #FE0000; */
+    /* border-color: #FE0000; */
 }
 
 .form-check-input:focus {
@@ -35,10 +35,10 @@
 }
 
 .form-check-label {
-    border: 1px solid #FE0000;
+    border: none;
     padding: 0.5rem;
-    background-color: #FFF2F2;
-    border-radius: 0.5rem;
+    /* background-color: #FFF2F2; */
+    /* border-radius: 0.5rem; */
     font-weight: 600;
 }
 

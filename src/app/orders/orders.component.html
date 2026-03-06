@@ -51,7 +51,7 @@
     <ul class="nav nav-requests mb-4 px-0 w-100 d-flex flex-row justify-content-between" role="tablist">
       <li class="nav-item flex-fill mx-1" role="presentation">
         <button class="nav-link w-100 mb-2" [class.active]="selectedStatus === 'all'" (click)="selectStatus('all')">
-          <span>الكل ({{ getStatusCount("all", selectedOrderTypeStatus) }} من {{ totalOrdersCount }})</span>
+          <span>الكل ({{ orders.length }} من {{ totalOrdersCount }})</span>
         </button>
       </li>
 
@@ -421,11 +421,11 @@
                         aria-expanded="false" data-bs-display="static">
                         <i class="fa-solid fa-ellipsis-vertical"></i> </a>
                       <ul class="dropdown-menu" aria-labelledby="dropdownMenu2">
-                       
+
                         <li> <button class="dropdown-item" type="button" (click)="openEditModal(item , order.order_details.order_id)">
                             تعديل الطلب
                           </button></li>
-                       
+
                         <li><button class="dropdown-item" type="button" data-bs-toggle="modal"
                             [attr.data-bs-target]="'#deleteConfirmModal' + item.order_detail_id">
                             حذف الطلب</button></li>
@@ -482,7 +482,11 @@
                 <!-- Second column: Price and currency -->
                 <div class="col-12 col-sm-6 text-start">
                   <h6 class="fw-bold mb-1 text-break" style="font-size: 0.95rem; word-wrap: break-word">
-                    {{ order.total_price }} {{ order.currency_symbol }}
+                    @if(order.order_details.status !== 'cancelled') {
+                      {{ order.total_price }} {{ order.currency_symbol }}
+                    } @else {
+                      0 {{ order.currency_symbol }}
+                    }
                   </h6>
                 </div>
               </div>
