@@ -439,6 +439,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           if (response) {
+            console.log("response_dalia",response);
             const order = response.data.orderDetails[0];
             this.currencySymbol = order.currency_symbol;
             this.paymenMethod = order.transactions?.[0]?.payment_method ?? 'Unknown';
