@@ -1276,12 +1276,14 @@ export class OrdersComponent implements OnDestroy {
   } {
     const items = this.getDisplayOrderItems(order);
 
-    console.log("items_dalia",items);
-    console.log("order_dalia",order);
+    // console.log("items_dalia",items);
+    // console.log("order_dalia",order);
+
 
     let taxTotal = 0;
     let serviceTotal = 0;
     let priceTotal = 0;
+    let couponTotal = 0;
 
     for (const item of items) {
       const totalQty = Number(item.quantity) || 0;
@@ -1299,8 +1301,10 @@ export class OrdersComponent implements OnDestroy {
       let taxPart : number;
       let servicePart : number;
       let pricePart : number;
+      let couponPart : number;
       const unitPrice = item.unitPrice;
       pricePart = unitPrice * returnedQty;
+      pricePart = pricePart - order.details_order?.order_summary?.coupon_value;
       if (order.details_order?.order_type === 'dine-in') {
         servicePart = pricePart * 12 / 100;
         taxPart = (pricePart + servicePart) * 14/100;
@@ -1311,10 +1315,6 @@ export class OrdersComponent implements OnDestroy {
 
       }
 
-      // const qty = totalQty || 1;
-      // const taxPart = ((item.tax_value ?? 0) / qty) * returnedQty;
-      // const servicePart = ((item.service_fees ?? 0) / qty) * returnedQty;
-      // const pricePart = ((item.total_dish_price ?? 0) / qty) * returnedQty;
 
       taxTotal += taxPart;
       serviceTotal += servicePart;
@@ -2700,7 +2700,7 @@ export class OrdersComponent implements OnDestroy {
   canShowReturnInvoice(order: any): boolean {
     const totalCash = localStorage.getItem('totalcash');
     const totalCredit = localStorage.getItem('totalvisa');
-    console.log("totalCash",totalCash,totalCredit);
+    // console.log("totalCash",totalCash,totalCredit);
 
     if (!totalCash && !totalCredit) {
       return false;
