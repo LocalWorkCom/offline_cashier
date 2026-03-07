@@ -74,7 +74,7 @@
     <div *ngIf="orderDetails.transactions.length>1">
       <div *ngFor="let inv of orderDetails.transactions">
         <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
-          *ngIf="orderDetails.transactions[0].payment_status == 'paid'">
+          *ngIf="orderDetails.transactions[0].payment_status == 'paid' && inv.is_refund == 0">
           <div>
             {{ inv.payment_method === 'cash' ? ' الكاش' : inv.payment_method === 'credit' ? ' الفيزا' : 'غير محدد' }}
           </div>
