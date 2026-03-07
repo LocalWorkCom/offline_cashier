@@ -1,16 +1,15 @@
 @if (paymentSummary) {
-<div class="card p-4 my-3">
+<div class="card p-4 my-3 totals-card-wrapper" [class.totals-collapsed]="!showAmounts">
+  <button type="button" class="totals-toggle" (click)="toggleAmounts()" [attr.aria-expanded]="showAmounts" [attr.aria-label]="showAmounts ? 'إخفاء المبالغ' : 'إظهار المبالغ'">
+    <i class="fa-solid fa-chevron-{{ showAmounts ? 'down' : 'left' }}" aria-hidden="true"></i>
+  </button>
+  @if (showAmounts) {
   <div class="totals">
     <div *ngFor="let pay of paymentSummary" class="payment-card ">
-      <!-- <div class="icon-wrapper ">
-      {{ pay.icon }}
-    </div> -->
       <div class="payment-body">
         <div class="method">{{ pay.name }}</div>
-        <div class=" ">{{ pay.value|number }} ج.م</div>
+        <div class="amount">{{ pay.value|number }} ج.م</div>
       </div>
-      <!-- </div> -->
-
     </div>
     <!-- <div class="payment-card d-flex justify-content-center align-items-center">
   <div  class="payment-body">
@@ -35,5 +34,12 @@
 </div>
  -->
   </div>
+  } @else {
+  <div class="totals-labels-only">
+    @for (pay of paymentSummary; track pay.name) {
+      <span class="method">{{ pay.name }}</span>
+    }
+  </div>
+  }
 </div>
 }
