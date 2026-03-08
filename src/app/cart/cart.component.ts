@@ -121,7 +121,7 @@ export class CartComponent {
 
       if (this.cartId) {
         this.fetchOrderDetails();
-        this.loadSelectedCourier(); 
+        this.loadSelectedCourier();
 
       }
     });
@@ -188,7 +188,7 @@ export class CartComponent {
   //   if (storedCourier) {
   //     this.selectedCourier = JSON.parse(storedCourier); // Load selected courier
   //   }
-  // } 
+  // }
 
   loadSelectedCourier() {
     if (!this.cartId) return;
@@ -380,9 +380,9 @@ export class CartComponent {
           'Content-Type': 'application/json'
         };
         // 🚀 Send courier + order ID to API with token
-       
+
           this.http.post(`${baseUrl}api/orders/update-delivery-driver`,{
-      
+
           delivery_id: courier.id,
           order_id: orderId
         }, { headers }).subscribe({
@@ -604,11 +604,11 @@ export class CartComponent {
   canShowOrderActions(): boolean {
     const d = this.orderDetails;
     if (!d || this.isOrderPaid()) return false;
-    console.log('CartComponent Order Status:', d.status, 'Payment Status:', d.payment_status, 'Type:', d.order_type);
-    
+    // console.log('CartComponent Order Status:', d.status, 'Payment Status:', d.payment_status, 'Type:', d.order_type);
+
     if (d.status === 'cancelled' || d.status === 'cancel') return false;
     if (d.order_type === 'talabat') return false;
-    
+
     return true;
   }
 
