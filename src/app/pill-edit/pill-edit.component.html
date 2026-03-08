@@ -129,7 +129,7 @@
         {{ addresDetails.client_address ?? "غير متوفر" }}
         {{ addresDetails.branch_name ?? "" }}
       </p>
-  
+
       <p *ngIf="addresDetails?.address_phone">
         <span class="fw-bold">رقم الهاتف :</span>
         {{ addresDetails.address_phone }}
@@ -168,8 +168,8 @@
                     الحجم: {{ item.size }}
                   </h6>
                   <h6 class="text-muted mx-5 fw-medium" *ngIf="item?.addons?.length>0"> الاضافات :
-                    <span *ngFor="let addon of item?.addons; let last = last">
-                      <span>{{ addon?.addon_name }}<span *ngIf="!last">، </span></span>
+                    <span *ngFor="let addon of item.addons; let last = last">
+                      <span>{{ addon.addon_name }}<span *ngIf="!last">، </span></span>
                     </span>
 
                   </h6>
@@ -188,7 +188,7 @@
       </div>
     </div>
     <!-- Coupon / Discount for unpaid orders -->
-    <div *ngIf="invoices?.[0]?.transactions?.[0]?.payment_status !== 'paid'" class="card px-4 py-3 my-2">
+    <div *ngIf="(invoices?.[0]?.transactions?.[0]?.payment_status !== 'paid') && invoices?.[0]?.order_type !== 'talabat'" class="card px-4 py-3 my-2">
       <h5 class="fw-bold mb-2"><i class="fas fa-percent me-2"></i> الكوبون / الخصم</h5>
 
       <!-- زر إضافة كوبون - يظهر فقط إذا لم يكن هناك كوبون مطبق -->
@@ -248,7 +248,7 @@
         ">
         <div
           *ngIf="invoices[0].order_type === 'Takeaway' ||invoices[0].order_type === 'dine-in' || invoices[0].order_type === 'Delivery'">
-          <div class="d-flex gap-4" *ngIf="invoices[0]?.transactions"> 
+          <div class="d-flex gap-4" *ngIf="invoices[0]?.transactions">
             <button class="fs-6 rounded-4 w-50 btn" [ngClass]="{
               'btn-static-main text-white': paymentStatus === 'unpaid' || (invoices[0]?.transactions[0]?.payment_status === 'unpaid' && paymentStatus !== 'paid'),
               'btn-transparent border-1': paymentStatus !== 'unpaid' || invoices[0]?.transactions[0]?.payment_status !== 'unpaid'
@@ -576,7 +576,7 @@
       <div class="d-flex justify-content-between px-2 mb-1 align-items-center" *ngIf="!item.tax_application && item.tax_percentage">
         <h6 class="mb-0">ضريبة القيمة المضافة <span class="main-color">{{ item.tax_percentage }}%</span></h6>
         <h6 class="mb-0 text-end">
-          <span>{{ (displayInvoiceSummary?.tax_value ?? item.tax_value) | number:'1.2-2' }} {{ item.currency_symbol }}</span>
+          <span>{{ (item.tax_value ) | number:'1.2-2' }} {{ item.currency_symbol }}</span>
         </h6>
       </div>
       <div class="d-flex flex-column">
@@ -617,7 +617,7 @@
         </button>
       </div>
 
-      
+
     </div>
   </div>
 </div>

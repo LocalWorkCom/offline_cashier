@@ -327,40 +327,40 @@ export class PillEditComponent {
         // Merged order fix: invoice API may return only primary order items. Fetch full order and use merged items if more.
         const orderId = response.data.order_id;
         const invoiceItemsCount = (this.orderDetails?.flat() || []).length;
-        if (orderId != null && orderId !== '') {
-          this.orderListDetailsService.getOrderById(String(orderId)).subscribe({
-            next: (orderRes: any) => {
-              const order = orderRes?.data?.orderDetails?.[0];
-              const rawItems = order?.order_details || [];
-              const orderItems = Array.isArray(rawItems) ? rawItems.filter((it: any) => (Number(it.quantity) || 0) > 0) : [];
-              if (orderItems.length > invoiceItemsCount && this.invoices?.[0]) {
-                this.invoices[0].orderDetails = orderItems;
-                this.orderDetails = this.invoices.map((e: any) => e.orderDetails || []);
-                const summary = order?.order_summary || this.invoices[0]?.invoice_summary || {};
-                const subtotal = orderItems.reduce((s: number, it: any) => s + (Number(it.total_dish_price) || 0), 0);
-                const total = Number(summary.total ?? summary.total_price ?? subtotal);
-                if (this.invoiceSummary?.[0]) {
-                  this.invoiceSummary[0] = { ...this.invoiceSummary[0], subtotal_price_before_coupon: subtotal, subtotal_price: subtotal, total_price: total, total };
-                }
-                if (this.invoices[0].invoice_summary) {
-                  this.invoices[0].invoice_summary = { ...this.invoices[0].invoice_summary, subtotal_price_before_coupon: subtotal, subtotal_price: subtotal, total_price: total, total };
-                }
-                this.totalll = total;
-                this.receiptData = {
-                  ...this.receiptData,
-                  orderDetails: this.getFilteredOrderDetailsFlat(),
-                  invoice_summary: this.invoiceSummary || [],
-                };
-                if (this.receiptData?.invoices?.[0]) {
-                  this.receiptData.invoices[0].orderDetails = this.getFilteredOrderDetailsFlat();
-                }
-                this.applyClearCouponForSplitPrimaryOrder();
-                this.cdr.detectChanges();
-              }
-            },
-            error: () => {},
-          });
-        }
+        // if (orderId != null && orderId !== '') {
+        //   this.orderListDetailsService.getOrderById(String(orderId)).subscribe({
+        //     next: (orderRes: any) => {
+        //       const order = orderRes?.data?.orderDetails?.[0];
+        //       const rawItems = order?.order_details || [];
+        //       const orderItems = Array.isArray(rawItems) ? rawItems.filter((it: any) => (Number(it.quantity) || 0) > 0) : [];
+        //       if (orderItems.length > invoiceItemsCount && this.invoices?.[0]) {
+        //         this.invoices[0].orderDetails = orderItems;
+        //         this.orderDetails = this.invoices.map((e: any) => e.orderDetails || []);
+        //         const summary = order?.order_summary || this.invoices[0]?.invoice_summary || {};
+        //         const subtotal = orderItems.reduce((s: number, it: any) => s + (Number(it.total_dish_price) || 0), 0);
+        //         const total = Number(summary.total ?? summary.total_price ?? subtotal);
+        //         if (this.invoiceSummary?.[0]) {
+        //           this.invoiceSummary[0] = { ...this.invoiceSummary[0], subtotal_price_before_coupon: subtotal, subtotal_price: subtotal, total_price: total, total };
+        //         }
+        //         if (this.invoices[0].invoice_summary) {
+        //           this.invoices[0].invoice_summary = { ...this.invoices[0].invoice_summary, subtotal_price_before_coupon: subtotal, subtotal_price: subtotal, total_price: total, total };
+        //         }
+        //         this.totalll = total;
+        //         this.receiptData = {
+        //           ...this.receiptData,
+        //           orderDetails: this.getFilteredOrderDetailsFlat(),
+        //           invoice_summary: this.invoiceSummary || [],
+        //         };
+        //         if (this.receiptData?.invoices?.[0]) {
+        //           this.receiptData.invoices[0].orderDetails = this.getFilteredOrderDetailsFlat();
+        //         }
+        //         this.applyClearCouponForSplitPrimaryOrder();
+        //         this.cdr.detectChanges();
+        //       }
+        //     },
+        //     error: () => {},
+        //   });
+        // }
       },
       error: (error: any) => {
         console.error(' Error fetching pill details:', error);
@@ -391,6 +391,8 @@ export class PillEditComponent {
   /** ملخص الفاتورة للعرض: يستبعد العناصر الملغاة من المجموع والإجمالي (مثل تفاصيل الطلب وتفاصيل الفاتورة). */
   get displayInvoiceSummary(): any {
     const summary = this.invoices?.[0]?.invoice_summary;
+
+    // console.log(summary,'summary_dalia');
     const items = this.activeOrderDetails || [];
     if (!summary) return summary;
     const activeItemsSubtotal = items
@@ -805,6 +807,11 @@ export class PillEditComponent {
           localStorage.setItem('paid_order_credit', JSON.stringify(newTotalCredit));
         }
       }
+      if (this.orderType == 'talabat' && this.paymentStatus == 'unpaid') {
+        this.paymentStatus = 'paid';
+        cashAmount = finalTotal;
+        creditAmount = 0;
+      }
 
       this.orderService
         .updateInvoiceStatus(
@@ -949,12 +956,12 @@ export class PillEditComponent {
       summary._original_subtotal_price_before_coupon = Number(summary.subtotal_price_before_coupon ?? summary.total_price ?? 0);
     }
     const productValueBeforeDiscount = Number(summary._original_subtotal_price_before_coupon);
-    
+
     // ✅ حفظ القيم الأصلية للخدمة والضريبة
     if (!summary._original_service_fees) {
       summary._original_service_fees = Number(summary.service_fees || 0);
     }
-    
+
     const servicePerc = Number(summary.service_percentage || 0);
     const taxPerc = Number(summary.tax_percentage || 0);
     const taxApplication = summary.tax_application ?? false;
@@ -1353,7 +1360,7 @@ export class PillEditComponent {
   isFinal: boolean = false;
   async printInvoice(isFinal: boolean) {
     this.isFinal = isFinal;
-    
+
     if (this.receiptData) {
       this.receiptData.isFinal = isFinal;
     }
@@ -1367,7 +1374,7 @@ export class PillEditComponent {
       if ((window as any).deviceAPI) {
         console.log('Detected Electron environment. Attempting silent print via SilentPrintService.');
 
-        const printerIP = this.invoices[0]?.branch_details?.printer_ip || "192.168.11.187"; 
+        const printerIP = this.invoices[0]?.branch_details?.printer_ip || "192.168.11.187";
         const port = this.invoices[0]?.branch_details?.printer_port || 9100;
 
         const result = await this.silentPrint.printElement('printSection', printerIP, port);
@@ -1380,7 +1387,7 @@ export class PillEditComponent {
           alert(`فشلت الطباعة الصامتة: ${result.message || 'خطأ غير معروف'}`);
         }
 
-        return; 
+        return;
       }
 
       const printContent = document.getElementById('printSection');

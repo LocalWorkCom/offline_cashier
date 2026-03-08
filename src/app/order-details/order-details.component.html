@@ -18,12 +18,12 @@
       <i class="fa-solid fa-arrows-rotate px-1"></i>
       تغيير نوع الطلب
     </button>
-    
+
     <button type="button" class="btn reversed main-color flex-fill py-2 text-center" (click)="cancelOrder()" title="حذف الطلب">
       <i class="fa-solid fa-trash-can px-1"></i>
       حذف الطلب
     </button>
-    
+
     <a *ngIf="isDineIn()" [routerLink]="['/tableavailable', orderId]" class="btn reversed main-color flex-fill py-2 text-decoration-none text-center" title="تغيير الطاولة">
       <i class="fa-solid fa-chair px-1"></i>
       تغيير الطاولة
@@ -53,9 +53,9 @@
         <h5>
           <span class="badge bg-success text-white">
             {{
-            paymenMethod === "cash" && orderDetails.transactions[0].payment_status === "paid" 
+            paymenMethod === "cash" && orderDetails.transactions[0].payment_status === "paid"
             ? "نقدا"
-            : paymenMethod === "credit" && orderDetails.transactions[0].payment_status === "paid" 
+            : paymenMethod === "credit" && orderDetails.transactions[0].payment_status === "paid"
             ? "فيزا"
             : "غير محدد"
             }}
@@ -74,7 +74,7 @@
     <div *ngIf="orderDetails.transactions.length>1">
       <div *ngFor="let inv of orderDetails.transactions">
         <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
-          *ngIf="orderDetails.transactions[0].payment_status == 'paid'">
+          *ngIf="orderDetails.transactions[0].payment_status == 'paid' && inv.is_refund == 0">
           <div>
             {{ inv.payment_method === 'cash' ? ' الكاش' : inv.payment_method === 'credit' ? ' الفيزا' : 'غير محدد' }}
           </div>
@@ -221,8 +221,11 @@
     </div>
     <div class="d-flex justify-content-between px-2 mb-1 " *ngIf="orderDetails?.order_type === 'Delivery' && orderSummary.delivery_fees">
       <h6> رسوم التوصيل</h6>
-      <h6>
+      <h6 *ngIf="orderDetails?.status !== 'cancelled'">
         <span>{{ orderSummary.delivery_fees }}</span> {{ currencySymbol }}
+      </h6>
+      <h6 *ngIf="orderDetails?.status === 'cancelled'">
+        <span>0</span> {{ currencySymbol }}
       </h6>
     </div>
     <div class="d-flex justify-content-between px-2 mb-1 " *ngIf="hasServiceFees">
@@ -238,8 +241,9 @@
     <div class="px-2 mb-1" *ngIf="!orderSummary.tax_application">
       <h6>
         تضاف ضريبة القيمة المضافة
-        <span class="main-color">بنسبة {{ orderSummary.tax_percentage }}% </span> بمعنى اخر
-        {{ orderSummary.tax_value }} {{currencySymbol }}
+        <span class="main-color" *ngIf="orderDetails?.status !== 'cancelled'">بنسبة {{ orderSummary.tax_percentage }}% </span> بمعنى اخر
+        <span *ngIf="orderDetails?.status !== 'cancelled'">{{ orderSummary.tax_value }} {{currencySymbol }}</span>
+        <span *ngIf="orderDetails?.status === 'cancelled'">0 {{currencySymbol }}</span>
       </h6>
     </div>
     <div class="d-flex justify-content-between px-2 mb-1 border-top py-2">
