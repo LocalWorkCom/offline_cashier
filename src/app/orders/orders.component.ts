@@ -1284,7 +1284,7 @@ export class OrdersComponent implements OnDestroy {
     let serviceTotal = 0;
     let priceTotal = 0;
     let couponTotal = 0;
-
+    let deliveryTotal = 0;
     for (const item of items) {
       const totalQty = Number(item.quantity) || 0;
       const selectedQty =
@@ -1298,30 +1298,56 @@ export class OrdersComponent implements OnDestroy {
       }
 
       // new calculation for the return totals
-      let taxPart : number;
-      let servicePart : number;
+      // let taxPart : number;
+      // let servicePart : number;
       let pricePart : number;
-      let couponPart : number;
+      // let couponPart : number;
       const unitPrice = item.unitPrice;
       pricePart = unitPrice * returnedQty;
-      pricePart = pricePart - order.details_order?.order_summary?.coupon_value;
-      if (order.details_order?.order_type === 'dine-in') {
-        servicePart = pricePart * 12 / 100;
-        taxPart = (pricePart + servicePart) * 14/100;
-
-      } else {
-        servicePart =0;
-        taxPart = (pricePart + servicePart) * 14/100;
-
-      }
 
 
-      taxTotal += taxPart;
-      serviceTotal += servicePart;
+      // if (order.details_order?.order_type === 'dine-in') {
+      //   servicePart = pricePart * 12 / 100;
+      //   taxPart = (pricePart + servicePart) * 14/100;
+
+      // } else {
+      //   servicePart =0;
+      //   taxPart = (pricePart + servicePart) * 14/100;
+
+      // }
+
+
+
+      // taxTotal += taxPart;
+      // serviceTotal += servicePart;
       priceTotal += pricePart;
     }
 
-    const grandTotal = taxTotal + serviceTotal + priceTotal;
+    console.log('order_dalia',order);
+    let precoupon = 0;
+
+    if(order.details_order?.order_summary?.coupon_type == 'percentage'){
+
+      precoupon = priceTotal * order.details_order?.order_summary?.coupon_percentage / 100;
+      couponTotal = priceTotal - precoupon;
+
+    }
+    else
+    {
+      couponTotal = priceTotal - order.details_order?.order_summary?.coupon_value;
+    }
+    if (order.details_order?.order_type === 'dine-in') {
+        serviceTotal = couponTotal * 12 / 100;
+        taxTotal = (couponTotal + serviceTotal) * 14/100;
+
+      } else {
+        serviceTotal =0;
+        taxTotal = (couponTotal + serviceTotal) * 14/100;
+
+      }
+      deliveryTotal = order.details_order?.order_summary?.delivery_fees;
+
+    const grandTotal = taxTotal + serviceTotal + couponTotal + deliveryTotal;
 
     return {
       taxTotal,

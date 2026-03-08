@@ -1768,6 +1768,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       let discountAmount = 0;
       const currentCartTotal = this.getTotal();
 
+      console.log("order_dalia", this.currentOrderData);
+
+
       if (storedCouponType === 'percentage') {
         // تطبيق النسبة المئوية على المجموع الحالي
         const couponPercentage = parseFloat(storedCouponValue || '10');
@@ -1783,6 +1786,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         const fixedDiscount = parseFloat(storedCouponValue || '0');
         discountAmount = Math.min(fixedDiscount, currentCartTotal);
       }
+
+      if(this.currentOrderData)
+        {
+          if(this.currentOrderData.details_order?.order_summary?.coupon_type === 'percentage')
+          {
+            discountAmount = currentCartTotal * this.currentOrderData.details_order?.order_summary?.coupon_percentage / 100;
+            // discountAmount = currentCartTotal - precoupon;
+          }
+        }
 
       this.validCoupon = true;
       // ✅ التأكد من أن amount_after_coupon لا يكون سالباً (خاصة عند كوبون 100%)
@@ -1908,6 +1920,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
             this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount.toFixed(2)} ${response.data.currency_symbol} من الإجمالي.`;
 
+            console.log("response.data", response.data);
             // حفظ بيانات الكوبون في localStorage بما فيها القيمة الأصلية
             localStorage.setItem('appliedCoupon', 'true');
             localStorage.setItem('validCoupon', 'true');
