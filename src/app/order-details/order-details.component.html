@@ -231,7 +231,15 @@
     <div class="d-flex justify-content-between px-2 mb-1 " *ngIf="hasServiceFees">
       <h6> رسوم الخدمة <span class="main-color">بنسبة {{orderSummary.service_percentage}} % </span></h6>
       <h6>
-        <span>{{ orderSummary.service_fees }} {{ currencySymbol }}</span>
+        @if(orderDetails?.status === 'cancelled')
+        {
+          <span>0</span> {{ currencySymbol }}
+        }
+        @else
+        {
+          <span>{{ orderSummary.service_fees }} {{ currencySymbol }}</span>
+        }
+
       </h6>
     </div>
     <div class="px-2 mb-1" *ngIf="orderSummary.tax_application">
