@@ -243,7 +243,7 @@ export class PillEditComponent {
 
         // const trackingKey = this.invoices[0]?.['tracking-status'];
         // this.trackingStatus = trackingKey || '';
-        this.orderNumber = Number(response.data.order_id);
+        this.orderNumber = response.data.order_id;
         this.couponType = this.invoices[0]?.invoice_summary?.coupon_type;
 
         this.addresDetails = this.invoices[0]?.address_details || {};
