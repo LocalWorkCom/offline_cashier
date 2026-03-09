@@ -14,6 +14,8 @@ export class TotalsCardComponent implements OnInit{
 
 constructor(private http: HttpClient,private totalBalance:totalBalance) {}
 paymentSummary: { name: string,value: number }[] = [];
+/** When true, monetary amounts are visible; when false, only labels are shown. Default hidden on load/refresh. */
+showAmounts = false;
 errorMsg!:string;
 
 totals:number=32523
@@ -56,5 +58,9 @@ const body = {
       console.error('Failed to fetch total money:', err);
     }
   });
+}
+
+toggleAmounts(): void {
+  this.showAmounts = !this.showAmounts;
 }
 }
