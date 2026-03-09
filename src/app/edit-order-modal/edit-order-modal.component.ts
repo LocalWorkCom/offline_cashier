@@ -338,6 +338,12 @@ export class EditOrderModalComponent implements OnInit {
     this.updatePrice();
   }
 
+  /** تعطيل باقي الإضافات عندما يصل المستخدم للحد الأقصى (مثلاً حد أقصى 1 = يمنع اختيار ثاني) */
+  isAddonDisabled(addon: any, category: any): boolean {
+    const selectedCount = (category.addons || []).filter((a: any) => a.checked).length;
+    return selectedCount >= category.max_addons && !addon.checked;
+  }
+
   editItem(): void {
     // 🔑 منع الضغط المتعدد
     if (this.isSubmitting) {
