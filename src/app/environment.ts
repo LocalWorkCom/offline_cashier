@@ -2,8 +2,8 @@
 //  export const baseUrlForWebSocket ='https://erpfortest.testdomain100.online/'
 
 //  export const baseUrl ='https://erp-cashier.testdomain100.online/'
-export const baseUrl ='http://127.0.0.1:8000/'
- export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
+export const baseUrl ='https://7163-41-46-13-150.ngrok-free.app/'
+export const baseUrl2 ='https://7163-41-46-13-150.ngrok-free.app/api'
 
 //test
 export const environment = {
@@ -11,7 +11,8 @@ export const environment = {
   pusher: {
     key: 'cfd52a74b92f9e278f2d',
     cluster: 'mt1',
-  }
+  },
+  wsUrl: 'ws://localhost:8081'
 };
 
 // //localhost
