@@ -291,7 +291,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   fetchOrderDetailsFromAPI(): void {
     this.loading = true;
     this.error = '';
-    console.log("orderId -dalia",this.orderId);
+    // console.log("orderId -dalia",this.orderId);
 
     this.orderListById.getOrderById(this.orderId)
       .pipe(
@@ -305,8 +305,9 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
           if (response && response.data) {
             const order = response.data.orderDetails[0];
 
-            console.log("order -dalia",response.data);
+            // console.log("order -dalia",response.data);
             this.processOrderData(order);
+
 
             // Save to IndexedDB for future access
             // this.saveOrderToIndexedDB(order);
@@ -470,6 +471,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           if (response) {
+            console.log("response_dalia",response);
             const order = response.data.orderDetails[0];
             this.currencySymbol = order.currency_symbol;
             this.paymenMethod = order.transactions?.[0]?.payment_method ?? 'Unknown';
@@ -623,9 +625,14 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         console.log('Order cancelled successfully:', response);
         this.errorMessage = response.message;
         this.status_order = response.status;
+        const isDelivery = (this.orderDetails?.order_type || this.orderDetails?.order_details?.order_type || '')
+          .toString().toLowerCase() === 'delivery';
         setTimeout(() => {
           this.errorMessage = '';
-        }, 2000);
+          if (isDelivery) {
+            window.location.reload();
+          }
+        }, 3000);
         this.fetchOrderDetailsFromAPI();
       },
       error: (error) => {
