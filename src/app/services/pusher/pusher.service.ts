@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { environment } from '../../environment';
 
 @Injectable({
   providedIn: 'root',
@@ -16,7 +17,8 @@ export class PusherService {
     }
 
     // Connect to the Electron WebSocket Server
-    this.socket = new WebSocket('ws://localhost:8081');
+    const url = `${environment.wsUrl}?key=${environment.pusher.key}`;
+    this.socket = new WebSocket(url);
 
     this.socket.onopen = () => {
       console.log('✅ Connected to Electron WebSocket Hub');
