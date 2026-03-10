@@ -233,7 +233,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       // Extract order details
       this.currencySymbol = order.details_order.currency_symbol || 'ج.م';
 
-      this.paymenMethod = order.details_order.transactions[0].payment_method;
+      this.paymenMethod = order.details_order.transactions?.[0]?.payment_method ?? order.details_order.payment_method ?? 'Unknown';
       this.deliveryData = order.details_order?.delivery_data || "";
       const rawDeliveryFees = order.details_order.order_summary?.delivery_fees ||
         order.details_order.order_summary?.delivery_fees || 0;
@@ -249,11 +249,24 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
 
       this.deliveryFees = applied.deliveryFees;
       // Set the main order details
-      this.orderDetails = order.details_order;
-      this.orderItems = this.filterMovedOrderItems(order.details_order?.order_details || []);
+      const detailsOrder = order.details_order;
+      this.orderDetails = detailsOrder;
+      this.orderItems = this.filterMovedOrderItems(detailsOrder?.order_details || []);
       this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
 
-
+      const totalPrice = Number(this.orderSummary?.total_price ?? this.orderSummary?.total ?? 0);
+      const isPaidByTotal = !isNaN(totalPrice) && totalPrice <= 0;
+      if (!detailsOrder.transactions || !Array.isArray(detailsOrder.transactions) || detailsOrder.transactions.length === 0) {
+        const isPaid = detailsOrder.payment_status === 'paid' || isPaidByTotal;
+        detailsOrder.transactions = [{
+          payment_method: this.paymenMethod ?? 'cash',
+          payment_status: isPaid ? 'paid' : (detailsOrder.payment_status ?? 'unpaid'),
+          paid: isPaid ? totalPrice : 0
+        }];
+      } else if (isPaidByTotal && detailsOrder.transactions[0]?.payment_status === 'unpaid') {
+        detailsOrder.transactions[0].payment_status = 'paid';
+        detailsOrder.transactions[0].paid = totalPrice;
+      }
 
       console.log("orderitems", this.orderItems);
 
@@ -330,9 +343,12 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   /**
    * Recalculate order summary from displayed items when backend summary is stale (e.g. after split).
    * Ensures "view original order" and invoice show the correct amount for the remaining items only.
+   * لا نستبدل الإجمالي لو الـ API رجّع total = 0 (كوبون 100%) حتى لا يظهر 900 بدل 0.
    */
   private recalculateSummaryFromDisplayedItems(summary: any, items: any[]): any {
     if (!summary || !items || items.length === 0) return summary;
+    const apiTotal = Number(summary.total_price ?? summary.total ?? NaN);
+    if (!isNaN(apiTotal) && apiTotal <= 0) return summary;
     const itemsSubtotal = items
       .filter((item: any) => !this.isItemCancelled(item))
       .reduce((sum: number, item: any) => sum + this.safeNum(item.total_dish_price), 0);
@@ -396,6 +412,21 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     }
     // Persist corrected summary so saveOrderToIndexedDB stores correct totals (e.g. after split)
     order.order_summary = this.orderSummary;
+
+    // ✅ تطبيع transactions لو الـ API ما رجّعش مصفوفة
+    const totalPrice = Number(this.orderSummary?.total_price ?? this.orderSummary?.total ?? 0);
+    const isPaidByTotal = !isNaN(totalPrice) && totalPrice <= 0;
+    if (!order.transactions || !Array.isArray(order.transactions) || order.transactions.length === 0) {
+      const isPaid = order.payment_status === 'paid' || isPaidByTotal;
+      order.transactions = [{
+        payment_method: order.payment_method ?? this.paymenMethod ?? 'cash',
+        payment_status: isPaid ? 'paid' : (order.payment_status ?? 'unpaid'),
+        paid: isPaid ? totalPrice : 0
+      }];
+    } else if (isPaidByTotal && order.transactions[0]?.payment_status === 'unpaid') {
+      order.transactions[0].payment_status = 'paid';
+      order.transactions[0].paid = totalPrice;
+    }
 
     if (this.deliveryData?.delivery_name === ' ') {
       this.deliveryData.delivery_name = 'لا يوجد';
@@ -470,6 +501,23 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
               };
             }
             order.order_summary = this.orderSummary;
+
+            // ✅ تطبيع transactions: لو الـ API ما رجّعش مصفوفة أو رجّعها فاضية
+            const totalPrice = Number(this.orderSummary?.total_price ?? this.orderSummary?.total ?? 0);
+            const isPaidByTotal = !isNaN(totalPrice) && totalPrice <= 0;
+            if (!order.transactions || !Array.isArray(order.transactions) || order.transactions.length === 0) {
+              const isPaid = order.payment_status === 'paid' || isPaidByTotal;
+              order.transactions = [{
+                payment_method: order.payment_method ?? this.paymenMethod ?? 'cash',
+                payment_status: isPaid ? 'paid' : (order.payment_status ?? 'unpaid'),
+                paid: isPaid ? totalPrice : 0
+              }];
+            } else if (isPaidByTotal && order.transactions[0]?.payment_status === 'unpaid') {
+              // لو الإجمالي = 0 (كوبون 100%) لكن الحالة غير مدفوعة → نصلحها
+              order.transactions[0].payment_status = 'paid';
+              order.transactions[0].paid = totalPrice;
+            }
+
             if (this.deliveryData?.delivery_name == ' ') {
               this.deliveryData.delivery_name = 'لا يوجد';
             }
@@ -495,6 +543,16 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   }
   get hasServiceFees(): boolean {
     return Number(this.orderSummary.service_percentage) > 0;
+  }
+
+  /** حالة الدفع الفعلية للعرض (مدفوعة / غير مدفوعة). لو الإجمالي = 0 نعتبرها مدفوعة. */
+  get displayPaymentStatus(): 'paid' | 'unpaid' {
+    const d = this.orderDetails;
+    if (!d) return 'unpaid';
+    const fromTx = d.transactions?.[0]?.payment_status ?? d.payment_status;
+    if (fromTx === 'paid') return 'paid';
+    const total = Number(this.orderSummary?.total_price ?? this.orderSummary?.total ?? 0);
+    return (!isNaN(total) && total <= 0) ? 'paid' : 'unpaid';
   }
 
   /** Safe grand total for display (never NaN). */
