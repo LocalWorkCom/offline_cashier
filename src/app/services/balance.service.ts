@@ -215,4 +215,25 @@ PrintBalance(id:number): Observable<any> {
     })
   );
 }
+
+  /**
+   * تقرير وردية الفرع (أول فتح، آخر إغلاق، إجماليات، متوقع، فعلي، فرق) - User Story 7
+   */
+  getBranchShiftReport(branchId: number, date: string): Observable<any> {
+    const token = this.authService.getToken();
+    if (!token) {
+      return throwError(() => new Error('Authentication token is missing'));
+    }
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    });
+    const params = { branch_id: branchId.toString(), date };
+    return this.http.get<any>(`${baseUrl}api/cashier/branch-shift-report`, { headers, params }).pipe(
+      catchError(error => {
+        console.error('Error fetching branch shift report:', error);
+        return throwError(() => error);
+      })
+    );
+  }
 }

@@ -1,7 +1,39 @@
-.totals{
+.totals-card-wrapper {
+  position: relative;
+  padding-left: 2.5rem;
+}
+
+.totals-toggle {
+  position: absolute;
+  left: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #6c757d;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.totals-toggle:hover {
+  color: #495057;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.totals-toggle .fa {
+  font-size: 1rem;
+}
+
+.totals {
   display: grid;
   gap: 24px;
-  grid-template-columns: repeat(auto-fill,minmax(150px,1fr));
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
 }
 .payment-card {
   width: 100%;
@@ -32,6 +64,27 @@
   font-size: 1.25rem;
   text-transform: capitalize;
 }
-.method{
+.method {
   color: #fe0000;
+}
+
+.amount {
+  font-weight: bold;
+}
+
+/* When amounts are hidden: only labels in one row, no boxes */
+.totals-labels-only {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 1rem;
+  flex-wrap: wrap;
+  min-height: 2.5rem;
+}
+
+.totals-labels-only .method {
+  color: #fe0000;
+  font-weight: bold;
+  font-size: 1.25rem;
+  text-transform: capitalize;
 }

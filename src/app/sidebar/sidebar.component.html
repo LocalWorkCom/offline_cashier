@@ -558,6 +558,39 @@
 
   </div>
 
+  @if (branchShiftReport) {
+  <p class="text-center fw-bold my-2 total"> ملخص وردية الفرع (جميع الجلسات)</p>
+  <div class="border border-1 border-black">
+    <div class="table-content">
+      <span> أول رصيد فتح </span>
+      <span>{{ branchShiftReport.first_open_balance | number:'1.2-2' }} {{ currency_Symbol }}</span>
+    </div>
+    <div class="table-content">
+      <span> آخر رصيد إغلاق </span>
+      <span>{{ branchShiftReport.last_close_balance | number:'1.2-2' }} {{ currency_Symbol }}</span>
+    </div>
+    <div class="table-content">
+      <span> إجمالي مبيعات كاش </span>
+      <span>{{ branchShiftReport.total_cash_sales | number:'1.2-2' }} {{ currency_Symbol }}</span>
+    </div>
+    <div class="table-content">
+      <span> مرتجعات كاش </span>
+      <span>{{ branchShiftReport.total_cash_returns | number:'1.2-2' }} {{ currency_Symbol }}</span>
+    </div>
+    <div class="table-content">
+      <span> النقدية المتوقعة (وردية الفرع) </span>
+      <span>{{ branchShiftReport.expected_cash | number:'1.2-2' }} {{ currency_Symbol }}</span>
+    </div>
+    <div class="table-content">
+      <span> النقدية الفعلية </span>
+      <span>{{ branchShiftReport.actual_cash != null ? (branchShiftReport.actual_cash | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span>
+    </div>
+    <div class="table-content">
+      <span> الفرق (متوقع vs فعلي) </span>
+      <span>{{ branchShiftReport.difference != null ? (branchShiftReport.difference | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span>
+    </div>
+  </div>
+  }
 
   <!--   <p class="text-center fw-bold my-2 total"> الإكرامية</p>
   <div class="border border-1 border-black">
@@ -774,6 +807,20 @@
         </span>
       </p>
     </div>
+
+    @if (branchShiftReport) {
+    <div class="border border-1 border-black mt-3 p-2 text-center">
+      <p class="fw-bold total">ملخص وردية الفرع (جميع الجلسات)</p>
+      <p class="fw-bold">أول رصيد فتح: <span>{{ branchShiftReport.first_open_balance | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
+      <p class="fw-bold">آخر رصيد إغلاق: <span>{{ branchShiftReport.last_close_balance | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
+      <p class="fw-bold">إجمالي مبيعات كاش: <span>{{ branchShiftReport.total_cash_sales | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
+      <p class="fw-bold">مرتجعات كاش: <span>{{ branchShiftReport.total_cash_returns | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
+      <p class="fw-bold">المتوقع: <span>{{ branchShiftReport.expected_cash | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
+      <p class="fw-bold">الفعلي: <span>{{ branchShiftReport.actual_cash != null ? (branchShiftReport.actual_cash | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span></p>
+      <p class="fw-bold">الفرق: <span>{{ branchShiftReport.difference != null ? (branchShiftReport.difference | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span></p>
+    </div>
+    }
+
   <footer class="m-3 text-center">
     <div class="border border-1 border-black p-2 w-100 m-2">
       <h6>
