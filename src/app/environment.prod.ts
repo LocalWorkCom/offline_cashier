@@ -17,7 +17,7 @@ export const environment = {
     key: 'cfd52a74b92f9e278f2d',
     cluster: 'mt1',
   },
-  wsUrl: 'ws://localhost:8081'
+  wsUrl: 'ws://192.168.11.20:8081'
 };
 
 

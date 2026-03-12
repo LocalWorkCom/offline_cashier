@@ -2,8 +2,8 @@
 //  export const baseUrlForWebSocket ='https://erpfortest.testdomain100.online/'
 
 //  export const baseUrl ='https://erp-cashier.testdomain100.online/'
-export const baseUrl ='https://7163-41-46-13-150.ngrok-free.app/'
-export const baseUrl2 ='https://7163-41-46-13-150.ngrok-free.app/api'
+export const baseUrl ='http://192.168.11.20:8000/'
+export const baseUrl2 ='http://192.168.11.20:8000/api'
 
 //test
 export const environment = {

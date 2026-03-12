@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, session } = require('electron');
+const { app, BrowserWindow, ipcMain} = require('electron');
 const WebSocket = require('ws');
 
 const path = require('path');
@@ -1241,16 +1241,6 @@ function logoutUser() {
 
 // ⬅️ App lifecycle
 app.on('ready', async () => {
-    session.defaultSession.webRequest.onBeforeSendHeaders(
-    { urls: ["https://*.ngrok-free.app/*"] },
-    (details, callback) => {
-
-      details.requestHeaders["ngrok-skip-browser-warning"] = "true";
-
-      callback({ requestHeaders: details.requestHeaders });
-    }
-  );
-
   await createWindow();
   startWebSocketServer();
 

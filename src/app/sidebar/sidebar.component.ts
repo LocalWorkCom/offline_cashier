@@ -105,14 +105,26 @@ export class SidebarComponent implements OnInit {
 
     this.syncService.triggerSync().subscribe({
       next: (response) => {
-        this.isSyncing = false;
-        this.syncStatus = 'success';
-        this.syncMessage = 'تمت المزامنة بنجاح';
-        setTimeout(() => {
-          this.syncMessage = null;
-          this.syncStatus = null;
-          this.closeSyncModal();
-        }, 2000);
+        // After general sync, sync activity logs
+        this.syncMessage = 'جاري مزامنة سجل النشاط...';
+        this.syncService.triggerActivityLogSync().subscribe({
+          next: () => {
+            this.isSyncing = false;
+            this.syncStatus = 'success';
+            this.syncMessage = 'تمت المزامنة بنجاح';
+            setTimeout(() => {
+              this.syncMessage = null;
+              this.syncStatus = null;
+              this.closeSyncModal();
+            }, 2000);
+          },
+          error: (err) => {
+            this.isSyncing = false;
+            this.syncStatus = 'error';
+            this.syncMessage = 'فشلت مزامنة سجل النشاط.';
+            console.error('Activity log sync error:', err);
+          }
+        });
       },
       error: (err) => {
         this.isSyncing = false;
