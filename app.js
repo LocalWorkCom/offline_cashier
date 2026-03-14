@@ -1,5 +1,7 @@
 const { app, BrowserWindow, ipcMain} = require('electron');
-const WebSocket = require('ws');
+const { Server } = require('socket.io');
+const express = require('express');
+const bodyParser = require('body-parser');
 
 const path = require('path');
 const url = require('url');
@@ -1046,115 +1048,40 @@ ipcMain.handle("test-printer-connection", async (event, ip, port, base64Image) =
 //             printChain.then(() => {
 //               console.log('✅ Print commands executed, closing device...');
 
-//               // Close device to flush and send all commands
-//               device.close(function (closeErr) {
-//                 if (closeErr) {
-//                   console.error('⚠️ Error closing device:', closeErr);
-//                 } else {
-//                   console.log('✅ Device closed successfully');
-//                 }
-
-//                 // Clean up temp file after successful print
-//                 try {
-//                   fs.unlinkSync(tempFilePath);
-//                   console.log('✅ Temporary file cleaned up');
-//                 } catch (unlinkErr) {
-//                   console.warn('⚠️ Failed to delete temp file:', unlinkErr.message);
-//                 }
-
-//                 console.log('✅ Print completed successfully');
-//                 resolve({ success: true });
-//               });
-//             }).catch(err => {
-//               // Clean up temp file on error
-//               try { fs.unlinkSync(tempFilePath); } catch (e) { }
-//               const errorMsg = `خطأ في الطباعة: ${err.message || err}`;
-//               console.error('❌ Print error:', errorMsg);
-//               console.error('❌ Error details:', err);
-//               try {
-//                 device.close();
-//               } catch (closeErr) {
-//                 console.error('Error closing device:', closeErr);
-//               }
-//               resolve({ success: false, error: errorMsg });
-//             });
-//           });
-//         } catch (err) {
-//           // Clean up temp file on error
-//           try { fs.unlinkSync(tempFilePath); } catch (e) { }
-//           const errorMsg = `خطأ في معالجة الصورة: ${err.message || err}`;
-//           console.error('❌ Image processing error:', errorMsg);
-//           try {
-//             device.close();
-//           } catch (closeErr) {
-//             console.error('Error closing device:', closeErr);
-//           }
-//           resolve({ success: false, error: errorMsg });
-//         }
-//       });
-//     } catch (err) {
-//       // Clean up temp file if it exists
-//       if (tempFilePath) {
-//         try { fs.unlinkSync(tempFilePath); } catch (e) { }
-//       }
-//       const errorMsg = `خطأ عام في الطباعة: ${err.message || err}`;
-//       console.error('❌ Error in print-image-to-network:', errorMsg);
-//       resolve({ success: false, error: errorMsg });
-//     }
-//   });
-// });
 
 
 // ⬅️ IPC handler for silent printing to specific printer
-// ipcMain.handle('print-to-printer', async (event, { htmlContent, printerName, silent = true, ...options }) => {
-//   try {
-//     // Create a hidden window for printing
-//     const printWindow = new BrowserWindow({
-//       show: false,
-//       width: 800,
-//       height: 600,
-//       webPreferences: {
-//         nodeIntegration: true,
-//         contextIsolation: false
-//       }
-//     });
+ipcMain.handle('print-to-printer', async (event, { htmlContent, printerName, silent = true, ...options }) => {
+  try {
+    const printWindow = new BrowserWindow({
+      show: false,
+      width: 800,
+      height: 600,
+      webPreferences: {
+        nodeIntegration: true,
+        contextIsolation: false
+      }
+    });
 
-//     // Load HTML content
-//     await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
+    await printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(htmlContent)}`);
+    await new Promise(resolve => setTimeout(resolve, 500));
 
-//     // Wait for content to load
-//     await new Promise(resolve => setTimeout(resolve, 500));
-
-//     // Print silently to specific printer (Electron will use the printer name directly)
-//     return new Promise((resolve) => {
-//       printWindow.webContents.print({
-//         silent: silent,
-//         printBackground: true,
-//         deviceName: printerName,
-//         ...options
-//       }, (success, failureReason) => {
-//         if (success) {
-//           console.log(`✅ Successfully printed to ${printerName}`);
-//         } else {
-//           console.error(`❌ Print failed on ${printerName}:`, failureReason);
-//         }
-
-//         // Close the hidden window after printing
-//         setTimeout(() => {
-//           printWindow.close();
-//         }, 1000);
-
-//         resolve({
-//           success: success,
-//           error: success ? null : failureReason
-//         });
-//       });
-//     });
-//   } catch (error) {
-//     console.error('❌ Error in print-to-printer:', error);
-//     return { success: false, error: error.message };
-//   }
-// });
+    return new Promise((resolve) => {
+      printWindow.webContents.print({
+        silent: silent,
+        printBackground: true,
+        deviceName: printerName,
+        ...options
+      }, (success, failureReason) => {
+        setTimeout(() => { printWindow.close(); }, 1000);
+        resolve({ success, error: success ? null : failureReason });
+      });
+    });
+  } catch (error) {
+    console.error('❌ Error in print-to-printer:', error);
+    return { success: false, error: error.message };
+  }
+});
 
 // ⬅️ Create BrowserWindow
 async function createWindow() {
@@ -1179,7 +1106,7 @@ async function createWindow() {
       preload: preloadPath,
       contextIsolation: true,
       nodeIntegration: true,
-      webSecurity: true, // Keep security enabled but allow WebSocket connections
+      webSecurity: true, 
     }
   });
 
@@ -1192,10 +1119,6 @@ async function createWindow() {
 
   console.log('📂 Loading:', indexUrl);
   await mainWindow.loadURL(indexUrl);
-
-  // mainWindow.webContents.on('did-finish-load', () => {
-  //   console.log('✅ Loaded:', mainWindow.webContents.getURL());
-  // });
 
   mainWindow.webContents.on('did-fail-load', () => {
     console.log('⚠️ Reload failed, forcing index.html');
@@ -1221,8 +1144,6 @@ async function createWindow() {
   await mainWindow.webContents.session.clearCache();
   console.log('✅ Cache cleared');
 
-  // mainWindow.webContents.openDevTools();
-
   mainWindow.on('closed', () => {
     mainWindow = null;
   });
@@ -1239,6 +1160,66 @@ function logoutUser() {
   }
 }
 
+const cors = require('cors');
+
+const serverApp = express();
+serverApp.use(cors());
+serverApp.use(bodyParser.json());
+
+function startWebSocketServer() {
+  const port = 8081;
+  const httpServer = require('http').createServer(serverApp);
+  const io = new Server(httpServer, {
+    cors: {
+      origin: "*",
+      methods: ["GET", "POST"],
+      credentials: true
+    },
+    allowEIO3: true // Support older clients if any
+  });
+
+  console.log(`🚀 Socket.io server started on port ${port}`);
+
+  // HTTP endpoint for backend to trigger broadcasts
+  serverApp.post('/broadcast', (req, res) => {
+    const { channel, event, data } = req.body;
+    
+    if (!channel || !event) {
+      return res.status(400).json({ error: 'Channel and event are required' });
+    }
+
+    console.log(`📦 Broadcast requested via HTTP: ${event} on ${channel}`);
+    
+    // Emit to all connected clients
+    io.emit(`${channel}:${event}`, data);
+    
+    // Also send to Electron Main Process IPC if needed
+    if (mainWindow) {
+      mainWindow.webContents.send('ws-message', { channel, event, data });
+    }
+
+    res.json({ status: 'success' });
+  });
+
+  io.on('connection', (socket) => {
+    console.log('Client connected to Electron Socket.io Server:', socket.id);
+
+    socket.on('subscribe', (data) => {
+      console.log(`📺 Frontend Subscribed: ${data.channel} -> ${data.event}`);
+      socket.join(data.channel);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('Client disconnected:', socket.id);
+    });
+  });
+
+  httpServer.listen(port, '0.0.0.0', () => {
+    console.log(`🚀 Socket.io server is live on http://0.0.0.0:${port}`);
+  });
+  app.io = io;
+}
+
 // ⬅️ App lifecycle
 app.on('ready', async () => {
   await createWindow();
@@ -1251,58 +1232,6 @@ app.on('ready', async () => {
   }, 1000);
 });
 
-// WebSocket Server for Electron
-function startWebSocketServer() {
-  const port = 8081;
-  const wss = new WebSocket.Server({ port });
-  console.log(`🚀 WebSocket server started on ws://localhost:${port}`);
-
-  wss.on('connection', (ws) => {
-    console.log('Client connected to Electron WS Server');
-
-    ws.on('message', (message) => {
-      const messageString = message.toString();
-      
-      try {
-        const data = JSON.parse(messageString);
-        
-        // Log based on type
-        if (data.type === 'subscribe') {
-          console.log(`📺 Frontend Subscribed: ${data.channel} -> ${data.event}`);
-          return; // Don't broadcast subscription meta-messages
-        }
-
-        console.log('📦 Event Received:', data.event || 'No Event Name', 'on', data.channel || 'No Channel');
-
-        // Broadcast to all other clients (e.g., Angular app)
-        wss.clients.forEach((client) => {
-          if (client !== ws && client.readyState === WebSocket.OPEN) {
-            client.send(messageString);
-          }
-        });
-
-        // Also send to Electron Main Process IPC
-        if (mainWindow) {
-           mainWindow.webContents.send('ws-message', data);
-        }
-
-      } catch (e) {
-        console.log('Received (Raw):', messageString);
-        // ... broadcast raw message if needed
-      }
-    });
-
-
-    ws.on('close', () => {
-      console.log('Client disconnected');
-    });
-
-    ws.send(JSON.stringify({ type: 'system', message: 'Connected to Electron Hub' }));
-  });
-
-  app.wss = wss;
-}
-
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') app.quit();
 });
@@ -1310,5 +1239,6 @@ app.on('window-all-closed', () => {
 app.on('activate', () => {
   if (!mainWindow) createWindow();
 });
+
 
 

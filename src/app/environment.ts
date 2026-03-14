@@ -2,8 +2,8 @@
 //  export const baseUrlForWebSocket ='https://erpfortest.testdomain100.online/'
 
 //  export const baseUrl ='https://erp-cashier.testdomain100.online/'
-export const baseUrl ='http://192.168.11.20:8000/'
-export const baseUrl2 ='http://192.168.11.20:8000/api'
+export const baseUrl ='http://192.168.100.11:8000/'
+export const baseUrl2 ='http://192.168.100.11:8000/api'
 
 //test
 export const environment = {
@@ -12,7 +12,7 @@ export const environment = {
     key: 'cfd52a74b92f9e278f2d',
     cluster: 'mt1',
   },
-  wsUrl: 'ws://localhost:8081'
+  wsUrl: 'ws://192.168.100.11:8081'
 };
 
 // //localhost
