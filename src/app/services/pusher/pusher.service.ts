@@ -1,59 +1,59 @@
 import { Injectable } from '@angular/core';
 import { environment } from '../../environment';
+import { io, Socket } from 'socket.io-client';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PusherService {
-  private socket: WebSocket | null = null;
+  private socket: Socket | null = null;
   private subscriptions: Map<string, ((data: any) => void)[]> = new Map();
   private isConnected = false;
 
   constructor() {}
 
   connect(): void {
-    if (this.socket && (this.socket.readyState === WebSocket.OPEN || this.socket.readyState === WebSocket.CONNECTING)) {
+    if (this.socket && this.socket.connected) {
       return;
     }
 
-    // Connect to the Electron WebSocket Server
-    const url = `${environment.wsUrl}?key=${environment.pusher.key}`;
-    this.socket = new WebSocket(url);
-
-    this.socket.onopen = () => {
-      console.log('✅ Connected to Electron WebSocket Hub');
-      this.isConnected = true;
-    };
-
-    this.socket.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data);
-        const { channel, event: eventName, data } = payload;
-
-        if (channel && eventName) {
-          const key = `${channel}:${eventName}`;
-          const callbacks = this.subscriptions.get(key);
-          if (callbacks) {
-            console.log(`[Socket] Event received: ${key}`, data);
-            callbacks.forEach(cb => cb(data));
-          }
-        } else if (payload.type === 'system') {
-          console.log('[Socket System]', payload.message);
-        }
-      } catch (e) {
-        console.warn('[Socket] Non-JSON message received:', event.data);
+    // Connect to the Electron Socket.io Server
+    // Socket.io automatically appends /socket.io/ and handles the handshake
+    const url = environment.wsUrl.replace('ws://', 'http://').replace('wss://', 'https://');
+    
+    this.socket = io(url, {
+      transports: ['polling', 'websocket'],
+      withCredentials: true,
+      query: {
+        key: environment.pusher.key
       }
-    };
+    });
 
-    this.socket.onclose = () => {
-      console.log('❌ Disconnected from Electron WebSocket Hub. Retrying in 3s...');
+    this.socket.on('connect', () => {
+      console.log('✅ Connected to Electron Socket.io Hub');
+      this.isConnected = true;
+    });
+
+    this.socket.on('disconnect', () => {
+      console.log('❌ Disconnected from Electron Socket.io Hub');
       this.isConnected = false;
-      setTimeout(() => this.connect(), 3000);
-    };
+    });
 
-    this.socket.onerror = (error) => {
-      console.error('[Socket] Error:', error);
-    };
+    this.socket.on('connect_error', (error) => {
+      console.error('[Socket] Connection Error:', error);
+    });
+
+    // Handle incoming events
+    // We listen to the catch-all or specific channel:event pattern
+    // Based on app.js: io.emit(`${channel}:${event}`, data);
+    this.socket.onAny((path, data) => {
+       // path usually looks like "channel:event"
+       const callbacks = this.subscriptions.get(path);
+       if (callbacks) {
+         console.log(`[Socket] Event received: ${path}`, data);
+         callbacks.forEach(cb => cb(data));
+       }
+    });
   }
 
   subscribe(
@@ -69,16 +69,14 @@ export class PusherService {
     
     console.log(`[Socket] Subscribed locally to: ${key}`);
 
-    // Notify the Electron server so you can see it in the terminal logs
-    if (this.socket && this.socket.readyState === WebSocket.OPEN) {
-      this.socket.send(JSON.stringify({
-        type: 'subscribe',
+    // Notify the Electron server
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('subscribe', {
         channel: channelName,
         event: eventName
-      }));
+      });
     }
   }
-
 
   subscribeToPrivateChannel(
     channelName: string,
@@ -86,13 +84,10 @@ export class PusherService {
     endPoint: string,
     callback: (data: any) => void
   ) {
-    // For local Electron WebSocket, we treat private channels same as public for now
-    // In a full implementation, you'd send an auth request to Laravel first
     this.subscribe(channelName, eventName, callback);
   }
 
   unsubscribe(channelName: string): void {
-    // Remove all subscriptions for this channel
     for (const key of this.subscriptions.keys()) {
       if (key.startsWith(`${channelName}:`)) {
         this.subscriptions.delete(key);
