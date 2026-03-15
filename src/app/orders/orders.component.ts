@@ -114,9 +114,9 @@ export class OrdersComponent implements OnDestroy {
     private http: HttpClient,
     private NgbModal: NgbModal,
     private productsService: ProductsService,
-    private tablesService: TablesService, // private dbService: IndexeddbService
-    private _OrderListDetailsService: OrderListDetailsService ,
-     private dbService: IndexeddbService,
+    private tablesService: TablesService,
+    private _OrderListDetailsService: OrderListDetailsService,
+    private dbService: IndexeddbService,
     private addAddressService: AddAddressService,
     private phoneCheckService: PhoneCheckService
   ) {
@@ -132,6 +132,9 @@ export class OrdersComponent implements OnDestroy {
   isLoadMoreLoading: boolean = false;
   orderTypeCounts: any = {};
   orderStatusCounts: any = {};
+  /** عند العمل offline: القائمة الكاملة من IndexedDB لعرض 30 لكل صفحة */
+  private offlineOrdersFull: any[] = [];
+  private readonly ORDERS_PER_PAGE = 30;
 
   ngOnInit(): void {
     // console.log("this.isOnline", this.isOnline);
@@ -192,55 +195,68 @@ export class OrdersComponent implements OnDestroy {
     if (this.isOnline) {
       this.fetchOrdersFromAPI();
     } else {
-      // this.loadFromIndexedDB();
-      this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+      this.loadOrdersFromIndexedDB();
     }
   }
   //start dalia
 
   // Load orders from IndexedDB
-  // private loadOrdersFromIndexedDB(): void {
-  //   this.dbService.getOrders().then(orders => {
-  //     if (orders && orders.length > 0) {
-  //       console.log('Orders loaded from IndexedDB:', orders.length);
+  private loadOrdersFromIndexedDB(): void {
+    this.dbService.getOrders().then(orders => {
+      if (orders && orders.length > 0) {
+        console.log('Orders loaded from IndexedDB:', orders.length);
 
-  //       this.processOrders(orders);
+        this.processOrders(orders);
+        // عرض 30 طلب فقط في الصفحة، والباقي عبر "تحميل المزيد"
+        this.offlineOrdersFull = [...this.orders];
+        this.orders = this.offlineOrdersFull.slice(0, this.ORDERS_PER_PAGE);
+        this.totalOrdersCount = this.offlineOrdersFull.length;
+        this.hasMoreOrders = this.offlineOrdersFull.length > this.ORDERS_PER_PAGE;
+        this.currentPage = 1;
+        this.filterOrders();
+        this.loading = true; // إيقاف الـ spinner وعرض الطلبات
+        this.cdr.detectChanges();
 
-  // Check if data is stale (older than 5 minutes)
-  //       this.dbService.getOrdersLastSync().then(lastSync => {
-  //         const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
-  //         if (this.isOnline && lastSync < fiveMinutesAgo) {
-  //           this.fetchOrdersFromAPI();
-  //         }
-  //       }).catch(err => {
-  //         console.error('Error getting last sync time:', err);
-  //         if (this.isOnline) {
-  //           this.fetchOrdersFromAPI();
-  //         }
-  //       });
-  //     } else if (this.isOnline) {
-  //       // No data in IndexedDB, fetch from API
-  //       this.fetchOrdersFromAPI();
-  //     } else {
-  //       // Offline and no data available
-  //       this.loading = false;
-  //       console.warn('No orders available offline');
-  //     }
-  //   }).catch(err => {
-  //     console.error('Error loading orders from IndexedDB:', err);
-  //     if (this.isOnline) {
-  //       this.fetchOrdersFromAPI();
-  //     } else {
-  //       this.loading = false;
-  //     }
-  //   });
-  // }
+        // Check if data is stale (older than 5 minutes)
+        this.dbService.getOrdersLastSync().then(lastSync => {
+          const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+          if (this.isOnline && lastSync < fiveMinutesAgo) {
+            this.fetchOrdersFromAPI();
+          }
+        }).catch(err => {
+          console.error('Error getting last sync time:', err);
+          if (this.isOnline) {
+            this.fetchOrdersFromAPI();
+          }
+        });
+      } else if (this.isOnline) {
+        // No data in IndexedDB, fetch from API
+        this.fetchOrdersFromAPI();
+      } else {
+        // Offline and no data available
+        this.loading = true; // إيقاف الـ spinner لعرض رسالة الخطأ
+        this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+        console.warn('No orders available offline');
+        this.cdr.detectChanges();
+      }
+    }).catch(err => {
+      console.error('Error loading orders from IndexedDB:', err);
+      if (this.isOnline) {
+        this.fetchOrdersFromAPI();
+      } else {
+        this.loading = true; // إيقاف الـ spinner لعرض رسالة الخطأ
+        this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+        this.cdr.detectChanges();
+      }
+    });
+  }
   // Fetch orders from API
   private fetchOrdersFromAPI(isLoadMore: boolean = false): void {
     if (!isLoadMore) {
       this.loading = false;
       this.currentPage = 1;
       this.orders = [];
+      this.offlineOrdersFull = []; // استخدام الـ API وليس القائمة المحلية
     } else {
       this.isLoadMoreLoading = true;
     }
@@ -287,14 +303,19 @@ export class OrdersComponent implements OnDestroy {
 
             this.processOrders(this.orders);
 
-            // Save to IndexedDB (only for the first page usually, but here we save current list)
+            // حفظ الطلبات في IndexedDB: أولاً الصفحة الحالية فوراً، ثم مزامنة كل الصفحات في الخلفية
             if (!isLoadMore) {
               this.dbService.saveOrders(this.orders).then(() => {
-                console.log('Orders saved to IndexedDB');
-                return this.dbService.setOrdersLastSync(Date.now());
-              }).catch(err => {
-                console.error('Error saving orders to IndexedDB:', err);
-              });
+                this.dbService.setOrdersLastSync(Date.now());
+              }).catch(err => console.error('Error saving orders to IndexedDB:', err));
+              // مزامنة كل الطلبات (كل الأنواع والحالات) إلى IndexedDB للعمل offline
+              this.ordersListService
+                .fetchAllOrdersAndSaveToIndexedDB('All', 'all')
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                  next: (r) => console.log('✅ تم حفظ كل الطلبات في IndexedDB:', r.count),
+                  error: () => {},
+                });
             }
           } else {
             console.warn('No orders found in API response.');
@@ -315,15 +336,33 @@ export class OrdersComponent implements OnDestroy {
             'حدث خطأ فى الاتصال يرجى المحاولة مره اخرى',
             'error'
           );
+
+          // If we're online but API failed, try to use IndexedDB data as fallback
+          if (this.isOnline) {
+            this.dbService.getOrders().then(orders => {
+              if (orders && orders.length > 0) {
+                console.log('Using IndexedDB data as fallback:', orders.length);
+                this.processOrders(orders);
+              }
+            });
+          }
         },
       });
   }
 
   loadMore(): void {
-    if (this.hasMoreOrders && !this.isLoadMoreLoading) {
-      this.currentPage++;
-      this.fetchOrdersFromAPI(true);
+    if (!this.hasMoreOrders || this.isLoadMoreLoading) return;
+    // عند العمل offline: جلب الـ 30 التالية من القائمة المحلية
+    if (!this.isOnline && this.offlineOrdersFull.length > 0) {
+      const nextCount = this.orders.length + this.ORDERS_PER_PAGE;
+      this.orders = this.offlineOrdersFull.slice(0, nextCount);
+      this.hasMoreOrders = this.orders.length < this.totalOrdersCount;
+      this.filterOrders();
+      this.cdr.detectChanges();
+      return;
     }
+    this.currentPage++;
+    this.fetchOrdersFromAPI(true);
   }
 
   fetchOrderTypeCounts(): void {
