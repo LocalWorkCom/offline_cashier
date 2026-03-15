@@ -11,9 +11,9 @@
     "start:electron": "npm run build:dev && electron ./app.js",
     "electron:prod": "npm run build && electron ./app.js",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
+    "test": "ng test",0
     "serve:ssr:cashier": "node dist/cashier/server/server.mjs",
-    "electron:build": "ng build --configuration production && electron-builder"
+    "electron:build": "node --max-old-space-size=8192 ./node_modules/@angular/cli/bin/ng build --configuration production && electron-builder"
   },
   "private": true,
   "dependencies": {
