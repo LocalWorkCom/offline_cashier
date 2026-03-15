@@ -77,11 +77,12 @@ export class PillsComponent implements OnInit, OnDestroy {
   // start dalia
   ngOnInit() {
     this.isOnline = navigator.onLine;
+    this.loading = false;
     if (this.isOnline) {
       this.fetchPillsData();
       this.fetchInvoiceCounts();
     } else {
-      this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+      this.loadFromIndexedDB();
     }
     // }).catch(error => {
     //   console.error('Error initializing IndexedDB:', error);
@@ -93,7 +94,12 @@ export class PillsComponent implements OnInit, OnDestroy {
       distinctUntilChanged(),
       takeUntil(this.destroy$)
     ).subscribe(() => {
-      this.fetchPillsData();
+      if (this.usingOfflineData) {
+        this.updatePillsByStatus();
+        this.cdr.detectChanges();
+      } else {
+        this.fetchPillsData();
+      }
     });
 
     this.listenToNewInvoice();
@@ -241,8 +247,7 @@ console.log(newOrder);
       this.usingOfflineData = false;
       this.fetchPillsData();
     } else if (!this.isOnline) {
-      // When going offline, load from IndexedDB
-      // this.loadFromIndexedDB();
+      this.loadFromIndexedDB();
     }
     this.cdr.detectChanges();
   }
@@ -289,6 +294,10 @@ console.log(newOrder);
 
             this.updatePillsByStatus();
             this.usingOfflineData = false;
+            this.errorMessage = '';
+            if (!isLoadMore) {
+              this.triggerFullPillsSyncToIndexedDB();
+            }
             this.cdr.detectChanges();
           } else {
             console.warn('No invoices found in API response.');
@@ -304,8 +313,21 @@ console.log(newOrder);
         error: (error) => {
           console.error('Error fetching pills data:', error);
           this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+          this.loading = true;
+          this.loadFromIndexedDB();
           this.cdr.detectChanges();
         },
+      });
+  }
+
+  /** مزامنة كل الفواتير (كل الصفحات) إلى IndexedDB في الخلفية للعمل offline */
+  private triggerFullPillsSyncToIndexedDB(): void {
+    this.pillRequestService
+      .fetchAllInvoicesAndSaveToIndexedDB()
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (r) => console.log('✅ مزامنة الفواتير إلى IndexedDB:', r.count),
+        error: (err) => console.error('مزامنة الفواتير إلى IndexedDB:', err),
       });
   }
 
@@ -351,6 +373,10 @@ console.log(newOrder);
   }
 
   getInvoiceTypeCount(type: string): number {
+    if (this.usingOfflineData && this.pills.length > 0) {
+      if (type === 'all') return this.pills.length;
+      return this.pills.filter((p: any) => (p.order_type || '').toLowerCase() === type.toLowerCase()).length;
+    }
     if (type === 'all') {
       return Object.values(this.invoiceTypeCounts).reduce((sum: number, c: any) => sum + (Number(c) || 0), 0);
     }
@@ -358,6 +384,11 @@ console.log(newOrder);
   }
 
   getInvoiceStatusCount(status: string): number {
+    if (this.usingOfflineData && this.pills.length > 0) {
+      if (status === 'all') return this.pills.length;
+      const statusKey = (p: any) => (p.invoice_print_status || (p.payment_status === 'paid' ? 'done' : 'hold') || '').toLowerCase();
+      return this.pills.filter((p: any) => statusKey(p) === status).length;
+    }
     if (status === 'all') {
       return this.totalInvoicesCount;
     }
@@ -374,24 +405,37 @@ console.log(newOrder);
   selectOrderTypeFilter(type: string): void {
     this.orderTypeFilter = type;
     this.currentPage = 1;
+    if (this.usingOfflineData) {
+      this.updatePillsByStatus();
+      this.cdr.detectChanges();
+      return;
+    }
     this.fetchPillsData();
     this.fetchInvoiceCounts();
   }
 
-  private loadFromIndexedDB() {
+  private loadFromIndexedDB(): void {
     this.dbService
-      .getAll('pills')
+      .getPills()
       .then((pills) => {
         if (pills && pills.length > 0) {
-          this.pills = pills;
+          this.pills = pills.map((p: any) => ({
+            ...p,
+            invoice_print_status: p.invoice_print_status ?? (p.payment_status === 'paid' ? 'done' : 'hold'),
+            order_number: p.order_number ?? p.invoice_id ?? p.id,
+            invoice_number: p.invoice_number ?? p.invoice_id ?? `INV-${p.id}`,
+          }));
           this.usingOfflineData = true;
+          this.errorMessage = '';
           this.updatePillsByStatus();
-          console.log('Loaded from offline storage:', pills.length, 'pills');
+          this.totalInvoicesCount = this.pills.length;
+          this.hasMoreInvoices = false;
+          console.log('الفواتير من IndexedDB:', this.pills.length);
         } else {
           this.pills = [];
           this.usingOfflineData = false;
+          this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
           this.updatePillsByStatus();
-          console.log('No offline data available');
         }
         this.loading = true;
         this.cdr.detectChanges();
@@ -400,6 +444,7 @@ console.log(newOrder);
         console.error('Error loading from IndexedDB:', error);
         this.pills = [];
         this.usingOfflineData = false;
+        this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
         this.loading = true;
         this.cdr.detectChanges();
       });
@@ -453,6 +498,11 @@ console.log(newOrder);
     this.selectedStatus = index;
     const allStatuses = ['hold', 'done', 'cancelled', 'returned'];
     this.selectedStatusLabel = allStatuses[index] || 'hold';
+    if (this.usingOfflineData) {
+      this.updatePillsByStatus();
+      this.cdr.detectChanges();
+      return;
+    }
     this.fetchPillsData();
   }
   // fetchPillsData(): void {
@@ -490,17 +540,32 @@ console.log(newOrder);
   private updatePillsByStatus(): void {
     const allStatuses = ['hold', 'done', 'cancelled', 'returned'];
 
+    // عند الـ offline أو عند وجود فلتر: نستخدم قائمة معالجة حسب نوع الطلب والبحث
+    let list = this.pills;
+    if (this.orderTypeFilter && this.orderTypeFilter !== 'all') {
+      list = list.filter((p: any) => (p.order_type || '').toLowerCase() === this.orderTypeFilter.toLowerCase());
+    }
+    const search = this.searchOrderNumber?.trim().toLowerCase();
+    if (search) {
+      list = list.filter(
+        (p: any) =>
+          String(p.order_number || '').toLowerCase().includes(search) ||
+          String(p.invoice_number || '').toLowerCase().includes(search) ||
+          String(p.invoice_id || '').toLowerCase().includes(search)
+      );
+    }
+
     this.pillsByStatus = allStatuses.map((status) => {
       // If the current active tab matches this status group, show all items from the server response
       if (this.selectedStatusLabel === status) {
-        return { status, pills: this.pills };
+        return { status, pills: list };
       }
 
       // Otherwise, filter locally based on the print status
       return {
         status,
-        pills: this.pills.filter(
-          (pill) => (pill.invoice_print_status || '').toLowerCase() === status
+        pills: list.filter(
+          (pill: any) => (pill.invoice_print_status || (pill.payment_status === 'paid' ? 'done' : 'hold') || '').toLowerCase() === status
         ),
       };
     });
@@ -527,7 +592,9 @@ console.log(newOrder);
 
     const search = this.searchOrderNumber?.trim().toLowerCase();
     if (search && this.pills.length > 0) {
-      const match = this.pills[0]; // Take first match since API filtered it
+      const match = this.usingOfflineData
+        ? this.filteredPillsByStatus?.[this.selectedStatus]?.pills?.[0]
+        : this.pills[0];
 
       if (match) {
         this.highlightedPillId = `pill-${match.order_number}`;
