@@ -1,93 +1,98 @@
 import { Injectable } from '@angular/core';
-import Pusher from 'pusher-js';
-import { baseUrl, environment ,baseUrl2} from '../../environment';
-import { BasicsConstance } from '../../constants';
+import { environment } from '../../environment';
+import { io, Socket } from 'socket.io-client';
 
 @Injectable({
   providedIn: 'root',
 })
 export class PusherService {
-  private pusher: Pusher | null = null;
-  private token: string = localStorage.getItem('access_token') || '';
+  private socket: Socket | null = null;
+  private subscriptions: Map<string, ((data: any) => void)[]> = new Map();
+  private isConnected = false;
 
-  constructor() {
-    Pusher.logToConsole = true;
-  }
+  constructor() {}
 
   connect(): void {
-    this.pusher = new Pusher(environment.pusher.key, {
-      cluster: environment.pusher.cluster,
-      authEndpoint: `${baseUrl2}broadcasting/auth`,
-      auth: {
-        headers: {
-          Authorization: `Bearer ${this.token}`,
-          Accept: 'application/json',
-          'Content-Type': 'application/json',
-        },
-      },
+    if (this.socket && this.socket.connected) {
+      return;
+    }
+
+    // Connect to the Electron Socket.io Server
+    // Socket.io automatically appends /socket.io/ and handles the handshake
+    const url = environment.wsUrl.replace('ws://', 'http://').replace('wss://', 'https://');
+    
+    this.socket = io(url, {
+      transports: ['polling', 'websocket'],
+      withCredentials: true,
+      query: {
+        key: environment.pusher.key
+      }
+    });
+
+    this.socket.on('connect', () => {
+      console.log('✅ Connected to Electron Socket.io Hub');
+      this.isConnected = true;
+    });
+
+    this.socket.on('disconnect', () => {
+      console.log('❌ Disconnected from Electron Socket.io Hub');
+      this.isConnected = false;
+    });
+
+    this.socket.on('connect_error', (error) => {
+      console.error('[Socket] Connection Error:', error);
+    });
+
+    // Handle incoming events
+    // We listen to the catch-all or specific channel:event pattern
+    // Based on app.js: io.emit(`${channel}:${event}`, data);
+    this.socket.onAny((path, data) => {
+       // path usually looks like "channel:event"
+       const callbacks = this.subscriptions.get(path);
+       if (callbacks) {
+         console.log(`[Socket] Event received: ${path}`, data);
+         callbacks.forEach(cb => cb(data));
+       }
     });
   }
-
-  // connect(): void {
-  //   this.pusher = new Pusher('77f608d73899bd256cfa', {
-  //     cluster: 'mt1',
-  //     forceTLS: true,
-  //     authEndpoint:`${baseUrl}broadcasting/auth`,
-  //     auth: {
-  //       headers: {
-  //         token: `Bearer ${this.token}`,
-  //           Lang: localStorage.getItem(BasicsConstance.LANG)||BasicsConstance.DefaultLang,
-  //       }
-  //     }
-  //   });
-  // }
 
   subscribe(
     channelName: string,
     eventName: string,
     callback: (data: any) => void
   ): void {
-    if (!this.pusher) {
-      throw new Error(
-        'Pusher connection not initialized. Call connect() first.'
-      );
+    const key = `${channelName}:${eventName}`;
+    if (!this.subscriptions.has(key)) {
+      this.subscriptions.set(key, []);
     }
+    this.subscriptions.get(key)?.push(callback);
+    
+    console.log(`[Socket] Subscribed locally to: ${key}`);
 
-    const channel = this.pusher.subscribe(channelName);
-    channel.bind(eventName, callback);
-  }
-
-  subscribeToPrivateChannel(channelName: string,eventName:string,endPoint:string,
-    callback: (data: any) => void) {
-
-    // Make an authentication request to your server for the private channel
-    fetch(`${baseUrl2}${endPoint}`, {
-      method: 'POST',credentials: 'include',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        socket_id: this.pusher?.connection.socket_id,
-        channel_name: channelName
-      })
-    })
-      .then(response => response.json())
-      .then(authData => {
-         if (!this.pusher) {
-      throw new Error(
-        'Pusher connection not initialized. Call connect() first from private listen   .'
-      );
-    }
-        const channel = this.pusher.subscribe(channelName);
-        channel.bind(eventName,callback);
-      })
-      .catch(error => {
-        console.error('Error authenticating private channel:', error);
+    // Notify the Electron server
+    if (this.socket && this.socket.connected) {
+      this.socket.emit('subscribe', {
+        channel: channelName,
+        event: eventName
       });
-  }
-  unsubscribe(channelName: string): void {
-    if (this.pusher) {
-      this.pusher.unsubscribe(channelName);
     }
+  }
+
+  subscribeToPrivateChannel(
+    channelName: string,
+    eventName: string,
+    endPoint: string,
+    callback: (data: any) => void
+  ) {
+    this.subscribe(channelName, eventName, callback);
+  }
+
+  unsubscribe(channelName: string): void {
+    for (const key of this.subscriptions.keys()) {
+      if (key.startsWith(`${channelName}:`)) {
+        this.subscriptions.delete(key);
+      }
+    }
+    console.log(`[Socket] Unsubscribed from channel: ${channelName}`);
   }
 }

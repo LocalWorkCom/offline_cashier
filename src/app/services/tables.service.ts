@@ -53,11 +53,7 @@ export class TablesService {
     return this.http.post(`${this.apiUrl}/orders/tableorderDetails`, body, { headers });
   }
   // UPDATE TABLE STATUS
-  updateTableStatus(tableId: number, orderId: number): Observable<any> {
-    const token = this.getToken();
-    if (!token) {
-      return new Observable((obs) => obs.error(new Error('No authentication token found')));
-    }
+  updateTableStatus(tableId: number, orderId: string): Observable<any> {
     const headers = new HttpHeaders().set(
       'Authorization',
       `Bearer ${token}`
