@@ -1,6 +1,29 @@
 @import "../node_modules/@fortawesome/fontawesome-free/css/all.min.css";
 @import "../node_modules/ngx-countries-dropdown/assets/styles.css";
 
+/* تقرير الوردية والطباعة – خط Cairo أوضح وأكبر قليلاً */
+#print-section,
+#print-section p,
+#print-section span,
+#print-section .total,
+#logout-report-section,
+#logout-report-section p,
+#logout-report-section span,
+#logout-report-section .total {
+  font-family: 'Cairo', sans-serif !important;
+  font-size: 15px !important;
+  font-weight: 600;
+}
+@media print {
+  body,
+  body * {
+    font-family: 'Cairo', sans-serif !important;
+  }
+  body {
+    font-size: 15px !important;
+  }
+}
+
 ::-webkit-scrollbar {
     width: 10px;
 }

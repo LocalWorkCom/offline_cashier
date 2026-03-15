@@ -34,12 +34,12 @@ export class PillsComponent implements OnInit, OnDestroy {
     hold: 'معلقة',
     done: 'مكتملة',
   };
-  selectedStatusLabel: string = 'all';
+  selectedStatusLabel: string = 'hold';
   searchOrderNumber: string = '';
   searchText: any;
   filteredPillsByStatus: any[] | undefined;
   orderType: any;
-  orderTypeFilter: string = 'all';
+  orderTypeFilter: string = 'dine-in';
   highlightedPillId: string | null = null;
   errorMessage: any;
   invoiceTypeCounts: any = {};
@@ -262,8 +262,8 @@ console.log(newOrder);
     }
 
     const apiStatusMap: any = {
-      'hold': 'unpaid',
-      'done': 'paid',
+      'hold': 'hold',
+      'done': 'completed',
       'cancelled': 'cancelled',
       'returned': 'returned'
     };
@@ -332,6 +332,8 @@ console.log(newOrder);
   }
 
   onSearchChange(): void {
+    // Strip '#' from search input so users can paste e.g. '#1234'
+    this.searchOrderNumber = this.searchOrderNumber.replace(/#/g, '');
     this.searchSubject.next(this.searchOrderNumber);
   }
 
@@ -391,8 +393,8 @@ console.log(newOrder);
       return this.totalInvoicesCount;
     }
     const apiStatusMap: any = {
-      'hold': 'unpaid',
-      'done': 'paid',
+      'hold': 'hold', 
+      'done': 'completed',
       'cancelled': 'cancelled',
       'returned': 'returned'
     };
@@ -494,8 +496,8 @@ console.log(newOrder);
   // }
   selectStatusGroup(index: number): void {
     this.selectedStatus = index;
-    const allStatuses = ['all', 'hold', 'done', 'cancelled', 'returned'];
-    this.selectedStatusLabel = allStatuses[index] || 'all';
+    const allStatuses = ['hold', 'done', 'cancelled', 'returned'];
+    this.selectedStatusLabel = allStatuses[index] || 'hold';
     if (this.usingOfflineData) {
       this.updatePillsByStatus();
       this.cdr.detectChanges();
@@ -536,7 +538,7 @@ console.log(newOrder);
   //   this.filterPills();
   // }
   private updatePillsByStatus(): void {
-    const allStatuses = ['all', 'hold', 'done', 'cancelled', 'returned'];
+    const allStatuses = ['hold', 'done', 'cancelled', 'returned'];
 
     // عند الـ offline أو عند وجود فلتر: نستخدم قائمة معالجة حسب نوع الطلب والبحث
     let list = this.pills;
@@ -554,12 +556,12 @@ console.log(newOrder);
     }
 
     this.pillsByStatus = allStatuses.map((status) => {
-      if (status === 'all') {
-        return { status, pills: list };
-      }
+      // If the current active tab matches this status group, show all items from the server response
       if (this.selectedStatusLabel === status) {
         return { status, pills: list };
       }
+
+      // Otherwise, filter locally based on the print status
       return {
         status,
         pills: list.filter(

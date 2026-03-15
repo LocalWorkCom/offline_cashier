@@ -215,7 +215,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   tipModalTimeoutDuration: number = 30; // 30 seconds timeout
   tipModalWarningTime: number = 10; // Show warning at 10 seconds remaining
   tipModalWarningShown: boolean = false;
-  
+
   drivers: any[] = [];
   selectedDriverId: number | null = null;
 
@@ -1355,7 +1355,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       // this.dbService.removeFromCart(index);
       localStorage.setItem('cart', JSON.stringify(this.cartItems));
       // If the cart is empty, clear coupon, note, and messages
-      if (this.cartItems.length === 0) {
+      if (this.cartItems.length === 0 && localStorage.getItem('couponValue') != '0') {
         this.appliedCoupon = null;
         this.couponCode = '';
         this.discountAmount = 0;
@@ -1768,6 +1768,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       let discountAmount = 0;
       const currentCartTotal = this.getTotal();
 
+      console.log("order_dalia", this.currentOrderData);
+
+
       if (storedCouponType === 'percentage') {
         // تطبيق النسبة المئوية على المجموع الحالي
         const couponPercentage = parseFloat(storedCouponValue || '10');
@@ -1783,6 +1786,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         const fixedDiscount = parseFloat(storedCouponValue || '0');
         discountAmount = Math.min(fixedDiscount, currentCartTotal);
       }
+
+      if(this.currentOrderData)
+        {
+          if(this.currentOrderData.details_order?.order_summary?.coupon_type === 'percentage')
+          {
+            discountAmount = currentCartTotal * this.currentOrderData.details_order?.order_summary?.coupon_percentage / 100;
+            // discountAmount = currentCartTotal - precoupon;
+          }
+        }
 
       this.validCoupon = true;
       // ✅ التأكد من أن amount_after_coupon لا يكون سالباً (خاصة عند كوبون 100%)
@@ -1908,6 +1920,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
             this.successMessage = `تم تطبيق الكوبون! تم خصم ${this.discountAmount.toFixed(2)} ${response.data.currency_symbol} من الإجمالي.`;
 
+            console.log("response.data", response.data);
             // حفظ بيانات الكوبون في localStorage بما فيها القيمة الأصلية
             localStorage.setItem('appliedCoupon', 'true');
             localStorage.setItem('validCoupon', 'true');
@@ -2556,6 +2569,21 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       itemsWithCategory.push(itemData);
     }
 
+    // ✅ لو الكوبون أو الخصم جعل المبلغ المستحق = 0 (بدون طلبات)
+    // نعتبر الطلب "مدفوع" حتى لو لم يغيّر الكاشير الحالة يدوياً.
+    const effectiveBillAmount = this.finalTipSummary?.billAmount ?? this.getCartTotal();
+    let resolvedPaymentStatus = this.selectedPaymentStatus;
+
+    if (
+      effectiveBillAmount <= 0 &&
+      (this.appliedCoupon || this.validCoupon) &&
+      this.selectedOrderType !== 'talabat' &&
+      this.selectedOrderType !== 'طلبات'
+    ) {
+      resolvedPaymentStatus = 'paid';
+      this.selectedPaymentStatus = 'paid';
+    }
+
     return {
       isOnline: navigator.onLine,
       orderId: this.finalOrderId || Date.now(),
@@ -2567,7 +2595,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       delivery_id: this.selectedDriverId || null,
       branch_id: branchId,
       payment_method: this.selectedPaymentMethod ?? 'cash',
-      payment_status: this.selectedPaymentStatus,
+      payment_status: resolvedPaymentStatus,
       // cash_amount: this.selectedPaymentMethod === "cash" ? this.finalTipSummary?.billAmount ?? 0 : 0,
       // credit_amount: this.selectedPaymentMethod === "credit" ? this.finalTipSummary?.billAmount ?? 0 : 0,
       cash_amount: this.cash_amountt,
@@ -2594,7 +2622,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       total_with_tip: this.finalTipSummary?.grandTotalWithTip ?? ((this.finalTipSummary?.tipAmount ?? 0) + (this.finalTipSummary?.billAmount ?? 0)) ?? this.getCartTotal(),
       returned_amount: this.finalTipSummary?.changeToReturn ?? 0,
       menu_integration: this.selectedOrderType === 'talabat' ? true : false,
-      payment_status_menu_integration: this.selectedPaymentStatus,
+      payment_status_menu_integration: resolvedPaymentStatus,
       payment_method_menu_integration: this.selectedPaymentMethod,
 
       // dalia end tips
@@ -3138,7 +3166,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           finalCreditAmount = userCreditEntered;
 
           const totalPaid = Number((finalCashAmount + finalCreditAmount).toFixed(2));
-          
+
           // ✅ حساب المبلغ المطلوب (مع الإكرامية إذا كانت موجودة)
           const tipAmount = this.finalTipSummary?.tipAmount || 0;
           const requiredAmount = billAmountNum + tipAmount;
@@ -3530,7 +3558,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       // get new item IDs from response for selective printing
       const addedItems = (response as any).data?.dish_data?.added_items || [];
       const items_id = addedItems.map((item: any) => item.order_detail_id).filter((id: any) => !!id);
-      
+
       const body = items_id.length > 0 ? { items_id } : {};
 
       this.clearCart();
@@ -6108,7 +6136,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         // إذا كانت الإكرامية أكبر من الكاش المدخل، نضبط القيم
         if (cashFinal < 0) {
           cashFinal = 0;
-          // في هذه الحالة، إذا كانت الإكرامية أكبر من الكاش، 
+          // في هذه الحالة، إذا كانت الإكرامية أكبر من الكاش،
           // يمكن توزيعها على الفيزا (لكن هذا لا يجب أن يحدث عادة)
           // creditFinal = totalWithTip;
         }

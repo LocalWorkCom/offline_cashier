@@ -201,9 +201,19 @@ private processPillDetails(data: any): void {
     this.orderNumber = data.order_id;
     this.couponType = this.invoices[0]?.invoice_summary?.coupon_type;
 
-    this.addresDetails = this.invoices[0]?.address_details || {};
-    this.paymentMethod = this.invoices[0]?.transactions?.[0]?.['payment_method'];
-    this.paymentStatus = this.invoices[0]?.transactions?.[0]?.['payment_status'];
+    const firstInvoice = this.invoices[0];
+
+    this.addresDetails = firstInvoice?.address_details || {};
+    this.paymentMethod = firstInvoice?.transactions?.[0]?.['payment_method'];
+    this.paymentStatus = firstInvoice?.transactions?.[0]?.['payment_status'];
+
+    const rawTotal =
+      Number(firstInvoice?.invoice_summary?.total_price ??
+        firstInvoice?.invoice_summary?.total ??
+        0);
+    if (!isNaN(rawTotal) && rawTotal === 0 && this.paymentStatus !== 'paid') {
+      this.paymentStatus = 'paid';
+    }
 
     this.isDeliveryOrder = this.invoices.some(
       (invoice: any) => invoice.order_type === 'Delivery'
@@ -308,6 +318,16 @@ private processPillDetails(data: any): void {
         this.addresDetails = firstInvoice?.address_details || {};
         this.paymentMethod = firstInvoice?.transactions?.[0]?.['payment_method'];
         this.paymentStatus = firstInvoice?.transactions?.[0]?.['payment_status'];
+
+        // ✅ في حالة كوبون 100% أو أي خصم جعل إجمالي الفاتورة = 0
+        // نعرض الحالة كـ "مدفوع" حتى لو الـ backend لم يحدّث payment_status بعد.
+        const rawTotal =
+          Number(firstInvoice?.invoice_summary?.total_price ??
+            firstInvoice?.invoice_summary?.total ??
+            0);
+        if (!isNaN(rawTotal) && rawTotal === 0 && this.paymentStatus !== 'paid') {
+          this.paymentStatus = 'paid';
+        }
         //  if (this.trackingStatus === 'completed' ) {
         //   this.deliveredButton?.nativeElement.click();
         //   }
