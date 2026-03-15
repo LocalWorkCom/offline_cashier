@@ -2389,6 +2389,9 @@ export class OrdersComponent implements OnDestroy {
           console.log('🔍 [DEBUG] Result is truthy, proceeding...');
           this.successMessage = 'تم تحديث الطلب بنجاح';
           this.successMessageModal.show();
+          if (result === 'updated') {
+            this.fetchOrdersFromAPI();
+          }
 
             /*
             // Removed to prevent double printing (handled by global listener)
