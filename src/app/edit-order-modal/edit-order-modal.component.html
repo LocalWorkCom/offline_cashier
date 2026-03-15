@@ -97,6 +97,7 @@
                 <div>
                   <input class="form-check-input" type="checkbox" name="addons"
                     id="addon{{ selectedItem?.id }}-{{ $index }}" [checked]="addon.checked"
+                    [disabled]="isAddonDisabled(addon, category)"
                     (change)="toggleAddon(addon, $event, category)" />
 
 

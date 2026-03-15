@@ -1,4 +1,4 @@
-import { finalize, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, finalize, switchMap, take, tap } from 'rxjs/operators';
 import { Component, OnInit, Inject, PLATFORM_ID, Input, ChangeDetectorRef } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
@@ -11,8 +11,9 @@ import { BalanceService } from '../services/balance.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import * as bootstrap from 'bootstrap';
 import { HttpClientModule } from '@angular/common/http';
-import { from, lastValueFrom, Observable } from 'rxjs';
+import { from, lastValueFrom, Observable, of } from 'rxjs';
 import { baseUrl } from '../environment';
+import { SyncOfflineService } from '../services/sync-offline.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -73,6 +74,8 @@ export class SidebarComponent implements OnInit {
     cash_sales: number;
     visa_sales: number;
   } | null = null;
+  /** بيانات وردية الفرع (أول فتح، آخر إغلاق، متوقع، فعلي، فرق) - يظهر في التقرير المطبوع وتقرير الخروج */
+  branchShiftReport: any = null;
   currentBalance: {
     cash: number;
     visa: number;
@@ -86,9 +89,83 @@ export class SidebarComponent implements OnInit {
     private http: HttpClient,
     private balanceService: BalanceService,
     private closeBalanceService: CloseBalanceService,
+    private syncService: SyncOfflineService,
     @Inject(PLATFORM_ID) private platformId: Object,
     private cdr: ChangeDetectorRef
   ) {}
+
+  isSyncing = false;
+  syncMessage: string | null = null;
+  syncStatus: 'success' | 'error' | null = null;
+
+  syncData() {
+    this.isSyncing = true;
+    this.syncMessage = 'جاري مزامنة البيانات...';
+    this.syncStatus = null;
+
+    this.syncService.triggerSync().subscribe({
+      next: (response) => {
+        // After general sync, sync activity logs
+        this.syncMessage = 'جاري مزامنة سجل النشاط...';
+        this.syncService.triggerActivityLogSync().subscribe({
+          next: () => {
+            this.isSyncing = false;
+            this.syncStatus = 'success';
+            this.syncMessage = 'تمت المزامنة بنجاح';
+            setTimeout(() => {
+              this.syncMessage = null;
+              this.syncStatus = null;
+              this.closeSyncModal();
+            }, 2000);
+          },
+          error: (err) => {
+            this.isSyncing = false;
+            this.syncStatus = 'error';
+            this.syncMessage = 'فشلت مزامنة سجل النشاط.';
+            console.error('Activity log sync error:', err);
+          }
+        });
+      },
+      error: (err) => {
+        this.isSyncing = false;
+        this.syncStatus = 'error';
+        this.syncMessage = 'فشلت المزامنة. يرجى المحاولة مرة أخرى.';
+        console.error('Sync error:', err);
+      }
+    });
+  }
+
+  async openSyncModal() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const { Modal } = await import('bootstrap');
+    
+    // Hide logout modal if it's open
+    const logoutModalElement = document.getElementById('logoutModal');
+    if (logoutModalElement) {
+      const logoutInstance = Modal.getInstance(logoutModalElement);
+      if (logoutInstance) logoutInstance.hide();
+    }
+
+    const modalElement = document.getElementById('syncModal');
+    if (modalElement) {
+      this.syncMessage = null;
+      this.syncStatus = null;
+      const modalInstance = Modal.getInstance(modalElement) || new Modal(modalElement);
+      modalInstance.show();
+    }
+  }
+
+  closeSyncModal() {
+    const modalElement = document.getElementById('syncModal');
+    if (modalElement) {
+      import('bootstrap').then(({ Modal }) => {
+        const modalInstance = Modal.getInstance(modalElement);
+        if (modalInstance) {
+          modalInstance.hide();
+        }
+      });
+    }
+  }
 
   ngOnInit() {
 /*      this.printt(2)
@@ -433,53 +510,67 @@ proceedToLogout(): void {
         localStorage.setItem('cashTotallogout', JSON.stringify(this.enteredCash));
       }
 
-      // Calculate report data
-      const cashTotalStr = localStorage.getItem('start_total_cash');
-      const visaTotalStr = localStorage.getItem('start_total_credit');
-      const cashTotalLogoutStr = localStorage.getItem('cashTotallogout');
-      const visaTotalLogoutStr = localStorage.getItem('visaTotallogout');
-      const cash_salesStr = localStorage.getItem('paid_order_cash');
-      const visa_salesStr = localStorage.getItem('paid_order_credit');
+      const branchId = this.authService.getBranchId();
+      const date = new Date().toISOString().slice(0, 10);
+      const fetchShift = branchId != null
+        ? this.balanceService.getBranchShiftReport(branchId, date)
+        : of({ status: false });
 
-      // Helper function to parse value (handles both JSON and plain string)
-      const parseValue = (value: string | null): number => {
-        if (!value) return 0;
-        try {
-          const parsed = JSON.parse(value);
-          return parseFloat(parsed) || 0;
-        } catch {
-          return parseFloat(value) || 0;
-        }
-      };
-
-      const cashTotal = parseValue(cashTotalStr);
-      const visaTotal = parseValue(visaTotalStr);
-      const cashTotalLogout = parseValue(cashTotalLogoutStr);
-      const visaTotalLogout = parseValue(visaTotalLogoutStr);
-      const cash_sales = parseValue(cash_salesStr);
-      const visa_sales = parseValue(visa_salesStr);
-      // ✅ النقدية المتوقعة = الرصيد الافتتاحي + مبيعات كاش
-      const cashDifference = cashTotalLogout - (cashTotal + cash_sales);
-      const visaDifference =  visaTotalLogout - (visaTotal + visa_sales);
-
-      // Store report data for printing
-      this.reportData = {
-        cashTotal,
-        cashTotalLogout,
-        cashDifference,
-        visaTotal,
-        visaTotalLogout,
-        visaDifference,
-        cash_sales,
-        visa_sales
-      };
-
-      // Print the report and wait for it to complete before logout
-      this.printLogoutReportAndLogout();
+      fetchShift.subscribe({
+        next: (r) => {
+          if (r?.status && r?.data) {
+            this.branchShiftReport = r.data;
+          } else {
+            this.branchShiftReport = null;
+          }
+        },
+        error: () => { this.branchShiftReport = null; },
+        complete: () => this.buildReportDataAndPrintLogout()
+      });
     } else {
-      // If not browser, proceed directly to logout
       this.performLogout();
     }
+  }
+
+  private buildReportDataAndPrintLogout(): void {
+    const cashTotalStr = localStorage.getItem('start_total_cash');
+    const visaTotalStr = localStorage.getItem('start_total_credit');
+    const cashTotalLogoutStr = localStorage.getItem('cashTotallogout');
+    const visaTotalLogoutStr = localStorage.getItem('visaTotallogout');
+    const cash_salesStr = localStorage.getItem('paid_order_cash');
+    const visa_salesStr = localStorage.getItem('paid_order_credit');
+
+    const parseValue = (value: string | null): number => {
+      if (!value) return 0;
+      try {
+        const parsed = JSON.parse(value);
+        return parseFloat(parsed) || 0;
+      } catch {
+        return parseFloat(value) || 0;
+      }
+    };
+
+    const cashTotal = parseValue(cashTotalStr);
+    const visaTotal = parseValue(visaTotalStr);
+    const cashTotalLogout = parseValue(cashTotalLogoutStr);
+    const visaTotalLogout = parseValue(visaTotalLogoutStr);
+    const cash_sales = parseValue(cash_salesStr);
+    const visa_sales = parseValue(visa_salesStr);
+    const cashDifference = cashTotalLogout - (cashTotal + cash_sales);
+    const visaDifference = visaTotalLogout - (visaTotal + visa_sales);
+
+    this.reportData = {
+      cashTotal,
+      cashTotalLogout,
+      cashDifference,
+      visaTotal,
+      visaTotalLogout,
+      visaDifference,
+      cash_sales,
+      visa_sales
+    };
+
+    this.printLogoutReportAndLogout();
   }
 
   private printLogoutReportAndLogout(): void {
@@ -658,10 +749,13 @@ proceedToLogout(): void {
         throw new Error('بيانات المصادقة غير متوفرة');
       }
 
+      // Round to 2 decimal places to avoid floating-point precision issues when comparing with backend
+      const roundedAmount = Number(Number(this.transferAmount).toFixed(2));
+
       const requestBody = {
         branch_id: branchId,
         cashier_machine_id: cashierMachineId,
-        cash_amount: this.transferAmount,
+        cash_amount: roundedAmount,
         reason: this.reason,
       };
 
@@ -685,6 +779,15 @@ proceedToLogout(): void {
         console.log(response,"alaa");
         this.transferSuccess = 'تم تحويل المبلغ بنجاح';
         this.alertError = response?.data?.alert[0];
+        // Suppress misleading "amount less than available" alert when entered amount matches
+        // available balance (floating-point precision can cause false positives at 2 decimals)
+        if (this.alertError) {
+          const availableCash = Number(localStorage.getItem('totalcash')) || this.balance?.cash || 0;
+          const amountMatches = Math.abs(roundedAmount - availableCash) < 0.01;
+          if (amountMatches) {
+            this.alertError = null;
+          }
+        }
         if(this.alertError == undefined){
           setTimeout(()=>{
           this.CloseTheModalAndClear();
@@ -798,14 +901,30 @@ waitForImagesInSection(selector: string): Promise<void> {
 }
 printTime:any
 print(id: number): void {
+  this.branchShiftReport = null;
+  const branchId = this.authService.getBranchId();
+  const date = new Date().toISOString().slice(0, 10);
+  const shiftReport$ = branchId != null
+    ? this.balanceService.getBranchShiftReport(branchId, date).pipe(
+        tap((r) => {
+          if (r?.status && r?.data) {
+            this.branchShiftReport = r.data;
+          }
+          this.cdr.detectChanges();
+        }),
+        catchError(() => of(undefined))
+      )
+    : of(undefined);
+
   this.balanceService.PrintBalance(id).pipe(
     tap((res) => {
       if (!res?.data) {
         throw new Error('No data received for printing');
       }
       this.printingData = res.data;
-       this.printTime = new Date().toLocaleString();
+      this.printTime = new Date().toLocaleString();
     }),
+    switchMap(() => shiftReport$),
     switchMap(() => from(this.waitForRender('#print-section'))),
     switchMap(() => from(this.waitForImagesInSection('#print-section'))),
     take(1)
