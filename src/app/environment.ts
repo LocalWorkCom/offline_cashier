@@ -11,8 +11,7 @@ export const environment = {
   pusher: {
     key: 'cfd52a74b92f9e278f2d',
     cluster: 'mt1',
-  },
-  wsUrl: 'ws://192.168.100.11:8081'
+  }
 };
 
 // //localhost
