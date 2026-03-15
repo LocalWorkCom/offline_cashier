@@ -93,29 +93,40 @@ fetchAndSaveOrders(): Observable<any> {
 
   /**
    * جلب كل الطلبات (كل الصفحات) وحفظها في IndexedDB للعمل offline
+   * يمر على كل الصفحات حتى يتم جلب العدد الكلي (استناداً إلى pagination أو order_counts)
    */
   fetchAllOrdersAndSaveToIndexedDB(type: string = 'All', status: string = 'all'): Observable<{ count: number }> {
     return new Observable(observer => {
       const run = async () => {
         let page = 1;
         let allOrders: any[] = [];
-        let hasMore = true;
         const perPage = 100;
+        const maxPages = 200; // حد أمان لتجنب حلقة لا نهائية
         try {
-          while (hasMore) {
+          let totalFromApi: number | null = null;
+          while (page <= maxPages) {
             const res = await firstValueFrom(
               this.getOrdersListV2(type, page, '', perPage, status)
             );
-            if (!res?.data?.orders?.length) break;
-            allOrders = allOrders.concat(res.data.orders);
-            const total = res.data.pagination?.total ?? res.data.order_counts ?? 0;
-            hasMore = res.data.pagination?.has_more ?? (page * perPage < total);
+            const orders = res?.data?.orders ?? [];
+            if (!orders.length) break;
+
+            allOrders = allOrders.concat(orders);
+            const pagination = res?.data?.pagination;
+            const total = pagination?.total ?? res?.data?.order_counts ?? res?.data?.total ?? null;
+            if (total != null) totalFromApi = total;
+
+            const hasMoreFromApi = pagination?.has_more;
+            const hasMoreByCount = totalFromApi != null && allOrders.length < totalFromApi;
+            const hasMore = hasMoreFromApi ?? hasMoreByCount ?? (orders.length >= perPage);
+
+            if (!hasMore) break;
             page++;
           }
           if (allOrders.length > 0) {
             await this.db.saveOrders(allOrders);
             await this.db.setOrdersLastSync(Date.now());
-            console.log('✅ كل الطلبات محفوظة في IndexedDB:', allOrders.length);
+            console.log('✅ كل الطلبات محفوظة في IndexedDB:', allOrders.length, '(إجمالي من API:', totalFromApi ?? 'غير معروف', ')');
           }
           observer.next({ count: allOrders.length });
         } catch (err) {

@@ -50,19 +50,21 @@ export class AddAddressService {
     return new Observable(observer => {
       this.getHotelsData().subscribe({
         next: async (response: any) => {
-        if (response.data) {
+          if (response.data) {
             this.hotels = response.data;
             this.allHotels = response.data;
-
-            // Save to IndexedDB
-            this.db.saveData('hotels', response.data);
-            // this.dbService.lastSync('hotels');
-
-            console.log('Hotels loaded from API and saved to IndexedDB', this.hotels);
+            try {
+              await this.db.saveData('hotels', response.data);
+              console.log('✅ Hotels loaded from API and saved to IndexedDB', this.hotels.length);
+            } catch (e) {
+              console.error('Error saving hotels to IndexedDB', e);
+            }
           }
+          observer.next(response);
+          observer.complete();
         },
         error: (err) => {
-          console.error('❌ Failed to fetch pils', err);
+          console.error('❌ Failed to fetch hotels', err);
           observer.error(err);
         }
       });
