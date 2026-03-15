@@ -16,6 +16,11 @@
     font-weight: bold;
     opacity: 1;
 }
+
+/* Keep button text visible on hover (overrides global .btn:hover red text) */
+.forget-pass .right-side .btn:hover {
+    color: #fff !important;
+}
 .login-background img {
     width: 100%;
     height: auto;
