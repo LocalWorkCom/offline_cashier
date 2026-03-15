@@ -407,8 +407,8 @@ console.log(newOrder);
       return this.totalInvoicesCount;
     }
     const apiStatusMap: any = {
-      'hold': 'unpaid',
-      'done': 'paid',
+      'hold': 'hold', 
+      'done': 'completed',
       'cancelled': 'cancelled',
       'returned': 'returned'
     };
@@ -510,8 +510,8 @@ console.log(newOrder);
   // }
   selectStatusGroup(index: number): void {
     this.selectedStatus = index;
-    const allStatuses = ['all', 'hold', 'done', 'cancelled', 'returned'];
-    this.selectedStatusLabel = allStatuses[index] || 'all';
+    const allStatuses = ['hold', 'done', 'cancelled', 'returned'];
+    this.selectedStatusLabel = allStatuses[index] || 'hold';
     if (this.usingOfflineData) {
       this.updatePillsByStatus();
       this.cdr.detectChanges();
@@ -570,12 +570,12 @@ console.log(newOrder);
     }
 
     this.pillsByStatus = allStatuses.map((status) => {
-      if (status === 'all') {
-        return { status, pills: list };
-      }
+      // If the current active tab matches this status group, show all items from the server response
       if (this.selectedStatusLabel === status) {
         return { status, pills: list };
       }
+
+      // Otherwise, filter locally based on the print status
       return {
         status,
         pills: list.filter(
