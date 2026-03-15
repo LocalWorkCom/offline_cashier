@@ -1,4 +1,3 @@
-
 .sidebar-logo {
   width: 100%;
   height: 100px;
@@ -14,46 +13,63 @@
 }
 
 .active_link {
-    background: #fe0000;
-    color: #fff;
-  }
-  .active_link  img{
-    filter: brightness(0) invert(1);
-  }
-  .sidebar .sidebar-item img{
-    height: 25px;
-  }
-  .sidebar-man{
-    height: 275px;
-    width: 100%;
-    object-fit: contain;
-    object-position: bottom;
-  }
-  .btn-transparent {
-    box-shadow: none;
-    color: #FE0000;
-    background-color: transparent;
-    border-radius: 10px;
-    transition: all 0.3s ease-in-out;
-    font-weight: bold;
-
-    opacity: 1;
-    border: 2px solid #FE0000;
-    padding-block: 0.65rem ;
+  background: #fe0000;
+  color: #fff;
 }
-.transfer-money-btn{
-  background-color: #FE0000;
+.active_link img {
+  filter: brightness(0) invert(1);
+}
+.sidebar .sidebar-item img {
+  height: 25px;
+}
+.sidebar-man {
+  height: 275px;
+  width: 100%;
+  object-fit: contain;
+  object-position: bottom;
+}
+.btn-transparent {
+  box-shadow: none;
+  color: #fe0000;
+  background-color: transparent;
+  border-radius: 10px;
+  transition: all 0.3s ease-in-out;
+  font-weight: bold;
+
+  opacity: 1;
+  border: 2px solid #fe0000;
+  padding-block: 0.65rem;
+}
+.transfer-money-btn {
+  background-color: #fe0000;
   color: #f1eff1;
   box-shadow: none;
   border: none;
   width: 100%;
-padding: 10px 15px;
+  padding: 10px 15px;
   border-radius: 10px;
   font-weight: 900;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease;
 }
 
+.sync-btn {
+  background-color: #28a745 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.sync-btn:hover {
+  background-color: #218838 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.sync-btn:active {
+  transform: translateY(0);
+}
 
 /* Modal styles */
 #transferMoneyModal .modal-header {
@@ -80,38 +96,47 @@ padding: 10px 15px;
   background-color: #218838;
   border-color: #1e7e34;
 }
- /* login-logout cash amount modal   */
- .user img{
-  height:8vh;
+/* login-logout cash amount modal   */
+.user img {
+  height: 8vh;
   margin-left: 1rem;
   border-radius: 50%;
-
 }
 
-.input-group input{
+.input-group input {
   border: 1px solid #f1eff1;
   border-radius: 15px;
 }
-.input-group:not(.has-validation) > .dropdown-toggle:nth-last-child(n+3), .input-group:not(.has-validation) > .form-floating:not(:last-child) > .form-control, .input-group:not(.has-validation) > .form-floating:not(:last-child) > .form-select, .input-group:not(.has-validation) > :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu):not(.form-floating) {
+.input-group:not(.has-validation) > .dropdown-toggle:nth-last-child(n + 3),
+.input-group:not(.has-validation)
+  > .form-floating:not(:last-child)
+  > .form-control,
+.input-group:not(.has-validation)
+  > .form-floating:not(:last-child)
+  > .form-select,
+.input-group:not(.has-validation)
+  > :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu):not(
+    .form-floating
+  ) {
   border-top-right-radius: 15px !important;
   border-bottom-right-radius: 15px !important;
 }
-.input-group input::placeholder{
- color: #808080;
- font-size: 0.8rem;
+.input-group input::placeholder {
+  color: #808080;
+  font-size: 0.8rem;
 }
-.mobile-view{
+.mobile-view {
   display: none;
 }
-.user-img-modal{
-  width: 100px ;
+.user-img-modal {
+  width: 100px;
 }
 
-.man-img{  
-    /* height: 28vh; */
-        max-height: 28vh;
-    max-width: 100%;
-    height: auto;
+.man-img {
+  /* height: 28vh; */
+  max-height: 28vh;
+  max-width: 100%;
+  height: auto;
 }
 
 .sidebar {
@@ -130,7 +155,6 @@ padding: 10px 15px;
 .sidebar-logo {
   width: 100%;
   height: 100px;
-
 }
 
 .sidebar-item .sidebar-link {
@@ -150,103 +174,100 @@ padding: 10px 15px;
   height: 100vh;
   overflow: auto;
 }
-@media (max-width:768px) {
+@media (max-width: 768px) {
   .sidebar-item .sidebar-link span {
     display: block;
-      }
-      .sidebar-item .sidebar-link{
-        padding: 0.5rem;
-        width:100%;
-        display: flex;
-    }
-  .mobile-view{
+  }
+  .sidebar-item .sidebar-link {
+    padding: 0.5rem;
+    width: 100%;
     display: flex;
   }
-  .desktop-view{
+  .mobile-view {
+    display: flex;
+  }
+  .desktop-view {
     display: none;
   }
   .sidebar-logo {
     width: auto;
     height: 90px;
-}
-.sidebar-item .sidebar-link img {
-  width: 8vw; 
-  margin-right: 1.2rem;
-}
-.sidebar-item .sidebar-link span {
-  font-size: 1.1rem;
-  padding-right: 1rem !important;
-
-}
-.sidebar{
-  padding-inline: 0.7rem;
-  padding-top: 0rem;
-  display: none;
-}
-}
-
-@media (max-width:425px) {
-.sidebar-logo {
-  width: auto;
-  height: 70px;
-}
-}
-
-@media (max-width:1440px) {
-  .sidebar-itemو .sidebar-link {
-    padding: 0.30rem;
-}
-.sidebar-item .sidebar-link img {
-  width: 2.5vw; 
-  margin-right: 0.2rem;
-}
-.sidebar-item .sidebar-link span {
-  font-size: 0.9rem;
-  padding-right: 0.2rem !important;
-}
-
-}
-
-@media (max-width:768px) {
-  .sidebar{
-  display: none;
-}
-  .sidebar-item .sidebar-link span {
-display: none;
   }
   .sidebar-item .sidebar-link img {
-    width: 4.5vw; 
+    width: 8vw;
+    margin-right: 1.2rem;
+  }
+  .sidebar-item .sidebar-link span {
+    font-size: 1.1rem;
+    padding-right: 1rem !important;
+  }
+  .sidebar {
+    padding-inline: 0.7rem;
+    padding-top: 0rem;
+    display: none;
+  }
+}
+
+@media (max-width: 425px) {
+  .sidebar-logo {
+    width: auto;
+    height: 70px;
+  }
+}
+
+@media (max-width: 1440px) {
+  .sidebar-itemو .sidebar-link {
+    padding: 0.3rem;
+  }
+  .sidebar-item .sidebar-link img {
+    width: 2.5vw;
     margin-right: 0.2rem;
   }
-  .sidebar-item .sidebar-link{
-    padding: 0.5rem;
-    width:auto;
+  .sidebar-item .sidebar-link span {
+    font-size: 0.9rem;
+    padding-right: 0.2rem !important;
+  }
 }
-.sidebar{
-  padding: 1rem;
- padding-top: 0rem;
 
-}
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+  .sidebar-item .sidebar-link span {
+    display: none;
+  }
+  .sidebar-item .sidebar-link img {
+    width: 4.5vw;
+    margin-right: 0.2rem;
+  }
+  .sidebar-item .sidebar-link {
+    padding: 0.5rem;
+    width: auto;
+  }
+  .sidebar {
+    padding: 1rem;
+    padding-top: 0rem;
+  }
 }
 
 .custom-cursor[readonly] {
   cursor: not-allowed; /* شكل ممنوع عند readonly */
 }
 
-#body-logo{
- /* background-image: url('../../../public/assets/images/Group.png'); */
- background-position: center center;
- background-size: contain;
+#body-logo {
+  /* background-image: url('../../../public/assets/images/Group.png'); */
+  background-position: center center;
+  background-size: contain;
 
- background-repeat: no-repeat;
+  background-repeat: no-repeat;
 }
 
-.table-content{
+.table-content {
   display: flex;
   padding: 5px;
   justify-content: space-between;
   align-items: center;
-  border-bottom:1px solid black;
+  border-bottom: 1px solid black;
   font-size: 10px;
   font-weight: bold;
 }
@@ -255,17 +276,28 @@ display: none;
   border-bottom: none;
 }
 .ll .table-content:last-child {
-  border-bottom:1px solid black;
+  border-bottom: 1px solid black;
 }
 
-.img{
+.img {
   min-height: 70px;
-max-width: 100%; 
+  max-width: 100%;
 }
 #print-section p ,#print-section span,.total{
   font-size: 11px;
 }
-#dd{
+
+#print-section,
+#logout-report-section{
+  font-family: 'Cairo', sans-serif;
+}
+#logout-report-section p, #logout-report-section span, #logout-report-section{
+  font-family: 'Cairo', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+#dd {
   width: 100%;
   position: relative;
   margin-top: 1rem;
@@ -273,7 +305,7 @@ max-width: 100%;
   page-break-inside: avoid;
 }
 /* Avoid absolute positioning in print – keeps footer in flow and prevents overlapping */
-#print-section .footer{
+#print-section .footer {
   position: static;
   bottom: auto;
   left: auto;
@@ -285,12 +317,12 @@ max-width: 100%;
   border-top: 1px dashed #333;
   page-break-inside: avoid;
 }
-#print-section .footer p{
+#print-section .footer p {
   display: block;
   margin: 0.25rem 0;
   line-height: 1.4;
 }
-.footer{
+.footer {
   position: absolute;
   bottom: 0;
   left: 50%;
@@ -300,14 +332,13 @@ max-width: 100%;
   display: flex;
   padding: 0 12px;
 }
- 
 
-.dots{
-  border-bottom:3px dashed black
+.dots {
+  border-bottom: 3px dashed black;
 }
-.line{
-  padding-bottom:10px;
-  border-bottom:3px solid black
+.line {
+  padding-bottom: 10px;
+  border-bottom: 3px solid black;
 }
 
 /* Shift Closing Report – prevent footer overlap when printing */
