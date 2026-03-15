@@ -207,12 +207,12 @@ export class OrdersComponent implements OnDestroy {
         console.log('Orders loaded from IndexedDB:', orders.length);
 
         this.processOrders(orders);
-        // عرض 30 طلب فقط في الصفحة، والباقي عبر "تحميل المزيد"
+        // عند offline نضع القائمة الكاملة في orders و offlineOrdersFull ليعمل الفلتر على الكل
         this.offlineOrdersFull = [...this.orders];
-        this.orders = this.offlineOrdersFull.slice(0, this.ORDERS_PER_PAGE);
         this.totalOrdersCount = this.offlineOrdersFull.length;
-        this.hasMoreOrders = this.offlineOrdersFull.length > this.ORDERS_PER_PAGE;
+        this.hasMoreOrders = false; // كل البيانات محمّلة من IDB
         this.currentPage = 1;
+        this.computeOfflineCounts();
         this.filterOrders();
         this.loading = true; // إيقاف الـ spinner وعرض الطلبات
         this.cdr.detectChanges();
@@ -252,6 +252,29 @@ export class OrdersComponent implements OnDestroy {
   }
   // Fetch orders from API
   private fetchOrdersFromAPI(isLoadMore: boolean = false): void {
+    // عند عدم الاتصال: تحميل من IndexedDB بدلاً من مسح القائمة واستدعاء API
+    if (!navigator.onLine) {
+      this.dbService.getOrders().then(orders => {
+        if (orders && orders.length > 0) {
+          this.processOrders(orders);
+          this.offlineOrdersFull = [...this.orders];
+          this.totalOrdersCount = this.offlineOrdersFull.length;
+          this.hasMoreOrders = false;
+          this.computeOfflineCounts();
+          this.filterOrders();
+          this.filterOrdersInput();
+        }
+        this.loading = true;
+        this.isLoadMoreLoading = false;
+        this.cdr.detectChanges();
+      }).catch(() => {
+        this.loading = true;
+        this.isLoadMoreLoading = false;
+        this.cdr.detectChanges();
+      });
+      return;
+    }
+
     if (!isLoadMore) {
       this.loading = false;
       this.currentPage = 1;
@@ -337,15 +360,20 @@ export class OrdersComponent implements OnDestroy {
             'error'
           );
 
-          // If we're online but API failed, try to use IndexedDB data as fallback
-          if (this.isOnline) {
-            this.dbService.getOrders().then(orders => {
-              if (orders && orders.length > 0) {
-                console.log('Using IndexedDB data as fallback:', orders.length);
-                this.processOrders(orders);
-              }
-            });
-          }
+          // عند فشل API: استخدام بيانات IndexedDB (سواء أونلاين أو أوفلاين)
+          this.dbService.getOrders().then(orders => {
+            if (orders && orders.length > 0) {
+              console.log('Using IndexedDB data as fallback:', orders.length);
+              this.processOrders(orders);
+              this.offlineOrdersFull = [...this.orders];
+              this.totalOrdersCount = this.offlineOrdersFull.length;
+              this.hasMoreOrders = false;
+              this.computeOfflineCounts();
+              this.filterOrders();
+              this.filterOrdersInput();
+              this.cdr.detectChanges();
+            }
+          }).catch(() => {});
         },
       });
   }
@@ -363,6 +391,31 @@ export class OrdersComponent implements OnDestroy {
     }
     this.currentPage++;
     this.fetchOrdersFromAPI(true);
+  }
+
+  /** حساب أعداد الأنواع والحالات من القائمة المحلية (للعمل offline) */
+  private computeOfflineCounts(): void {
+    const list = this.offlineOrdersFull.length > 0 ? this.offlineOrdersFull : this.orders;
+    if (!list.length) return;
+
+    const typesMap: Record<string, number> = { All: list.length };
+    const statusMap: Record<string, number> = {};
+
+    for (const order of list) {
+      const type = order.order_details?.order_type;
+      if (type) {
+        typesMap[type] = (typesMap[type] || 0) + 1;
+      }
+      let status = order.order_details?.status;
+      if (status === 'packing') status = 'readyForPickup';
+      if (status === 'inprogress') status = 'in_progress';
+      if (status) {
+        statusMap[status] = (statusMap[status] || 0) + 1;
+      }
+    }
+
+    this.orderTypeCounts = typesMap;
+    this.orderStatusCounts = statusMap;
   }
 
   fetchOrderTypeCounts(): void {
@@ -398,22 +451,57 @@ export class OrdersComponent implements OnDestroy {
       }
     });
   }
+  /** توحيد نوع الطلب ليطابق القيم المتوقعة (API قد يرجع Delivery، الـ offline يحفظ delivery) */
+  private normalizeOrderType(type: string | undefined): string | undefined {
+    if (!type) return type;
+    const t = type.toString().toLowerCase();
+    if (t === 'delivery' || t === 'توصيل') return 'Delivery';
+    if (t === 'takeaway' || t === 'إستلام') return 'Takeaway';
+    if (t === 'dine-in' || t === 'في المطعم') return 'dine-in';
+    if (t === 'talabat') return 'talabat';
+    return type;
+  }
+
   // Process orders (common method for both API and IndexedDB data)
   private processOrders(orders: any[]): void {
-    this.currencySymbol = orders[0]?.currency_symbol;
+    this.currencySymbol = orders[0]?.currency_symbol ?? orders[0]?.details_order?.currency_symbol ?? 'ج.م';
     this.orders = orders
       .filter(
-        (order: any) =>
-          this.allowedOrderTypes.includes(order.order_details?.order_type) &&
-          (this.allowedStatuses.includes(order.order_details?.status) ||
-           order.order_details?.status === 'packing' ||
-           order.order_details?.status === 'inprogress')
+        (order: any) => {
+          // دعم طلبات من IndexedDB قد تكون order_details تحت جذر مختلف أو نوع مكتوب بحروف مختلفة
+          const rawType = order.order_details?.order_type ?? order.order_type;
+          const normalizedType = this.normalizeOrderType(rawType);
+          const status = order.order_details?.status ?? order.status;
+          const typeOk = normalizedType && this.allowedOrderTypes.includes(normalizedType);
+          const statusOk =
+            this.allowedStatuses.includes(status) ||
+            status === 'packing' ||
+            status === 'inprogress';
+          return !!typeOk && !!statusOk;
+        }
       )
       .map((order: any) => {
         const processedOrder = {
           ...order,
-          currency_symbol: this.currencySymbol,
+          currency_symbol: order.currency_symbol ?? this.currencySymbol,
         };
+        // توحيد order_details إن وُجد النوع/الحالة في الجذر (طلبات قديمة أو أوفلاين بصيغة مختلفة)
+        if (!processedOrder.order_details && (processedOrder.order_type || processedOrder.status)) {
+          processedOrder.order_details = {
+            order_id: processedOrder.order_number ?? processedOrder.order_id,
+            order_type: this.normalizeOrderType(processedOrder.order_type) ?? processedOrder.order_type,
+            status: processedOrder.status ?? 'pending',
+          };
+        }
+        if (processedOrder.order_details?.order_type) {
+          processedOrder.order_details.order_type =
+            this.normalizeOrderType(processedOrder.order_details.order_type) ?? processedOrder.order_details.order_type;
+        }
+
+        // طلبات الـ offline من savePendingOrder تأتي بـ order_items وليس items — توحيد الشكل للعرض
+        if (!processedOrder.items && processedOrder.order_items?.length) {
+          processedOrder.items = processedOrder.order_items;
+        }
 
         // Map backend status to frontend status
         if (processedOrder.order_details?.status === 'packing') {
@@ -1409,6 +1497,16 @@ export class OrdersComponent implements OnDestroy {
     console.log('fatema', orderType, this.selectedOrderTypeStatus);
 
     this.selectedOrderTypeStatus = orderType;
+    // عند العمل offline: فلترة من القائمة المحلية بدلاً من استدعاء API
+    if (!this.isOnline && this.offlineOrdersFull.length > 0) {
+      this.orders = [...this.offlineOrdersFull];
+      this.filterOrders();
+      this.filterOrdersInput();
+      this.totalOrdersCount = this.filteredOrders.length;
+      this.hasMoreOrders = false;
+      this.cdr.detectChanges();
+      return;
+    }
     this.fetchOrderTypeCounts();
     if (this.selectedStatus !== 'static') {
       this.fetchOrdersFromAPI();
@@ -1419,15 +1517,17 @@ export class OrdersComponent implements OnDestroy {
   }
   selectStatus(status: string): void {
     this.selectedStatus = status;
+    // عند العمل offline: فلترة من القائمة المحلية بدلاً من استدعاء API
+    if (!this.isOnline && this.offlineOrdersFull.length > 0) {
+      this.orders = [...this.offlineOrdersFull];
+      this.filterOrdersInput();
+      this.filterOrders();
+      this.totalOrdersCount = this.filteredOrders.length;
+      this.hasMoreOrders = false;
+      this.cdr.detectChanges();
+      return;
+    }
     if (this.selectedStatus !== 'static') {
-      // If we are switching away from static or between dynamic statuses,
-      // but the API doesn't support status filtering yet, we might still
-      // rely on client-side filtering of the already fetched orders.
-      // However, the user asked for "backend side not the front side".
-      // Let's assume listv2 also supports &status=... or we just fetch all for that type and filter.
-      // For now, let's just trigger a re-fetch if we change type,
-      // but for status we might still use client side if the API doesn't support it.
-      // But let's re-fetch to start from page 1.
       this.fetchOrdersFromAPI();
     } else {
       this.filterOrdersInput();
@@ -2389,6 +2489,9 @@ export class OrdersComponent implements OnDestroy {
           console.log('🔍 [DEBUG] Result is truthy, proceeding...');
           this.successMessage = 'تم تحديث الطلب بنجاح';
           this.successMessageModal.show();
+          if (result === 'updated') {
+            this.fetchOrdersFromAPI();
+          }
 
             /*
             // Removed to prevent double printing (handled by global listener)
