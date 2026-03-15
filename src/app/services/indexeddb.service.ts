@@ -1,6 +1,52 @@
 import { Injectable } from '@angular/core';
 import { table } from 'console';
 
+/** بنية حدث Outbox — أي عملية offline تُسجّل كـ Event وتظل حتى استلام ACK */
+
+/** status: حالة دورة الإرسال داخليًا */
+export type OutboxStatus = 'pending' | 'sending' | 'sent' | 'acked' | 'failed' | 'dead';
+// pending: اتسجل ولسه متبعتش
+// sending: عامل الـ Sync ماسكه الآن (lock)
+// sent: اتبعت ولسه مستني ACK
+// acked: وصل ACK نهائي وتمام
+// failed: فشل مؤقت (مع retry)
+// dead: فشل نهائي بعد محاولات كثيرة (manual intervention)
+
+/** ack_status: نتيجة السيرفر */
+export type OutboxAckStatus = 'accepted' | 'applied' | 'rejected' | 'duplicate';
+// accepted: Hub استلم (ACK #1) — على Device كفاية لأن Hub أصبح مسؤول
+// applied: Cloud طبق الحدث (ACK #2 النهائي) — على Hub لازم توصل ليه
+// rejected: مرفوض (تعارض/فاليديشن/صلاحيات)
+// duplicate: اتبعت قبل كده (رجّع نفس ACK القديم)
+
+export interface OutboxEvent {
+  id?: number;
+  event_uuid: string;
+  aggregate_type: string;      // order, payment, inventory...
+  aggregate_uuid: string;
+  event_type: string;         // order_created, payment_done...
+  schema_version?: number;
+  payload: Record<string, unknown> | string;
+  headers?: Record<string, unknown> | null;
+  status: OutboxStatus;
+  priority?: number;
+  attempts?: number;
+  locked_at?: string | null;
+  next_retry_at?: string | null;
+  last_error?: string | null;
+  destination?: string;       // hub أو cloud
+  last_sent_at?: string | null;
+  ack_status?: OutboxAckStatus | null;
+  ack_code?: string | null;
+  ack_message?: string | null;
+  ack_payload?: Record<string, unknown> | null;
+  acked_at?: string | null;
+  correlation_id?: string | null;
+  causation_id?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -20,7 +66,7 @@ export class IndexeddbService {
 
     this.initPromise = new Promise((resolve, reject) => {
 
-      const request = indexedDB.open('MyDB', 152); // Incremented version to force upgrade
+      const request = indexedDB.open('MyDB', 153); // Incremented for outbox store
 
       request.onupgradeneeded = (event: any) => {
         this.db = event.target.result;
@@ -150,6 +196,22 @@ export class IndexeddbService {
           if (!pendingStore.indexNames.contains('type')) {
             pendingStore.createIndex('type', 'type', { unique: false });
           }
+        }
+
+        // Outbox store: أي عملية offline تُسجّل كـ Event وتظل حتى استلام ACK
+        if (!this.db.objectStoreNames.contains('outbox')) {
+          const outboxStore = this.db.createObjectStore('outbox', {
+            keyPath: 'id',
+            autoIncrement: true
+          });
+          outboxStore.createIndex('event_uuid', 'event_uuid', { unique: true });
+          outboxStore.createIndex('aggregate_uuid', 'aggregate_uuid', { unique: false });
+          outboxStore.createIndex('aggregate_type', 'aggregate_type', { unique: false });
+          outboxStore.createIndex('event_type', 'event_type', { unique: false });
+          outboxStore.createIndex('status', 'status', { unique: false });
+          outboxStore.createIndex('destination', 'destination', { unique: false });
+          outboxStore.createIndex('next_retry_at', 'next_retry_at', { unique: false });
+          outboxStore.createIndex('priority', 'priority', { unique: false });
         }
       };
 
@@ -343,6 +405,36 @@ export class IndexeddbService {
     });
   }
 
+  /**
+   * مزامنة السلة من مصدر خارجي (مثل localStorage) إلى IndexedDB للاستخدام offline.
+   * يستخدم transaction واحد لتجنّب تكرار العناصر عند استدعاءات متزامنة.
+   */
+  syncCartToIndexedDB(cart: any[]): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('cart', 'readwrite');
+        const store = tx.objectStore('cart');
+
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+
+        store.clear();
+        if (Array.isArray(cart) && cart.length > 0) {
+          const now = new Date().toISOString();
+          cart.forEach((item) => {
+            const itemWithMetadata = {
+              ...item,
+              addedAt: now,
+              isSynced: navigator.onLine,
+              lastUpdated: now,
+            };
+            store.add(itemWithMetadata);
+          });
+        }
+      });
+    });
+  }
+
   // Clear entire cart
   clearCart(): Promise<void> {
     return this.ensureInit().then(() => {
@@ -450,16 +542,19 @@ export class IndexeddbService {
 
 
 
-  // Save orders to IndexedDB
-  saveOrders(orders: any[]): Promise<void> {
+  /**
+   * حفظ الطلبات في IndexedDB (دمج مع الموجود — لا مسح).
+   * يضمن أن حفظ الصفحة الأولى (30) لا يمسح الطلبات التي تم جلبها لاحقاً بالمزامنة الكاملة.
+   * @param orders مصفوفة الطلبات
+   * @param replaceAll إذا true يُمسح الـ store أولاً ثم يُضاف (افتراضي: false للدمج)
+   */
+  saveOrders(orders: any[], replaceAll: boolean = false): Promise<void> {
     return this.ensureInit().then(() => {
       return new Promise((resolve, reject) => {
         const tx = this.db.transaction('orders', 'readwrite');
         const store = tx.objectStore('orders');
 
-        // Clear existing orders
-        store.clear().onsuccess = () => {
-          // Add all new orders
+        const writeOrders = () => {
           orders.forEach(order => {
             const orderWithMetadata = {
               ...order,
@@ -468,10 +563,15 @@ export class IndexeddbService {
             };
             store.put(orderWithMetadata);
           });
-
           tx.oncomplete = () => resolve();
           tx.onerror = (e) => reject(e);
         };
+
+        if (replaceAll) {
+          store.clear().onsuccess = () => writeOrders();
+        } else {
+          writeOrders();
+        }
       });
     });
   }
@@ -513,7 +613,7 @@ export class IndexeddbService {
         const store = tx.objectStore('tables');
         store.clear();
         const toSave = (Array.isArray(tables) ? tables : []).filter(
-          (t) => t != null && (t.table_number !== undefined || t.id !== undefined)
+          (t) => t != null && (t.table_number !== undefined || t.number !== undefined || t.id !== undefined)
         );
         toSave.forEach((table) => store.put({ ...table, status: Number(table.status ?? 0) }));
         tx.oncomplete = () => resolve();
@@ -524,7 +624,7 @@ export class IndexeddbService {
 
   /**
    * جلب الطاولات من IndexedDB للعرض عند عدم الاتصال.
-   * يُرجع فقط العناصر التي تحتوي table_number (لتجنب عرض بيانات خاطئة محفوظة سابقاً).
+   * يُرجع العناصر التي تشبه طاولة (table_number أو number أو id).
    */
   getTables(): Promise<any[]> {
     return this.ensureInit().then(() => {
@@ -534,7 +634,10 @@ export class IndexeddbService {
         const request = store.getAll();
         request.onsuccess = () => {
           const raw = request.result || [];
-          const valid = raw.filter((t: any) => t != null && t.table_number !== undefined);
+          const valid = raw.filter((t: any) =>
+            t != null &&
+            (t.table_number !== undefined || t.number !== undefined || t.id !== undefined)
+          );
           resolve(valid);
         };
         request.onerror = (e) => reject(e);
@@ -1350,22 +1453,27 @@ export class IndexeddbService {
             order_summary: summary,
           },
 
-          order_items: orderData.items.map((item: any) => ({
-            addon_categories: item.addon_categories,
-            currency_symbol,
-            dish_id: item.dish_id,
-            dish_name: item.dish_name,
-            dish_price: item.dish_price,
-            quantity: item.quantity,
-            final_price: item.finalPrice,
-            note: item.note || "",
-            addons: item.selectedAddons || [],
-            sizeId: item.sizeId,
-            size: item.sizeName || "",
-            size_name: item.sizeName || "",
-            total_dish_price: item.finalPrice == 0 ? item.dish_price*item.quantity:  item.finalPrice,
-            dish_status: "pending",
-          })),
+          order_items: orderData.items.map((item: any) => {
+            const qty = Number(item.quantity) || 1;
+            const unitPrice = item.finalPrice == 0 ? (Number(item.dish_price) || 0) : (Number(item.finalPrice) || 0);
+            const totalDishPrice = unitPrice * qty;
+            return {
+              addon_categories: item.addon_categories,
+              currency_symbol,
+              dish_id: item.dish_id,
+              dish_name: item.dish_name,
+              dish_price: item.dish_price,
+              quantity: item.quantity,
+              final_price: item.finalPrice,
+              note: item.note || "",
+              addons: item.selectedAddons || [],
+              sizeId: item.sizeId,
+              size: item.sizeName || "",
+              size_name: item.sizeName || "",
+              total_dish_price: totalDishPrice,
+              dish_status: "pending",
+            };
+          }),
 
           total_price: summary.total_price,
           currency_symbol,
@@ -2354,6 +2462,242 @@ export class IndexeddbService {
           console.error('❌ Error deleting synced pending order:', e);
           reject(e);
         };
+      });
+    });
+  }
+
+  // ────────── Outbox Methods ──────────
+
+  /** توليد UUID للحدث (Idempotency) */
+  private generateEventUuid(): string {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+      const r = (Math.random() * 16) | 0;
+      const v = c === 'x' ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
+
+  /** إضافة حدث جديد إلى الـ outbox */
+  async addOutboxEvent(params: {
+    aggregate_type: string;
+    aggregate_uuid: string;
+    event_type: string;
+    payload: Record<string, unknown> | string;
+    headers?: Record<string, unknown> | null;
+    schema_version?: number;
+    priority?: number;
+    destination?: string;
+    correlation_id?: string | null;
+    causation_id?: string | null;
+    event_uuid?: string;
+  }): Promise<number> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const now = new Date().toISOString();
+        const event_uuid = params.event_uuid ?? this.generateEventUuid();
+
+        const event: Omit<OutboxEvent, 'id'> = {
+          event_uuid,
+          aggregate_type: params.aggregate_type,
+          aggregate_uuid: params.aggregate_uuid,
+          event_type: params.event_type,
+          schema_version: params.schema_version ?? 1,
+          payload: params.payload,
+          headers: params.headers ?? null,
+          status: 'pending',
+          priority: params.priority ?? 0,
+          attempts: 0,
+          locked_at: null,
+          next_retry_at: null,
+          last_error: null,
+          destination: params.destination ?? 'cloud',
+          last_sent_at: null,
+          ack_status: null,
+          ack_code: null,
+          ack_message: null,
+          ack_payload: null,
+          acked_at: null,
+          correlation_id: params.correlation_id ?? null,
+          causation_id: params.causation_id ?? null,
+          created_at: now,
+          updated_at: now,
+        };
+
+        const tx = this.db.transaction('outbox', 'readwrite');
+        const store = tx.objectStore('outbox');
+        const request = store.add(event);
+
+        request.onsuccess = () => resolve(request.result as number);
+        request.onerror = (e) => {
+          if ((e.target as IDBRequest).error?.name === 'ConstraintError') {
+            reject(new Error('DUPLICATE_EVENT_UUID'));
+          }
+          reject(e);
+        };
+      });
+    });
+  }
+
+  /** جلب الأحداث المعلقة حسب الحالة والوجهة (لـ Sync) */
+  async getOutboxEventsByStatus(
+    status: OutboxStatus = 'pending',
+    destination?: string,
+    limit = 50
+  ): Promise<OutboxEvent[]> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('outbox', 'readonly');
+        const store = tx.objectStore('outbox');
+        const index = store.index('status');
+        const request = index.getAll(status);
+
+        request.onsuccess = () => {
+          let items = request.result as OutboxEvent[];
+          if (destination) {
+            items = items.filter((e) => e.destination === destination);
+          }
+          items.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+          items = items.slice(0, limit);
+          resolve(items);
+        };
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  /** جلب الأحداث المعلقة للـ retry (حسب next_retry_at) */
+  async getOutboxEventsForRetry(destination?: string, limit = 50): Promise<OutboxEvent[]> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('outbox', 'readonly');
+        const store = tx.objectStore('outbox');
+        const request = store.getAll();
+
+        request.onsuccess = () => {
+          const now = new Date().toISOString();
+          let items = (request.result as OutboxEvent[]).filter(
+            (e) => e.status === 'pending' && e.next_retry_at != null && e.next_retry_at <= now
+          );
+          if (destination) {
+            items = items.filter((e) => e.destination === destination);
+          }
+          items.sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+          resolve(items.slice(0, limit));
+        };
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  /** تحديث حالة حدث */
+  async updateOutboxEvent(
+    id: number,
+    updates: Partial<Pick<OutboxEvent, 'status' | 'attempts' | 'locked_at' | 'next_retry_at' | 'last_error' | 'last_sent_at' | 'ack_status' | 'ack_code' | 'ack_message' | 'ack_payload' | 'acked_at' | 'updated_at'>>
+  ): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('outbox', 'readwrite');
+        const store = tx.objectStore('outbox');
+        const getRequest = store.get(id);
+
+        getRequest.onsuccess = () => {
+          const event = getRequest.result;
+          if (!event) {
+            reject(new Error('OUTBOX_EVENT_NOT_FOUND'));
+            return;
+          }
+          const updated = { ...event, ...updates, updated_at: new Date().toISOString() };
+          store.put(updated);
+          resolve();
+        };
+        getRequest.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  /** تحديث بالـ event_uuid (للمزامنة من السيرفر) */
+  async updateOutboxByEventUuid(
+    event_uuid: string,
+    updates: Partial<Pick<OutboxEvent, 'status' | 'ack_status' | 'ack_code' | 'ack_message' | 'ack_payload' | 'acked_at' | 'last_sent_at' | 'attempts' | 'last_error' | 'updated_at'>>
+  ): Promise<void> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('outbox', 'readwrite');
+        const store = tx.objectStore('outbox');
+        const index = store.index('event_uuid');
+        const getRequest = index.get(event_uuid);
+
+        getRequest.onsuccess = () => {
+          const event = getRequest.result;
+          if (!event) {
+            reject(new Error('OUTBOX_EVENT_NOT_FOUND'));
+            return;
+          }
+          const updated = { ...event, ...updates, updated_at: new Date().toISOString() };
+          store.put(updated);
+          resolve();
+        };
+        getRequest.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  /** جلب حدث بالـ event_uuid */
+  async getOutboxEventByUuid(event_uuid: string): Promise<OutboxEvent | null> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('outbox', 'readonly');
+        const store = tx.objectStore('outbox');
+        const index = store.index('event_uuid');
+        const request = index.get(event_uuid);
+
+        request.onsuccess = () => resolve(request.result ?? null);
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  /** حذف أحداث مكتملة (acked) بعد فترة */
+  async deleteAckedOutboxEvents(olderThan: Date): Promise<number> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('outbox', 'readwrite');
+        const store = tx.objectStore('outbox');
+        const index = store.index('status');
+        const request = index.getAll('acked');
+
+        request.onsuccess = () => {
+          const items = request.result as OutboxEvent[];
+          const cutoff = olderThan.toISOString();
+          let deleted = 0;
+          for (const e of items) {
+            if (e.acked_at && e.acked_at <= cutoff) {
+              store.delete(e.id!);
+              deleted++;
+            }
+          }
+          resolve(deleted);
+        };
+        request.onerror = (e) => reject(e);
+      });
+    });
+  }
+
+  /** حفظ عملية تغيير نوع الطلب للمزامنة عند عودة الاتصال. */
+  async savePendingChangeOrderType(payload: Record<string, unknown>): Promise<number> {
+    return this.ensureInit().then(() => {
+      return new Promise((resolve, reject) => {
+        const tx = this.db.transaction('pendingOperations', 'readwrite');
+        const store = tx.objectStore('pendingOperations');
+        const pending = {
+          ...payload,
+          type: 'changeOrderType',
+          savedAt: new Date().toISOString(),
+          isSynced: false,
+        };
+        const request = store.add(pending);
+        request.onsuccess = () => resolve(request.result as number);
+        request.onerror = (e) => reject(e);
       });
     });
   }

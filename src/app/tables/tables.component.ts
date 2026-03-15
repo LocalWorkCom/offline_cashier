@@ -26,6 +26,7 @@ export class TablesComponent implements OnInit, OnDestroy {
   searchText: string = '';
   loading: boolean = true;
   errorMessage: any;
+  isOnline = navigator.onLine;
   message: string = '';
   messageType: 'success' | 'error' = 'error';
 
@@ -64,6 +65,7 @@ export class TablesComponent implements OnInit, OnDestroy {
   fetchTablesData(): void {
     this.loading = false;
     this.errorMessage = '';
+    this.isOnline = navigator.onLine;
     this.tablesRequestService
       .getTables()
       .pipe(
@@ -102,9 +104,23 @@ export class TablesComponent implements OnInit, OnDestroy {
           }
         },
         error: (err) => {
-          console.error('Error fetching tables:', err);
+          const status = err?.status;
+          const is401 = status === 401;
+          const is0 = status === 0;
+          console.error('Error fetching tables:', {
+            status,
+            message: err?.message,
+            error: err?.error,
+            url: err?.url,
+          });
+          if (is401) {
+            this.errorMessage = 'انتهت الجلسة. يرجى تسجيل الدخول مرة أخرى.';
+          } else if (is0) {
+            this.errorMessage = 'تعذر الاتصال بالخادم (تحقق من الاتصال أو CORS).';
+          } else {
+            this.errorMessage = err?.error?.message || err?.message || 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+          }
           this.loading = true;
-          this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
           this.loadTablesFromIndexedDB();
         },
       });
