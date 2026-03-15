@@ -19,8 +19,8 @@ export class PusherService {
 
     // Connect to the Electron Socket.io Server
     // Socket.io automatically appends /socket.io/ and handles the handshake
-    const url = environment.wsUrl.replace('ws://', 'http://').replace('wss://', 'https://');
-    
+    const url = 'http://127.0.0.1:8000/'.replace('ws://', 'http://').replace('wss://', 'https://');
+
     this.socket = io(url, {
       transports: ['polling', 'websocket'],
       withCredentials: true,
@@ -66,7 +66,7 @@ export class PusherService {
       this.subscriptions.set(key, []);
     }
     this.subscriptions.get(key)?.push(callback);
-    
+
     console.log(`[Socket] Subscribed locally to: ${key}`);
 
     // Notify the Electron server

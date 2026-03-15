@@ -756,6 +756,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       if (this.changeTypeDeliveryAreaId) {
         body['area_id'] = parseInt(this.changeTypeDeliveryAreaId, 10);
         body['delivery_address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || this.changeTypeDeliveryHotelName?.trim() || 'عنوان التوصيل';
+        
         body['address_type'] = this.changeTypeDeliveryBuildingType || 'apartment';
         body['building'] = this.changeTypeDeliveryBuilding?.trim() || null;
         body['apartment_number'] = this.changeTypeDeliveryApartment?.trim() || null;
