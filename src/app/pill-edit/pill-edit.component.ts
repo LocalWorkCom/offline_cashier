@@ -726,6 +726,22 @@ export class PillEditComponent {
     // التأكد من أن totalll محدث بشكل صحيح
     const finalTotal = this.totalll || this.getInvoiceTotal();
 
+    // ✅ في حالة كوبون 100% على الطلب جعل إجمالي الفاتورة = 0 نعتبر الفاتورة "مدفوعة" تلقائياً
+    const isFullOrderCoupon =
+      this.appliedCoupon &&
+      (this.appliedCoupon.value_type === 'percentage' ||
+        this.appliedCoupon.value_type === 'Percentage' ||
+        this.appliedCoupon.value_type === 'percent') &&
+      Number(this.appliedCoupon.coupon_value) === 100 &&
+      this.appliedCoupon.coupon_apply_type === 'order' &&
+      finalTotal <= 0;
+
+    if (isFullOrderCoupon && this.paymentStatus !== 'paid') {
+      this.paymentStatus = 'paid';
+      cashAmount = 0;
+      creditAmount = 0;
+    }
+
     console.log('💰 Payment amounts before save:', {
       cashAmount,
       creditAmount,
