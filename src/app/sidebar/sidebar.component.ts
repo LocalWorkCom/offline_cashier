@@ -674,10 +674,13 @@ proceedToLogout(): void {
         throw new Error('بيانات المصادقة غير متوفرة');
       }
 
+      // Round to 2 decimal places to avoid floating-point precision issues when comparing with backend
+      const roundedAmount = Number(Number(this.transferAmount).toFixed(2));
+
       const requestBody = {
         branch_id: branchId,
         cashier_machine_id: cashierMachineId,
-        cash_amount: this.transferAmount,
+        cash_amount: roundedAmount,
         reason: this.reason,
       };
 
@@ -701,6 +704,15 @@ proceedToLogout(): void {
         console.log(response,"alaa");
         this.transferSuccess = 'تم تحويل المبلغ بنجاح';
         this.alertError = response?.data?.alert[0];
+        // Suppress misleading "amount less than available" alert when entered amount matches
+        // available balance (floating-point precision can cause false positives at 2 decimals)
+        if (this.alertError) {
+          const availableCash = Number(localStorage.getItem('totalcash')) || this.balance?.cash || 0;
+          const amountMatches = Math.abs(roundedAmount - availableCash) < 0.01;
+          if (amountMatches) {
+            this.alertError = null;
+          }
+        }
         if(this.alertError == undefined){
           setTimeout(()=>{
           this.CloseTheModalAndClear();
