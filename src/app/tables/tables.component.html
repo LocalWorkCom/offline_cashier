@@ -1,6 +1,11 @@
 @if (errorMessage) {
-<div class="alert alert-danger text-center my-3">
-  {{ errorMessage }}
+<div class="alert alert-danger text-center my-3 d-flex flex-column align-items-center gap-2">
+  <span>{{ errorMessage }}</span>
+  @if (isOnline) {
+  <button class="btn btn-outline-danger btn-sm" (click)="fetchTablesData()">
+    إعادة المحاولة
+  </button>
+  }
 </div>
 }
 

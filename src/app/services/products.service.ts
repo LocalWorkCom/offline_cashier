@@ -232,6 +232,9 @@ export class ProductsService {
   saveCart(): void {
     try {
       localStorage.setItem('cart', JSON.stringify(this.cart));
+      this.db.syncCartToIndexedDB(this.cart).catch((err) =>
+        console.warn('IndexedDB syncCart:', err)
+      );
       this.cartSubject.next(this.cart);
     } catch (error) {
       console.error("Error saving cart to localStorage", error);
@@ -295,6 +298,9 @@ export class ProductsService {
     }
 
     localStorage.setItem('cart', JSON.stringify(cart));
+    this.db.syncCartToIndexedDB(cart).catch((err) =>
+      console.warn('IndexedDB syncCart:', err)
+    );
     this.cartSubject.next(cart);
      console.log('Product structure:', {
       dish: product.dish,
