@@ -56,10 +56,40 @@
         <button class="transfer-money-btn" (click)="openTransferMoneyModal()">تحويل النقدية</button>
       </li>
 
+      <!-- Sync Data -->
+      <li class="sidebar-item mt-2">
+        <button class="transfer-money-btn sync-btn" (click)="openSyncModal()" style="background-color: #28a745 !important;">
+          <i class="fa-solid fa-rotate me-1"></i> مزامنة البيانات
+        </button>
+      </li>
+
     </ul>
     <img class="man-img" src="assets/images/cashier2.png" alt="">
   </div>
 </section>
+
+<!-- ==================== Sync Data Modal ==================== -->
+<div class="modal fade" id="syncModal" tabindex="-1" aria-labelledby="syncModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-md">
+    <div class="modal-content">
+      <div class="modal-header border-0">
+        <button type="button" class="btn btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center py-4">
+        <i class="fa-solid fa-rotate main-color mb-3" [class.fa-spin]="isSyncing" style="font-size: 3rem;"></i>
+        <h4 class="fw-bold mb-3">مزامنة البيانات</h4>
+        <div *ngIf="syncMessage" class="alert mb-4" [class.alert-info]="!syncStatus" [class.alert-success]="syncStatus === 'success'" [class.alert-danger]="syncStatus === 'error'">
+          {{ syncMessage }}
+        </div>
+
+        <button type="button" class="btn btn-primary w-100 py-3 fs-5" (click)="syncData()" [disabled]="isSyncing">
+          <span *ngIf="!isSyncing">بدء المزامنة الآن</span>
+          <span *ngIf="isSyncing">جاري المزامنة... <i class="fa-solid fa-spinner fa-spin ms-2"></i></span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
 <!-- ==================== Logout Confirmation Modal ==================== -->
 <div class="modal fade" id="logoutModal" tabindex="-1" aria-labelledby="logoutModalLabel" aria-hidden="true">
   <div class="modal-dialog modal-dialog-centered modal-md">
@@ -70,11 +100,18 @@
       <div class="modal-body text-center">
         <i class="fa-solid fa-right-from-bracket main-color fs-2"></i>
         <h5 class="fw-bold">سيتم تسجيل خروجك ؟</h5>
+        <div class="mt-4 p-3 bg-light rounded shadow-sm border">
+          <p class="mb-2 text-dark">نوصي بمزامنة بياناتك لضمان تحديث كافة العمليات مع النظام السحابي.</p>
+          <button type="button" class="btn btn-primary d-flex align-items-center justify-content-center mx-auto gap-2 px-4 text-white" (click)="openSyncModal()">
+            <i class="fa-solid fa-rotate"></i>
+            مزامنة البيانات الآن
+          </button>
+        </div>
       </div>
-      <div class="modal-footer border-0 justify-content-center gap-5">
+      <div class="modal-footer border-0 justify-content-center gap-4">
         <!-- Bind تأكيد button to confirmLogout method -->
-        <button type="button" class="btn btn text-white w-25" (click)="confirmLogout()">تأكيد</button>
-        <button type="button" class="btn btn-transparent w-25" data-bs-dismiss="modal">إلغاء</button>
+        <button type="button" class="btn btn-secondary text-white px-4" (click)="confirmLogout()">تأكيد الخروج</button>
+        <button type="button" class="btn btn-outline-dark px-4" data-bs-dismiss="modal">إلغاء</button>
       </div>
     </div>
   </div>
@@ -521,6 +558,39 @@
 
   </div>
 
+  @if (branchShiftReport) {
+  <p class="text-center fw-bold my-2 total"> ملخص وردية الفرع (جميع الجلسات)</p>
+  <div class="border border-1 border-black">
+    <div class="table-content">
+      <span> أول رصيد فتح </span>
+      <span>{{ branchShiftReport.first_open_balance | number:'1.2-2' }} {{ currency_Symbol }}</span>
+    </div>
+    <div class="table-content">
+      <span> آخر رصيد إغلاق </span>
+      <span>{{ branchShiftReport.last_close_balance | number:'1.2-2' }} {{ currency_Symbol }}</span>
+    </div>
+    <div class="table-content">
+      <span> إجمالي مبيعات كاش </span>
+      <span>{{ branchShiftReport.total_cash_sales | number:'1.2-2' }} {{ currency_Symbol }}</span>
+    </div>
+    <div class="table-content">
+      <span> مرتجعات كاش </span>
+      <span>{{ branchShiftReport.total_cash_returns | number:'1.2-2' }} {{ currency_Symbol }}</span>
+    </div>
+    <div class="table-content">
+      <span> النقدية المتوقعة (وردية الفرع) </span>
+      <span>{{ branchShiftReport.expected_cash | number:'1.2-2' }} {{ currency_Symbol }}</span>
+    </div>
+    <div class="table-content">
+      <span> النقدية الفعلية </span>
+      <span>{{ branchShiftReport.actual_cash != null ? (branchShiftReport.actual_cash | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span>
+    </div>
+    <div class="table-content">
+      <span> الفرق (متوقع vs فعلي) </span>
+      <span>{{ branchShiftReport.difference != null ? (branchShiftReport.difference | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span>
+    </div>
+  </div>
+  }
 
   <!--   <p class="text-center fw-bold my-2 total"> الإكرامية</p>
   <div class="border border-1 border-black">
@@ -737,6 +807,20 @@
         </span>
       </p>
     </div>
+
+    @if (branchShiftReport) {
+    <div class="border border-1 border-black mt-3 p-2 text-center">
+      <p class="fw-bold total">ملخص وردية الفرع (جميع الجلسات)</p>
+      <p class="fw-bold">أول رصيد فتح: <span>{{ branchShiftReport.first_open_balance | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
+      <p class="fw-bold">آخر رصيد إغلاق: <span>{{ branchShiftReport.last_close_balance | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
+      <p class="fw-bold">إجمالي مبيعات كاش: <span>{{ branchShiftReport.total_cash_sales | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
+      <p class="fw-bold">مرتجعات كاش: <span>{{ branchShiftReport.total_cash_returns | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
+      <p class="fw-bold">المتوقع: <span>{{ branchShiftReport.expected_cash | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
+      <p class="fw-bold">الفعلي: <span>{{ branchShiftReport.actual_cash != null ? (branchShiftReport.actual_cash | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span></p>
+      <p class="fw-bold">الفرق: <span>{{ branchShiftReport.difference != null ? (branchShiftReport.difference | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span></p>
+    </div>
+    }
+
   <footer class="m-3 text-center">
     <div class="border border-1 border-black p-2 w-100 m-2">
       <h6>
