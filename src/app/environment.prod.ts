@@ -1,12 +1,17 @@
 
 
 
+
 export const baseUrlForWebSocket ='https://erpfortest.testdomain100.online/'
 
 /*  export const baseUrl ='http://127.0.0.1:8000/'
  */
-export const baseUrl2 ='https://productowner.testdomain100.online/api'
+
 // export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
+
+export const baseUrl ='http://192.168.100.11:8000/'
+// export const baseUrl2 ='https://productowner.testdomain100.online/api'
+export const baseUrl2 ='http://192.168.100.11:8000/api'
 
 // export const baseUrl2 ='https://erpmain.alkoot-restaurant.com/api'
 
@@ -17,7 +22,8 @@ export const environment = {
   pusher: {
     key: 'cfd52a74b92f9e278f2d',
     cluster: 'mt1',
-  }
+  },
+  wsUrl: 'ws://192.168.100.11:8081'
 };
 
 
@@ -38,9 +44,12 @@ export const environment = {
 //production
 
 // for  product owner
- export const baseUrl='https://productowner.testdomain100.online/'
+//  export const baseUrl='https://productowner.testdomain100.online/'
 // for  cashier test
-// export const baseUrl='https://erp-cashier.testdomain100.online/'
+
+//export const baseUrl='https://erp-cashier.testdomain100.online/'
+//export const baseUrl='http://192.168.11.20:8000/'
+
 
 // for  cashier production
 // export const baseUrl='https://erpmain.alkoot-restaurant.com/api'
@@ -60,8 +69,8 @@ export const environment2 = {
   production: true,
   pusher: {
     key: 'localkey',
-    wsHost: 'erpfortest.testdomain100.online',
-    wsPort: 6001,
+    wsHost: '192.168.100.11',
+    wsPort: 8081,
     cluster: 'mt1',
     forceTLS: false,
   },
