@@ -774,7 +774,10 @@ export class PillEditComponent {
         returned_amount: this.finalTipSummary.changeToReturn || 0,
         total_with_tip: this.finalTipSummary.grandTotalWithTip || finalTotal,
         payment_amount: this.finalTipSummary.paymentAmount || (cashAmount + creditAmount),
-        bill_amount: this.finalTipSummary.billAmount || finalTotal
+        bill_amount: this.finalTipSummary.billAmount || finalTotal ,
+        tips_aption : this.selectedTipType,
+        tip_specific_amount: this.specificTipAmount ? this.finalTipSummary?.tipAmount : 0,
+        change_amount: this.tempChangeAmount || 0,
       } : undefined;
 
 
