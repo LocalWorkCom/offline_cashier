@@ -226,20 +226,11 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       const details = order.details_order || order;
       this.currencySymbol = details.currency_symbol || order.currency_symbol || 'ج.م';
 
-<<<<<<< HEAD
       this.paymenMethod = (details.transactions && details.transactions[0]) ? details.transactions[0].payment_method : (order.order_details?.payment_method || 'Unknown');
       this.deliveryData = details?.delivery_data ?? order.formdata_delivery ?? null;
       const rawDeliveryFees = details?.order_summary?.delivery_fees ?? order.delivery_fees_amount ?? 0;
       const summaryFromOrder = details?.order_summary || {
         total_dish_price: order.total_price || 0,
-=======
-      this.paymenMethod = order.details_order.transactions?.[0]?.payment_method ?? order.details_order.payment_method ?? 'Unknown';
-      this.deliveryData = order.details_order?.delivery_data || "";
-      const rawDeliveryFees = order.details_order.order_summary?.delivery_fees ||
-        order.details_order.order_summary?.delivery_fees || 0;
-      const summaryFromOrder = order.details_order?.order_summary || {
-        total_dish_price: order.order_details?.total_dish_price || 0,
->>>>>>> 653671617ccd753d4036c713fcfd735a6b49e15d
         total: order.total_price || 0,
         delivery_fees: order.delivery_fees_amount || 0,
         coupon_value: order.order_details?.coupon_value || 0,
@@ -249,7 +240,6 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       const applied = this.normalizeSummaryByOrderType(orderType, summaryFromOrder, Number(rawDeliveryFees));
 
       this.deliveryFees = applied.deliveryFees;
-<<<<<<< HEAD
       let itemsArray = details?.order_details || order.order_items || [];
       itemsArray = this.normalizeOfflineOrderItems(itemsArray);
       this.orderDetails = {
@@ -259,26 +249,20 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         order_summary: applied.orderSummary,
       };
       this.orderItems = this.filterMovedOrderItems(itemsArray);
-=======
-      // Set the main order details
-      const detailsOrder = order.details_order;
-      this.orderDetails = detailsOrder;
-      this.orderItems = this.filterMovedOrderItems(detailsOrder?.order_details || []);
->>>>>>> 653671617ccd753d4036c713fcfd735a6b49e15d
       this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
 
       const totalPrice = Number(this.orderSummary?.total_price ?? this.orderSummary?.total ?? 0);
       const isPaidByTotal = !isNaN(totalPrice) && totalPrice <= 0;
-      if (!detailsOrder.transactions || !Array.isArray(detailsOrder.transactions) || detailsOrder.transactions.length === 0) {
-        const isPaid = detailsOrder.payment_status === 'paid' || isPaidByTotal;
-        detailsOrder.transactions = [{
+      if (!this.orderDetails.transactions || !Array.isArray(this.orderDetails.transactions) || this.orderDetails.transactions.length === 0) {
+        const isPaid = this.orderDetails.payment_status === 'paid' || isPaidByTotal;
+        this.orderDetails.transactions = [{
           payment_method: this.paymenMethod ?? 'cash',
-          payment_status: isPaid ? 'paid' : (detailsOrder.payment_status ?? 'unpaid'),
+          payment_status: isPaid ? 'paid' : (this.orderDetails.payment_status ?? 'unpaid'),
           paid: isPaid ? totalPrice : 0
         }];
-      } else if (isPaidByTotal && detailsOrder.transactions[0]?.payment_status === 'unpaid') {
-        detailsOrder.transactions[0].payment_status = 'paid';
-        detailsOrder.transactions[0].paid = totalPrice;
+      } else if (isPaidByTotal && this.orderDetails.transactions[0]?.payment_status === 'unpaid') {
+        this.orderDetails.transactions[0].payment_status = 'paid';
+        this.orderDetails.transactions[0].paid = totalPrice;
       }
 
       console.log("orderitems", this.orderItems);

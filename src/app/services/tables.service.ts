@@ -54,6 +54,10 @@ export class TablesService {
   }
   // UPDATE TABLE STATUS
   updateTableStatus(tableId: number, orderId: string): Observable<any> {
+    const token = this.getToken();
+    if (!token) {
+      return new Observable((obs) => obs.error(new Error('No authentication token found')));
+    }
     const headers = new HttpHeaders().set(
       'Authorization',
       `Bearer ${token}`

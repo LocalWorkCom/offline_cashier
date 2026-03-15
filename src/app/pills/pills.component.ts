@@ -407,13 +407,8 @@ console.log(newOrder);
       return this.totalInvoicesCount;
     }
     const apiStatusMap: any = {
-<<<<<<< HEAD
       'hold': 'unpaid',
       'done': 'paid',
-=======
-      'hold': 'hold', 
-      'done': 'completed',
->>>>>>> 653671617ccd753d4036c713fcfd735a6b49e15d
       'cancelled': 'cancelled',
       'returned': 'returned'
     };
@@ -515,7 +510,6 @@ console.log(newOrder);
   // }
   selectStatusGroup(index: number): void {
     this.selectedStatus = index;
-<<<<<<< HEAD
     const allStatuses = ['all', 'hold', 'done', 'cancelled', 'returned'];
     this.selectedStatusLabel = allStatuses[index] || 'all';
     if (this.usingOfflineData) {
@@ -523,10 +517,6 @@ console.log(newOrder);
       this.cdr.detectChanges();
       return;
     }
-=======
-    const allStatuses = ['hold', 'done', 'cancelled', 'returned'];
-    this.selectedStatusLabel = allStatuses[index] || 'hold';
->>>>>>> 653671617ccd753d4036c713fcfd735a6b49e15d
     this.fetchPillsData();
   }
   // fetchPillsData(): void {
@@ -580,21 +570,12 @@ console.log(newOrder);
     }
 
     this.pillsByStatus = allStatuses.map((status) => {
-<<<<<<< HEAD
       if (status === 'all') {
         return { status, pills: list };
       }
-=======
-      // If the current active tab matches this status group, show all items from the server response
->>>>>>> 653671617ccd753d4036c713fcfd735a6b49e15d
       if (this.selectedStatusLabel === status) {
         return { status, pills: list };
       }
-<<<<<<< HEAD
-=======
-
-      // Otherwise, filter locally based on the print status
->>>>>>> 653671617ccd753d4036c713fcfd735a6b49e15d
       return {
         status,
         pills: list.filter(
