@@ -283,11 +283,20 @@
   min-height: 70px;
   max-width: 100%;
 }
-#print-section p,
-#print-section span,
-.total {
+#print-section p ,#print-section span,.total{
   font-size: 11px;
 }
+
+#print-section,
+#logout-report-section{
+  font-family: 'Cairo', sans-serif;
+}
+#logout-report-section p, #logout-report-section span, #logout-report-section{
+  font-family: 'Cairo', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+}
+
 #dd {
   width: 100%;
   position: relative;
