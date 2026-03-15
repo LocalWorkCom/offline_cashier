@@ -9,9 +9,9 @@ export const baseUrlForWebSocket ='https://erpfortest.testdomain100.online/'
 
 // export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
 
-export const baseUrl ='http://192.168.100.11:8000/'
+export const baseUrl ='https://strange-elephant-mil-frost.trycloudflare.com/'
 // export const baseUrl2 ='https://productowner.testdomain100.online/api'
-export const baseUrl2 ='http://192.168.100.11:8000/api'
+export const baseUrl2 ='https://strange-elephant-mil-frost.trycloudflare.com/api'
 
 // export const baseUrl2 ='https://erpmain.alkoot-restaurant.com/api'
 
