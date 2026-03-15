@@ -2489,6 +2489,9 @@ export class OrdersComponent implements OnDestroy {
           console.log('🔍 [DEBUG] Result is truthy, proceeding...');
           this.successMessage = 'تم تحديث الطلب بنجاح';
           this.successMessageModal.show();
+          if (result === 'updated') {
+            this.fetchOrdersFromAPI();
+          }
 
             /*
             // Removed to prevent double printing (handled by global listener)
@@ -4207,15 +4210,18 @@ export class OrdersComponent implements OnDestroy {
       body['client_name'] = this.changeTypeDeliveryName?.trim() || od?.client_name || '';
       body['client_phone'] = this.changeTypeDeliveryPhone?.trim() || od?.client_phone || '';
       body['client_country_code'] = (this.changeTypeDeliverySelectedCountry?.code || this.changeTypeDeliveryCountryCode || od?.client_country_code || '').trim();
+
+      console.log("this.changeTypeDeliveryAreaId",this.changeTypeDeliveryAreaId);
+      console.log("this.changeTypeDeliveryHotelName",this.changeTypeDeliveryHotelName);
       if (this.changeTypeDeliveryAreaId) {
         body['area_id'] = parseInt(this.changeTypeDeliveryAreaId, 10);
-        body['delivery_address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || 'عنوان التوصيل';
+        body['delivery_address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || this.changeTypeDeliveryHotelName?.trim() ||'عنوان التوصيل';
         // Full address payload for storeAddress (same as add-address)
         body['address_type'] = this.changeTypeDeliveryBuildingType || 'apartment';
         body['building'] = this.changeTypeDeliveryBuilding?.trim() || null;
         body['apartment_number'] = this.changeTypeDeliveryApartment?.trim() || null;
         body['floor_number'] = this.changeTypeDeliveryFloor?.trim() || null;
-        body['address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || 'عنوان التوصيل';
+        body['address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || this.changeTypeDeliveryHotelName?.trim()  || 'عنوان التوصيل';
         body['notes'] = this.changeTypeDeliveryNotes?.trim() || null;
         if (this.changeTypeDeliveryBuildingType === 'hotel' && this.changeTypeDeliveryHotelId) {
           body['hotel_id'] = parseInt(String(this.changeTypeDeliveryHotelId), 10);
