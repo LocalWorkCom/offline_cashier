@@ -683,6 +683,9 @@ export class OrdersComponent implements OnDestroy {
     this.filterOrders();
   }
   filterOrdersInput(): void {
+    // Strip '#' from search input so users can paste e.g. '#1234'
+    this.searchOrderNumber = this.searchOrderNumber.replace(/#/g, '');
+
     if (this.selectedStatus !== 'static') {
       this.searchSubject.next(this.searchOrderNumber);
       return;
@@ -1050,17 +1053,14 @@ export class OrdersComponent implements OnDestroy {
     }
   }
 
-  /** True if this order is a merged order: either it was merged into another (secondary) or it received a merge (primary). */
+  /** True if this order is the secondary (merged-into-another) order. Hides edit/remove for it.
+   * The primary order (that received the merge) must still allow edit QTY and remove item. */
   isMergedOrder(order: any): boolean {
     if (!order?.order_details) return false;
-    const id = order.order_details.order_id;
     const status = order.order_details.status;
     const mergedIntoOrderId = order.order_details.merged_into_order_id ?? order.merged_into_order_id;
-    if (status === 'cancelled' && mergedIntoOrderId) return true;
-    const isPrimaryMerged = (this.orders || []).some(
-      (o: any) => (o?.order_details?.merged_into_order_id ?? o?.merged_into_order_id) == id
-    );
-    return !!isPrimaryMerged;
+    // Only the secondary order (merged INTO another, cancelled) hides edit/remove.
+    return status === 'cancelled' && !!mergedIntoOrderId;
   }
 
   getStatusText(order: any): string {
@@ -1312,10 +1312,15 @@ export class OrdersComponent implements OnDestroy {
   } {
     const items = this.getDisplayOrderItems(order);
 
+    // console.log("items_dalia",items);
+    // console.log("order_dalia",order);
+
+
     let taxTotal = 0;
     let serviceTotal = 0;
     let priceTotal = 0;
-
+    let couponTotal = 0;
+    let deliveryTotal = 0;
     for (const item of items) {
       const totalQty = Number(item.quantity) || 0;
       const selectedQty =
@@ -1328,17 +1333,57 @@ export class OrdersComponent implements OnDestroy {
         continue;
       }
 
-      const qty = totalQty || 1;
-      const taxPart = ((item.tax_value ?? 0) / qty) * returnedQty;
-      const servicePart = ((item.service_fees ?? 0) / qty) * returnedQty;
-      const pricePart = ((item.total_dish_price ?? 0) / qty) * returnedQty;
+      // new calculation for the return totals
+      // let taxPart : number;
+      // let servicePart : number;
+      let pricePart : number;
+      // let couponPart : number;
+      const unitPrice = item.unitPrice;
+      pricePart = unitPrice * returnedQty;
 
-      taxTotal += taxPart;
-      serviceTotal += servicePart;
+
+      // if (order.details_order?.order_type === 'dine-in') {
+      //   servicePart = pricePart * 12 / 100;
+      //   taxPart = (pricePart + servicePart) * 14/100;
+
+      // } else {
+      //   servicePart =0;
+      //   taxPart = (pricePart + servicePart) * 14/100;
+
+      // }
+
+
+
+      // taxTotal += taxPart;
+      // serviceTotal += servicePart;
       priceTotal += pricePart;
     }
 
-    const grandTotal = taxTotal + serviceTotal + priceTotal;
+    console.log('order_dalia',order);
+    let precoupon = 0;
+
+    if(order.details_order?.order_summary?.coupon_type == 'percentage'){
+
+      precoupon = priceTotal * order.details_order?.order_summary?.coupon_percentage / 100;
+      couponTotal = priceTotal - precoupon;
+
+    }
+    else
+    {
+      couponTotal = priceTotal - order.details_order?.order_summary?.coupon_value;
+    }
+    if (order.details_order?.order_type === 'dine-in') {
+        serviceTotal = couponTotal * 12 / 100;
+        taxTotal = (couponTotal + serviceTotal) * 14/100;
+
+      } else {
+        serviceTotal =0;
+        taxTotal = (couponTotal + serviceTotal) * 14/100;
+
+      }
+      deliveryTotal = order.details_order?.order_summary?.delivery_fees;
+
+    const grandTotal = taxTotal + serviceTotal + couponTotal + deliveryTotal;
 
     return {
       taxTotal,
@@ -2667,7 +2712,8 @@ export class OrdersComponent implements OnDestroy {
       if (couponType === 'percentage') {
         discountAmount = (couponData.subtotal_price_before_coupon * parseFloat(couponValue)) / 100;
       } else {
-        discountAmount = parseFloat(couponValue);
+        discountAmount = 0;
+        couponValue = '0' ;
       }
 
       console.log('💰 Corrected coupon details (10%):', {
@@ -2716,7 +2762,7 @@ export class OrdersComponent implements OnDestroy {
   canShowReturnInvoice(order: any): boolean {
     const totalCash = localStorage.getItem('totalcash');
     const totalCredit = localStorage.getItem('totalvisa');
-    console.log("totalCash",totalCash,totalCredit);
+    // console.log("totalCash",totalCash,totalCredit);
 
     if (!totalCash && !totalCredit) {
       return false;

@@ -71,9 +71,30 @@ export class PillDetailsService {
   
     // بناء payload واحد متسق
     // ملاحظة: الـ API يجب أن يقبل payment_status = 'paid' أو 'unpaid' (راجع docs/API_PAYMENT_STATUS_FIX.md عند خطأ 400)
+    // ✅ في حالة كوبون 100% على الطلب يجعل إجمالي الفاتورة = 0 نعتبر الفاتورة "مدفوعة" حتى لو لم يتم إدخال مبالغ نقدية/فيزا.
+    let finalPaymentStatus = paymentStatus || null;
+
+    const normalizedTotal = total !== undefined && total !== null ? Number(total) : null;
+    const normalizedCouponValue =
+      couponData && couponData.coupon_value !== undefined && couponData.coupon_value !== null
+        ? Number(couponData.coupon_value)
+        : null;
+
+    const isFullOrderCoupon =
+      couponData != null &&
+      (couponData.coupon_type === 'percentage' ||
+        couponData.coupon_type === 'Percentage' ||
+        couponData.coupon_type === 'percent') &&
+      normalizedCouponValue === 100 &&
+      normalizedTotal === 0;
+
+    if (isFullOrderCoupon && finalPaymentStatus !== 'paid') {
+      finalPaymentStatus = 'paid';
+    }
+
     let payload: any = {
       order_number: orderNumber,
-      payment_status: paymentStatus || null,
+      payment_status: finalPaymentStatus,
       tip: tip || null,
     };
   
