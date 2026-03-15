@@ -293,7 +293,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   fetchOrderDetailsFromAPI(): void {
     this.loading = true;
     this.error = '';
-    // console.log("orderId -dalia",this.orderId);
+    console.log("orderId -dalia",this.orderId);
 
     this.orderListById.getOrderById(this.orderId)
       .pipe(
@@ -307,9 +307,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
           if (response && response.data) {
             const order = response.data.orderDetails[0];
 
-            // console.log("order -dalia",response.data);
+            console.log("order -dalia",response.data);
             this.processOrderData(order);
-
 
             // Save to IndexedDB for future access
             // this.saveOrderToIndexedDB(order);
@@ -346,12 +345,9 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   /**
    * Recalculate order summary from displayed items when backend summary is stale (e.g. after split).
    * Ensures "view original order" and invoice show the correct amount for the remaining items only.
-   * لا نستبدل الإجمالي لو الـ API رجّع total = 0 (كوبون 100%) حتى لا يظهر 900 بدل 0.
    */
   private recalculateSummaryFromDisplayedItems(summary: any, items: any[]): any {
     if (!summary || !items || items.length === 0) return summary;
-    const apiTotal = Number(summary.total_price ?? summary.total ?? NaN);
-    if (!isNaN(apiTotal) && apiTotal <= 0) return summary;
     const itemsSubtotal = items
       .filter((item: any) => !this.isItemCancelled(item))
       .reduce((sum: number, item: any) => sum + this.safeNum(item.total_dish_price), 0);
@@ -416,21 +412,6 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     // Persist corrected summary so saveOrderToIndexedDB stores correct totals (e.g. after split)
     order.order_summary = this.orderSummary;
 
-    // ✅ تطبيع transactions لو الـ API ما رجّعش مصفوفة
-    const totalPrice = Number(this.orderSummary?.total_price ?? this.orderSummary?.total ?? 0);
-    const isPaidByTotal = !isNaN(totalPrice) && totalPrice <= 0;
-    if (!order.transactions || !Array.isArray(order.transactions) || order.transactions.length === 0) {
-      const isPaid = order.payment_status === 'paid' || isPaidByTotal;
-      order.transactions = [{
-        payment_method: order.payment_method ?? this.paymenMethod ?? 'cash',
-        payment_status: isPaid ? 'paid' : (order.payment_status ?? 'unpaid'),
-        paid: isPaid ? totalPrice : 0
-      }];
-    } else if (isPaidByTotal && order.transactions[0]?.payment_status === 'unpaid') {
-      order.transactions[0].payment_status = 'paid';
-      order.transactions[0].paid = totalPrice;
-    }
-
     if (this.deliveryData?.delivery_name === ' ') {
       this.deliveryData.delivery_name = 'لا يوجد';
     }
@@ -473,7 +454,6 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (response) => {
           if (response) {
-            console.log("response_dalia",response);
             const order = response.data.orderDetails[0];
             this.currencySymbol = order.currency_symbol;
             this.paymenMethod = order.transactions?.[0]?.payment_method ?? 'Unknown';
@@ -505,23 +485,6 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
               };
             }
             order.order_summary = this.orderSummary;
-
-            // ✅ تطبيع transactions: لو الـ API ما رجّعش مصفوفة أو رجّعها فاضية
-            const totalPrice = Number(this.orderSummary?.total_price ?? this.orderSummary?.total ?? 0);
-            const isPaidByTotal = !isNaN(totalPrice) && totalPrice <= 0;
-            if (!order.transactions || !Array.isArray(order.transactions) || order.transactions.length === 0) {
-              const isPaid = order.payment_status === 'paid' || isPaidByTotal;
-              order.transactions = [{
-                payment_method: order.payment_method ?? this.paymenMethod ?? 'cash',
-                payment_status: isPaid ? 'paid' : (order.payment_status ?? 'unpaid'),
-                paid: isPaid ? totalPrice : 0
-              }];
-            } else if (isPaidByTotal && order.transactions[0]?.payment_status === 'unpaid') {
-              // لو الإجمالي = 0 (كوبون 100%) لكن الحالة غير مدفوعة → نصلحها
-              order.transactions[0].payment_status = 'paid';
-              order.transactions[0].paid = totalPrice;
-            }
-
             if (this.deliveryData?.delivery_name == ' ') {
               this.deliveryData.delivery_name = 'لا يوجد';
             }
@@ -549,26 +512,11 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     return Number(this.orderSummary.service_percentage) > 0;
   }
 
-  /** حالة الدفع الفعلية للعرض (مدفوعة / غير مدفوعة). لو الإجمالي = 0 نعتبرها مدفوعة. */
-  get displayPaymentStatus(): 'paid' | 'unpaid' {
-    const d = this.orderDetails;
-    if (!d) return 'unpaid';
-    const fromTx = d.transactions?.[0]?.payment_status ?? d.payment_status;
-    if (fromTx === 'paid') return 'paid';
-    const total = Number(this.orderSummary?.total_price ?? this.orderSummary?.total ?? 0);
-    return (!isNaN(total) && total <= 0) ? 'paid' : 'unpaid';
-  }
-
   /** Safe grand total for display (never NaN). */
   get displayTotalPrice(): number {
-    if (this.orderDetails?.status === 'cancelled') {
-      return 0;
-    }
-    else {
-      const v = this.orderSummary?.total_price ?? this.orderSummary?.total;
-      const n = Number(v);
-      return v != null && !isNaN(n) ? n : 0;
-    }
+    const v = this.orderSummary?.total_price ?? this.orderSummary?.total;
+    const n = Number(v);
+    return v != null && !isNaN(n) ? n : 0;
   }
 
   ngOnDestroy(): void {
@@ -627,14 +575,9 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         console.log('Order cancelled successfully:', response);
         this.errorMessage = response.message;
         this.status_order = response.status;
-        const isDelivery = (this.orderDetails?.order_type || this.orderDetails?.order_details?.order_type || '')
-          .toString().toLowerCase() === 'delivery';
         setTimeout(() => {
           this.errorMessage = '';
-          if (isDelivery) {
-            window.location.reload();
-          }
-        }, 3000);
+        }, 2000);
         this.fetchOrderDetailsFromAPI();
       },
       error: (error) => {
@@ -812,7 +755,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       body['client_country_code'] = (this.changeTypeDeliverySelectedCountry?.code || this.changeTypeDeliveryCountryCode || od?.client_country_code || '').trim();
       if (this.changeTypeDeliveryAreaId) {
         body['area_id'] = parseInt(this.changeTypeDeliveryAreaId, 10);
-        body['delivery_address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || 'عنوان التوصيل';
+        body['delivery_address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || this.changeTypeDeliveryHotelName?.trim() || 'عنوان التوصيل';
         body['address_type'] = this.changeTypeDeliveryBuildingType || 'apartment';
         body['building'] = this.changeTypeDeliveryBuilding?.trim() || null;
         body['apartment_number'] = this.changeTypeDeliveryApartment?.trim() || null;
