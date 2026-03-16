@@ -11,6 +11,7 @@ import { ProductsService } from './products.service';
 import { TablesService } from './tables.service';
 import { AddAddressService } from './add-address.service';
 import { IndexeddbService } from './indexeddb.service';
+import { SyncOfflineService } from './sync-offline.service';
 
 @Injectable({
   providedIn: 'root',
@@ -359,6 +360,11 @@ export class AuthService {
             console.error('❌ Error fetching categories after login:', err);
           },
         });
+
+        // ✅ Pull online data from cloud to sync offline database
+        const syncOfflineService = this.injector.get(SyncOfflineService);
+        syncOfflineService.pullOnlineData();
+        console.log('🔄 Pull online data triggered after login.');
         // ==========================
         // 🚀 END DALIA
         // ==========================
