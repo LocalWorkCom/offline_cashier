@@ -13,7 +13,7 @@
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:cashier": "node dist/cashier/server/server.mjs",
-    "electron:build": "ng build --configuration production && electron-builder"
+    "electron:build": "node --max-old-space-size=8192 ./node_modules/@angular/cli/bin/ng build --configuration production && electron-builder"
   },
   "private": true,
   "dependencies": {
