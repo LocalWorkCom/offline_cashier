@@ -2428,6 +2428,14 @@ export class OrdersComponent implements OnDestroy {
           console.log('Order cancelled failed:', response);
         }
         setTimeout(() => {
+          this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+            this.router.navigate(
+              ['/listv2'],
+              { queryParams: { refresh: 'true' } }
+            );
+          });
+        }, 700);
+        setTimeout(() => {
           this.errorMessage = '';
         }, 2000);
       },
