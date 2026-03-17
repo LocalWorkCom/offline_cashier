@@ -19,7 +19,7 @@ export class PusherService {
 
     // Connect to the Electron Socket.io Server
     // Socket.io automatically appends /socket.io/ and handles the handshake
-    const url = 'http://127.0.0.1:8000/'.replace('ws://', 'http://').replace('wss://', 'https://');
+    const url = 'http://127.0.0.1:8081/'.replace('ws://', 'http://').replace('wss://', 'https://');
 
     this.socket = io(url, {
       transports: ['polling', 'websocket'],
