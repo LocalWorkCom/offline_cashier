@@ -69,6 +69,9 @@ ngOnInit() {
     const isBalanceOpened = localStorage.getItem('isBalanceOpened') === 'true' ||
                            localStorage.getItem('is_open_balance') === 'true';
 
+    // No open balance ID in this session = fresh login after logout → always show opening balance modal
+    const hasOpenBalanceId = this.balanceService.getCurrentBalanceId() != null;
+
     // Then subscribe to auth service
     this.authService.isOpenBalance$.subscribe(isOpen => {
       console.log('Balance status from service:', isOpen);
@@ -77,9 +80,12 @@ ngOnInit() {
     isBalanceOpened: localStorage.getItem('isBalanceOpened'),
     is_open_balance: localStorage.getItem('is_open_balance')
   },
-  authService: this.authService.getOpenBalanceStatus()
+  authService: this.authService.getOpenBalanceStatus(),
+  hasOpenBalanceId: this.balanceService.getCurrentBalanceId()
 });
-      if (!isOpen && !isBalanceOpened) {
+      // Show modal if: balance not opened OR no balance ID in session (e.g. after re-login)
+      const shouldShowModal = (!isOpen && !isBalanceOpened) || !hasOpenBalanceId;
+      if (shouldShowModal) {
         console.log('Showing balance modal');
         this.showModal = true;
         this.modalStateService.setModalOpen(true);
@@ -92,8 +98,8 @@ ngOnInit() {
       }
     });
 
-    // Immediate check
-    if (!isBalanceOpened) {
+    // Immediate check: show if localStorage says not opened, or no balance ID in session
+    if (!isBalanceOpened || !hasOpenBalanceId) {
       this.showModal = true;
       this.modalStateService.setModalOpen(true);
       setTimeout(() => this.showWelcomeModal(), 500);

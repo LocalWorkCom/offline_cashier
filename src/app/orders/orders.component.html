@@ -219,8 +219,7 @@
                   class="btn btn-static-secondary text-dark fs-6 w-100 mb-2 btn-static-warning">
                   تفاصيل الطلب
                 </a>
-                <a (click)="loadOrderToCart(order.orderId)" class="btn fs-6 w-100 mt-auto bg-success">
-
+                <a (click)="loadOrderToCart(order.orderId)" class="btn btn-action-add fs-6 w-100 mt-auto text-white">
                   إستكمال الطلب
                 </a>
               </div>
@@ -266,7 +265,7 @@
                 <div>
                   @if(order.order_details.status != 'cancelled' && order.order_details.payment_status == "unpaid"){
                   <span class="badge text-dark">
-                    <button type="button" class="bg-main rounded-circle p-0 border-0 ms-1"
+                    <button type="button" class="btn-action-add rounded-circle p-0 border-0 ms-1 text-white"
                       style="width: 20px; height: 20px" (click)="continueOrder(order)">
                       <i class="fa-solid fa-plus"></i>
                     </button>
@@ -315,13 +314,13 @@
               </div>
               <div class="d-flex align-items-center justify-content-end my-2">
                 @if (order.order_details.payment_status == "unpaid") {
-                <span class="rounded-circle bg-main d-flex justify-content-center align-items-center text-white ms-1"
+                <span class="rounded-circle badge-unpaid d-flex justify-content-center align-items-center ms-1"
                   style="width: 20px;height: 20px;">
                   <i class="fa-solid fa-xmark fs-6"></i>
                 </span>
-                <span class="main-color fw-bold">غير مدفوع</span>
+                <span class="fw-bold text-danger">غير مدفوع</span>
                 } @else {
-                <span class="rounded-circle bg-success d-flex justify-content-center align-items-center text-white ms-1"
+                <span class="rounded-circle badge-paid d-flex justify-content-center align-items-center ms-1"
                   style="width: 20px;height: 20px;">
                   <i class="fa-solid fa-check"></i>
                 </span>

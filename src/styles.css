@@ -189,6 +189,45 @@ a {
     background-color: #fe0000;
 }
 
+/* ========== Consistent action buttons: Add = green, Delete = red ========== */
+.btn-action-add,
+.btn.btn-action-add {
+    background-color: #198754 !important;
+    color: #fff !important;
+    border-color: #198754 !important;
+}
+.btn-action-add:hover,
+.btn.btn-action-add:hover {
+    background-color: #157347 !important;
+    color: #fff !important;
+    border-color: #157347 !important;
+}
+
+.btn-action-delete,
+.btn.btn-action-delete {
+    background-color: #dc3545 !important;
+    color: #fff !important;
+    border-color: #dc3545 !important;
+}
+.btn-action-delete:hover,
+.btn.btn-action-delete:hover {
+    background-color: #bb2d3b !important;
+    color: #fff !important;
+    border-color: #bb2d3b !important;
+}
+
+/* Paid badge/button: green; Unpaid badge/button: red */
+.badge-paid,
+.btn-paid {
+    background-color: #198754 !important;
+    color: #fff !important;
+}
+.badge-unpaid,
+.btn-unpaid {
+    background-color: #dc3545 !important;
+    color: #fff !important;
+}
+
 .btn-static-primary {
     background-color: #0085db1a;
 
