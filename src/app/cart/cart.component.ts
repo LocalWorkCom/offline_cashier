@@ -781,7 +781,14 @@ export class CartComponent {
           this.message = res?.message || 'تم تغيير نوع الطلب بنجاح';
           this.status_order = true;
           setTimeout(() => { this.message = ''; }, 3000);
-          this.fetchOrderDetails();
+          // this.fetchOrderDetails();
+          setTimeout(() => {
+            const id = this.currentOrderForTypeChange.order_details.order_id;
+            this.router.navigate(
+              ['/order-details', id],
+              { queryParams: { refresh: 'true' } }
+            );
+          }, 700);
           this.currentOrderForTypeChange = null;
           this.selectedNewOrderType = '';
           this.selectedTableIdForTypeChange = '';
