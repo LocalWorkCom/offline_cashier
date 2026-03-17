@@ -234,7 +234,7 @@
         </div>
         <!-- زر حذف الكوبون - يظهر فقط للطلبات غير المدفوعة -->
         <button *ngIf="invoices[0]?.transactions?.[0]?.payment_status !== 'paid'"
-          class="btn btn-danger btn-sm mt-3 w-100" (click)="removeDiscount()">
+          class="btn btn-action-delete btn-sm mt-3 w-100 text-white" (click)="removeDiscount()">
           <i class="fa-solid fa-trash me-2"></i>
           حذف الكوبون
         </button>
@@ -250,14 +250,14 @@
           *ngIf="invoices[0].order_type === 'Takeaway' ||invoices[0].order_type === 'dine-in' || invoices[0].order_type === 'Delivery'">
           <div class="d-flex gap-4" *ngIf="invoices[0]?.transactions">
             <button class="fs-6 rounded-4 w-50 btn" [ngClass]="{
-              'btn-static-main text-white': paymentStatus === 'unpaid' || (invoices[0]?.transactions[0]?.payment_status === 'unpaid' && paymentStatus !== 'paid'),
+              'btn-action-delete': paymentStatus === 'unpaid' || (invoices[0]?.transactions[0]?.payment_status === 'unpaid' && paymentStatus !== 'paid'),
               'btn-transparent border-1': paymentStatus !== 'unpaid' || invoices[0]?.transactions[0]?.payment_status !== 'unpaid'
             }" (click)="changePaymentStatus('unpaid')">
               غير مدفوعة
             </button>
 
             <button class="fs-6 rounded-4 w-50 btn" [ngClass]="{
-              'btn-static-main text-white': paymentStatus === 'paid' || (invoices[0].transactions[0].payment_status === 'paid' && paymentStatus !== 'unpaid'),
+              'btn-action-add text-white': paymentStatus === 'paid' || (invoices[0].transactions[0].payment_status === 'paid' && paymentStatus !== 'unpaid'),
               'btn-transparent border-1': paymentStatus !== 'paid' || invoices[0].transactions[0].payment_status !== 'paid'
             }" (click)="changePaymentStatus('paid')">
               مدفوعة
@@ -602,7 +602,7 @@
         <!-- <button class="btn fs-6 rounded-4" (click)="onPrintButtonClick()">
           <i class="fas fa-print ms-1"></i> طباعة الفاتورة
         </button> -->
-        <button class="btn pill-edit-pay-btn w-100" [disabled]="loading || amountError || (paymentError && paymentError.trim() !== '') || (paymentAmountError && paymentAmountError.trim() !== '') || (referenceNumberError && referenceNumberError.trim() !== '') || (deliveryStatusError && deliveryStatusError.trim() !== '')" (click)="saveOrder()" *ngIf="
+        <button class="btn btn-action-add pill-edit-pay-btn w-100 text-white" [disabled]="loading || amountError || (paymentError && paymentError.trim() !== '') || (paymentAmountError && paymentAmountError.trim() !== '') || (referenceNumberError && referenceNumberError.trim() !== '') || (deliveryStatusError && deliveryStatusError.trim() !== '')" (click)="saveOrder()" *ngIf="
             invoices &&
             invoices.length > 0
           "> <!--  &&
@@ -1061,7 +1061,7 @@
   </div>
 
   <div class="modal-footer d-flex justify-content-center tip-modal-footer border-0 px-4 pb-4 pt-0">
-    <button type="button" class="btn btn-danger confirm-tip-btn w-100 py-3"
+    <button type="button" class="btn btn-action-delete confirm-tip-btn w-100 py-3 text-white"
       [disabled]="selectedTipType === 'tip_specific_amount' && parseTipAmount(specificTipAmount) < 0"
       (click)="confirmTipAndClose(modal)">
       <span class="fw-bold">تكملة الدفع</span>
