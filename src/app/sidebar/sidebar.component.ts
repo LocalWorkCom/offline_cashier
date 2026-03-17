@@ -109,6 +109,9 @@ export class SidebarComponent implements OnInit {
         this.syncMessage = 'جاري مزامنة سجل النشاط...';
         this.syncService.triggerActivityLogSync().subscribe({
           next: () => {
+            // After sending all local data, pull changes from the cloud
+            this.syncService.pullOnlineData();
+
             this.isSyncing = false;
             this.syncStatus = 'success';
             this.syncMessage = 'تمت المزامنة بنجاح';
