@@ -1396,6 +1396,20 @@ export class OrdersComponent implements OnDestroy {
     return items.filter((item: any) => (Number(item.quantity) || 0) > 0);
   }
 
+  /** True when the order has any returned quantity (quantity - selectedQuantity > 0). */
+  hasReturnedItems(order: any): boolean {
+    const items = this.getDisplayOrderItems(order);
+    for (const item of items) {
+      const totalQty = Number(item.quantity) || 0;
+      const selectedQty =
+        item.selectedQuantity !== undefined && item.selectedQuantity !== null
+          ? Number(item.selectedQuantity)
+          : totalQty;
+      if (totalQty - selectedQty > 0) return true;
+    }
+    return false;
+  }
+
   /**
    * Compute total amounts (price + tax + service) for returned quantities
    * of all items in a given order. Used for the return invoice summary.
@@ -1455,7 +1469,6 @@ export class OrdersComponent implements OnDestroy {
       priceTotal += pricePart;
     }
 
-    console.log('order_dalia',order);
     let precoupon = 0;
 
     if(order.details_order?.order_summary?.coupon_type == 'percentage'){
