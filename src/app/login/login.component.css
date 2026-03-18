@@ -239,8 +239,8 @@ a:hover {
     
   .password-toggle-btn {
     position: absolute;
-    inset-inline-end: 10px;
-    /* left: 10px; */
+    right: auto;
+    left: 10px;
     top: 50%;
     transform: translateY(-50%);
     background: transparent;
@@ -315,7 +315,7 @@ a:hover {
 
 /* Add this to ensure the input doesn't overlap the button */
 .input-group input {
-    padding-inline-end: 35px !important; /* Make space for the eye icon */
+    padding-right: 35px !important; /* Make space for the eye icon */
 }
 
  

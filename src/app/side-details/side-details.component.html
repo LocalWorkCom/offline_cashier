@@ -880,8 +880,8 @@
     </button> -->
 
 
-      <button class="btn w-100 my-3 bg-success" (click)="submitOrder()" [disabled]="isLoading || (paymentError && paymentError.trim() !== '') || amountError || (selectedPaymentStatus === 'paid' && !selectedPaymentMethod)">
-        <h5 class="mb-0">
+      <button class="btn btn-action-add w-100 my-3" (click)="submitOrder()" [disabled]="isLoading || (paymentError && paymentError.trim() !== '') || amountError">
+        <h5 class="mb-0 text-white">
           {{ isLoading ? 'جاري التنفيذ...' : 'تنفيذ الطلب' }}
         </h5>
       </button>
@@ -1289,7 +1289,7 @@
             (click)=" closeModal()">
             لا
           </button>
-          <button type="button" class="btn w-50 mx-3" (click)="cancelOrder()">
+          <button type="button" class="btn btn-action-delete w-50 mx-3" (click)="cancelOrder()">
             نعم
           </button>
         </div>
@@ -1496,7 +1496,7 @@
   </div>
 
   <div class="modal-footer d-flex justify-content-center tip-modal-footer border-0 px-4 pb-4 pt-0">
-    <button type="button" class="btn btn-danger confirm-tip-btn w-100 py-3"
+    <button type="button" class="btn btn-action-delete confirm-tip-btn w-100 py-3 text-white"
       [disabled]="selectedTipType === 'tip_specific_amount' && specificTipAmount < 0"
       (click)="confirmTipAndClose(modal)">
       <span class="fw-bold">تكملة الدفع</span>
