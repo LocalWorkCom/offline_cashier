@@ -239,8 +239,8 @@ a:hover {
     
   .password-toggle-btn {
     position: absolute;
-    right: 10px;
-    left: auto;
+    right: auto;
+    left: 10px;
     top: 50%;
     transform: translateY(-50%);
     background: transparent;
