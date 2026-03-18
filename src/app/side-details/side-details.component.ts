@@ -2725,6 +2725,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       return { isValid: false, errorMessage: this.paymentError };
     }
 
+    // ✅ NEW: Enforce payment method selection
+    if (!this.selectedPaymentMethod) {
+      return { isValid: false, errorMessage: 'يرجى اختيار طريقة الدفع (كاش/فيزا/مختلط).' };
+    }
+
     // ✅ التحقق من finalTipSummary
     if (this.finalTipSummary && this.finalTipSummary.paymentAmount > 0) {
       const totalEntered = Number(this.finalTipSummary.paymentAmount);
@@ -3052,7 +3057,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           this.falseMessage = `المبلغ غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}`;
           console.log('❌ Entered amount less than total:', totalEntered, cartTotal, 'Remaining:', remainingBalance);
           this.isLoading = false;
-          return; // 🔒 منع المتابعة إذا كان المبلغ غير كافي
 
           setTimeout(() => {
             this.amountError = false;
