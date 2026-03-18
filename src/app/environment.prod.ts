@@ -69,7 +69,7 @@ export const environment2 = {
   production: true,
   pusher: {
     key: 'localkey',
-    wsHost: '192.168.100.11',
+    wsHost: '192.168.11.178',
     wsPort: 8081,
     cluster: 'mt1',
     forceTLS: false,

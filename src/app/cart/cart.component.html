@@ -4,8 +4,8 @@
       <i class="fa-solid fa-arrows-rotate px-1"></i>
       تغيير نوع الطلب
     </button>
-
-    <button type="button" class="btn reversed main-color flex-fill py-2 text-center" (click)="cancelOrder()" title="حذف الطلب" style="font-size: 13px;">
+    
+    <button type="button" class="btn btn-action-delete flex-fill py-2 text-center text-white" (click)="cancelOrder()" title="حذف الطلب" style="font-size: 13px;">
       <i class="fa-solid fa-trash-can px-1"></i>
       حذف الطلب
     </button>
@@ -187,9 +187,9 @@
         <span>{{ item.total_dish_price }}</span> {{ currencySymbol }}
       </h6>
       <ng-container *ngIf="canShowItemActions(item)">
-        <button type="button" class="btn btn-sm py-1 px-2 bg-white border border-danger" (click)="openDeleteItemModal(item)" [disabled]="removeItemLoading === (item.id || item.order_detail_id)" title="إلغاء صنف">
+        <button type="button" class="btn btn-action-delete btn-sm py-1 px-2 text-white" (click)="openDeleteItemModal(item)" [disabled]="removeItemLoading === (item.id || item.order_detail_id)" title="إلغاء صنف">
           <span *ngIf="removeItemLoading === (item.id || item.order_detail_id)">...</span>
-          <i *ngIf="removeItemLoading !== (item.id || item.order_detail_id)" class="fa-solid fa-trash-can fa-sm main-color"></i>
+          <i *ngIf="removeItemLoading !== (item.id || item.order_detail_id)" class="fa-solid fa-trash-can fa-sm"></i>
         </button>
         <button type="button" class="btn btn-sm py-1 px-2 bg-white border border-danger" (click)="openEditModalFromDetails(item)" title="تعديل صنف">
           <i class="fa-solid fa-pen fa-sm main-color"></i>

@@ -483,6 +483,7 @@ export class AuthService {
       }),
       catchError((error) => {
         console.error('❌ Logout API Error:', error);
+        this.clearSession(); // 🔹 Always clear local state so next login shows opening balance
         this.removeModalBackdrop(); // 🔹 Remove modal backdrop on error
         this.resetBodyOverflow(); // 🔹 Reset body overflow on error
         return throwError(() => error);

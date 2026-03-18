@@ -281,8 +281,10 @@ export class NavbarComponent implements OnInit {
   proceedToLogout(): void {
     this.balanceService.clearBalanceData();
     this.hideBalanceoutModal();
-    this.authService.logout().subscribe(() => {
-      this.router.navigate(['/login']);
+    this.authService.setOpenBalanceStatus(false);
+    this.authService.logout().subscribe({
+      next: () => this.router.navigate(['/login']),
+      error: () => this.router.navigate(['/login']),
     });
   }
 

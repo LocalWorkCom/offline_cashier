@@ -20,7 +20,7 @@ declare var bootstrap: any;
   selector: 'app-order-details',
   templateUrl: './order-details.component.html',
   styleUrls: ['./order-details.component.css'],
-  imports: [CommonModule, FormsModule, ShowLoaderUntilPageLoadedDirective, RouterLink, EditOrderModalComponent],
+  imports: [CommonModule, FormsModule, ShowLoaderUntilPageLoadedDirective, RouterLink],
 })
 export class OrderDetailsComponent implements OnInit, OnDestroy {
   orderId: any;
@@ -165,6 +165,41 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   private safeNum(v: any): number {
     const n = Number(v);
     return v != null && !isNaN(n) ? n : 0;
+  }
+
+  private normalizePaymentMethod(method: any): string {
+    return String(method ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '_');
+  }
+
+  /** Payment status for display (safe, normalized). */
+  get displayPaymentStatus(): string {
+    const raw =
+      this.orderDetails?.transactions?.[0]?.payment_status ??
+      this.orderDetails?.payment_status ??
+      '';
+    const s = String(raw ?? '').trim().toLowerCase();
+    return s || 'unpaid';
+  }
+
+  /** Payment method label in Arabic (cash/visa/card/online/etc). */
+  get displayPaymentMethodLabel(): string {
+    if (this.displayPaymentStatus !== 'paid') return 'غير محدد';
+    const m = this.normalizePaymentMethod(
+      this.orderDetails?.transactions?.[0]?.payment_method ?? this.paymenMethod
+    );
+    return this.getPaymentMethodLabel(m);
+  }
+
+  getPaymentMethodLabel(method: any): string {
+    const m = this.normalizePaymentMethod(method);
+    if (m === 'cash') return 'كاش';
+    if (['credit', 'visa', 'card', 'mastercard', 'mada'].includes(m)) return 'فيزا';
+    if (['deferred', 'later', 'postpaid'].includes(m)) return 'آجل';
+    if (m === 'online') return 'أونلاين';
+    return 'غير محدد';
   }
 
   /** Compute grand total from summary parts when total/total_price are missing or invalid. */
