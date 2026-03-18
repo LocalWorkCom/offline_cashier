@@ -22,10 +22,10 @@ export class ReceiptComponent {
 
   getOrderTypeLabel(type: string): string {
     const map: any = {
-      'dine-in': 'في المطعم',
-      'Takeaway': 'استلام',
-      'talabat': 'طلبات',
-      'Delivery': 'توصيل'
+      'dine-in': 'محلي (Dine in)',
+      'Takeaway': 'استلام (Pick up)',
+      'talabat': 'طلبات (Talabat)',
+      'Delivery': 'سفري (Delivery)'
     };
 
     return map[type] || type;
