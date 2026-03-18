@@ -285,7 +285,11 @@ export class OrdersComponent implements OnDestroy {
     }
 
     let statusParam = this.selectedStatus;
-    if (statusParam === 'in_progress') {
+    if (statusParam === 'static') {
+      // 'static' is a frontend-only concept (on-hold orders from localStorage).
+      // The backend does NOT know about it — sending it to the API causes "invalid status".
+      statusParam = 'all';
+    } else if (statusParam === 'in_progress') {
       statusParam = 'inprogress';
     } else if (statusParam === 'readyForPickup') {
       statusParam = 'packing';
@@ -1260,6 +1264,11 @@ export class OrdersComponent implements OnDestroy {
   startFiltering(): void {
     let filtered = this.orders;
 
+    // Guard: skip orders without order_details (can happen with Pusher/background-sync objects)
+    if (this.selectedStatus !== 'static') {
+      filtered = filtered.filter((order) => !!order.order_details);
+    }
+
     // filter by order type (skip if "All")
     if (this.selectedOrderTypeStatus !== 'All') {
       filtered = filtered.filter(
@@ -1281,7 +1290,6 @@ export class OrdersComponent implements OnDestroy {
       if (this.selectedOrderTypeStatus === 'All') {
         filtered = parsed; //  take all saved orders
       } else {
-        ``;
         filtered = parsed.filter(
           (item: any) => item.type === this.selectedOrderTypeStatus
         );
@@ -1388,6 +1396,20 @@ export class OrdersComponent implements OnDestroy {
     return items.filter((item: any) => (Number(item.quantity) || 0) > 0);
   }
 
+  /** True when the order has any returned quantity (quantity - selectedQuantity > 0). */
+  hasReturnedItems(order: any): boolean {
+    const items = this.getDisplayOrderItems(order);
+    for (const item of items) {
+      const totalQty = Number(item.quantity) || 0;
+      const selectedQty =
+        item.selectedQuantity !== undefined && item.selectedQuantity !== null
+          ? Number(item.selectedQuantity)
+          : totalQty;
+      if (totalQty - selectedQty > 0) return true;
+    }
+    return false;
+  }
+
   /**
    * Compute total amounts (price + tax + service) for returned quantities
    * of all items in a given order. Used for the return invoice summary.
@@ -1447,7 +1469,6 @@ export class OrdersComponent implements OnDestroy {
       priceTotal += pricePart;
     }
 
-    console.log('order_dalia',order);
     let precoupon = 0;
 
     if(order.details_order?.order_summary?.coupon_type == 'percentage'){
@@ -1516,7 +1537,14 @@ export class OrdersComponent implements OnDestroy {
     }
   }
   selectStatus(status: string): void {
+    const previousStatus = this.selectedStatus;
     this.selectedStatus = status;
+
+    // Clear current data to prevent "strange items" from previous view (like static results)
+    // from showing while new data is being fetched.
+    this.filteredOrders = [];
+    this.orders = [];
+
     // عند العمل offline: فلترة من القائمة المحلية بدلاً من استدعاء API
     if (!this.isOnline && this.offlineOrdersFull.length > 0) {
       this.orders = [...this.offlineOrdersFull];
@@ -1527,6 +1555,7 @@ export class OrdersComponent implements OnDestroy {
       this.cdr.detectChanges();
       return;
     }
+
     if (this.selectedStatus !== 'static') {
       this.fetchOrdersFromAPI();
     } else {
@@ -2427,6 +2456,14 @@ export class OrdersComponent implements OnDestroy {
           this.errorMessage = response.errorData.error[0];
           console.log('Order cancelled failed:', response);
         }
+        setTimeout(() => {
+          this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+            this.router.navigate(
+              ['/listv2'],
+              { queryParams: { refresh: 'true' } }
+            );
+          });
+        }, 700);
         setTimeout(() => {
           this.errorMessage = '';
         }, 2000);

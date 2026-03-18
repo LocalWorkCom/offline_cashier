@@ -42,6 +42,9 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   /** Loading state for cancel-item request (set to order_detail_id while loading). */
   removeItemLoading: number | null = null;
 
+  /** Toggle state for order details accordion */
+  isOrderDetailsOpen: boolean = true;
+
   /** Delete item confirmation modal (على صفحة التفاصيل) */
   itemToDelete: any = null;
   deleteItemErrMsg: string = '';
