@@ -611,6 +611,10 @@
             </label>
           </ng-container>
         </div>
+        <div *ngIf="selectedPaymentStatus === 'paid' && !selectedPaymentMethod" class="alert alert-danger py-2 mt-2">
+          <small><i class="fas fa-exclamation-circle me-1"></i> يرجى اختيار طريقة الدفع (كاش/فيزا/مختلط)</small>
+        </div>
+
         <ng-container *ngIf="selectedOrderType !== 'talabat' && selectedPaymentStatus === 'paid'">
           <!-- إدخال الدفع عند اختيار كاش أو كاش + فيزا -->
           <div
@@ -876,7 +880,7 @@
     </button> -->
 
 
-      <button class="btn w-100 my-3 bg-success" (click)="submitOrder()" [disabled]="isLoading || (paymentError && paymentError.trim() !== '') || amountError">
+      <button class="btn w-100 my-3 bg-success" (click)="submitOrder()" [disabled]="isLoading || (paymentError && paymentError.trim() !== '') || amountError || (selectedPaymentStatus === 'paid' && !selectedPaymentMethod)">
         <h5 class="mb-0">
           {{ isLoading ? 'جاري التنفيذ...' : 'تنفيذ الطلب' }}
         </h5>
