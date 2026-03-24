@@ -39,6 +39,7 @@ import { switchMap } from 'rxjs/operators';
 import { TablesService } from '../services/tables.service';
 import { AddAddressService } from '../services/add-address.service';
 import { PhoneCheckService } from '../services/phoneCheck';
+import { totalBalance } from '../services/pusher/totalBalance';
 @Component({
   selector: 'app-orders',
   standalone: true,
@@ -118,7 +119,8 @@ export class OrdersComponent implements OnDestroy {
     private _OrderListDetailsService: OrderListDetailsService,
     private dbService: IndexeddbService,
     private addAddressService: AddAddressService,
-    private phoneCheckService: PhoneCheckService
+    private phoneCheckService: PhoneCheckService,
+    private totalBalance: totalBalance
   ) {
     // const navigation = this.router.getCurrentNavigation();
     // this.orderDetails = navigation?.extras.state?.['orderData'];
@@ -2325,6 +2327,7 @@ export class OrdersComponent implements OnDestroy {
               this.cancelErrorMessage = '';
               this.cancelReason = '';
               this.cancelReasonTouched = false;
+              this.refreshCashierTotalsAfterReturn();
               const modal_id = `modal-${order.order_details.order_id}`;
               const currentModal = document.getElementById(modal_id);
               console.log(currentModal);
@@ -2424,6 +2427,34 @@ export class OrdersComponent implements OnDestroy {
     }).catch((err) => {
       console.error('error saving to printkitchen indexeddb', err);
       this.isSubmitting = false; // reset flag if save failed
+    });
+  }
+
+  /** Refresh home totals cards (cash / visa) after return; matches get-current-balance used by app-totals-card. */
+  private refreshCashierTotalsAfterReturn(): void {
+    let shiftData: { shift_start?: string; shift_end?: string } | null = null;
+    try {
+      shiftData = JSON.parse(localStorage.getItem('shiftData') || 'null');
+    } catch {
+      shiftData = null;
+    }
+    const body = {
+      cashier_machine_id: localStorage.getItem('cashier_machine_id'),
+      employee_schedule_id: localStorage.getItem('employee_schedule_id'),
+      shift_start: shiftData?.shift_start ?? null,
+      shift_end: shiftData?.shift_end ?? null,
+    };
+    this.http.post<any>(`${baseUrl}api/cashier/get-current-balance`, body).subscribe({
+      next: (r) => {
+        if (r?.status && Array.isArray(r.data)) {
+          this.totalBalance.emitTotals({ data: r.data });
+          const cash = r.data.find((x: { name?: string }) => x?.name === 'cash');
+          const visa = r.data.find((x: { name?: string }) => x?.name === 'visa');
+          if (cash) localStorage.setItem('totalcash', String(cash.value));
+          if (visa) localStorage.setItem('totalvisa', String(visa.value));
+        }
+      },
+      error: () => {},
     });
   }
 
