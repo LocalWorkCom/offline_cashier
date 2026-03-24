@@ -63,6 +63,9 @@ export class NavbarComponent implements OnInit {
 
     this.syncService.triggerSync().subscribe({
       next: (response) => {
+        // After sending local data, pull changes from the cloud
+        this.syncService.pullOnlineData();
+        
         this.isSyncing = false;
         this.syncStatus = 'success';
         this.syncMessage = 'تمت المزامنة بنجاح';

@@ -636,10 +636,22 @@ export class CartComponent {
         console.log('Order cancelled successfully:', response);
         this.message = response.message;
         this.status_order = response.status;
+          // ✅ تحديث لحظى لحالة الطلب فى الموديل المعروض
+          setTimeout(() => {
+            const id = this.cartId;
+            // نروح لصفحة وهمية بدون ما نغيّر الـ URL فعليًا
+            this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+              // نرجع تانى لنفس صفحة التفاصيل مع refresh=true
+              this.router.navigate(
+                ['/order-details', id],
+                { queryParams: { refresh: 'true' } }
+              );
+            });
+          }, 700);
         setTimeout(() => {
           this.message = '';
         }, 2000);
-        this.fetchOrderDetails();
+        // this.fetchOrderDetails();
       },
       error: (error) => {
         console.error('Failed to cancel order:', error);
@@ -769,7 +781,14 @@ export class CartComponent {
           this.message = res?.message || 'تم تغيير نوع الطلب بنجاح';
           this.status_order = true;
           setTimeout(() => { this.message = ''; }, 3000);
-          this.fetchOrderDetails();
+          // this.fetchOrderDetails();
+          setTimeout(() => {
+            const id = this.currentOrderForTypeChange.order_details.order_id;
+            this.router.navigate(
+              ['/order-details', id],
+              { queryParams: { refresh: 'true' } }
+            );
+          }, 700);
           this.currentOrderForTypeChange = null;
           this.selectedNewOrderType = '';
           this.selectedTableIdForTypeChange = '';
