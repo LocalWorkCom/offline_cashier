@@ -20,7 +20,7 @@ declare var bootstrap: any;
   selector: 'app-order-details',
   templateUrl: './order-details.component.html',
   styleUrls: ['./order-details.component.css'],
-  imports: [CommonModule, FormsModule, ShowLoaderUntilPageLoadedDirective, RouterLink, EditOrderModalComponent],
+  imports: [CommonModule, FormsModule, ShowLoaderUntilPageLoadedDirective, RouterLink],
 })
 export class OrderDetailsComponent implements OnInit, OnDestroy {
   orderId: any;
@@ -41,6 +41,9 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   clearCouponAfterSplit: boolean = false;
   /** Loading state for cancel-item request (set to order_detail_id while loading). */
   removeItemLoading: number | null = null;
+
+  /** Toggle state for order details accordion */
+  isOrderDetailsOpen: boolean = true;
 
   /** Delete item confirmation modal (على صفحة التفاصيل) */
   itemToDelete: any = null;
@@ -162,6 +165,41 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   private safeNum(v: any): number {
     const n = Number(v);
     return v != null && !isNaN(n) ? n : 0;
+  }
+
+  private normalizePaymentMethod(method: any): string {
+    return String(method ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '_');
+  }
+
+  /** Payment status for display (safe, normalized). */
+  get displayPaymentStatus(): string {
+    const raw =
+      this.orderDetails?.transactions?.[0]?.payment_status ??
+      this.orderDetails?.payment_status ??
+      '';
+    const s = String(raw ?? '').trim().toLowerCase();
+    return s || 'unpaid';
+  }
+
+  /** Payment method label in Arabic (cash/visa/card/online/etc). */
+  get displayPaymentMethodLabel(): string {
+    if (this.displayPaymentStatus !== 'paid') return 'غير محدد';
+    const m = this.normalizePaymentMethod(
+      this.orderDetails?.transactions?.[0]?.payment_method ?? this.paymenMethod
+    );
+    return this.getPaymentMethodLabel(m);
+  }
+
+  getPaymentMethodLabel(method: any): string {
+    const m = this.normalizePaymentMethod(method);
+    if (m === 'cash') return 'كاش';
+    if (['credit', 'visa', 'card', 'mastercard', 'mada'].includes(m)) return 'فيزا';
+    if (['deferred', 'later', 'postpaid'].includes(m)) return 'آجل';
+    if (m === 'online') return 'أونلاين';
+    return 'غير محدد';
   }
 
   /** Compute grand total from summary parts when total/total_price are missing or invalid. */
@@ -382,7 +420,25 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   private processOrderData(order: any): void {
     this.currencySymbol = order.currency_symbol;
     this.paymenMethod = order.transactions?.[0]?.payment_method || 'Unknown';
-    this.deliveryData = order.order_type === 'Delivery' ? order.delivery_data : null;
+    if (order.order_type === 'Delivery') {
+      // Prefer structured delivery_data from API, but fall back to formdata_delivery or basic fields
+      let delivery: any = order.delivery_data ?? order.formdata_delivery ?? null;
+      const od = order.order_details || {};
+
+      if (!delivery) {
+        delivery = {
+          client_name: od.client_name || '',
+          client_phone: od.client_phone || '',
+          client_address: od.delivery_address || od.address || '',
+          client_address_phone: od.client_phone || '',
+          delivery_name: (od.delivery_name ?? '').trim() || undefined,
+        };
+      }
+
+      this.deliveryData = delivery;
+    } else {
+      this.deliveryData = null;
+    }
     const rawFee = order.order_summary?.delivery_fees ?? 0;
     const summary = order.order_summary || {};
     const orderType = order.order_type || '';
@@ -756,7 +812,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       if (this.changeTypeDeliveryAreaId) {
         body['area_id'] = parseInt(this.changeTypeDeliveryAreaId, 10);
         body['delivery_address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || this.changeTypeDeliveryHotelName?.trim() || 'عنوان التوصيل';
-        
+
         body['address_type'] = this.changeTypeDeliveryBuildingType || 'apartment';
         body['building'] = this.changeTypeDeliveryBuilding?.trim() || null;
         body['apartment_number'] = this.changeTypeDeliveryApartment?.trim() || null;
@@ -787,7 +843,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         if (res?.status) {
           this.errorMessage = res?.message || 'تم تغيير نوع الطلب بنجاح';
           this.status_order = true;
-          this.fetchOrderDetailsFromAPI();
+          // this.fetchOrderDetailsFromAPI();
+          this.fetchOrderDetails();
           setTimeout(() => { this.errorMessage = ''; }, 4000);
           this.currentOrderForTypeChange = null;
           this.selectedNewOrderType = '';
