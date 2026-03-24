@@ -379,6 +379,10 @@
                     <span class="badge  bg-lightgray text-dark me-1">{{ item.quantity }}</span>
                     x <span [innerHTML]="highlightMatch(item.dish_name, searchOrderNumber)"></span>
                   </h6>
+                  <div *ngIf="formatOrderItemChosenAddonsLine(item, order.currency_symbol) as addonsLine"
+                    class="w-100 small text-muted px-1 mb-1">
+                    <span class="d-block">إضافات: {{ addonsLine }}</span>
+                  </div>
                   <h6 class="mb-0 fs-6 fs-sm-6 fs-md-5 text-start text-md-end text-nowrap mb-2 mx-1">
                     {{ item.total_dish_price }} {{ order.currency_symbol }}
                   </h6>

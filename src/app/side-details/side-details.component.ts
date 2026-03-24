@@ -305,10 +305,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     return localStorage.getItem('currentOrderId') !== null;
   }
   ngAfterViewInit() {
-    this.successModal = new bootstrap.Modal(
-      document.getElementById('successModal')
-    );
-
+    const successEl = document.getElementById('successModal');
+    if (successEl) {
+      this.successModal = new bootstrap.Modal(successEl);
+    }
   }
 
   // ngOnInit(): void {
@@ -490,7 +490,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // this.loadSelectedCourier();
     // this.applyAdditionalNote();
     // this.loadCouponFromLocalStorage();
-    this.loadFormData();
+    // loadFormData runs after loadCart so delivery preview matches persisted cart / cleared form_data
     // this.checkIfTableIsAvaliable();
     this.loadTableNumber();
     this.fetchCountries();
@@ -599,6 +599,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     // localStorage.setItem('cart', JSON.stringify(this.cartItems));
     this.loadCart();
+    this.loadFormData();
 
     this.updateTotalPrice();
     this.cdr.detectChanges();
@@ -1277,19 +1278,40 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   // }
 
   loadFormData() {
-
-    const FormData = localStorage.getItem('form_data');
-    if (FormData) {
-      this.FormDataDetails = JSON.parse(FormData);
+    if (this.currentOrderData) {
+      return;
+    }
+    const raw = localStorage.getItem('form_data');
+    if (!raw || raw === '{}' || raw === 'null') {
+      this.FormDataDetails = null;
+      this.resetAddress();
+      return;
+    }
+    try {
+      this.FormDataDetails = JSON.parse(raw);
+      if (
+        !this.FormDataDetails ||
+        (!this.FormDataDetails.client_name &&
+          !this.FormDataDetails.address &&
+          !this.FormDataDetails.address_phone)
+      ) {
+        this.FormDataDetails = null;
+        this.resetAddress();
+        return;
+      }
       this.clientName =
         this.FormDataDetails.client_name || 'لم يتم تحديد الإسم';
       if (this.FormDataDetails.address) {
-        /*         this.address = "  المبني :  " + this.FormDataDetails.building + " ,  " + this.FormDataDetails.address + " الدور " + this.FormDataDetails.floor_number + " رقم " + this.FormDataDetails.apartment_number || 'لم يتم تحديد العنوان';
-         */ this.address =
+        this.address =
           this.FormDataDetails.address || 'لم يتم تحديد العنوان';
+      } else {
+        this.address = '';
       }
       this.addressPhone =
         this.FormDataDetails.address_phone || 'لم يتم تحديد رقم الهاتف';
+    } catch {
+      this.FormDataDetails = null;
+      this.resetAddress();
     }
   }
   // end hanan
@@ -1440,6 +1462,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     localStorage.removeItem('selected_address');
     this.tableNumber = null;
     this.FormDataDetails = null;
+    this.resetAddress();
   }
   clearCart(): void {
     this.productsService.clearCart();
@@ -2640,6 +2663,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     localStorage.removeItem('selectedOrderType');
     localStorage.removeItem('address_id');
     localStorage.removeItem('form_data');
+    localStorage.removeItem('FormDataDetails');
     localStorage.removeItem('notes');
     localStorage.removeItem('deliveryForm');
     localStorage.removeItem('additionalNote');
@@ -2660,6 +2684,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     this.client = '';
     this.clientPhone = '';
+    this.clientStoredInLocal = null;
+    this.clientPhoneStoredInLocal = null;
     this.finalOrderId = '';
     this.currentOrderData = null;
     this.currentOrderId = null;
@@ -2678,6 +2704,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.creditAmountMixed = '';
     this.finalTipSummary = null;
     this.clearOrderType();
+    this.resetAddress();
     this.cdr.detectChanges();
 
 
@@ -3585,9 +3612,20 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
       localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
 
-      // get new item IDs from response for selective printing
-      const addedItems = (response as any).data?.dish_data?.added_items || [];
-      const items_id = addedItems.map((item: any) => item.order_detail_id).filter((id: any) => !!id);
+      // تفاصيل جديدة للطباعة — الـ API قد يرسل added_items أو items أو order_items
+      const resData = (response as any).data;
+      const dishData = resData?.dish_data;
+      let addedItems =
+        dishData?.added_items ||
+        dishData?.items ||
+        (Array.isArray(dishData) ? dishData : []) ||
+        [];
+      if (!addedItems.length && Array.isArray(resData?.order_items)) {
+        addedItems = resData.order_items;
+      }
+      const items_id = addedItems
+        .map((item: any) => item.order_detail_id ?? item.order_detailId ?? item.id)
+        .filter((id: any) => id != null && id !== '');
 
       const body = items_id.length > 0 ? { items_id } : {};
 
@@ -3598,42 +3636,39 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.cdr.detectChanges();
       this.successMessage = 'تم تنفيذ طلبك بنجاح';
 
-      if (this.successModal) {
-          this.printedInvoiceService
-          .printMenu(this.orderedId , body)
-          .subscribe({
-            next: async (response) => {
-              console.log('🖨️ [Print Menu] Response received:', response);
+      // الطباعة لا تعتمد على successModal — كان يُمنع الطباعة كلياً إذا فشل إنشاء المودال
+      const printOrderId = orderId ?? this.orderedId;
+      if (printOrderId != null && printOrderId !== '') {
+        this.printedInvoiceService.printMenu(printOrderId as any, body).subscribe({
+          next: async (printRes) => {
+            console.log('🖨️ [Print Menu] Response received:', printRes);
 
-              if (response.status && response.printers && response.printers.length > 0) {
-                for (const group of response.printers) {
-                  if (group.items && group.items.length > 0) {
-                    console.log(`🖨️ [Print Menu] Printing to ${group.ip}:${group.port}...`);
-                    try {
-                      await this.printInvoiceImage(group.items, response.order, group.ip, group.port);
-                    } catch (err) {
-                      console.error(`❌ [Print Menu] Error printing to ${group.ip}:`, err);
-                    }
-                    // Small delay between different printers
-                    await new Promise(resolve => setTimeout(resolve, 500));
+            if (printRes.status && printRes.printers && printRes.printers.length > 0) {
+              for (const group of printRes.printers) {
+                if (group.items && group.items.length > 0) {
+                  console.log(`🖨️ [Print Menu] Printing to ${group.ip}:${group.port}...`);
+                  try {
+                    await this.printInvoiceImage(group.items, printRes.order, group.ip, group.port);
+                  } catch (err) {
+                    console.error(`❌ [Print Menu] Error printing to ${group.ip}:`, err);
                   }
+                  await new Promise((resolve) => setTimeout(resolve, 500));
                 }
               }
-            },
-            error: (error) => {
-              console.error('Print menu error:', error);
-              // location.reload();
+            } else {
+              console.warn('🖨️ [Print Menu] No printers or items in API response', printRes);
             }
-          });
-
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        this.successModal.show();
-        // location.reload();
-
-        // Print invoice items without prices to network printer
-        // this.printInvoiceImage();
-
+          },
+          error: (error) => {
+            console.error('Print menu error:', error);
+          },
+        });
+      } else {
+        console.warn('🖨️ [Print Menu] Skipped: no order id for print');
       }
+
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      this.successModal?.show();
 
       setTimeout(() => {
         this.falseMessage = '';
@@ -3718,8 +3753,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         this.falseMessage = 'تم حفظ الطلب بسبب مشكلة في الاتصال وسيتم إرساله لاحقًا';
         this.clearCart();
         this.resetLocalStorage();
-
-
+        this.resetAddress();
 
       } catch (dbError) {
         console.error('Error saving to IndexedDB:', dbError);
@@ -4782,11 +4816,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     return this.invoices[0].invoice_summary.subtotal_price - this.getDiscount();
   }
   async selectOrderType(type: string) {
-
-    let previousOrderType = localStorage.getItem('selectedOrderType');
+    const previousOrderType =
+      this.selectedOrderType || localStorage.getItem('selectedOrderType') || '';
     localStorage.removeItem('selectedOrderType');
     const currentCart = [...this.cartItems];
-    this.clearOrderTypeData();
+    this.clearOrderTypeDataForLeaving(previousOrderType);
 
     // ✅ Clear selectedOrderType from localStorage first to ensure correct pricing
 
@@ -4839,7 +4873,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // ✅ إخفاء رسالة تحديث الأسعار
     this.isUpdatingPrices = false;
 
-
+    if (
+      this.selectedOrderType === 'Delivery' &&
+      !this.currentOrderData &&
+      this.cartItems.length === 0
+    ) {
+      this.loadFormData();
+    }
 
     // ✅ الشرط الجديد: إذا كان الطلب من طلبات وغير مدفوع، اختيار آجل تلقائياً
     if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
@@ -5061,35 +5101,42 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     return product;
   }
 
-  clearOrderTypeData() {
-    // Clear data based on the previously selected order type
-    switch (this.selectedOrderType) {
+  /** Clears type-specific session data when leaving an order type (uses the type we are switching *from*). */
+  private clearOrderTypeDataForLeaving(previousType: string): void {
+    switch (previousType) {
       case 'dine-in':
-        // Clear table number and table ID
+      case 'في المطعم':
         this.tableNumber = null;
         localStorage.removeItem('table_number');
         localStorage.removeItem('table_id');
         break;
 
       case 'Delivery':
-        // Clear delivery address, courier, and form data
-        // this.address = '';
-        // this.clientName = ' ';
-        // this.addressPhone = '';
-        // localStorage.removeItem('form_data');
-
-        // localStorage.removeItem('address_id');
+      case 'توصيل':
+        if (this.cartItems.length === 0) {
+          this.resetAddress();
+          localStorage.removeItem('form_data');
+          localStorage.removeItem('FormDataDetails');
+          localStorage.removeItem('deliveryForm');
+          localStorage.removeItem('address_id');
+          localStorage.removeItem('selected_address');
+          localStorage.removeItem('delivery_fees');
+          this.FormDataDetails = null;
+        }
         break;
 
       case 'Takeaway':
-        // No specific data to clear for Takeaway
         break;
       case 'talabat':
-        // No specific data to clear for talabat
+      case 'طلبات':
         break;
       default:
         break;
     }
+  }
+
+  clearOrderTypeData() {
+    this.clearOrderTypeDataForLeaving(this.selectedOrderType || '');
   }
 
   loadOrderType() {

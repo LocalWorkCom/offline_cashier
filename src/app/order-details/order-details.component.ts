@@ -13,6 +13,7 @@ import { TablesService } from '../services/tables.service';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { EditOrderModalComponent } from '../edit-order-modal/edit-order-modal.component';
 import { PhoneCheckService } from '../services/phoneCheck';
+import { NewOrderService } from '../services/pusher/newOrder';
 
 declare var bootstrap: any;
 
@@ -94,7 +95,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     private dbService: IndexeddbService,
     private tablesService: TablesService,
     private ngbModal: NgbModal,
-    private phoneCheckService: PhoneCheckService
+    private phoneCheckService: PhoneCheckService,
+    private newOrder: NewOrderService
   ) { }
   ngOnInit(): void {
     this.route.paramMap.subscribe({
@@ -1108,6 +1110,71 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     this.router.navigate(['/orders'], { queryParams: { openOrder: this.orderId, action: 'changeType' } });
   }
 
+  /** Snapshot shape expected by printkitchen + processKitchenPrint (order_items with order_detail_id). */
+  private buildPrintkitchenOrderSnapshot(): any {
+    const o = this.orderDetails;
+    if (!o) return null;
+    const lines =
+      this.orderItems?.length > 0
+        ? this.orderItems
+        : Array.isArray(o.order_details)
+          ? o.order_details
+          : [];
+    const order_items = lines.map((it: any) => ({
+      ...it,
+      order_detail_id: it.order_detail_id ?? it.id,
+      dish_addons: it.dish_addons ?? it.addons,
+    }));
+    return { ...o, order_items };
+  }
+
+  private persistPrintkitchenSnapshot(type: string): void {
+    const snapshot = this.buildPrintkitchenOrderSnapshot();
+    if (!snapshot || this.orderId == null) return;
+    this.dbService
+      .saveOrderSnapshotToPrintkitchen(snapshot, this.orderId, type)
+      .catch((e) => console.error('[printkitchen] save snapshot failed', e));
+  }
+
+  processKitchenPrint(orderId: any, items: any[], flag: string): void {
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      console.error('Auth token not found');
+      return;
+    }
+    const printPayload = { order_id: orderId, items, flag };
+    this.http
+      .post(`${baseUrl}api/print-editor-cancel`, { order: printPayload }, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      .subscribe({
+        next: async (response: any) => {
+          if (response?.status && response.printers?.length > 0) {
+            for (const printer of response.printers) {
+              if (printer.items?.length > 0) {
+                try {
+                  await this.newOrder.printInvoiceImage(
+                    printer.items,
+                    response.order,
+                    printer.ip,
+                    printer.port,
+                    response.type
+                  );
+                  await new Promise((resolve) => setTimeout(resolve, 500));
+                } catch (err) {
+                  console.error(`Error printing to ${printer.ip}:`, err);
+                }
+              }
+            }
+          }
+          this.dbService.deleteOrderFromPrintkitchenById(orderId).catch((err) => {
+            console.error('error deleting order from printkitchen indexeddb', err);
+          });
+        },
+        error: (err) => console.error('error calling print-editor-cancel', err),
+      });
+  }
+
   /** Whether to show Cancel/Modify item buttons for this line (unpaid, pending/inprogress item). Shown for all order types including talabat (طلبات). */
   canShowItemActions(item: any): boolean {
     const d = this.orderDetails;
@@ -1140,7 +1207,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       flag: 'cancel',
     };
 
-    this.dbService.saveOrderToPrintkitchen(this.orderId, 'cancel').then(() => {}).catch(() => {});
+    this.persistPrintkitchenSnapshot('cancel');
 
     this.http.post(url, body, { headers }).pipe(
       finalize(() => {
@@ -1151,6 +1218,9 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       next: (res: any) => {
         this.errorMessage = res?.message || 'تم حذف الصنف بنجاح';
         this.status_order = res?.status;
+        if (res?.status) {
+          this.processKitchenPrint(this.orderId, body.items, 'cancel');
+        }
         setTimeout(() => { this.errorMessage = ''; }, 2000);
         this.fetchOrderDetailsFromAPI();
       },
@@ -1206,7 +1276,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     });
     editModal.componentInstance.itemId = detailId;
 
-    this.dbService.saveOrderToPrintkitchen(this.orderId, 'edit').then(() => {}).catch(() => {});
+    this.persistPrintkitchenSnapshot('edit');
 
     editModal.result.then(
       (result) => {
@@ -1215,6 +1285,37 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
           this.status_order = true;
           setTimeout(() => { this.errorMessage = ''; }, 2000);
           this.fetchOrderDetailsFromAPI();
+          if (result === 'updated') {
+            this.dbService.getOrderFromPrintkitchenById(String(this.orderId)).then((orderMetadata: any) => {
+              if (!orderMetadata?.order_data) {
+                console.warn('[edit print] No printkitchen snapshot for order', this.orderId);
+                return;
+              }
+              const od = orderMetadata.order_data;
+              const lineItems =
+                od.order_items ??
+                od.items ??
+                (Array.isArray(od.order_details) ? od.order_details : []);
+              const editedItemOldState = lineItems.find(
+                (i: any) => (i.order_detail_id ?? i.id) === detailId
+              );
+              if (!editedItemOldState) {
+                console.warn('[edit print] Original line not found in snapshot', detailId);
+                return;
+              }
+              const oldItems = [
+                {
+                  item_id: editedItemOldState.order_detail_id ?? editedItemOldState.id,
+                  quantity: editedItemOldState.quantity,
+                  size: editedItemOldState.size,
+                  dish_addons: editedItemOldState.dish_addons,
+                },
+              ];
+              this.processKitchenPrint(this.orderId, oldItems, 'edit');
+            }).catch((err) => {
+              console.error('error getting order from printkitchen indexeddb', err);
+            });
+          }
         }
       },
       () => {}

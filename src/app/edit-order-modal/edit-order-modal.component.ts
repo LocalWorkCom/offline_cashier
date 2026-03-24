@@ -41,6 +41,21 @@ export class EditOrderModalComponent implements OnInit {
     authService: AuthService
   ) {}
 
+  /** الـ API قد يرسل checked أو selected أو is_selected — نوحّد على checked للواجهة والإرسال */
+  private isAddonChosenRaw(a: any): boolean {
+    if (a == null) return false;
+    const t = (v: any) => v === true || v === 1 || v === '1';
+    return t(a.checked) || t(a.selected) || t(a.is_selected);
+  }
+
+  private normalizeAddonCategoriesFlags(categories: any[] | undefined): void {
+    (categories || []).forEach((cat: any) => {
+      (cat.addons || []).forEach((a: any) => {
+        a.checked = this.isAddonChosenRaw(a);
+      });
+    });
+  }
+
   /** تطبيق أسعار تلابات وفلترة sizes/addons — نعرض فقط اللي لها تطابق في تكامل تلابات */
   private applyTalabatIntegration(): void {
     const item = this.selectedItem;
@@ -114,12 +129,13 @@ export class EditOrderModalComponent implements OnInit {
         : defaultSize || null;
     }
 
-    // ✅ preload addons if already selected
+    // ✅ preload addons if already selected (نفس منطق الـ API: checked / selected)
     this.selectedAddonsByCategory = {};
     if (dish.addon_categories?.length) {
+      this.normalizeAddonCategoriesFlags(dish.addon_categories);
       dish.addon_categories.forEach((cat: any) => {
         this.selectedAddonsByCategory[cat.id.toString()] =
-          cat.addons?.filter((a: any) => a.selected) || [];
+          cat.addons?.filter((a: any) => a.checked) || [];
       });
     }
 
@@ -190,9 +206,11 @@ export class EditOrderModalComponent implements OnInit {
     this.selectedSize = preSize;
     this.selectedItem.selected_size = preSize?.id ?? null;
 
-    // addons → from checked
+    // addons → توحيد العلامات ثم بناء الخرائط (لا تعتمد على checked فقط — قد يأتي selected من السيرفر)
     this.selectedAddonsByCategory = {};
     this.selectedAddons = [];
+
+    this.normalizeAddonCategoriesFlags(this.selectedItem.addon_categories);
 
     (this.selectedItem.addon_categories || []).forEach((cat: any) => {
       const selected = (cat.addons || []).filter((a: any) => a.checked);
@@ -258,15 +276,19 @@ export class EditOrderModalComponent implements OnInit {
     const dish = this.selectedItem;
     if (!dish || !Array.isArray(dish.addon_categories)) return;
 
-    this.selectedAddonsByCategory = {};
+    // لا تُفرّغ selectedAddonsByCategory — كان يمحو الاختيارات بعد hydrateFromApi
     this.addonValidationErrors = {};
 
     dish.addon_categories.forEach(
-      (category: { id: any; min_addons: number; max_addons: number }) => {
+      (category: { id: any; min_addons: number; max_addons: number; addons?: any[] }) => {
         const categoryId = category.id.toString();
 
-        this.selectedAddonsByCategory[categoryId] =
-          this.selectedAddonsByCategory[categoryId] || [];
+        if (!this.selectedAddonsByCategory[categoryId]) {
+          this.selectedAddonsByCategory[categoryId] = (category.addons || []).filter(
+            (a: any) => a.checked
+          );
+        }
+
         this.addonValidationErrors[categoryId] = {
           minError:
             this.selectedAddonsByCategory[categoryId].length <

@@ -1133,6 +1133,16 @@ export class IndexeddbService {
     });
   }
 
+  /**
+   * Save an in-memory order snapshot to printkitchen (e.g. order opened from API on details page,
+   * where the order may not exist in the local `orders` store).
+   */
+  saveOrderSnapshotToPrintkitchen(orderData: any, orderId: string | number, type: string): Promise<void> {
+    return this.ensureInit().then(() =>
+      this.saveOrderToPrintkitchenStore(orderData, String(orderId), type)
+    );
+  }
+
   // Helper method to save order to printkitchen store
   private saveOrderToPrintkitchenStore(order: any, orderId: string ,type: string): Promise<void> {
     return new Promise((resolve, reject) => {
