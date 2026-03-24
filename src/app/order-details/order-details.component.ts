@@ -1109,7 +1109,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     if (!this.orderId) return;
     this.router.navigate(['/orders'], { queryParams: { openOrder: this.orderId, action: 'changeType' } });
   }
-
+  // printkitchen
+  
   /** Snapshot shape expected by printkitchen + processKitchenPrint (order_items with order_detail_id). */
   private buildPrintkitchenOrderSnapshot(): any {
     const o = this.orderDetails;
