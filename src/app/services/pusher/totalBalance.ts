@@ -18,6 +18,11 @@ export class totalBalance {
       this.totalChange$.next(res); // Emit the new dish to subscribers
     });
   }
+
+  /** Same shape as Pusher payload `{ data: [{ name, value }, ...] }` for app-totals-card. */
+  emitTotals(payload: { data: unknown[] }): void {
+    this.totalChange$.next(payload);
+  }
    stopListeningForBalance() {
     if (this.channel) {
       this.pusherService.unsubscribe(this.channel);
