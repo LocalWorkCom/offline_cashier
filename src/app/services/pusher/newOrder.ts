@@ -443,7 +443,9 @@ export class NewOrderService {
     const tableNumber = order?.table?.table_number || order?.table_id || 'N/A';
     const orderType = order?.type || 'N/A';
     const orderStatus = order?.status || 'N/A';
-    const orderCreatedAt = order?.created_at
+    // وقت الطباعة الحالي (بعد التعديل يجب أن يعكس لحظة الطباعة وليس أول إنشاء للطلب)
+    const printStampAt = this.printTime.formatOrderDateTime(new Date());
+    const orderPlacedAt = order?.created_at
       ? this.printTime.formatOrderDateTime(order.created_at)
       : this.printTime.parseAndFormatOrderDateTime(order?.date, order?.time);
     const orderNote = order?.note || 'N/A';
@@ -672,7 +674,8 @@ html += `</div>
             <p>رقم الطاولة: ${escapeHtml(String(tableNumber))}</p>
             <p>نوع الطلب: ${escapeHtml(translateOrderType(String(orderType)))}</p>
             <p>حالة الطلب: ${escapeHtml(String(orderStatus))}</p>
-            <p>تاريخ الطلب: ${escapeHtml(String(orderCreatedAt))}</p>
+            <p>وقت الطباعة: ${escapeHtml(String(printStampAt))}</p>
+            <p>وقت إنشاء الطلب: ${escapeHtml(String(orderPlacedAt))}</p>
         </div>
 
         <table>

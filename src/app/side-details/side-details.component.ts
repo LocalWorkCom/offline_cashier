@@ -4487,7 +4487,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const tableNumber = order?.table_id !== null ? order?.table?.table_number : 'N/A';
     const orderType = order?.type || 'N/A';
     const orderStatus = order?.status || 'N/A';
-    const orderCreatedAt = order?.created_at
+    const printStampAt = this.printTime.formatOrderDateTime(new Date());
+    const orderPlacedAt = order?.created_at
       ? this.printTime.formatOrderDateTime(order.created_at)
       : this.printTime.parseAndFormatOrderDateTime(order?.date, order?.time);
     const orderNote = order?.note || 'N/A';
@@ -4642,7 +4643,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             <p>رقم الطاولة: ${escapeHtml(String(tableNumber))}</p>
             <p>نوع الطلب: ${escapeHtml(translateOrderType(String(orderType)))}</p>
             <p>حالة الطلب: ${escapeHtml(String(orderStatus))}</p>
-            <p>تاريخ الطلب: ${escapeHtml(String(orderCreatedAt))}</p>
+            <p>وقت الطباعة: ${escapeHtml(String(printStampAt))}</p>
+            <p>وقت إنشاء الطلب: ${escapeHtml(String(orderPlacedAt))}</p>
         </div>
             <table>
                 <thead>
