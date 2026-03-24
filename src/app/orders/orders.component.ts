@@ -1431,6 +1431,8 @@ export class OrdersComponent implements OnDestroy {
     let priceTotal = 0;
     let couponTotal = 0;
     let deliveryTotal = 0;
+    let hasReturnedQty = false;
+    let isFullReturn = items.length > 0;
     for (const item of items) {
       const totalQty = Number(item.quantity) || 0;
       const selectedQty =
@@ -1440,7 +1442,12 @@ export class OrdersComponent implements OnDestroy {
 
       const returnedQty = totalQty - selectedQty;
       if (returnedQty <= 0) {
+        isFullReturn = false;
         continue;
+      }
+      hasReturnedQty = true;
+      if (selectedQty !== 0) {
+        isFullReturn = false;
       }
 
       // new calculation for the return totals
@@ -1490,7 +1497,11 @@ export class OrdersComponent implements OnDestroy {
         taxTotal = (couponTotal + serviceTotal) * 14/100;
 
       }
-      deliveryTotal = order.details_order?.order_summary?.delivery_fees;
+      if (hasReturnedQty && isFullReturn) {
+        deliveryTotal = Number(order.details_order?.order_summary?.delivery_fees) || 0;
+      } else {
+        deliveryTotal = 0;
+      }
 
     const grandTotal = taxTotal + serviceTotal + couponTotal + deliveryTotal;
 
