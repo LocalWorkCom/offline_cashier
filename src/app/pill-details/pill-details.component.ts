@@ -287,17 +287,8 @@ private processPillDetails(data: any): void {
       })
     ).subscribe({
       next: (response: any) => {
-        this.invoices = response.data.invoices;
         this.order_id = response.data.order_id;
-        this.invoices = (response.data.invoices || []).map((inv: any) => {
-          const creatorName = inv.created_by_username || response.data.created_by_username || inv.transactions?.[0]?.created_by_username || response.data.order_transactions?.[0]?.created_by_username;
-          const closerName = inv.closed_by_username || response.data.closed_by_username || inv.transactions?.[0]?.closed_by_username || response.data.order_transactions?.[0]?.closed_by_username;
-          return {
-            ...inv,
-            created_by_username: creatorName,
-            closed_by_username: closerName
-          };
-        });
+        this.invoices = response.data.invoices || [];
 
         if (this.invoices.length === 0) {
           console.warn('No invoices found in response');
@@ -380,9 +371,6 @@ private processPillDetails(data: any): void {
         }
 
 
-        const creatorUserName = response.data.created_by_username || response.data.order_transactions?.[0]?.created_by_username || response.data.invoices?.[0]?.created_by_username;
-        const closedUserName = response.data.closed_by_username || response.data.order_transactions?.[0]?.closed_by_username || response.data.invoices?.[0]?.closed_by_username;
-
         this.receiptData = {
           branchDetails: Array.isArray(this.branchDetails) ? this.branchDetails : (this.branchDetails ? [this.branchDetails] : []),
           invoices: response.data.invoices,
@@ -393,32 +381,18 @@ private processPillDetails(data: any): void {
           time: this.time,
           showPrices: true,
           paymentStatus: this.paymentStatus,
-          invoice_id: response.data.invoice_tips?.[0]?.invoice_id || response.data.invoices?.[0]?.id,
-          order_type: response.data.invoices?.[0]?.order_type || response.data.type,
-          table_number: this.branchDetails?.[0]?.table_number,
-          transactions: response.data.order_transactions || this.invoices?.[0]?.transactions || [],
-          isFinal: this.isFinal,
+          invoice_id: response.data.invoice_tips[0]?.invoice_id,
+          order_type: response.data.invoices[0]?.order_type,
+          table_number: this.branchDetails[0]?.table_number,
+          transactions: this.invoices[0]?.transactions,
+          isFinal: this.isFinal, // change to true if you want to print the final invoice
           cashier: response.data.cashier,
           waiter: response.data.waiter,
-          make_type: response.data.make_type,
-          created_by_username: creatorUserName,
-          closed_by_username: closedUserName
+          make_type: response.data.make_type
         };
-
         if (this.receiptData?.invoices?.[0]) {
           this.receiptData.invoices[0].orderDetails = this.getFilteredOrderDetailsFlat();
-          this.receiptData.invoices[0].created_by_username = creatorUserName;
-          this.receiptData.invoices[0].closed_by_username = closedUserName;
-          this.receiptData.invoices[0].transactions = this.receiptData.transactions; // Force the "good" transactions here
         }
-
-        const rawJsonString = JSON.stringify(response.data);
-        console.log('--- RAW API RESPONSE DATA (STRINGIFIED) ---', rawJsonString);
-        console.log('--- PILL DETAILS: UPDATING RECEIPT DATA ---', {
-          data: this.receiptData,
-          api_creator: response.data.created_by_username,
-          api_transactions: response.data.order_transactions
-        });
       },
       error: (error: any) => {
         console.error(' Error fetching pill details:', error);
@@ -600,39 +574,20 @@ private processPillDetails(data: any): void {
     const response = await this.printedInvoiceService
     .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
     .toPromise();
-    console.log('Print invoice response:', response);
+  console.log('Print invoice response:', response);
 
-    if (response && response.status && response.data) {
-      const creatorNameFromPrint = response.data.created_by_username || response.data.order_transactions?.[0]?.created_by_username || response.data.invoice?.created_by_username;
-      const closerNameFromPrint = response.data.closed_by_username || response.data.order_transactions?.[0]?.closed_by_username || response.data.invoice?.closed_by_username;
+this.cdr.detectChanges();
+// Allow time for view to update
+await new Promise((resolve) => setTimeout(resolve, 100));
 
-      this.receiptData = {
-        ...this.receiptData,
-        created_by_username: creatorNameFromPrint,
-        closed_by_username: closerNameFromPrint,
-        transactions: response.data.order_transactions || this.receiptData.transactions // Ensure print-specific transactions are used
-      };
-      
-      // Also update the first invoice object for redundant safety
-      if (this.receiptData.invoices && this.receiptData.invoices[0]) {
-        this.receiptData.invoices[0].created_by_username = creatorNameFromPrint;
-        this.receiptData.invoices[0].closed_by_username = closerNameFromPrint;
-        this.receiptData.invoices[0].transactions = this.receiptData.transactions;
-      }
-    }
+// Check if running in Electron with deviceAPI available
+if ((window as any).deviceAPI) {
+  console.log('Detected Electron environment. Attempting silent print via SilentPrintService.');
 
-    this.cdr.detectChanges();
-    // Increase delay to allow DOM to catch up before silent print reads it
-    await new Promise((resolve) => setTimeout(resolve, 500));
+  const printerIP = this.invoices[0]?.branch_details?.printer_ip || "192.168.11.187";
+  const port = this.invoices[0]?.branch_details?.printer_port || 9100;
 
-    // Check if running in Electron with deviceAPI available
-    if ((window as any).deviceAPI) {
-      console.log('Detected Electron environment. Attempting silent print via SilentPrintService.');
-
-      const printerIP = this.invoices[0]?.branch_details?.printer_ip || "192.168.11.187";
-      const port = this.invoices[0]?.branch_details?.printer_port || 9100;
-
-      const result = await this.silentPrint.printElement('printSection', printerIP, port);
+  const result = await this.silentPrint.printElement('printSection', printerIP, port);
 
   if (result.success) {
     console.log("Silent print successful");
