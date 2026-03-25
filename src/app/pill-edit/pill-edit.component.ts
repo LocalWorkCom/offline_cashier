@@ -1032,6 +1032,11 @@ export class PillEditComponent {
     const finalTotal = productValueAfterDiscount + serviceAmount + taxAmount + deliveryFees;
 
     // تحديث بيانات الفاتورة الأصلية (invoices[0].invoice_summary)
+    const ac = this.appliedCoupon;
+    const apiCouponId = ac && (ac.coupon_id ?? ac.id);
+    if (apiCouponId != null && apiCouponId !== '') {
+      summary.coupon_id = apiCouponId;
+    }
     summary.coupon_value = discountValue;
     summary.coupon_title = title;
     summary.coupon_type = type;
@@ -1045,6 +1050,9 @@ export class PillEditComponent {
 
     // ✅ تحديث invoiceSummary أيضاً (المستخدم في العرض)
     if (this.invoiceSummary && this.invoiceSummary[0]) {
+      if (apiCouponId != null && apiCouponId !== '') {
+        this.invoiceSummary[0].coupon_id = apiCouponId;
+      }
       this.invoiceSummary[0].coupon_value = discountValue;
       this.invoiceSummary[0].coupon_title = title;
       this.invoiceSummary[0].coupon_type = type;

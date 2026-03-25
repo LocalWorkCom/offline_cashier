@@ -2570,38 +2570,35 @@ export class OrdersComponent implements OnDestroy {
           this.successMessageModal.show();
           if (result === 'updated') {
             this.fetchOrdersFromAPI();
-          }
-
-            /*
-            // Removed to prevent double printing (handled by global listener)
-            this.dbService.getOrderFromPrintkitchenById(orderId).then((orderMetadata: any) => {
-              console.log('🔍 [DEBUG] Order from printkitchen indexeddb:', orderMetadata);
-              if (!orderMetadata || !orderMetadata.order_data) {
-                console.error('❌ [DEBUG] Order not found in printkitchen indexeddb or order_data is missing');
+            // Kitchen print: Pusher `Dish-status2` + items_updated often does not fire for cashier
+            // order-edit-item; new dishes use new-order-added2. Snapshot was saved before modal open.
+            this.dbService.getOrderFromPrintkitchenById(String(orderId)).then((orderMetadata: any) => {
+              if (!orderMetadata?.order_data) {
+                console.warn('[edit print] No printkitchen snapshot for order', orderId);
                 return;
               }
-
-              const editedItemOldState = orderMetadata.order_data.order_items.find(
+              const od = orderMetadata.order_data;
+              const lineItems = od.order_items ?? od.items ?? [];
+              const editedItemOldState = lineItems.find(
                 (i: any) => i.order_detail_id === item.order_detail_id
               );
-
               if (!editedItemOldState) {
-                 console.error('❌ [DEBUG] Original item not found in old order state');
-                 return;
+                console.warn('[edit print] Original line not found in snapshot', item.order_detail_id);
+                return;
               }
-
-              const oldItems = [{
-                item_id: editedItemOldState.order_detail_id,
-                quantity: editedItemOldState.quantity,
-                size: editedItemOldState.size,
-                dish_addons: editedItemOldState.dish_addons
-              }];
-
+              const oldItems = [
+                {
+                  item_id: editedItemOldState.order_detail_id,
+                  quantity: editedItemOldState.quantity,
+                  size: editedItemOldState.size,
+                  dish_addons: editedItemOldState.dish_addons,
+                },
+              ];
               this.processKitchenPrint(orderId, oldItems, 'edit');
             }).catch((err) => {
               console.error('error getting order from printkitchen indexeddb', err);
             });
-            */
+          }
 
           setTimeout(() => {
             // Safe dismiss - only call if method exists

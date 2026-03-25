@@ -35,7 +35,11 @@ export class ShowLoaderUntilPageLoadedDirective  implements  OnDestroy {
     }else{
       // remove parent
        parentElement.classList.add('d-none')
-       // Dynamically create the loader component
+       // Avoid stacking multiple full-screen spinners (each blocks all clicks)
+       if (this.loaderRef) {
+         this.loaderRef.destroy();
+         this.loaderRef = null;
+       }
        this.loaderRef = this.vcr.createComponent(SpinnerComponent);
     }
   }
@@ -43,6 +47,7 @@ export class ShowLoaderUntilPageLoadedDirective  implements  OnDestroy {
   private removeLoader(allComponentLoaded: boolean) {
     if (this.loaderRef && allComponentLoaded) {
       this.loaderRef.destroy();
+      this.loaderRef = null;
     }
   }
 

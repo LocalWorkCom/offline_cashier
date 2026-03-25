@@ -58,21 +58,18 @@ export class ReceiptComponent {
     return this.printTime.getPrintTimeNow();
   }
 
-  /** وقت وتاريخ الطلب بتنسيق 12 ساعة دائماً؛ مصدر واحد: الخدمة. */
+  /** وقت إصدار هذه النسخة من الفاتورة (لحظة الطباعة). */
   getOrderDateTime(): string {
-    const created_at =
-      this.data?.created_at ??
-      this.data?.branchDetails?.[0]?.created_at ??
-      this.data?.invoices?.[0]?.created_at;
-    if (created_at) {
-      return this.printTime.formatOrderDateTime(created_at);
-    }
-    if (this.data?.date != null || this.data?.time != null) {
-      return this.printTime.parseAndFormatOrderDateTime(this.data.date, this.data.time);
-    }
-    return '--/--/----   --:-- --';
+    return this.printTime.formatOrderDateTime(new Date());
   }
+
+  /** تاريخ ووقت الطباعة على الفاتورة (نفس سطر "وقت الطباعة"). */
   getOrderDateTimeSeperated(): { dateStr: string; timeStr: string } {
+    return this.printTime.getPrintTimeNow();
+  }
+
+  /** أول تسجيل للطلب (إنشاء) — للمرجع بجانب وقت الطباعة. */
+  getOrderPlacedAtSeparated(): { dateStr: string; timeStr: string } {
     const created_at =
       this.data?.created_at ??
       this.data?.branchDetails?.[0]?.created_at ??

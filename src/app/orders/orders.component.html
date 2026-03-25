@@ -117,12 +117,12 @@
                 <div class="date d-flex justify-content-between mb-1">
                   <h6 class="text-muted">
                     <small>{{
-                      order.created_at | date : "d MMM"
+                      (order.updated_at || order.created_at) | date : "d MMM"
                       }}</small>
                   </h6>
                   <h6 class="text-muted">
                     <small>{{
-                      order.created_at | date : "hh:mm a"
+                      (order.updated_at || order.created_at) | date : "hh:mm a"
                       }}</small>
                   </h6>
                 </div>
@@ -352,12 +352,12 @@
               <div class="date d-flex justify-content-between mb-1">
                 <h6 class="text-muted">
                   <small>
-                    {{order.order_details?.created_at | date : "d MMM"}}
+                    {{ (order.order_details?.updated_at || order.order_details?.created_at) | date : "d MMM" }}
                   </small>
                 </h6>
                 <h6 class="text-muted">
                   <small>{{
-                    order.order_details?.created_at | date : "hh:mm a"
+                    (order.order_details?.updated_at || order.order_details?.created_at) | date : "hh:mm a"
                     }}</small>
                 </h6>
               </div>
@@ -1308,7 +1308,7 @@
                   </div>
                   <!-- Second Row: Time and Items Count -->
                   <div class="d-flex align-items-center gap-2">
-                    <div class="text-muted small">{{ order.order_details.created_at | date : "hh:mm a" }}</div>
+                    <div class="text-muted small">{{ (order.order_details.updated_at || order.order_details.created_at) | date : "hh:mm a" }}</div>
                     <div class="text-muted small">{{ order.order_details.order_items_count }} عناصر</div>
                   </div>
                 </div>
