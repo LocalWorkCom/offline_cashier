@@ -112,7 +112,9 @@
           </p>
           }
         }
-        <p><span class="fw-bold">رقم الطلب :</span> {{ item.order_number }}</p>
+        <p><span class="fw-bold">رقم الطلب :</span> {{ item.order_number }} </p>
+        <p><span class="fw-bold">منشئ الطلب :</span> {{ invoices[0]?.created_by_username || '---' }}</p>
+        <p><span class="fw-bold">مغلق الطلب :</span> {{ invoices[0]?.closed_by_username || '---' }}</p>
 
         <p *ngIf="
             invoices?.length > 0 &&

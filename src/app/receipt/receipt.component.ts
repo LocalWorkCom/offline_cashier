@@ -14,10 +14,15 @@ export class ReceiptComponent {
   constructor(private printTime: PrintTimeService) {}
 
   ngOnInit() {
-    console.log('Receipt data:', this.data);
-    console.log('Cashier:', this.data?.cashier);
-    console.log('Waiter:', this.data?.waiter);
-    console.log('Make type:', this.data?.make_type);
+  }
+
+  ngOnChanges(changes: any) {
+    if (changes.data) {
+      console.log('--- RECEIPT COMPONENT DATA UPDATED ---');
+      console.log('New Creator:', changes.data.currentValue?.created_by_username);
+      console.log('New Closer:', changes.data.currentValue?.closed_by_username);
+      console.log('Full Data:', changes.data.currentValue);
+    }
   }
 
   getOrderTypeLabel(type: string): string {
