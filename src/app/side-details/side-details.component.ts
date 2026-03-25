@@ -305,10 +305,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     return localStorage.getItem('currentOrderId') !== null;
   }
   ngAfterViewInit() {
-    const successEl = document.getElementById('successModal');
-    if (successEl) {
-      this.successModal = new bootstrap.Modal(successEl);
-    }
+    this.successModal = new bootstrap.Modal(
+      document.getElementById('successModal')
+    );
+
   }
 
   // ngOnInit(): void {
@@ -490,7 +490,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // this.loadSelectedCourier();
     // this.applyAdditionalNote();
     // this.loadCouponFromLocalStorage();
-    // loadFormData runs after loadCart so delivery preview matches persisted cart / cleared form_data
+    this.loadFormData();
     // this.checkIfTableIsAvaliable();
     this.loadTableNumber();
     this.fetchCountries();
@@ -599,7 +599,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     // localStorage.setItem('cart', JSON.stringify(this.cartItems));
     this.loadCart();
-    this.loadFormData();
 
     this.updateTotalPrice();
     this.cdr.detectChanges();
@@ -1081,7 +1080,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
           // 🔥 حفظ في localStorage للكارت العادي
           localStorage.setItem('cart', JSON.stringify(this.cartItems));
-          this.dbService.syncCartToIndexedDB(this.cartItems).catch(() => {});
           this.updateTotalPrice();
           return; // 🔥 نخرج من الدالة هنا - لا ندمج مع الكارت العادي
         }
@@ -1127,7 +1125,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     // حفظ الكارت المدمج في localStorage
     localStorage.setItem('cart', JSON.stringify(this.cartItems));
-    this.dbService.syncCartToIndexedDB(this.cartItems).catch(() => {});
     this.updateTotalPrice();
   }
   // دالة مساعدة للتحقق من تكرار العناصر
@@ -1278,40 +1275,19 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   // }
 
   loadFormData() {
-    if (this.currentOrderData) {
-      return;
-    }
-    const raw = localStorage.getItem('form_data');
-    if (!raw || raw === '{}' || raw === 'null') {
-      this.FormDataDetails = null;
-      this.resetAddress();
-      return;
-    }
-    try {
-      this.FormDataDetails = JSON.parse(raw);
-      if (
-        !this.FormDataDetails ||
-        (!this.FormDataDetails.client_name &&
-          !this.FormDataDetails.address &&
-          !this.FormDataDetails.address_phone)
-      ) {
-        this.FormDataDetails = null;
-        this.resetAddress();
-        return;
-      }
+
+    const FormData = localStorage.getItem('form_data');
+    if (FormData) {
+      this.FormDataDetails = JSON.parse(FormData);
       this.clientName =
         this.FormDataDetails.client_name || 'لم يتم تحديد الإسم';
       if (this.FormDataDetails.address) {
-        this.address =
+        /*         this.address = "  المبني :  " + this.FormDataDetails.building + " ,  " + this.FormDataDetails.address + " الدور " + this.FormDataDetails.floor_number + " رقم " + this.FormDataDetails.apartment_number || 'لم يتم تحديد العنوان';
+         */ this.address =
           this.FormDataDetails.address || 'لم يتم تحديد العنوان';
-      } else {
-        this.address = '';
       }
       this.addressPhone =
         this.FormDataDetails.address_phone || 'لم يتم تحديد رقم الهاتف';
-    } catch {
-      this.FormDataDetails = null;
-      this.resetAddress();
     }
   }
   // end hanan
@@ -1322,11 +1298,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       0
     );
     localStorage.setItem('cart', JSON.stringify(this.cartItems)); // Update local storage
-    this.dbService.syncCartToIndexedDB(this.cartItems).catch(() => {});
   }
   saveCart() {
     localStorage.setItem('cart', JSON.stringify(this.cartItems));
-    this.dbService.syncCartToIndexedDB(this.cartItems).catch(() => {});
   }
   // start hanan
   // saveCart() {
@@ -1380,7 +1354,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.cartItems.splice(index, 1);
       // this.dbService.removeFromCart(index);
       localStorage.setItem('cart', JSON.stringify(this.cartItems));
-      this.dbService.syncCartToIndexedDB(this.cartItems).catch(() => {});
       // If the cart is empty, clear coupon, note, and messages
       if (this.cartItems.length === 0 && localStorage.getItem('couponValue') != '0') {
         this.appliedCoupon = null;
@@ -1462,7 +1435,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     localStorage.removeItem('selected_address');
     this.tableNumber = null;
     this.FormDataDetails = null;
-    this.resetAddress();
   }
   clearCart(): void {
     this.productsService.clearCart();
@@ -1907,7 +1879,19 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       baseAmount = this.getTotal();
     }
 
-    if (!baseAmount || isNaN(baseAmount)) {
+    if (isNaN(baseAmount)) {
+      this.errorMessage = 'فشل حساب إجمالي الطلب. تحقق من الأسعار والكميات.';
+      this.isLoading = false;
+      return;
+    }
+
+    if (this.cartItems.length > 0 && baseAmount <= 0) {
+      this.errorMessage = 'لا يمكن تطبيق الكوبون على أصناف بسعر 0.';
+      this.isLoading = false;
+      return;
+    }
+
+    if (baseAmount <= 0) {
       this.errorMessage = 'فشل حساب إجمالي الطلب. تحقق من الأسعار والكميات.';
       this.isLoading = false;
       return;
@@ -2597,21 +2581,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       itemsWithCategory.push(itemData);
     }
 
-    // ✅ لو الكوبون أو الخصم جعل المبلغ المستحق = 0 (بدون طلبات)
-    // نعتبر الطلب "مدفوع" حتى لو لم يغيّر الكاشير الحالة يدوياً.
-    const effectiveBillAmount = this.finalTipSummary?.billAmount ?? this.getCartTotal();
-    let resolvedPaymentStatus = this.selectedPaymentStatus;
-
-    if (
-      effectiveBillAmount <= 0 &&
-      (this.appliedCoupon || this.validCoupon) &&
-      this.selectedOrderType !== 'talabat' &&
-      this.selectedOrderType !== 'طلبات'
-    ) {
-      resolvedPaymentStatus = 'paid';
-      this.selectedPaymentStatus = 'paid';
-    }
-
     return {
       isOnline: navigator.onLine,
       orderId: this.finalOrderId || Date.now(),
@@ -2623,7 +2592,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       delivery_id: this.selectedDriverId || null,
       branch_id: branchId,
       payment_method: this.selectedPaymentMethod ?? 'cash',
-      payment_status: resolvedPaymentStatus,
+      payment_status: this.selectedPaymentStatus,
       // cash_amount: this.selectedPaymentMethod === "cash" ? this.finalTipSummary?.billAmount ?? 0 : 0,
       // credit_amount: this.selectedPaymentMethod === "credit" ? this.finalTipSummary?.billAmount ?? 0 : 0,
       cash_amount: this.cash_amountt,
@@ -2650,7 +2619,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       total_with_tip: this.finalTipSummary?.grandTotalWithTip ?? ((this.finalTipSummary?.tipAmount ?? 0) + (this.finalTipSummary?.billAmount ?? 0)) ?? this.getCartTotal(),
       returned_amount: this.finalTipSummary?.changeToReturn ?? 0,
       menu_integration: this.selectedOrderType === 'talabat' ? true : false,
-      payment_status_menu_integration: resolvedPaymentStatus,
+      payment_status_menu_integration: this.selectedPaymentStatus,
       payment_method_menu_integration: this.selectedPaymentMethod,
 
       // dalia end tips
@@ -2663,7 +2632,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     localStorage.removeItem('selectedOrderType');
     localStorage.removeItem('address_id');
     localStorage.removeItem('form_data');
-    localStorage.removeItem('FormDataDetails');
     localStorage.removeItem('notes');
     localStorage.removeItem('deliveryForm');
     localStorage.removeItem('additionalNote');
@@ -2684,8 +2652,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     this.client = '';
     this.clientPhone = '';
-    this.clientStoredInLocal = null;
-    this.clientPhoneStoredInLocal = null;
     this.finalOrderId = '';
     this.currentOrderData = null;
     this.currentOrderId = null;
@@ -2704,7 +2670,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.creditAmountMixed = '';
     this.finalTipSummary = null;
     this.clearOrderType();
-    this.resetAddress();
     this.cdr.detectChanges();
 
 
@@ -2750,11 +2715,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // ✅ التحقق من paymentError
     if (this.paymentError && this.paymentError.trim() !== '') {
       return { isValid: false, errorMessage: this.paymentError };
-    }
-
-    // ✅ NEW: Enforce payment method selection
-    if (!this.selectedPaymentMethod) {
-      return { isValid: false, errorMessage: 'يرجى اختيار طريقة الدفع (كاش/فيزا/مختلط).' };
     }
 
     // ✅ التحقق من finalTipSummary
@@ -2901,17 +2861,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
       addressId = localStorage.getItem('address_id');
 
-      if (!navigator.onLine) {
-        // عند عدم الاتصال: استخدام formData من localStorage/IndexedDB بدون API
-        if (!formData?.client_name || !formData?.address_phone) {
-          this.isLoading = false;
-          this.loading = false;
-          this.falseMessage = 'يرجى إضافة معلومات التوصيل (الاسم ورقم الهاتف) قبل التنفيذ.';
-          setTimeout(() => { this.falseMessage = ''; }, 2500);
-          return;
-        }
-        addressId = null; // سيتم استخدام بيانات formData عند الحفظ
-      } else if (!addressId && !this.addressRequestInProgress) {
+      if (!addressId && !this.addressRequestInProgress) {
         this.addressRequestInProgress = true;
         try {
           addressId = await this.getAddressId();
@@ -2920,15 +2870,23 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           } else {
             this.isLoading = false;
             this.loading = false;
+
             this.falseMessage = 'يرجى اختيار عنوان التوصيل';
-            setTimeout(() => { this.falseMessage = ''; }, 1500);
+            setTimeout(() => {
+              this.falseMessage = '';
+            }, 1500);
             return;
           }
         } catch (error) {
+          // ❌ API failed → show message and stop
           this.isLoading = false;
           this.loading = false;
+
           this.falseMessage = 'يرجى اختيار عنوان التوصيل';
-          setTimeout(() => { this.falseMessage = ''; }, 1500);
+          setTimeout(() => {
+            this.falseMessage = '';
+          }, 1500);
+
           return;
         } finally {
           this.addressRequestInProgress = false;
@@ -3084,6 +3042,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           this.falseMessage = `المبلغ غير كافي. المبلغ المتبقي: ${remainingBalance.toFixed(2)} ${this.currencySymbol}`;
           console.log('❌ Entered amount less than total:', totalEntered, cartTotal, 'Remaining:', remainingBalance);
           this.isLoading = false;
+          return; // 🔒 منع المتابعة إذا كان المبلغ غير كافي
 
           setTimeout(() => {
             this.amountError = false;
@@ -3116,8 +3075,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       orderData.delivery_id = this.selectedDriverId;
     }
 
-    // معالجة عنوان التوصيل (عند الاتصال فقط)
-    if (navigator.onLine && this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
+    // معالجة عنوان التوصيل
+    // let addressId = null;
+    // if (navigator.onLine) {
+    if (this.selectedOrderType === 'Delivery' && !this.currentOrderData) {
       addressId = localStorage.getItem('address_id');
       if (!addressId && !this.addressRequestInProgress) {
         this.addressRequestInProgress = true;
@@ -3131,6 +3092,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         }
       }
     }
+    // }
 
     if (!this.currentOrderData) {
       console.log("no current order data");
@@ -3384,71 +3346,49 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       }
     }
 
-    // معالجة حالة عدم الاتصال: حفظ الطلب في IndexedDB للمزامنة لاحقاً
-    if (!navigator.onLine) {
-      try {
-        // إعداد بيانات التوصيل للتخزين المحلي
-        const orderType = (orderData.type || '').toString().toLowerCase();
-        if ((orderType === 'delivery' || orderType === 'توصيل') && formData) {
-          orderData.client_name = formData.client_name || orderData.client_name;
-          orderData.client_phone = formData.address_phone || formData.client_phone || orderData.client_phone;
-          orderData.client_country_code = formData.country_code?.code || formData.country_code || orderData.client_country_code || '+20';
-          // حفظ formData في IndexedDB لاستخدامه في savePendingOrder
-          await this.dbService.saveFormData(formData).catch(() => {});
-        }
-        orderData.type = orderType === 'توصيل' ? 'delivery' : orderType;
-        orderData.coupon_value = orderData.discount_amount ?? this.discountAmount ?? 0;
-        orderData.coupon_code = orderData.coupon_code || ' ';
-        orderData.coupon_type = orderData.coupon_type || this.appliedCoupon?.value_type || 'fixed';
+    // معالجة حالة عدم الاتصال
+    // if (!navigator.onLine) {
+    //   try {
+    //     orderData.offlineTimestamp = new Date().toISOString();
+    //     orderData.status = 'pending_sync';
 
-        await this.dbService.savePendingOrder(orderData);
+    //     // Save to orders/pills stores (existing functionality)
+    //     const savedOrderId = await this.dbService.savePendingOrder(orderData);
+    //     console.log("Order saved to IndexedDB with ID:", savedOrderId);
 
-        const orderDataForSync = { ...orderData };
-        await this.dbService.savePendingOrderForSync(orderDataForSync);
+    //     // Save raw orderData for API sync (exact data that will be sent to API)
+    //     // Remove metadata fields that shouldn't be sent to API
+    //     const orderDataForSync = { ...orderData };
+    //     delete orderDataForSync.offlineTimestamp;
+    //     delete orderDataForSync.status;
 
-        // تسجيل الحدث في الـ outbox للمزامنة عند عودة الاتصال (Idempotency + ACK)
-        const orderId = orderData.order_id ?? orderData.orderId ?? Date.now();
-        await this.dbService.addOutboxEvent({
-          aggregate_type: 'order',
-          aggregate_uuid: String(orderId),
-          event_type: 'order_created',
-          payload: orderDataForSync,
-          headers: {
-            app_version: '1.0',
-            branch_id: localStorage.getItem('branch_id') ?? undefined,
-            saved_at: new Date().toISOString(),
-          },
-          priority: 10,
-          destination: 'cloud',
-        }).catch((err) => console.warn('Outbox: لم يتم تسجيل حدث الطلب', err));
+    //     await this.dbService.savePendingOrderForSync(orderDataForSync);
+    //     console.log("Raw orderData saved for API sync");
 
-        console.log('✅ تم حفظ الطلب محلياً للمزامنة عند عودة الاتصال');
+    //     await this.releaseTableAndOrderType();
 
-        this.clearCart();
-        this.dbService.syncCartToIndexedDB([]).catch(() => {});
-        this.resetLocalStorage();
-        this.resetAddress();
-        this.loadCart();
+    //     this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
+    //     this.clearCart();
+    //     this.resetLocalStorage();
 
-        const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
-        const orderIdToRemove = orderData.orderId;
-        const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
-        localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
+    //     if (this.successModal) {
+    //       this.successModal.show();
+    //     }
 
-        this.successMessage = 'تم حفظ الطلب وسيتم إرساله عند عودة الاتصال';
-        if (this.successModal) {
-          this.successModal.show();
-        }
-        this.cdr.detectChanges();
-      } catch (error) {
-        console.error('Error saving order offline:', error);
-        this.falseMessage = 'فشل حفظ الطلب في وضع عدم الاتصال. يرجى المحاولة مرة أخرى.';
-      } finally {
-        this.isLoading = false;
-        this.loading = false;
-      }
-      return;
-    }
+    //     const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
+    //     const orderIdToRemove = orderData.orderId;
+    //     const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
+    //     localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
+
+    //   } catch (error) {
+    //     console.error('Error saving order to IndexedDB:', error);
+    //     this.showError('فشل حفظ الطلب في وضع عدم الاتصال. يرجى المحاولة مرة أخرى.');
+    //   } finally {
+    //     this.isLoading = false;
+    //     this.loading = false;
+    //   }
+    //   return;
+    // }
 
     // إرسال الطلب إلى API
     console.log('Submitting order online:', orderData);
@@ -3612,20 +3552,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       const updatedOrders = savedOrders.filter((savedOrder: any) => savedOrder.orderId !== orderIdToRemove);
       localStorage.setItem('savedOrders', JSON.stringify(updatedOrders));
 
-      // تفاصيل جديدة للطباعة — الـ API قد يرسل added_items أو items أو order_items
-      const resData = (response as any).data;
-      const dishData = resData?.dish_data;
-      let addedItems =
-        dishData?.added_items ||
-        dishData?.items ||
-        (Array.isArray(dishData) ? dishData : []) ||
-        [];
-      if (!addedItems.length && Array.isArray(resData?.order_items)) {
-        addedItems = resData.order_items;
-      }
-      const items_id = addedItems
-        .map((item: any) => item.order_detail_id ?? item.order_detailId ?? item.id)
-        .filter((id: any) => id != null && id !== '');
+      // get new item IDs from response for selective printing
+      const addedItems = (response as any).data?.dish_data?.added_items || [];
+      const items_id = addedItems.map((item: any) => item.order_detail_id).filter((id: any) => !!id);
 
       const body = items_id.length > 0 ? { items_id } : {};
 
@@ -3636,48 +3565,42 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.cdr.detectChanges();
       this.successMessage = 'تم تنفيذ طلبك بنجاح';
 
-      // الطباعة لا تعتمد على successModal — كان يُمنع الطباعة كلياً إذا فشل إنشاء المودال
-      const printOrderId = orderId ?? this.orderedId;
-      if (printOrderId != null && printOrderId !== '') {
-        this.printedInvoiceService.printMenu(printOrderId as any, body).subscribe({
-          next: async (printRes) => {
-            console.log('🖨️ [Print Menu] Response received:', printRes);
+      if (this.successModal) {
+          this.printedInvoiceService
+          .printMenu(this.orderedId , body)
+          .subscribe({
+            next: async (response) => {
+              console.log('🖨️ [Print Menu] Response received:', response);
 
-            if (printRes.status && printRes.printers && printRes.printers.length > 0) {
-              if (!this.printedInvoiceService.acquireKitchenPrintSlot(printOrderId)) {
-                console.log('🖨️ [Print Menu] Skipped physical print (dedupe window) for order', printOrderId);
-              } else {
-                let anyPrinted = false;
-                for (const group of printRes.printers) {
+              if (response.status && response.printers && response.printers.length > 0) {
+                for (const group of response.printers) {
                   if (group.items && group.items.length > 0) {
                     console.log(`🖨️ [Print Menu] Printing to ${group.ip}:${group.port}...`);
                     try {
-                      await this.printInvoiceImage(group.items, printRes.order, group.ip, group.port);
-                      anyPrinted = true;
+                      await this.printInvoiceImage(group.items, response.order, group.ip, group.port);
                     } catch (err) {
                       console.error(`❌ [Print Menu] Error printing to ${group.ip}:`, err);
                     }
-                    await new Promise((resolve) => setTimeout(resolve, 500));
+                    // Small delay between different printers
+                    await new Promise(resolve => setTimeout(resolve, 500));
                   }
                 }
-                if (!anyPrinted) {
-                  this.printedInvoiceService.releaseKitchenPrintSlot(printOrderId);
-                }
               }
-            } else {
-              console.warn('🖨️ [Print Menu] No printers or items in API response', printRes);
+            },
+            error: (error) => {
+              console.error('Print menu error:', error);
+              // location.reload();
             }
-          },
-          error: (error) => {
-            console.error('Print menu error:', error);
-          },
-        });
-      } else {
-        console.warn('🖨️ [Print Menu] Skipped: no order id for print');
-      }
+          });
 
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      this.successModal?.show();
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        this.successModal.show();
+        // location.reload();
+
+        // Print invoice items without prices to network printer
+        // this.printInvoiceImage();
+
+      }
 
       setTimeout(() => {
         this.falseMessage = '';
@@ -3762,7 +3685,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         this.falseMessage = 'تم حفظ الطلب بسبب مشكلة في الاتصال وسيتم إرساله لاحقًا';
         this.clearCart();
         this.resetLocalStorage();
-        this.resetAddress();
+
+
 
       } catch (dbError) {
         console.error('Error saving to IndexedDB:', dbError);
@@ -4530,8 +4454,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const tableNumber = order?.table_id !== null ? order?.table?.table_number : 'N/A';
     const orderType = order?.type || 'N/A';
     const orderStatus = order?.status || 'N/A';
-    const printStampAt = this.printTime.formatOrderDateTime(new Date());
-    const orderPlacedAt = order?.created_at
+    const orderCreatedAt = order?.created_at
       ? this.printTime.formatOrderDateTime(order.created_at)
       : this.printTime.parseAndFormatOrderDateTime(order?.date, order?.time);
     const orderNote = order?.note || 'N/A';
@@ -4686,8 +4609,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             <p>رقم الطاولة: ${escapeHtml(String(tableNumber))}</p>
             <p>نوع الطلب: ${escapeHtml(translateOrderType(String(orderType)))}</p>
             <p>حالة الطلب: ${escapeHtml(String(orderStatus))}</p>
-            <p>وقت الطباعة: ${escapeHtml(String(printStampAt))}</p>
-            <p>وقت إنشاء الطلب: ${escapeHtml(String(orderPlacedAt))}</p>
+            <p>تاريخ الطلب: ${escapeHtml(String(orderCreatedAt))}</p>
         </div>
             <table>
                 <thead>
@@ -4825,11 +4747,11 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     return this.invoices[0].invoice_summary.subtotal_price - this.getDiscount();
   }
   async selectOrderType(type: string) {
-    const previousOrderType =
-      this.selectedOrderType || localStorage.getItem('selectedOrderType') || '';
+
+    let previousOrderType = localStorage.getItem('selectedOrderType');
     localStorage.removeItem('selectedOrderType');
     const currentCart = [...this.cartItems];
-    this.clearOrderTypeDataForLeaving(previousOrderType);
+    this.clearOrderTypeData();
 
     // ✅ Clear selectedOrderType from localStorage first to ensure correct pricing
 
@@ -4882,13 +4804,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     // ✅ إخفاء رسالة تحديث الأسعار
     this.isUpdatingPrices = false;
 
-    if (
-      this.selectedOrderType === 'Delivery' &&
-      !this.currentOrderData &&
-      this.cartItems.length === 0
-    ) {
-      this.loadFormData();
-    }
+
 
     // ✅ الشرط الجديد: إذا كان الطلب من طلبات وغير مدفوع، اختيار آجل تلقائياً
     if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
@@ -4979,7 +4895,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     // 💾 تحديث localStorage بالكارت الجديد
     localStorage.setItem('cart', JSON.stringify(cart));
-    this.dbService.syncCartToIndexedDB(cart).catch(() => {});
     // this.dbService.removeFromCart(cartItem.cartItemId); // تحديث IndexedDB لو بتستخدميها للكارت
     this.cartItems = cart; // تحديث المتغير المحلي لو عندك واحد
 
@@ -5027,7 +4942,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     console.log('Updated cart item after price sync:', cartItem);
     localStorage.setItem('cart', JSON.stringify(this.cartItems));
-    this.dbService.syncCartToIndexedDB(this.cartItems).catch(() => {});
 
     // 4. إعادة حساب المجموع النهائي بعد التحديث
     this.recalculateTotal(cartItem);
@@ -5110,42 +5024,35 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     return product;
   }
 
-  /** Clears type-specific session data when leaving an order type (uses the type we are switching *from*). */
-  private clearOrderTypeDataForLeaving(previousType: string): void {
-    switch (previousType) {
+  clearOrderTypeData() {
+    // Clear data based on the previously selected order type
+    switch (this.selectedOrderType) {
       case 'dine-in':
-      case 'في المطعم':
+        // Clear table number and table ID
         this.tableNumber = null;
         localStorage.removeItem('table_number');
         localStorage.removeItem('table_id');
         break;
 
       case 'Delivery':
-      case 'توصيل':
-        if (this.cartItems.length === 0) {
-          this.resetAddress();
-          localStorage.removeItem('form_data');
-          localStorage.removeItem('FormDataDetails');
-          localStorage.removeItem('deliveryForm');
-          localStorage.removeItem('address_id');
-          localStorage.removeItem('selected_address');
-          localStorage.removeItem('delivery_fees');
-          this.FormDataDetails = null;
-        }
+        // Clear delivery address, courier, and form data
+        // this.address = '';
+        // this.clientName = ' ';
+        // this.addressPhone = '';
+        // localStorage.removeItem('form_data');
+
+        // localStorage.removeItem('address_id');
         break;
 
       case 'Takeaway':
+        // No specific data to clear for Takeaway
         break;
       case 'talabat':
-      case 'طلبات':
+        // No specific data to clear for talabat
         break;
       default:
         break;
     }
-  }
-
-  clearOrderTypeData() {
-    this.clearOrderTypeDataForLeaving(this.selectedOrderType || '');
   }
 
   loadOrderType() {
@@ -5206,7 +5113,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.cartItems = updatedCart;
       this.updateTotalPrice();
       localStorage.setItem('cart', JSON.stringify(this.cartItems));
-      this.dbService.syncCartToIndexedDB(this.cartItems).catch(() => {});
     };
   }
   applyNote(): void {
