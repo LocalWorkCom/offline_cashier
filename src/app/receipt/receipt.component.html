@@ -45,12 +45,12 @@
 
       <div class="info-row">
         <span class="d-label">منشئ الطلب :</span>
-        <span class="d-value">{{ data.created_by_username || data.invoices?.[0]?.created_by_username || data.order_transactions?.[0]?.created_by_username || data.transactions?.[0]?.created_by_username || '---' }}</span>
+        <span class="d-value">{{ data.created_by_username || data.invoices?.[0]?.created_by_username || '---' }}</span>
       </div>
 
       <div class="info-row">
         <span class="d-label">مغلق الطلب :</span>
-        <span class="d-value">{{ data.closed_by_username || data.invoices?.[0]?.closed_by_username || data.order_transactions?.[0]?.closed_by_username || data.transactions?.[0]?.closed_by_username || '---' }}</span>
+        <span class="d-value">{{ data.closed_by_username || data.invoices?.[0]?.closed_by_username || '---' }}</span>
       </div>
 
       <!-- <div class="info-row">

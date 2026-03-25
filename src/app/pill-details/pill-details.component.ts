@@ -290,8 +290,8 @@ private processPillDetails(data: any): void {
         this.invoices = response.data.invoices;
         this.order_id = response.data.order_id;
         this.invoices = (response.data.invoices || []).map((inv: any) => {
-          const creatorName = inv.created_by_username || response.data.created_by_username || inv.transactions?.[0]?.created_by_username || response.data.order_transactions?.[0]?.created_by_username;
-          const closerName = inv.closed_by_username || response.data.closed_by_username || inv.transactions?.[0]?.closed_by_username || response.data.order_transactions?.[0]?.closed_by_username;
+          const creatorName = inv.created_by_username || response.data.created_by_username || '---';
+          const closerName = inv.closed_by_username || response.data.closed_by_username || '---';
           return {
             ...inv,
             created_by_username: creatorName,

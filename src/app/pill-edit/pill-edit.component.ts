@@ -289,8 +289,8 @@ export class PillEditComponent {
           this.extractDateAndTime(this.branchDetails[0]);
         }
 
-        const creatorName = response.data.created_by_username || response.data.invoices?.[0]?.created_by_username || response.data.order_transactions?.[0]?.created_by_username;
-        const closerName = response.data.closed_by_username || response.data.invoices?.[0]?.closed_by_username || response.data.order_transactions?.[0]?.closed_by_username;
+        const creatorName = response.data.created_by_username || response.data.invoices?.[0]?.created_by_username || '---';
+        const closerName = response.data.closed_by_username || response.data.invoices?.[0]?.closed_by_username || '---';
 
         this.receiptData = {
           branchDetails: Array.isArray(this.branchDetails) ? this.branchDetails : (this.branchDetails ? [this.branchDetails] : []),
