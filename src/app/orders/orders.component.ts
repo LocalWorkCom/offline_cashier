@@ -1014,17 +1014,14 @@ export class OrdersComponent implements OnDestroy {
     }
   }
 
-  /** True if this order is a merged order: either it was merged into another (secondary) or it received a merge (primary). */
+  /** True if this order is the secondary (merged-into-another) order. Hides edit/remove for it.
+   * The primary order (that received the merge) must still allow edit QTY and remove item. */
   isMergedOrder(order: any): boolean {
     if (!order?.order_details) return false;
-    const id = order.order_details.order_id;
     const status = order.order_details.status;
     const mergedIntoOrderId = order.order_details.merged_into_order_id ?? order.merged_into_order_id;
-    if (status === 'cancelled' && mergedIntoOrderId) return true;
-    const isPrimaryMerged = (this.orders || []).some(
-      (o: any) => (o?.order_details?.merged_into_order_id ?? o?.merged_into_order_id) == id
-    );
-    return !!isPrimaryMerged;
+    // Only the secondary order (merged INTO another, cancelled) hides edit/remove.
+    return status === 'cancelled' && !!mergedIntoOrderId;
   }
 
   getStatusText(order: any): string {
