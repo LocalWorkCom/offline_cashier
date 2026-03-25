@@ -3644,15 +3644,24 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             console.log('🖨️ [Print Menu] Response received:', printRes);
 
             if (printRes.status && printRes.printers && printRes.printers.length > 0) {
-              for (const group of printRes.printers) {
-                if (group.items && group.items.length > 0) {
-                  console.log(`🖨️ [Print Menu] Printing to ${group.ip}:${group.port}...`);
-                  try {
-                    await this.printInvoiceImage(group.items, printRes.order, group.ip, group.port);
-                  } catch (err) {
-                    console.error(`❌ [Print Menu] Error printing to ${group.ip}:`, err);
+              if (!this.printedInvoiceService.acquireKitchenPrintSlot(printOrderId)) {
+                console.log('🖨️ [Print Menu] Skipped physical print (dedupe window) for order', printOrderId);
+              } else {
+                let anyPrinted = false;
+                for (const group of printRes.printers) {
+                  if (group.items && group.items.length > 0) {
+                    console.log(`🖨️ [Print Menu] Printing to ${group.ip}:${group.port}...`);
+                    try {
+                      await this.printInvoiceImage(group.items, printRes.order, group.ip, group.port);
+                      anyPrinted = true;
+                    } catch (err) {
+                      console.error(`❌ [Print Menu] Error printing to ${group.ip}:`, err);
+                    }
+                    await new Promise((resolve) => setTimeout(resolve, 500));
                   }
-                  await new Promise((resolve) => setTimeout(resolve, 500));
+                }
+                if (!anyPrinted) {
+                  this.printedInvoiceService.releaseKitchenPrintSlot(printOrderId);
                 }
               }
             } else {

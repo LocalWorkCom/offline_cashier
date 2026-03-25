@@ -12,7 +12,27 @@ export class PrintedInvoiceService {
 
   private token = localStorage.getItem('authToken');
 
+  /** Avoids double physical kitchen prints when both submit flow and Pusher call print-menu. */
+  private kitchenPrintLastByOrderId = new Map<string, number>();
+  private readonly kitchenPrintDedupeMs = 12_000;
+
   constructor(private http: HttpClient) { }
+
+  /** Returns true if this caller should run physical kitchen printing for this order (first wins within window). */
+  acquireKitchenPrintSlot(orderId: string | number): boolean {
+    const key = String(orderId);
+    const now = Date.now();
+    const prev = this.kitchenPrintLastByOrderId.get(key);
+    if (prev != null && now - prev < this.kitchenPrintDedupeMs) {
+      return false;
+    }
+    this.kitchenPrintLastByOrderId.set(key, now);
+    return true;
+  }
+
+  releaseKitchenPrintSlot(orderId: string | number): void {
+    this.kitchenPrintLastByOrderId.delete(String(orderId));
+  }
 
   printInvoice(order_id: number, cashier_machine_id: any, payment_method: any): Observable<any> {
     const token = localStorage.getItem('authToken');

@@ -67,20 +67,28 @@ export class NewOrderService {
 
           this.printedInvoiceService.printMenu(order_id, printData).subscribe({
             next: async (response) => {
-              if (response.order && response.order.make_type != 'cashier') {
-                console.log('🖨️ [Kitchen Print] Processing printers...', response.printers?.length);
-                if (response.status && response.printers && response.printers.length > 0) {
-                  for (const group of response.printers) {
-                    if (group.items && group.items.length > 0) {
-                      try {
-                        await this.printInvoiceImage(group.items, response.order, group.ip, group.port);
-                      } catch (err) {
-                        console.error(`❌ Printer error (${group.ip}):`, err);
-                      }
-                      await new Promise(resolve => setTimeout(resolve, 500));
-                    }
+              if (!response.status || !response.printers?.length) {
+                return;
+              }
+              if (!this.printedInvoiceService.acquireKitchenPrintSlot(order_id)) {
+                console.log('🖨️ [Kitchen Print] Skipped (dedupe window) for order', order_id);
+                return;
+              }
+              console.log('🖨️ [Kitchen Print] Processing printers...', response.printers.length);
+              let anyPrinted = false;
+              for (const group of response.printers) {
+                if (group.items && group.items.length > 0) {
+                  try {
+                    await this.printInvoiceImage(group.items, response.order, group.ip, group.port);
+                    anyPrinted = true;
+                  } catch (err) {
+                    console.error(`❌ Printer error (${group.ip}):`, err);
                   }
+                  await new Promise(resolve => setTimeout(resolve, 500));
                 }
+              }
+              if (!anyPrinted) {
+                this.printedInvoiceService.releaseKitchenPrintSlot(order_id);
               }
             },
             error: (error) => console.error('❌ Print menu API error:', error)
