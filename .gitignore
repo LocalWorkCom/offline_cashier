@@ -8,6 +8,7 @@
 /release
 /erp2
 /erp_main
+/kitchen
 # Node
 /node_modules
 npm-debug.log

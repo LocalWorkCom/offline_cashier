@@ -42,3 +42,7 @@
     border-bottom-left-radius:0px !important;
     border-left: 0px;
 }
+.cardtable {
+  pointer-events: auto !important;
+  cursor: pointer !important;
+}

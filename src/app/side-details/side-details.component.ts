@@ -1879,8 +1879,17 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       baseAmount = this.getTotal();
     }
 
-    if (!baseAmount || isNaN(baseAmount)) {
-      this.errorMessage = 'فشل حساب إجمالي الطلب. تحقق من الأسعار والكميات.';
+    if (isNaN(baseAmount)) {
+      this.errorMessage =
+        'فشل حساب إجمالي الطلب. تحقق من الأسعار والكميات.';
+      this.isLoading = false;
+      return;
+    }
+
+    if (!baseAmount || baseAmount <= 0) {
+      this.errorMessage = !this.cartItems.length
+        ? 'يرجى إضافة عناصر للطلب قبل تطبيق الكوبون.'
+        : 'لا يمكن تطبيق الكوبون على صنف بسعر 0.';
       this.isLoading = false;
       return;
     }
