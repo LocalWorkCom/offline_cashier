@@ -59,7 +59,10 @@
       </div> -->
    
 
-<!-- Removed cashier info section -->
+      <!-- <div class="info-row" *ngIf="data.invoices[0]?.cashier_info">
+        <span class="info-label">الكاشير / Cashier:</span>
+        <span class="d-value">{{ data.invoices[0].cashier_info.first_name }} {{ data.invoices[0].cashier_info.last_name }}</span>
+      </div> -->
     </div>
 
     <!-- DELIVERY SPECIFIC INFO -->
@@ -88,7 +91,6 @@
         </span>
         <span class="d-value">:Created at </span>
       </div>
-      
       <div class="summary-row" *ngIf="isDelivery()">
         <span class="d-label">{{ getDriverName() }}</span>
         <span class="d-value">:Delivery Agent</span>
