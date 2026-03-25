@@ -69,8 +69,8 @@
                     </form>
                 </div>
                 }
-                @for (category of selectedProduct.addon_categories; track category.id) {
-                <h4 class="mt-2">{{ category.name_ar || category.name_en || category.name || 'إضافات' }}</h4>
+                @for (category of selectedProduct.addon_categories; track $index) {
+                <h4>إضافات</h4>
                 @if (addonValidationErrors[category.id]) {
 
                 <p class="mb-1 text-muted"> (حدد على الأقل {{ category.min_addons }} وبحد أقصى {{
@@ -78,14 +78,13 @@
                 }
                 <div class="choices my-3">
                     <form>
-                        @for (addon of category.addons; track addon.id) {
+                        @for (addon of category.addons; track $index) {
                         <div class="form-check">
                             <div>
                                 <input class="form-check-input" type="checkbox" name="addons"
-                                    id="addon-p{{ selectedProduct.id }}-c{{ category.id }}-a{{ addon.id }}"
-                                    [checked]="isAddonSelectedInCategory(addon, category)"
+                                    id="addon{{ selectedProduct.id }}-{{ $index }}"
                                     (change)="toggleAddon(addon, $event, category)">
-                                <label class="form-check-label" for="addon-p{{ selectedProduct.id }}-c{{ category.id }}-a{{ addon.id }}">
+                                <label class="form-check-label" for="addon{{ selectedProduct.id }}-{{ $index }}">
                                     {{ addon.name }}
                                 </label>
                             </div>

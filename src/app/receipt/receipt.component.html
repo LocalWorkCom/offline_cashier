@@ -27,6 +27,7 @@
       <div class="order-number-box" *ngIf="data.branchDetails && data.branchDetails[0]">
         <h3> رقم الطلب :{{ data.branchDetails[0].order_number }}</h3>
       </div>
+       <p> وقت الطباعة  : <span style="display: inline-flex; direction: ltr; align-items: center;"><span>{{ getPrintTimeNow().timeStr }}</span><span style="width: 20px;"></span><span>{{ getPrintTimeNow().dateStr }}</span></span></p>
     </div>
 
     <!-- Order Meta Data -->
