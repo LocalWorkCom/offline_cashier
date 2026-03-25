@@ -289,8 +289,8 @@ export class PillEditComponent {
           this.extractDateAndTime(this.branchDetails[0]);
         }
 
-        const creatorName = response.data.created_by_username || response.data.invoices?.[0]?.created_by_username || response.data.order_transactions?.[0]?.created_by_username;
-        const closerName = response.data.closed_by_username || response.data.invoices?.[0]?.closed_by_username || response.data.order_transactions?.[0]?.closed_by_username;
+        const creatorName = response.data.created_by_username || response.data.invoices?.[0]?.created_by_username || '---';
+        const closerName = response.data.closed_by_username || response.data.invoices?.[0]?.closed_by_username || '---';
 
         this.receiptData = {
           branchDetails: Array.isArray(this.branchDetails) ? this.branchDetails : (this.branchDetails ? [this.branchDetails] : []),
@@ -309,14 +309,10 @@ export class PillEditComponent {
           isFinal: this.isFinal || false,
           cashier: response.data.cashier,
           waiter: response.data.waiter,
-          make_type: response.data.make_type,
-          created_by_username: creatorName,
-          closed_by_username: closerName
+          make_type: response.data.make_type
         };
         if (this.receiptData?.invoices?.[0]) {
           this.receiptData.invoices[0].orderDetails = this.getFilteredOrderDetailsFlat();
-          this.receiptData.invoices[0].created_by_username = creatorName;
-          this.receiptData.invoices[0].closed_by_username = closerName;
         }
 
         // After split, coupon must not apply to primary order; clear it from display if this is the split primary
@@ -910,47 +906,29 @@ export class PillEditComponent {
                 }]
               : [];
 
-            const filteredOrderDetails = (response.data.order_details || response.data.orderDetails || []).filter((item: any) => (Number(item.quantity) || 0) > 0);
-            const creatorName = response.data.created_by_username || response.data.order_transactions?.[0]?.created_by_username || (response.data.order?.order_transactions?.[0]?.created_by_username);
-            const closerName = response.data.closed_by_username || response.data.order_transactions?.[0]?.closed_by_username || (response.data.order?.order_transactions?.[0]?.closed_by_username);
-
+            const filteredOrderDetails = (response.data.orderDetails || []).filter((item: any) => (Number(item.quantity) || 0) > 0);
             this.receiptData = {
               branchDetails: branchDetails,
               invoices: invoices,
-              order_id: response.data.id || response.data.order_id || response.data.order?.id,
+              order_id: response.data.order.id,
               invoice_summary: invoiceSummary,
               orderDetails: filteredOrderDetails,
-              date: response.data.date || response.data.order?.date,
-              time: response.data.time || response.data.order?.time,
+              date: response.data.order.date,
+              time: response.data.order.time,
               showPrices: true,
-              paymentStatus: response.data.status || response.data.order?.status,
-              invoice_id: (response.data.order_transactions || response.data.order?.order_transactions)?.[0]?.invoice_id,
-              order_type: response.data.type || response.data.order_type,
-              table_number: response.data.table_id || response.data.order?.table_id || null,
-              transactions: response.data.order_transactions || response.data.transactions || [],
+              paymentStatus: response.data.order.status,
+              invoice_id: response.data.order.order_transactions[0]?.invoice_id,
+              order_type: response.data.order_type,
+              table_number: response.data.order.table_id || null,
+              transactions: response.data.transactions || [],
               isFinal: true,
               cashier: response.data.cashier,
               waiter: response.data.waiter,
-              make_type: response.data.make_type,
-              created_by_username: creatorName,
-              closed_by_username: closerName
+              make_type: response.data.make_type
             };
-
-            // Ensure invoices sub-objects also have the data for safety
             if (this.receiptData?.invoices?.[0]) {
               this.receiptData.invoices[0].orderDetails = filteredOrderDetails;
-              this.receiptData.invoices[0].created_by_username = creatorName;
-              this.receiptData.invoices[0].closed_by_username = closerName;
-              if (!this.receiptData.invoices[0].transactions) {
-                this.receiptData.invoices[0].transactions = this.receiptData.transactions;
-              }
             }
-
-            console.log('Final Receipt Data Prepared:', {
-              creator: this.receiptData.created_by_username,
-              closer: this.receiptData.closed_by_username,
-              order_id: this.receiptData.order_id
-            });
 
             // التأكد من ظهور "مدفوع" في طباعة الفاتورة بعد الدفع
             if (this.paymentStatus === 'paid' && this.receiptData?.invoices?.[0]) {

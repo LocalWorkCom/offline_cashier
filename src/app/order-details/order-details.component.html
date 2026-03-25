@@ -82,6 +82,23 @@
     <!-- Cash - visa -->
   </div>
 
+  <div *ngIf="!loading && orderDetails" class="card p-3 my-2">
+    <div class="row g-2 mt-1">
+      <div class="col-6">
+        <div class="p-2 border rounded bg-light">
+          <small class="text-muted d-block mb-1">منشئ الطلب:</small>
+          <span class="fw-bold">{{ orderDetails?.created_by_username || orderDetails?.order_details?.created_by_username || '---' }}</span>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="p-2 border rounded bg-light">
+          <small class="text-muted d-block mb-1">مغلق الطلب:</small>
+          <span class="fw-bold">{{ orderDetails?.closed_by_username || orderDetails?.order_details?.closed_by_username || '---' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div *ngIf="loading" class="card p-3 my-2">
     <div class="skeleton bg-light" style="height: 3rem; width: 80%"></div>
     <div class="skeleton bg-light" style="height: 1rem; width: 70%; margin-top: 1rem"></div>
