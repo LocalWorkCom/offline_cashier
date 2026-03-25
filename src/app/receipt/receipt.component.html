@@ -43,14 +43,14 @@
         <span class="d-value" style="display: inline-flex; direction: ltr; align-items: center;"><span>{{ getOrderDateTimeSeperated().dateStr }}</span><span style="width: 20px;"></span><span>{{ getOrderDateTimeSeperated().timeStr }}</span></span>
       </div>
 
-      <div class="info-row" *ngIf="data.make_type == 'cashier'">
-        <span class="d-label" >   اسم الكاشير :</span>
-        <span class="d-value">{{ data.cashier?.first_name }} {{ data.cashier?.last_name }}</span>
+      <div class="info-row">
+        <span class="d-label">منشئ الطلب :</span>
+        <span class="d-value">{{ data.created_by_username || data.invoices?.[0]?.created_by_username || '---' }}</span>
       </div>
 
-      <div class="info-row" *ngIf="data.make_type == 'waiter'">
-        <span class="d-label" >   اسم الويتر :</span>
-        <span class="d-value">{{ data.waiter?.first_name }} {{ data.waiter?.last_name }}</span>
+      <div class="info-row">
+        <span class="d-label">مغلق الطلب :</span>
+        <span class="d-value">{{ data.closed_by_username || data.invoices?.[0]?.closed_by_username || '---' }}</span>
       </div>
 
       <!-- <div class="info-row">
@@ -91,17 +91,6 @@
         </span>
         <span class="d-value">:Created at </span>
       </div>
-      
-      <div class="info-row" *ngIf="data.make_type == 'cashier'">
-        <span class="d-label" >  {{ data.cashier?.first_name }} {{ data.cashier?.last_name }} </span>
-        <span class="d-value">  : Cashier Name</span>
-      </div>
-
-      <div class="info-row" *ngIf="data.make_type == 'waiter'">
-        <span class="d-label" >  {{ data.waiter?.first_name }} {{ data.waiter?.last_name }} </span>
-        <span class="d-value">  : Waiter Name </span>
-      </div>
-
       <div class="summary-row" *ngIf="isDelivery()">
         <span class="d-label">{{ getDriverName() }}</span>
         <span class="d-value">:Delivery Agent</span>
