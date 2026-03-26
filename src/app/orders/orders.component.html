@@ -512,7 +512,8 @@
                   @if (canShowReturnInvoice(order))
                   {
                     <button type="button" class="btn btn-transparent w-100 py-2" data-bs-toggle="modal"
-                      [attr.data-bs-target]="'#modal-' + order.order_details.order_id">
+                      [attr.data-bs-target]="'#modal-' + order.order_details.order_id"
+                      (click)="prepareOrderForCancel(order)">
                       <span>فاتوره مرتجع</span>
                     </button>
 
@@ -557,7 +558,8 @@
                       </button>
                     }
                     <button type="button" class="btn btn-transparent w-100 py-2" data-bs-toggle="modal"
-                      [attr.data-bs-target]="'#modal-' + order.order_details.order_id">
+                      [attr.data-bs-target]="'#modal-' + order.order_details.order_id"
+                      (click)="prepareOrderForCancel(order)">
                       <span>
                         حذف
                         الطلب </span>
