@@ -814,7 +814,7 @@ export class CartComponent {
     return short[type] || type;
   }
 
-  getOrderTypeIconClass(type: string): string {
+  getOrderTypeIconClass(type: string | undefined): string {
     if (!type) return 'fa-solid fa-circle';
     const icons: Record<string, string> = {
       'dine-in': 'fa-solid fa-utensils',
