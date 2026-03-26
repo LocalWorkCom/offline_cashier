@@ -1435,7 +1435,7 @@ export class OrdersComponent implements OnDestroy {
     let deliveryTotal = 0;
     let hasReturnedQty = false;
     let isFullReturn = items.length > 0;
-    for (const item of items) {
+    for (const item of items.filter((item: any) => (item.dish_status !== 'cancel'))) {
       const totalQty = Number(item.quantity) || 0;
       const selectedQty =
         item.selectedQuantity !== undefined && item.selectedQuantity !== null
