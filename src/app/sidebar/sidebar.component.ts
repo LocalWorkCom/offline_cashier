@@ -67,6 +67,9 @@ export class SidebarComponent implements OnInit {
   reportData: {
     cashTotal: number;
     cashTotalLogout: number;
+    /** متوقع في الدرج = open + مبيعات الجلسة − ما تم تحويله للخزنة (نفس منطق الـ API) */
+    expectedCash: number;
+    expectedVisa: number;
     cashDifference: number;
     visaTotal: number;
     visaTotalLogout: number;
@@ -76,6 +79,16 @@ export class SidebarComponent implements OnInit {
   } | null = null;
   /** بيانات وردية الفرع (أول فتح، آخر إغلاق، متوقع، فعلي، فرق) - يظهر في التقرير المطبوع وتقرير الخروج */
   branchShiftReport: any = null;
+  /** ملخص آخر جلسة من استجابة إغلاق الرصيد (مبيعات الكاشير على نفس الماكينة) */
+  private logoutSessionSummary: {
+    openCash: number;
+    openVisa: number;
+    cashSales: number;
+    visaSales: number;
+    /** من استجابة الإغلاق: open + مبيعات − balance_after_sent_to_safe */
+    expectedCloseCash?: number;
+    expectedCloseVisa?: number;
+  } | null = null;
   currentBalance: {
     cash: number;
     visa: number;
@@ -245,12 +258,16 @@ export class SidebarComponent implements OnInit {
           //     0,
           // };
           this.currentBalance = {
-  cash: response.data.open_cash || response.data[0].value || 0,
-  visa: response.data.open_visa || response.data[1].value || 0,
-  total: (response.data[0].value || 0) + (response.data[1].value || 0),
-  deficitCash: response.data.deficit_cash_close ?? 0,
-  deficitVisa: response.data.deficit_visa_close ?? 0,
-};
+            cash: response.data.open_cash || response.data[0].value || 0,
+            visa: response.data.open_visa || response.data[1].value || 0,
+            total: (response.data[0].value || 0) + (response.data[1].value || 0),
+            deficitCash: this.normalizeMoneyValue(
+              response.data.deficit_cash_close ?? response.data.deficit_cash ?? 0
+            ),
+            deficitVisa: this.normalizeMoneyValue(
+              response.data.deficit_visa_close ?? response.data.deficit_visa ?? 0
+            ),
+          };
 
           console.log('Processed balance:', this.currentBalance);
 
@@ -293,10 +310,10 @@ export class SidebarComponent implements OnInit {
       this.closeVisa = Number(balanceData.open_visa);
       this.currency_Symbol =
         balanceData.currency_symbol || this.currency_Symbol;
-      this.deficitCash = balanceData.deficit_cash || 0;
-      this.deficitVisa = balanceData.deficit_visa || 0;
+      this.deficitCash = this.normalizeMoneyValue(balanceData.deficit_cash ?? 0);
+      this.deficitVisa = this.normalizeMoneyValue(balanceData.deficit_visa ?? 0);
 
-      if (this.deficitCash !== 0 || this.deficitVisa !== 0) {
+      if (this.hasMoneyDeficit(this.deficitCash) || this.hasMoneyDeficit(this.deficitVisa)) {
         this.showDeficitMessage = true;
         this.buildDeficitMessage();
       }
@@ -306,22 +323,38 @@ export class SidebarComponent implements OnInit {
   }
 
   private buildDeficitMessage(): void {
-    if (this.deficitCash === 0 && this.deficitVisa === 0) {
+    const dc = this.normalizeMoneyValue(this.deficitCash);
+    const dv = this.normalizeMoneyValue(this.deficitVisa);
+    if (!this.hasMoneyDeficit(dc) && !this.hasMoneyDeficit(dv)) {
       this.deficitMessage = 'لا يوجد فارق في الرصيد';
     } else {
       let messages = [];
-      if (this.deficitCash !== 0) {
+      if (this.hasMoneyDeficit(dc)) {
         messages.push(
-          `يوجد فارق نقدي بقيمة  نقدي: ${this.deficitCash} ${this.currency_Symbol} في الوردية السابقه`
+          `يوجد فارق نقدي بقيمة  نقدي: ${dc} ${this.currency_Symbol} في الوردية السابقه`
         );
       }
-      if (this.deficitVisa !== 0) {
+      if (this.hasMoneyDeficit(dv)) {
         messages.push(
-          `فارق إلكتروني: ${this.deficitVisa} ${this.currency_Symbol}`
+          `فارق إلكتروني: ${dv} ${this.currency_Symbol}`
         );
       }
       this.deficitMessage = messages.join(' - ');
     }
+  }
+
+  /** Parse API / form values to 2-decimal number (avoids string "0.00" !== 0 in templates). */
+  normalizeMoneyValue(value: unknown): number {
+    const n = Number(value);
+    if (!Number.isFinite(n)) {
+      return 0;
+    }
+    return Math.round(n * 100) / 100;
+  }
+
+  /** True only if there is a real cash/visa gap to warn about (not 0 / "0.00" / float noise). */
+  hasMoneyDeficit(value: unknown): boolean {
+    return Math.abs(this.normalizeMoneyValue(value)) >= 0.005;
   }
 
   formatTime(time: string | null): string {
@@ -462,32 +495,35 @@ export class SidebarComponent implements OnInit {
       console.log('Close Balance Response:', response);
 
       if (response?.status && response.data) {
+        const exCash = Number(response.data.expected_close_cash);
+        const exVisa = Number(response.data.expected_close_visa);
+        this.logoutSessionSummary = {
+          openCash: Number(response.data.open_cash) || 0,
+          openVisa: Number(response.data.open_visa) || 0,
+          cashSales: Number(response.data.session_cash_sales) || 0,
+          visaSales: Number(response.data.session_visa_sales) || 0,
+          expectedCloseCash: Number.isFinite(exCash) ? exCash : undefined,
+          expectedCloseVisa: Number.isFinite(exVisa) ? exVisa : undefined,
+        };
+
         // Set form as submitted
         this.formSubmitted = true;
 
-        // Update current balance with new deficit values
-        // Note: Adjust this based on actual API response structure
-        const deficitCash =
-          response.data.deficit_cash_close ;
-        const deficitVisa =
-          response.data.deficit_visa_close ;
-
-          console.log( response.data.deficit_cash_close,"alaaaaaa");
+        const deficitCash = this.normalizeMoneyValue(response.data.deficit_cash_close);
+        const deficitVisa = this.normalizeMoneyValue(response.data.deficit_visa_close);
 
         if (this.currentBalance) {
           this.currentBalance.deficitCash = deficitCash;
           this.currentBalance.deficitVisa = deficitVisa;
-           console.log( this.currentBalance.deficitCash ,"alaaaaaa");
-           this.showDeficitMessage2=true
+          this.showDeficitMessage2 =
+            this.hasMoneyDeficit(deficitCash) || this.hasMoneyDeficit(deficitVisa);
         }
 
-        // Always show deficit message after submission
         this.showDeficitMessage = true;
         this.buildDeficitMessage();
 
-        // If logout is true (user clicked "تسجيل خروج" button), proceed to logout even with deficit
-        // Otherwise, only auto-proceed if no deficit
-        if (logout || (deficitCash === 0 && deficitVisa === 0)) {
+        const noDeficit = !this.hasMoneyDeficit(deficitCash) && !this.hasMoneyDeficit(deficitVisa);
+        if (logout || noDeficit) {
           this.proceedToLogout();
         }
 
@@ -513,23 +549,10 @@ proceedToLogout(): void {
         localStorage.setItem('cashTotallogout', JSON.stringify(this.enteredCash));
       }
 
-      const branchId = this.authService.getBranchId();
-      const date = new Date().toISOString().slice(0, 10);
-      const fetchShift = branchId != null
-        ? this.balanceService.getBranchShiftReport(branchId, date)
-        : of({ status: false });
-
-      fetchShift.subscribe({
-        next: (r) => {
-          if (r?.status && r?.data) {
-            this.branchShiftReport = r.data;
-          } else {
-            this.branchShiftReport = null;
-          }
-        },
-        error: () => { this.branchShiftReport = null; },
-        complete: () => this.buildReportDataAndPrintLogout()
-      });
+      // Per-cashier logout print: only session totals (reportData / close-balance response).
+      // Do not attach machine-wide branch-shift totals here — that belongs on balance-transfer print (print()).
+      this.branchShiftReport = null;
+      this.buildReportDataAndPrintLogout();
     } else {
       this.performLogout();
     }
@@ -553,18 +576,33 @@ proceedToLogout(): void {
       }
     };
 
-    const cashTotal = parseValue(cashTotalStr);
-    const visaTotal = parseValue(visaTotalStr);
+    const summary = this.logoutSessionSummary;
+    const cashTotal = summary?.openCash ?? parseValue(cashTotalStr);
+    const visaTotal = summary?.openVisa ?? parseValue(visaTotalStr);
     const cashTotalLogout = parseValue(cashTotalLogoutStr);
     const visaTotalLogout = parseValue(visaTotalLogoutStr);
-    const cash_sales = parseValue(cash_salesStr);
-    const visa_sales = parseValue(visa_salesStr);
-    const cashDifference = cashTotalLogout - (cashTotal + cash_sales);
-    const visaDifference = visaTotalLogout - (visaTotal + visa_sales);
+    const cash_sales = summary?.cashSales ?? parseValue(cash_salesStr);
+    const visa_sales = summary?.visaSales ?? parseValue(visa_salesStr);
+
+    const expectedCash =
+      summary?.expectedCloseCash !== undefined
+        ? summary.expectedCloseCash
+        : cashTotal + cash_sales;
+    const expectedVisa =
+      summary?.expectedCloseVisa !== undefined
+        ? summary.expectedCloseVisa
+        : visaTotal + visa_sales;
+
+    const cashDifference = cashTotalLogout - expectedCash;
+    const visaDifference = visaTotalLogout - expectedVisa;
+
+    this.logoutSessionSummary = null;
 
     this.reportData = {
       cashTotal,
       cashTotalLogout,
+      expectedCash,
+      expectedVisa,
       cashDifference,
       visaTotal,
       visaTotalLogout,
@@ -582,7 +620,7 @@ proceedToLogout(): void {
       return;
     }
 
-    this.printTime = new Date().toLocaleString();
+    this.printTime = new Date();
     this.cdr.detectChanges();
 
     // Wait for the element to be rendered, then print, then logout
@@ -902,13 +940,30 @@ waitForImagesInSection(selector: string): Promise<void> {
     });
   });
 }
-printTime:any
-print(id: number): void {
+  printTime: Date | null = null;
+
+  get posMachineDisplay(): string {
+    if (this.branchShiftReport?.report_scope === 'cashier_machine' && this.branchShiftReport?.cashier_machine_id != null) {
+      const name = this.branchShiftReport.cashier_machine_name;
+      const id = this.branchShiftReport.cashier_machine_id;
+      return name ? `${name} — #${id}` : `POS — #${id}`;
+    }
+    if (isPlatformBrowser(this.platformId)) {
+      const id = localStorage.getItem('cashier_machine_id');
+      if (id) {
+        return `POS — ماكينة #${id}`;
+      }
+    }
+    return 'POS';
+  }
+
+  print(id: number): void {
   this.branchShiftReport = null;
   const branchId = this.authService.getBranchId();
   const date = new Date().toISOString().slice(0, 10);
+  const machineId = isPlatformBrowser(this.platformId) ? localStorage.getItem('cashier_machine_id') : null;
   const shiftReport$ = branchId != null
-    ? this.balanceService.getBranchShiftReport(branchId, date).pipe(
+    ? this.balanceService.getBranchShiftReport(branchId, date, machineId).pipe(
         tap((r) => {
           if (r?.status && r?.data) {
             this.branchShiftReport = r.data;
@@ -925,7 +980,7 @@ print(id: number): void {
         throw new Error('No data received for printing');
       }
       this.printingData = res.data;
-      this.printTime = new Date().toLocaleString();
+      this.printTime = new Date();
     }),
     switchMap(() => shiftReport$),
     switchMap(() => from(this.waitForRender('#print-section'))),
@@ -999,7 +1054,25 @@ private waitForRender(selector: string): Observable<Element> {
 
   document.body.innerHTML = originalContents;
 
- location.reload();
+  this.clearPosSessionSalesAccumulators();
+  location.reload();
+  }
+
+  /** After branch-safe transfer print: reset client-side sales counters so the next segment starts from zero. */
+  private clearPosSessionSalesAccumulators(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    const keys = [
+      'paid_order_cash',
+      'paid_order_credit',
+      'cash_amountt',
+      'credit_amountt',
+      'cash_value',
+      'credit_value',
+      'totalcash',
+    ];
+    keys.forEach((k) => localStorage.removeItem(k));
   }
   printt(id: number): void {
   this.balanceService.PrintBalance(id).subscribe({
@@ -1010,7 +1083,7 @@ private waitForRender(selector: string): Observable<Element> {
         this.TotalPriceOFPrint += element.price
 
       });
-      console.log(this.TotalPriceOFPrint); this.printTime = new Date().toLocaleString();
+      console.log(this.TotalPriceOFPrint); this.printTime = new Date();
 
     },
     error: (err) => console.error('Print error:', err)
@@ -1032,7 +1105,7 @@ private waitForRender(selector: string): Observable<Element> {
   printLogoutReport(): void {
     if (!isPlatformBrowser(this.platformId) || !this.reportData) return;
 
-    this.printTime = new Date().toLocaleString();
+    this.printTime = new Date();
 
     // Trigger change detection to render the template
     this.cdr.detectChanges();
