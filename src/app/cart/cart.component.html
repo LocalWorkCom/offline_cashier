@@ -155,17 +155,24 @@
       <p class="mb-0">رقم الطلب </p>
       <p class="text-muted me-2 mb-0">{{orderSummary?.order_number}}</p>
     </div>
-    <div class="d-flex gap-3 small">
-      <div *ngIf="orderDetails?.created_by_username">
-        <span class="text-muted">منشئ الطلب:</span>
-        <span class="fw-bold ms-1">{{ orderDetails.created_by_username }}</span>
+    <p class="mb-0">{{ getTotalItemCount() }} عناصر</p>
+  </div>
+
+  <div *ngIf="orderDetails" class="card p-3 my-2 border-0 shadow-sm bg-white">
+    <div class="row g-2 mt-0">
+      <div class="col-6">
+        <div class="p-2 border rounded bg-light text-center">
+          <small class="text-muted d-block mb-1">منشئ الطلب</small>
+          <span class="fw-bold fs-7">{{ orderDetails?.created_by_username || orderDetails?.order_details?.created_by_username || '---' }}</span>
+        </div>
       </div>
-      <div *ngIf="orderDetails?.closed_by_username">
-        <span class="text-muted">مغلق الطلب:</span>
-        <span class="fw-bold ms-1">{{ orderDetails.closed_by_username }}</span>
+      <div class="col-6">
+        <div class="p-2 border rounded bg-light text-center">
+          <small class="text-muted d-block mb-1">مغلق الطلب</small>
+          <span class="fw-bold fs-7">{{ orderDetails?.closed_by_username || orderDetails?.order_details?.closed_by_username || '---' }}</span>
+        </div>
       </div>
     </div>
-    <p class="mb-0">{{ getTotalItemCount() }} عناصر</p>
   </div>
 
   @for (item of cartItems; track $index) {
