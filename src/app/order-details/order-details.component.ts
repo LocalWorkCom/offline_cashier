@@ -138,7 +138,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     this.loading = true;
     this.error = '';
     // Convert orderId to number
-    const numericOrderId = parseInt(this.orderId, 10);
+    const numericOrderId = this.orderId;
     if (isNaN(numericOrderId)) {
       this.error = 'Invalid order ID';
       this.loading = false;

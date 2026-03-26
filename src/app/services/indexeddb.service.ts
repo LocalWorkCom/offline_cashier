@@ -762,14 +762,14 @@ export class IndexeddbService {
   }
 
 
-  getOrderById(orderIdOrRunId: number | string): Promise<any> {
+  getOrderById(orderIdOrRunId: any): Promise<any> {
     return this.ensureInit().then(() => {
       return new Promise((resolve, reject) => {
         const tx = this.db.transaction('orders', 'readonly');
         const store = tx.objectStore('orders');
 
         // حاول تفسر القيمة كرقم (لو هي string)
-        const numericId = typeof orderIdOrRunId === 'string' ? parseInt(orderIdOrRunId, 10) : orderIdOrRunId;
+        const numericId = orderIdOrRunId;
 
         const request = store.get(numericId);
 
@@ -839,7 +839,7 @@ export class IndexeddbService {
         let getRequest = ordersStore.get(orderId);
 
         // Also try numeric version if it's a string
-        const numericOrderId = typeof orderId === 'string' ? parseInt(orderId, 10) : orderId;
+        const numericOrderId = orderId;
         if (!isNaN(numericOrderId as number) && numericOrderId !== orderId) {
           getRequest = ordersStore.get(numericOrderId);
         }

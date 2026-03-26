@@ -243,7 +243,7 @@ export class PillEditComponent {
 
         // const trackingKey = this.invoices[0]?.['tracking-status'];
         // this.trackingStatus = trackingKey || '';
-        this.orderNumber = Number(response.data.order_id);
+        this.orderNumber = response.data?.order_id != null ? String(response.data.order_id) : '';
         this.couponType = this.invoices[0]?.invoice_summary?.coupon_type;
 
         this.addresDetails = this.invoices[0]?.address_details || {};
@@ -832,9 +832,15 @@ export class PillEditComponent {
         creditAmount = 0;
       }
 
+      if (!this.orderNumber) {
+        console.error('Missing orderNumber, aborting invoice update to avoid invalid URL');
+        this.loading = false;
+        return;
+      }
+
       this.orderService
         .updateInvoiceStatus(
-          this.orderNumber,
+          String(this.orderNumber),
           this.paymentStatus,
           this.trackingStatus,
           cashAmount,

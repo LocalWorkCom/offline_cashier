@@ -14,7 +14,7 @@ export class PrintedInvoiceService {
 
   constructor(private http: HttpClient) { }
 
-  printInvoice(order_id: number, cashier_machine_id: any, payment_method: any): Observable<any> {
+  printInvoice(order_id: any, cashier_machine_id: any, payment_method: any): Observable<any> {
     const token = localStorage.getItem('authToken');
     const headers = new HttpHeaders({
       Authorization: `Bearer ${token}`,
@@ -57,7 +57,7 @@ export class PrintedInvoiceService {
     return this.http.post(`${this.apiUrl2}/print-waiter`, body, { headers });
   }
 
-  printMenu(order_id: number , data?:any): Observable<any> {
+  printMenu(order_id: any, data?:any): Observable<any> {
     const token = localStorage.getItem('authToken');
     console.log(`[PrintedInvoiceService] Requesting print menu for order_id: ${order_id} (Token present: ${!!token})`);
     const headers = new HttpHeaders({
