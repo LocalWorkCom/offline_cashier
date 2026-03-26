@@ -18,8 +18,16 @@
 
 .nav-pills .nav-link {
     font-size: 1.25rem;
-    min-width: 135px;
+    width: 95% !important;
     height: 125px;
+}
+
+.nav-item.mb-2{
+    width: 25% !important;
+}
+
+.col-lg-4.col-md-6.mb-4.ng-star-inserted {
+  width: 25% !important;
 }
 
 .icon {

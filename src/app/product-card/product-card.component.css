@@ -12,8 +12,8 @@
 }
 
 .plate-img img {
-    height: 150px;
-    width: 150px;
+    height: 130px;
+    width: 130px;
     object-fit: cover;
     border-radius: 50%;
 }
@@ -21,3 +21,4 @@
 .plate span {
     font-weight: bold;
 }
+
