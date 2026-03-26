@@ -22,8 +22,12 @@
     height: 125px;
 }
 
-.nav-item.mb-2, .ng-star-inserted {
+.nav-item.mb-2{
     width: 25% !important;
+}
+
+.col-lg-4.col-md-6.mb-4.ng-star-inserted {
+  width: 25% !important;
 }
 
 .icon {
