@@ -2148,6 +2148,28 @@ export class OrdersComponent implements OnDestroy {
       });
   } */
 
+  /**
+   * Resets the cancellation modal state for a fresh start when opening for an order.
+   * Fixes the issue where the reason or previous selection was cached between different orders.
+   */
+  prepareOrderForCancel(order: any): void {
+    this.cancelReason = '';
+    this.cancelReasonTouched = false;
+    this.cancelErrorMessage = '';
+    this.cancelSuccessMessage = '';
+    this.isSubmitting = false;
+    this.selectedReturnPaymentMethod = 'cash';
+    this.returnCashAmount = null;
+    this.returnCreditAmount = null;
+
+    if (order && order.order_items) {
+      order.order_items.forEach((item: any) => {
+        item.isChecked = false;
+        item.selectedQuantity = item.quantity;
+      });
+    }
+  }
+
   isSubmitting = false; // للتحكم في حالة الإرسال
 
   submitCancelRequest(order: any): void {
