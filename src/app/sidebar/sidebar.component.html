@@ -238,19 +238,18 @@
           </div>
         </div>
 
-        <!-- Updated deficit message display -->
-        <div *ngIf="currentBalance" class="text-center alert-warning"
-          [class.alert-success]="currentBalance.deficitCash === 0 && currentBalance.deficitVisa === 0"
-          [class.alert-warning]="currentBalance.deficitCash !== 0 || currentBalance.deficitVisa !== 0">
+        <!-- تنبيه الفارق: يظهر فقط عند وجود فارق حقيقي (ليس 0 ولا "0.00" من الـ API) -->
+        <div *ngIf="currentBalance && (hasMoneyDeficit(currentBalance.deficitCash) || hasMoneyDeficit(currentBalance.deficitVisa))"
+          class="text-center alert alert-warning">
 
-          <h6 *ngIf="currentBalance.deficitCash !== 0" class="alert alert-warning w-100">
+          <h6 *ngIf="hasMoneyDeficit(currentBalance.deficitCash)" class="alert alert-warning w-100">
             <h6 class="text-center"><i class="fas fa-exclamation-triangle me-2"></i>تنبيه!</h6>
-            فارق نقدي {{ currentBalance.deficitCash }} {{ currency_Symbol }}
+            فارق نقدي {{ normalizeMoneyValue(currentBalance.deficitCash) | number:'1.2-2' }} {{ currency_Symbol }}
           </h6>
 
-          <h6 *ngIf="currentBalance.deficitVisa !== 0" class="alert alert-warning w-100">
+          <h6 *ngIf="hasMoneyDeficit(currentBalance.deficitVisa)" class="alert alert-warning w-100">
             <h6 class="text-center"><i class="fas fa-exclamation-triangle me-2"></i>تنبيه!</h6>
-            فارق إلكتروني {{ currentBalance.deficitVisa }} {{ currency_Symbol }}
+            فارق إلكتروني {{ normalizeMoneyValue(currentBalance.deficitVisa) | number:'1.2-2' }} {{ currency_Symbol }}
           </h6>
         </div>
 
@@ -475,7 +474,7 @@
 
 
   <div class="dots mt-2">
-    <p class="total"><span> وقت طباعة الوردية:</span> <span class="fw-normal"> {{printTime}}</span> </p>
+    <p class="total"><span> وقت طباعة الوردية:</span> <span class="fw-normal">{{ printTime | date:'dd/MM/yyyy HH:mm:ss' }}</span> </p>
   </div>
 
   <div class="mt-2 total">
@@ -559,7 +558,9 @@
   </div>
 
   @if (branchShiftReport) {
-  <p class="text-center fw-bold my-2 total"> ملخص وردية الفرع (جميع الجلسات)</p>
+  <p class="text-center fw-bold my-2 total">
+    {{ branchShiftReport.report_scope === 'cashier_machine' ? 'ملخص وردية نقطة البيع (جميع الجلسات على الجهاز)' : 'ملخص وردية الفرع (جميع الجلسات)' }}
+  </p>
   <div class="border border-1 border-black">
     <div class="table-content">
       <span> أول رصيد فتح </span>
@@ -767,7 +768,7 @@
     </p>
      <p class="fw-bold">
       رقم نقطة البيع :
-      <span class="fw-bold">POS 1</span>
+      <span class="fw-bold">{{ posMachineDisplay }}</span>
     </p>
   </div>
 
@@ -796,7 +797,7 @@
 
     <div class="text-center mt-3">
       <p class="fw-bold"> النقدية المتوقعة :
-        <span>{{(reportData.cashTotal + reportData.cash_sales) | number:'1.2-2'}} {{currency_Symbol}}</span>
+        <span>{{ reportData.expectedCash | number:'1.2-2' }} {{currency_Symbol}}</span>
       </p>
       <p class="fw-bold"> النقدية الموجودة :
         <span>{{reportData.cashTotalLogout | number:'1.2-2'}} {{currency_Symbol}}</span>
@@ -810,7 +811,7 @@
 
     @if (branchShiftReport) {
     <div class="border border-1 border-black mt-3 p-2 text-center">
-      <p class="fw-bold total">ملخص وردية الفرع (جميع الجلسات)</p>
+      <p class="fw-bold total">{{ branchShiftReport.report_scope === 'cashier_machine' ? 'ملخص وردية نقطة البيع (جميع الجلسات على الجهاز)' : 'ملخص وردية الفرع (جميع الجلسات)' }}</p>
       <p class="fw-bold">أول رصيد فتح: <span>{{ branchShiftReport.first_open_balance | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
       <p class="fw-bold">آخر رصيد إغلاق: <span>{{ branchShiftReport.last_close_balance | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
       <p class="fw-bold">إجمالي مبيعات كاش: <span>{{ branchShiftReport.total_cash_sales | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
@@ -822,7 +823,7 @@
     }
 
   <footer class="m-3 text-center">
-    <div class="border border-1 border-black p-2 w-100 m-2">
+    <div *ngIf="hasMoneyDeficit(reportData.cashDifference)" class="border border-1 border-black p-2 w-100 m-2">
       <h6>
         يشير هذا التقرير لوجود فرق بمقدار
         <br>
