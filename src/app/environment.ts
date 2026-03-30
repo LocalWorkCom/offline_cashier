@@ -2,8 +2,8 @@
 //  export const baseUrlForWebSocket ='https://erpfortest.testdomain100.online/'
 
 //  export const baseUrl ='https://erp-cashier.testdomain100.online/'
-export const baseUrl ='http://127.0.0.1:8000/'
- export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
+export const baseUrl ='http://192.168.11.228:8000/'
+ export const baseUrl2 ='http://192.168.11.228:8000/api'
 
 //test
 export const environment = {

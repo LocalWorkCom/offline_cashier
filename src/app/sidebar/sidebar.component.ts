@@ -75,6 +75,8 @@ export class SidebarComponent implements OnInit {
   } | null = null;
   /** بيانات وردية الفرع (أول فتح، آخر إغلاق، متوقع، فعلي، فرق) - يظهر في التقرير المطبوع وتقرير الخروج */
   branchShiftReport: any = null;
+  /** Date فقط — DatePipe لا يقبل نص toLocaleString() */
+  printTime: Date | null = null;
   currentBalance: {
     cash: number;
     visa: number;
@@ -444,7 +446,7 @@ proceedToLogout(): void {
       fetchShift.subscribe({
         next: (r) => {
           if (r?.status && r?.data) {
-            this.branchShiftReport = r.data;
+            this.branchShiftReport = this.normalizeBranchShiftReport(r.data);
           } else {
             this.branchShiftReport = null;
           }
@@ -455,6 +457,25 @@ proceedToLogout(): void {
     } else {
       this.performLogout();
     }
+  }
+
+  /** تطبيع أرقام التقرير للعرض؛ يُحتفظ بـ sessions كما أرسلها الـ API إن وُجدت */
+  private normalizeBranchShiftReport(data: any): any {
+    if (!data || typeof data !== 'object') {
+      return null;
+    }
+    const num = (v: unknown): number => (v == null || v === '' ? 0 : Number(v));
+    return {
+      ...data,
+      first_open_balance: num(data.first_open_balance),
+      last_close_balance: num(data.last_close_balance),
+      total_cash_sales: num(data.total_cash_sales),
+      total_cash_returns: num(data.total_cash_returns),
+      total_cash_discounts: num(data.total_cash_discounts),
+      expected_cash: num(data.expected_cash),
+      actual_cash: data.actual_cash == null ? null : num(data.actual_cash),
+      difference: data.difference == null ? null : num(data.difference),
+    };
   }
 
   private buildReportDataAndPrintLogout(): void {
@@ -504,7 +525,7 @@ proceedToLogout(): void {
       return;
     }
 
-    this.printTime = new Date().toLocaleString();
+    this.printTime = new Date();
     this.cdr.detectChanges();
 
     // Wait for the element to be rendered, then print, then logout
@@ -824,8 +845,8 @@ waitForImagesInSection(selector: string): Promise<void> {
     });
   });
 }
-printTime:any
-print(id: number): void {
+
+  print(id: number): void {
   this.branchShiftReport = null;
   const branchId = this.authService.getBranchId();
   const date = new Date().toISOString().slice(0, 10);
@@ -833,11 +854,16 @@ print(id: number): void {
     ? this.balanceService.getBranchShiftReport(branchId, date).pipe(
         tap((r) => {
           if (r?.status && r?.data) {
-            this.branchShiftReport = r.data;
+            this.branchShiftReport = this.normalizeBranchShiftReport(r.data);
+          } else {
+            this.branchShiftReport = null;
           }
           this.cdr.detectChanges();
         }),
-        catchError(() => of(undefined))
+        catchError(() => {
+          this.branchShiftReport = null;
+          return of(undefined);
+        })
       )
     : of(undefined);
 
@@ -847,7 +873,7 @@ print(id: number): void {
         throw new Error('No data received for printing');
       }
       this.printingData = res.data;
-      this.printTime = new Date().toLocaleString();
+      this.printTime = new Date();
     }),
     switchMap(() => shiftReport$),
     switchMap(() => from(this.waitForRender('#print-section'))),
@@ -932,7 +958,7 @@ private waitForRender(selector: string): Observable<Element> {
         this.TotalPriceOFPrint += element.price
 
       });
-      console.log(this.TotalPriceOFPrint); this.printTime = new Date().toLocaleString();
+      console.log(this.TotalPriceOFPrint); this.printTime = new Date();
 
     },
     error: (err) => console.error('Print error:', err)
@@ -954,7 +980,7 @@ private waitForRender(selector: string): Observable<Element> {
   printLogoutReport(): void {
     if (!isPlatformBrowser(this.platformId) || !this.reportData) return;
 
-    this.printTime = new Date().toLocaleString();
+    this.printTime = new Date();
 
     // Trigger change detection to render the template
     this.cdr.detectChanges();
