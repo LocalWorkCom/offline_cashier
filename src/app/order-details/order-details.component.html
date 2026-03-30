@@ -506,7 +506,18 @@
           <div class="mb-3">
             <div class="d-flex align-items-center gap-2 mb-1">
               <h6 class="mb-0">هل هذا رقم واتساب؟</h6>
+              <input
+                type="checkbox"
+                class="form-check-input mx-1"
+                [checked]="changeTypeDeliveryUseSameWhatsapp"
+                (change)="useSameWhatsappChangeType(true)" />
               <a class="text-success fw-bold text-decoration-underline" style="cursor:pointer" (click)="useSameWhatsappChangeType(true)">نعم</a>
+
+              <input
+                type="checkbox"
+                class="form-check-input mx-1"
+                [checked]="!changeTypeDeliveryUseSameWhatsapp"
+                (change)="useSameWhatsappChangeType(false)" />
               <a class="text-danger fw-bold text-decoration-underline" style="cursor:pointer" (click)="useSameWhatsappChangeType(false)">لا</a>
             </div>
             <div *ngIf="!changeTypeDeliveryUseSameWhatsapp" class="d-flex gap-2 align-items-start">

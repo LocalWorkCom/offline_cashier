@@ -3180,7 +3180,16 @@ export class OrdersComponent implements OnDestroy {
 
   // Get eligible orders for merge from current page only (used when API list is not used)
   getEligibleOrdersForMerge(currentOrder: any): any[] {
-    return this.getEligibleOrdersForMergeFromList(currentOrder, this.orders);
+    // need to read the orders from the indexeddb and stoer in varaibale
+    let ordersindexeddb: any[] = [];
+    this.dbService.getOrders().then(orders => {
+      if (orders && orders.length > 0) {
+        ordersindexeddb = orders;
+      }
+    });
+    return this.getEligibleOrdersForMergeFromList(currentOrder, ordersindexeddb);
+
+    // return this.getEligibleOrdersForMergeFromList(currentOrder, this.orders);
   }
 
   /** Process raw API orders for merge list: same filter + map as processOrders, without mutating this.orders. */
