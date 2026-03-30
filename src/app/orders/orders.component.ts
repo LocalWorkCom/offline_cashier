@@ -3041,7 +3041,7 @@ export class OrdersComponent implements OnDestroy {
   // Merge Order Properties
   currentMergeOrder: any = null;
   eligibleOrdersForMerge: any[] = [];
-  /** True while fetching the full list of orders for merge (so modal shows all mergeable orders, not just current page). */
+  /** True while fetching all dine-in pages for merge (not limited to the orders grid page). */
   isMergeListLoading: boolean = false;
   selectedOrderIdForMerge: number | null = null;
   selectedTableIdForMerge: string = '';
@@ -3727,16 +3727,33 @@ export class OrdersComponent implements OnDestroy {
       modal.show();
     }
 
-    // Fetch dine-in orders with high per_page so merge list shows all mergeable orders, not just current page
-    const mergeListPerPage = 300;
+    // Offline: استخدم كل الطلبات المحفوظة في IndexedDB (بعد المزامنة) بدل الصفحة الحالية فقط
+    if (!navigator.onLine) {
+      this.dbService
+        .getOrders()
+        .then((stored) => {
+          const processed = this.processOrdersForMergeList(stored || []);
+          this.eligibleOrdersForMerge = this.getEligibleOrdersForMergeFromList(order, processed);
+        })
+        .catch(() => {
+          this.eligibleOrdersForMerge = this.getEligibleOrdersForMerge(order);
+        })
+        .finally(() => {
+          this.isMergeListLoading = false;
+          this.cdr.detectChanges();
+        });
+      return;
+    }
+
+    // Online: جلب كل صفحات dine-in (الـ API غالباً يحد per_page؛ طلب واحد بـ 300 لا يكفي)
     this.ordersListService
-      .getOrdersListV2('dine-in', 1, '', mergeListPerPage)
+      .getAllOrdersListV2('dine-in', 'all', '')
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (response) => {
+        next: (allOrders) => {
           this.isMergeListLoading = false;
-          if (response?.status && response?.data?.orders?.length) {
-            const processed = this.processOrdersForMergeList(response.data.orders);
+          if (allOrders?.length) {
+            const processed = this.processOrdersForMergeList(allOrders);
             this.eligibleOrdersForMerge = this.getEligibleOrdersForMergeFromList(order, processed);
           } else {
             this.eligibleOrdersForMerge = this.getEligibleOrdersForMerge(order);
