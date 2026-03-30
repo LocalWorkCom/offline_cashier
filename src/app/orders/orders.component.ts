@@ -3180,6 +3180,7 @@ export class OrdersComponent implements OnDestroy {
 
   // Get eligible orders for merge from current page only (used when API list is not used)
   getEligibleOrdersForMerge(currentOrder: any): any[] {
+    // need to read the orders from the indexeddb and stoer in varaibale
     return this.getEligibleOrdersForMergeFromList(currentOrder, this.orders);
   }
 
