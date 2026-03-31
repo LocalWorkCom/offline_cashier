@@ -22,3 +22,24 @@
     font-weight: bold;
 }
 
+.pro-dec {
+    border: 2px solid #ddd;
+    height: 45px;
+    width: 45px;
+    border-radius: 50%;
+    color: #000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.pro-inc {
+    background-color: #FE0000;
+    height: 45px;
+    width: 45px;
+    border-radius: 50%;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
