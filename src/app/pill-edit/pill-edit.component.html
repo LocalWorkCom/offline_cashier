@@ -126,7 +126,7 @@
       </p>
       <p *ngIf="addresDetails?.client_address || addresDetails?.branch_name">
         <span class="fw-bold">العنوان :</span>
-        {{ addresDetails.client_address ?? "غير متوفر" }}
+        {{ getFormattedDeliveryAddress() }}
         {{ addresDetails.branch_name ?? "" }}
       </p>
 
