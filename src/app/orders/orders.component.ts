@@ -2606,13 +2606,6 @@ export class OrdersComponent implements OnDestroy {
     editModal.componentInstance.itemId = item.order_detail_id;
 
     console.log('order_id', orderId);
-    // dalia
-    // save order_id to indexeddb
-    this.dbService.saveOrderToPrintkitchen(orderId, "edit").then(() => {
-      console.log('order_id saved to indexeddb', orderId);
-    }).catch((err) => {
-      console.error('error saving order_id to indexeddb', err);
-    });
 
     editModal.result.then(
       (result) => {
@@ -2623,34 +2616,7 @@ export class OrdersComponent implements OnDestroy {
           this.successMessageModal.show();
           if (result === 'updated') {
             this.fetchOrdersFromAPI();
-            // Kitchen print: Pusher `Dish-status2` + items_updated often does not fire for cashier
-            // order-edit-item; new dishes use new-order-added2. Snapshot was saved before modal open.
-            this.dbService.getOrderFromPrintkitchenById(String(orderId)).then((orderMetadata: any) => {
-              if (!orderMetadata?.order_data) {
-                console.warn('[edit print] No printkitchen snapshot for order', orderId);
-                return;
-              }
-              const od = orderMetadata.order_data;
-              const lineItems = od.order_items ?? od.items ?? [];
-              const editedItemOldState = lineItems.find(
-                (i: any) => i.order_detail_id === item.order_detail_id
-              );
-              if (!editedItemOldState) {
-                console.warn('[edit print] Original line not found in snapshot', item.order_detail_id);
-                return;
-              }
-              const oldItems = [
-                {
-                  item_id: editedItemOldState.order_detail_id,
-                  quantity: editedItemOldState.quantity,
-                  size: editedItemOldState.size,
-                  dish_addons: editedItemOldState.dish_addons,
-                },
-              ];
-              this.processKitchenPrint(orderId, oldItems, 'edit');
-            }).catch((err) => {
-              console.error('error getting order from printkitchen indexeddb', err);
-            });
+            // Kitchen print once via Pusher Dish-status2 (avoid double with processKitchenPrint)
           }
 
           setTimeout(() => {
@@ -2799,53 +2765,6 @@ export class OrdersComponent implements OnDestroy {
           }, 2000);
         },
       });
-  }
-
-  processKitchenPrint(orderId: any, items: any[], flag: string): void {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      console.error('Auth token not found');
-      return;
-    }
-
-    const printPayload = {
-      order_id: orderId,
-      items: items,
-      flag: flag
-    };
-
-    console.log(`Sending request to print-editor-cancel API with flag: ${flag}`, printPayload);
-    this.http.post(`${baseUrl}api/print-editor-cancel`, { order: printPayload }, { headers: { Authorization: `Bearer ${token}` } }).subscribe({
-      next: async (response: any) => {
-        console.log('order updated successfully', response);
-
-        if (response.status && response.printers && response.printers.length > 0) {
-          for (const printer of response.printers) {
-            if (printer.items && printer.items.length > 0) {
-              try {
-                await this.newOrder.printInvoiceImage(
-                  printer.items,
-                  response.order,
-                  printer.ip,
-                  printer.port,
-                  response.type
-                );
-                await new Promise(resolve => setTimeout(resolve, 500));
-              } catch (err) {
-                console.error(`Error printing to ${printer.ip}:`, err);
-              }
-            }
-          }
-        }
-
-        this.dbService.deleteOrderFromPrintkitchenById(orderId).catch((err) => {
-          console.error('error deleting order from printkitchen indexeddb', err);
-        });
-      },
-      error: (err) => {
-        console.error('error calling print-editor-cancel', err);
-      }
-    });
   }
 
   @ViewChild('messageModal') messageModal: any;
