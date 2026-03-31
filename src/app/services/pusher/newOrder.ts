@@ -84,7 +84,7 @@ export class NewOrderService {
                   } catch (err) {
                     console.error(`❌ Printer error (${group.ip}):`, err);
                   }
-                  await new Promise(resolve => setTimeout(resolve, 500));
+                  await new Promise(resolve => setTimeout(resolve, 250));
                 }
               }
               if (!anyPrinted) {
@@ -242,6 +242,12 @@ export class NewOrderService {
     }
   }
 
+  private flushIframeLayout(): Promise<void> {
+    return new Promise((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    });
+  }
+
   async printInvoiceImage(data?: any[], order?: any, printerIP: string = "192.168.100.102" , port: number = 9100, type: string |null = null) {
     console.log('🖨️ [printInvoiceImage] Function called', { dataLength: data?.length, order, printerIP });
     let iframe: HTMLIFrameElement | null = null;
@@ -296,9 +302,7 @@ export class NewOrderService {
       iframeDoc.close();
       console.log('🖨️ [printInvoiceImage] HTML written to iframe');
 
-      // ========== WAIT for HTML + images ==========
-      console.log('🖨️ [printInvoiceImage] Waiting 800ms for HTML/images to load...');
-      await new Promise((res) => setTimeout(res, 800));
+      await this.flushIframeLayout();
 
       const images = iframeDoc.querySelectorAll("img");
       console.log('🖨️ [printInvoiceImage] Found', images.length, 'images, waiting for load...');
@@ -329,13 +333,12 @@ export class NewOrderService {
                 img.addEventListener('load', onLoad, { once: true });
                 img.addEventListener('error', onError, { once: true });
 
-                // Timeout after 5 seconds to prevent hanging
                 setTimeout(() => {
                   console.warn('🖨️ [printInvoiceImage] Image load timeout:', img.src.substring(0, 50));
                   img.removeEventListener('load', onLoad);
                   img.removeEventListener('error', onError);
-                  resolve(null); // Resolve anyway to continue
-                }, 5000);
+                  resolve(null);
+                }, 2000);
               })
           )
         );
@@ -365,6 +368,8 @@ export class NewOrderService {
         useCORS: true,
         allowTaint: false,
         backgroundColor: "#ffffff",
+        logging: false,
+        imageTimeout: 2000,
       });
 
       console.log('🖨️ [printInvoiceImage] html2canvas completed', {

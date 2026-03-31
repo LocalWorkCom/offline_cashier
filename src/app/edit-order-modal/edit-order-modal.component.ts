@@ -258,15 +258,19 @@ export class EditOrderModalComponent implements OnInit {
     const dish = this.selectedItem;
     if (!dish || !Array.isArray(dish.addon_categories)) return;
 
+    // Build validation state from currently checked addons in UI/model
     this.selectedAddonsByCategory = {};
     this.addonValidationErrors = {};
 
     dish.addon_categories.forEach(
       (category: { id: any; min_addons: number; max_addons: number }) => {
         const categoryId = category.id.toString();
-
-        this.selectedAddonsByCategory[categoryId] =
-          this.selectedAddonsByCategory[categoryId] || [];
+        const selectedInCategory =
+          (dish.addon_categories
+            .find((c: any) => c.id?.toString() === categoryId)
+            ?.addons || []
+          ).filter((a: any) => a.checked);
+        this.selectedAddonsByCategory[categoryId] = selectedInCategory;
         this.addonValidationErrors[categoryId] = {
           minError:
             this.selectedAddonsByCategory[categoryId].length <
@@ -300,6 +304,23 @@ export class EditOrderModalComponent implements OnInit {
     return Object.values(this.addonValidationErrors).every(
       (errors: any) => !errors.minError && !errors.maxError
     );
+  }
+
+  // Button-level validation tied directly to current form checked state.
+  canSubmitEdit(): boolean {
+    const categories = this.selectedItem?.addon_categories;
+    if (!Array.isArray(categories) || categories.length === 0) {
+      return true;
+    }
+
+    return categories.every((category: any) => {
+      const selectedCount = (category.addons || []).filter((a: any) => a.checked).length;
+      const minAddons = Number(category.min_addons) || 0;
+      const maxAddons = Number(category.max_addons);
+      const minOk = selectedCount >= minAddons;
+      const maxOk = Number.isFinite(maxAddons) ? selectedCount <= maxAddons : true;
+      return minOk && maxOk;
+    });
   }
 
   toggleAddon(

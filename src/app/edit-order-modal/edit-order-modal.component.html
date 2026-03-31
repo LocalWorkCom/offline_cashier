@@ -48,7 +48,7 @@
         <label for="note1">من فضلك اكتب ملاحظتك</label>
       </div>
     </div>
-    <button type="button" class="btn w-100 mt-3" (click)="editItem()">
+    <button type="button" class="btn w-100 mt-3" (click)="editItem()" [disabled]="isSubmitting || !canSubmitEdit()">
       @if (isSubmitting) {
         <span>
           <i class="fa-solid fa-spinner fa-spin px-2"></i>
@@ -155,7 +155,7 @@
               <label for="note2">من فضلك اكتب ملاحظتك</label>
             </div>
           </div>
-          <button type="button" class="btn w-100 mt-3" (click)="editItem()" [disabled]="isSubmitting">
+          <button type="button" class="btn w-100 mt-3" (click)="editItem()" [disabled]="isSubmitting || !canSubmitEdit()">
             @if (isSubmitting) {
             <span>
               <i class="fa-solid fa-spinner fa-spin px-2"></i>

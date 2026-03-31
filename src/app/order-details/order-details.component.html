@@ -13,6 +13,7 @@
         *ngIf="orderDetails.status == 'cancelled' || orderDetails.status == 'cancel'">ملغي</span></h4>
   </div>
 
+  @if(orderDetails?.status_order !== 'cancelled') {
   <div *ngIf="!loading && orderDetails && canShowOrderActions()" class="d-flex w-100 gap-2 my-2">
     <button type="button" class="btn reversed main-color flex-fill py-2 text-center" (click)="openChangeOrderTypeModalFromDetails()" title="تغيير نوع الطلب">
       <i class="fa-solid fa-arrows-rotate px-1"></i>
@@ -29,7 +30,7 @@
       تغيير الطاولة
     </a>
   </div>
-
+  }
   <p class="fs-4  text-center" [ngClass]="status_order? 'text-success' : 'main-color' ">{{errorMessage}}</p>
   <div *ngIf="loading" class="card px-4 py-2 my-2">
     <div class="d-flex justify-content-between">
@@ -506,7 +507,18 @@
           <div class="mb-3">
             <div class="d-flex align-items-center gap-2 mb-1">
               <h6 class="mb-0">هل هذا رقم واتساب؟</h6>
+              <input
+                type="checkbox"
+                class="form-check-input mx-1"
+                [checked]="changeTypeDeliveryUseSameWhatsapp"
+                (change)="useSameWhatsappChangeType(true)" />
               <a class="text-success fw-bold text-decoration-underline" style="cursor:pointer" (click)="useSameWhatsappChangeType(true)">نعم</a>
+
+              <input
+                type="checkbox"
+                class="form-check-input mx-1"
+                [checked]="!changeTypeDeliveryUseSameWhatsapp"
+                (change)="useSameWhatsappChangeType(false)" />
               <a class="text-danger fw-bold text-decoration-underline" style="cursor:pointer" (click)="useSameWhatsappChangeType(false)">لا</a>
             </div>
             <div *ngIf="!changeTypeDeliveryUseSameWhatsapp" class="d-flex gap-2 align-items-start">
