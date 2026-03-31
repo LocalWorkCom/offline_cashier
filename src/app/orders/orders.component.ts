@@ -1538,6 +1538,13 @@ export class OrdersComponent implements OnDestroy {
 
     const grandTotal = taxTotal + serviceTotal + couponTotal + deliveryTotal;
 
+    console.log(   
+      'order_id',order.id,
+      'taxTotal',taxTotal,
+      'serviceTotal',serviceTotal,
+      'priceTotal',priceTotal,
+      'grandTotal',grandTotal);
+      
     return {
       taxTotal,
       serviceTotal,
@@ -2443,6 +2450,10 @@ export class OrdersComponent implements OnDestroy {
 
               // Refresh order data to get updated calculations (coupon, tax, total)
               this.refreshOrderAfterCancel(order.order_details.order_id);
+              
+              // Reload orders list and counts
+              this.fetchOrdersFromAPI();
+              this.fetchOrderTypeCounts();
 
               /*
               // Removed to prevent double printing (handled by global listener)
