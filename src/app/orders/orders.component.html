@@ -1854,11 +1854,22 @@
         }
         <!-- هل هذا رقم واتساب؟ -->
         <div class="whatsapp mb-3">
-          <div class="d-flex align-items-center mb-1">
-            <h6 class="mb-0">هل هذا رقم واتساب ؟</h6>
-            <a class="text-success fw-bold p-1 mx-2 text-decoration-underline" (click)="useSameWhatsappChangeType(true)">نعم</a>
-            <a class="text-danger fw-bold p-1 mx-2 text-decoration-underline" (click)="useSameWhatsappChangeType(false)">لا</a>
-          </div>
+            <div class="d-flex align-items-center mb-1">
+              <h6 class="mb-0">هل هذا رقم واتساب ؟</h6>
+              <input
+                type="checkbox"
+                class="form-check-input mx-2"
+                [checked]="changeTypeDeliveryUseSameWhatsapp"
+                (change)="useSameWhatsappChangeType(true)" />
+              <a class="text-success fw-bold p-1 mx-1 text-decoration-underline" (click)="useSameWhatsappChangeType(true)">نعم</a>
+
+              <input
+                type="checkbox"
+                class="form-check-input mx-2"
+                [checked]="!changeTypeDeliveryUseSameWhatsapp"
+                (change)="useSameWhatsappChangeType(false)" />
+              <a class="text-danger fw-bold p-1 mx-1 text-decoration-underline" (click)="useSameWhatsappChangeType(false)">لا</a>
+            </div>
         </div>
         @if (!changeTypeDeliveryUseSameWhatsapp) {
           <div class="mb-3 d-flex gap-2 align-items-start">

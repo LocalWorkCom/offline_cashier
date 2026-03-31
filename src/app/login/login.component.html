@@ -44,9 +44,12 @@
             class="form-control" 
             id="passwordInput"   placeholder="{{ 'login.passwordPlaceholder' | translate }}"
             [(ngModel)]="loginData.password"
+            autocomplete="current-password"
           />
-          <button type="button" class="password-toggle-btn" (click)="togglePasswordVisibility()">
-            <i class="fa" [ngClass]="isPasswordVisible ? 'fa-eye-slash' : 'fa-eye'"></i>
+          <button type="button" class="password-toggle-btn" (click)="togglePasswordVisibility()"
+                  [attr.aria-label]="isPasswordVisible ? 'إخفاء كلمة المرور' : 'إظهار كلمة المرور'"
+                  [attr.aria-pressed]="isPasswordVisible">
+            <i class="fa" [ngClass]="isPasswordVisible ? 'fa-eye' : 'fa-eye-slash'"></i>
           </button>
         </div>
 
