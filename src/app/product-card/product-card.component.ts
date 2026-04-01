@@ -50,15 +50,11 @@ export class ProductCardComponent  {
       }
 
     }
-     let Talabat = null;
-    const isTalabat = orderType === 'talabat';
     if (Array.isArray(item.Id_menus_integrations)) {
       for (let integration of item.Id_menus_integrations) {
         if (integration.name_en.toLowerCase().includes('talabat')) {
           console.log('✅ هذا الطبق تابع لطلبات:', integration);
-          Talabat = integration;
           break;
-          // هنا اكتبي اللي عايزة تعمليه لما تلاقي طلبات
         }
       }
     }
@@ -97,12 +93,6 @@ export class ProductCardComponent  {
   }
 
   handleAddClick(item: any): void {
-    const orderType = localStorage.getItem('selectedOrderType');
-    if (orderType === 'talabat' && item.is_integration === false) {
-      alert(' هذا المنتج غير متاح للطلبات عبر تطبيق طلبات ');
-      return;
-    }
-
     const hasAddonCategories = Array.isArray(item.addon_categories) && item.addon_categories.length > 0;
     const hasSizes = Array.isArray(item.sizes) && item.sizes.length > 0;
 

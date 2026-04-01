@@ -1,4 +1,4 @@
-<a (click)="handleAddClick(item)">
+<a (click)="openModal(item)">
     <div class="plate">
         <figure class="plate-img m-0">
             <img [src]="item.image ? item.image : 'assets/images/no-image.png'" alt />
@@ -9,7 +9,7 @@
                 <span>{{item.price}} {{ item.currency_symbol }}</span>
             </div>
             @if (showInlineQty) {
-            <div class="qty mt-1 d-flex justify-content-center align-items-center" (click)="$event.stopPropagation()">
+            <div class="qty d-flex justify-content-center align-items-center" (click)="$event.stopPropagation()">
                 <span class="pro-dec me-3" (click)="decreaseInlineQty()">
                     <i class="fa fa-minus" aria-hidden="true"></i>
                 </span>
@@ -22,7 +22,7 @@
                 أضف إلى العربة
             </button>
             } @else {
-            <button class="btn">
+            <button class="btn" (click)="$event.stopPropagation(); handleAddClick(item)">
                 + إضافة
             </button>
             }
