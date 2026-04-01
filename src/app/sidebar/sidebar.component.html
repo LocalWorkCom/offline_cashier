@@ -584,11 +584,11 @@
     </div>
     <div class="table-content">
       <span> النقدية الفعلية </span>
-      <span>{{ branchShiftReport.actual_cash != null ? (branchShiftReport.actual_cash | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span>
+      <span>{{ branchShiftActualCashDisplay != null ? (branchShiftActualCashDisplay | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span>
     </div>
     <div class="table-content">
       <span> الفرق (متوقع vs فعلي) </span>
-      <span>{{ branchShiftReport.difference != null ? (branchShiftReport.difference | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span>
+      <span>{{ branchShiftDifferenceDisplay != null ? (branchShiftDifferenceDisplay | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span>
     </div>
   </div>
   }
@@ -817,8 +817,8 @@
       <p class="fw-bold">إجمالي مبيعات كاش: <span>{{ branchShiftReport.total_cash_sales | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
       <p class="fw-bold">مرتجعات كاش: <span>{{ branchShiftReport.total_cash_returns | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
       <p class="fw-bold">المتوقع: <span>{{ branchShiftReport.expected_cash | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
-      <p class="fw-bold">الفعلي: <span>{{ branchShiftReport.actual_cash != null ? (branchShiftReport.actual_cash | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span></p>
-      <p class="fw-bold">الفرق: <span>{{ branchShiftReport.difference != null ? (branchShiftReport.difference | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span></p>
+      <p class="fw-bold">الفعلي: <span>{{ branchShiftActualCashDisplay != null ? (branchShiftActualCashDisplay | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span></p>
+      <p class="fw-bold">الفرق: <span>{{ branchShiftDifferenceDisplay != null ? (branchShiftDifferenceDisplay | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span></p>
     </div>
     }
 
