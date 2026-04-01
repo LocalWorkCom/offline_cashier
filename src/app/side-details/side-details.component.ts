@@ -2772,6 +2772,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   }
 
   async submitOrder() {
+    this.formSubmitted = true;
     console.log('🔍 قبل تعيين credit_amount:', {
       credit_amountt: this.credit_amountt,
       cashPaymentInput: this.cashPaymentInput,
@@ -2827,7 +2828,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-
+    if (this.selectedPaymentStatus === 'paid' && !this.selectedPaymentMethod) {
+      this.isLoading = false;
+      this.loading = false;
+      // Scroll to error if needed or let the template show the message
+      setTimeout(() => {
+        this.formSubmitted = false;
+      }, 3500);
+      return;
+    }
 
     // جلب البيانات الأساسية
     const branchId = Number(localStorage.getItem('branch_id')) || null;
@@ -2906,8 +2915,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.showError('فشل التحقق من الهوية. الرجاء تسجيل الدخول مجددًا.');
       return;
     }
-
-    this.formSubmitted = true;
     this.amountError = false;
 
     if (!this.selectedPaymentStatus) {

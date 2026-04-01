@@ -890,6 +890,12 @@ export class OrdersComponent implements OnDestroy {
     }
   }
 
+  onItemCheckChange(item: any): void {
+    if (!item.isChecked) {
+      item.selectedQuantity = item.quantity;
+    }
+  }
+
   calculateItemPrice(item: any): number {
     const quantity = item.selectedQuantity ?? item.quantity;
 
@@ -1433,6 +1439,7 @@ export class OrdersComponent implements OnDestroy {
   hasReturnedItems(order: any): boolean {
     const items = this.getDisplayOrderItems(order);
     for (const item of items) {
+      if (!item.isChecked) continue; // Skip items that are not checked
       const totalQty = Number(item.quantity) || 0;
       const selectedQty =
         item.selectedQuantity !== undefined && item.selectedQuantity !== null
@@ -1466,7 +1473,7 @@ export class OrdersComponent implements OnDestroy {
     let deliveryTotal = 0;
     let hasReturnedQty = false;
     let isFullReturn = items.length > 0;
-    for (const item of items.filter((item: any) => (item.dish_status !== 'cancel'))) {
+    for (const item of items.filter((item: any) => (item.dish_status !== 'cancel' && item.isChecked))) {
       const totalQty = Number(item.quantity) || 0;
       const selectedQty =
         item.selectedQuantity !== undefined && item.selectedQuantity !== null
@@ -1488,24 +1495,15 @@ export class OrdersComponent implements OnDestroy {
       // let servicePart : number;
       let pricePart : number;
       // let couponPart : number;
+      
+      // Ensure unit price is calculated
+      if (!item.unitPrice) {
+        item.unitPrice = (item.total_dish_price || 0) / (item.quantity || 1);
+      }
+      
       const unitPrice = item.unitPrice;
       pricePart = unitPrice * returnedQty;
 
-
-      // if (order.details_order?.order_type === 'dine-in') {
-      //   servicePart = pricePart * 12 / 100;
-      //   taxPart = (pricePart + servicePart) * 14/100;
-
-      // } else {
-      //   servicePart =0;
-      //   taxPart = (pricePart + servicePart) * 14/100;
-
-      // }
-
-
-
-      // taxTotal += taxPart;
-      // serviceTotal += servicePart;
       priceTotal += pricePart;
     }
 
@@ -1536,7 +1534,13 @@ export class OrdersComponent implements OnDestroy {
         deliveryTotal = 0;
       }
 
-    const grandTotal = taxTotal + serviceTotal + couponTotal + deliveryTotal;
+    let grandTotal = taxTotal + serviceTotal + couponTotal + deliveryTotal;
+
+    taxTotal = Number(taxTotal.toFixed(2));
+    serviceTotal = Number(serviceTotal.toFixed(2));
+    priceTotal = Number(priceTotal.toFixed(2));
+    couponTotal = Number(couponTotal.toFixed(2));
+    grandTotal = Number(grandTotal.toFixed(2));
 
     console.log(   
       'order_id',order.id,

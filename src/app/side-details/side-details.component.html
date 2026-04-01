@@ -607,10 +607,10 @@
             </label>
           </ng-container>
         </div>
-        <div *ngIf="selectedPaymentStatus === 'paid' && !selectedPaymentMethod" class="alert alert-danger py-2 mt-2">
-          <small><i class="fas fa-exclamation-circle me-1"></i> يرجى اختيار طريقة الدفع (كاش/فيزا/مختلط)</small>
+        <div *ngIf="formSubmitted && selectedPaymentStatus === 'paid' && !selectedPaymentMethod" class="alert alert-danger py-2 mt-2">
+          <small><i class="fas fa-exclamation-circle me-1"></i> يرجى اختيار طريقة الدفع (كاش/فيزا)</small>
         </div>
-
+        
         <ng-container *ngIf="selectedOrderType !== 'talabat' && selectedPaymentStatus === 'paid'">
           <!-- إدخال الدفع عند اختيار كاش أو كاش + فيزا -->
           <div
