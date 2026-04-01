@@ -64,6 +64,37 @@ export class SidebarComponent implements OnInit {
     const actual = Number(this.printingData?.actualAmount) || 0;
     return expected - actual;
   }
+
+  /**
+   * ملخص وردية نقطة البيع: إذا لم يُرسل actual_cash من الـ API (مثل تقرير بعد تحويل للخزنة)،
+   * نعرض نفس رقم «النقدية الموجودة» من جدول عهدة هذا التحويل.
+   */
+  get branchShiftActualCashDisplay(): number | null {
+    const r = this.branchShiftReport;
+    if (!r) return null;
+    const apiVal = r.actual_cash;
+    if (apiVal != null && apiVal !== '' && !Number.isNaN(Number(apiVal))) {
+      return Number(apiVal);
+    }
+    const fromPrint = Number(this.printingData?.actualAmount);
+    if (Number.isFinite(fromPrint)) return fromPrint;
+    const fromLogout = Number(this.reportData?.cashTotalLogout);
+    return Number.isFinite(fromLogout) ? fromLogout : null;
+  }
+
+  /** الفرق (متوقع − فعلي) يتم حسابه عند توفر الفعلي حتى لو لم يُرجعه الـ API */
+  get branchShiftDifferenceDisplay(): number | null {
+    const r = this.branchShiftReport;
+    if (!r) return null;
+    const apiDiff = r.difference;
+    if (apiDiff != null && apiDiff !== '' && !Number.isNaN(Number(apiDiff))) {
+      return Number(apiDiff);
+    }
+    const actual = this.branchShiftActualCashDisplay;
+    const expected = Number(r.expected_cash);
+    if (actual == null || Number.isNaN(expected)) return null;
+    return Math.round((expected - actual) * 100) / 100;
+  }
   reportData: {
     cashTotal: number;
     cashTotalLogout: number;
