@@ -3,10 +3,11 @@ import { ProductsService } from '../services/products.service';
 import { ProductModalComponent } from '../product-modal/product-modal.component';
 import { NgbModal, ModalDismissReasons } from '@ng-bootstrap/ng-bootstrap';
 import { Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-product-card',
-  imports: [],
+  imports: [CommonModule],
   templateUrl: './product-card.component.html',
   styleUrl: './product-card.component.css'
 })
