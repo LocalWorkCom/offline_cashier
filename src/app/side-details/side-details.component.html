@@ -324,7 +324,7 @@
       </div>
     </div>
     <p class="fw-bold text-start">
-      {{ getItemTotal(item).toFixed(2)}} {{ item.dish.currency_symbol }}
+      {{ getItemTotal(item) | number:'1.2-2' }} {{ item.dish.currency_symbol }}
     </p>
   </div>
   }
@@ -362,7 +362,7 @@
     <ul class="list-unstyled p-0 m-0">
       <li class="order-list fw-bold">
         <p>المجموع</p>
-        <p class="fw-bold">{{ getTotal().toFixed(2) }} {{ currencySymbol }}</p>
+        <p class="fw-bold">{{ getTotal()| number:'1.2-2' }} {{ currencySymbol }}</p>
       </li>
       @if (discountAmount >= 0 && validCoupon && selectedOrderType !== 'talabat') {
       <li class="order-list">
@@ -374,7 +374,7 @@
         <p class="fw-bold main-color d-flex align-items-center gap-2">
           <span>
             -
-            {{ discountAmount.toFixed(2) || this.appliedCoupon.total_discount }}
+            {{ discountAmount | number:'1.2-2' || this.appliedCoupon.total_discount }}
             {{ currencySymbol }}
           </span>
           <i class="fa-solid fa-trash text-danger cursor-pointer" (click)="removeCoupon()"
@@ -439,7 +439,7 @@
     <div class="total">
       <p class="fw-bold">المجموع الكلى</p>
       <p class="fw-bold">
-        {{ getCartTotal().toFixed(2) }} {{ currencySymbol }}
+        {{ getCartTotal()| number:'1.2-2' }} {{ currencySymbol }}
       </p>
     </div>
     @if (branchData?.tax_application === true) {
