@@ -398,7 +398,7 @@
           @if (appliedCoupon && validCoupon) {
           {{ getServiceOnAmountAfterCoupon() }}
           } @else {
-          {{ getServiceFeeAmount() }}
+          {{ getServiceFeeAmount() | number:'1.2-2' }}
           }{{ currencySymbol }}
         </p>
         }
