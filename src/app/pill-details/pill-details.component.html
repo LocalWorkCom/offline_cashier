@@ -258,7 +258,7 @@
             <div>
               {{ inv.payment_method === "cash" && inv.payment_status === 'paid' ? " الكاش" : inv.payment_method === "credit" && inv.payment_status === 'paid' ? " الفيزا" : "غير محدد" }}
             </div>
-            <div>{{ inv.paid }} {{ invoices[0].currency_symbol }}</div>
+            <div>{{ inv.paid | number:'1.2-2' }} {{ invoices[0].currency_symbol }}</div>
           </div>
         </div>
       </div>
