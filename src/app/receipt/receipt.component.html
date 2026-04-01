@@ -32,7 +32,7 @@
 
     <!-- Order Meta Data -->
     <div class="order-info-section">
-      
+
       <div class="info-row" *ngIf="data.branchDetails[0]?.invoice_number">
         <span class="d-label">رقم الفاتورة : {{ data.branchDetails[0].invoice_number }} </span>
         <span class="d-value" *ngIf="data.invoices[0]?.order_type === 'dine-in'">طاولة :  {{ getTableNumber() }}</span>
@@ -61,7 +61,7 @@
         <span class="info-label">نوع الطلب :</span>
         <span class="d-value">{{ getOrderTypeLabel(data.order_type) }}</span>
       </div> -->
-   
+
 
       <!-- <div class="info-row" *ngIf="data.invoices[0]?.cashier_info">
         <span class="info-label">الكاشير / Cashier:</span>
@@ -70,8 +70,8 @@
     </div>
 
     <!-- DELIVERY SPECIFIC INFO -->
-    <div class="" >   
-      
+    <div class="" >
+
         <!-- Driver Info -->
       <div class="summary-row" *ngIf="isDelivery()">
         <span class="d-label">اسم الطيار :</span>
@@ -125,7 +125,7 @@
        {{ getDeliveryAddress() }}
       </div>
 
-    
+
     </div>
 
     <hr class="divider" />
@@ -175,18 +175,18 @@
     <div class="summary-section" *ngFor="let summary of data.invoice_summary">
       <div class="summary-row">
         <span class="d-label">المجموع</span>
-        <span class="d-value">{{ summary.subtotal_price_before_coupon }} {{ summary.currency_symbol }}</span>
+        <span class="d-value">{{ summary.subtotal_price_before_coupon  | number:'1.2-2' }} {{ summary.currency_symbol }}</span>
       </div>
 
        <div class="summary-row">
         <span class="d-label">الخدمة({{ summary.service_percentage }}%) </span>
-        <span class="d-value">{{ summary.service_fees }} {{ summary.currency_symbol }}</span>
+        <span class="d-value">{{ summary.service_fees | number:'1.2-2' }} {{ summary.currency_symbol }}</span>
       </div>
 
 
       <div class="summary-row" *ngIf="!summary.tax_application && (summary.tax_percentage != null && summary.tax_percentage !== '')">
         <span class="d-label">ضريبة القيمة المضافة ({{ summary.tax_percentage }}%)</span>
-        <span class="d-value">{{ summary.tax_value ?? 0 }} {{ summary.currency_symbol }}</span>
+        <span class="d-value">{{ summary.tax_value ?? 0 | number:'1.2-2' }} {{ summary.currency_symbol }}</span>
       </div>
       <div class="summary-row" *ngIf="summary.tax_application">
         <span class="d-label">سعر الوجبات يشتمل على ضريبة القيمة المضافة</span>
@@ -194,17 +194,17 @@
 
       <div class="summary-row" *ngIf="summary.coupon_value && summary.coupon_value > 0">
         <span class="d-label"> الخصم <small *ngIf="summary.coupon_title">({{ summary.coupon_title }})</small>:</span>
-        <span class="d-value">-{{ summary.coupon_value }} {{ summary.currency_symbol }}</span>
+        <span class="d-value">-{{ summary.coupon_value | number:'1.2-2' }} {{ summary.currency_symbol }}</span>
       </div>
 
       <div class="summary-row" *ngIf="isDelivery()">
         <span class="d-label">رسوم التوصيل</span>
-        <span class="d-value">{{ summary.delivery_fees }} {{ summary.currency_symbol }}</span>
+        <span class="d-value">{{ summary.delivery_fees | number:'1.2-2' }} {{ summary.currency_symbol }}</span>
       </div>
 
       <div class="summary-row grand-total">
         <span class="d-label">الإجمالي</span>
-        <span class="d-value total">{{ summary.total_price }} {{ summary.currency_symbol }}</span>
+        <span class="d-value total">{{ summary.total_price | number:'1.2-2' }} {{ summary.currency_symbol }}</span>
       </div>
     </div>
 
