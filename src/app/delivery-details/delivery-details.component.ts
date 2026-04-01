@@ -1,4 +1,11 @@
-import { Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import {
+  ChangeDetectorRef,
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  ViewChild,
+} from '@angular/core';
 import { NgxCountriesDropdownModule } from 'ngx-countries-dropdown';
 import { CommonModule, Location } from '@angular/common';
 import {
@@ -23,9 +30,18 @@ import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
 import { PhoneCheckService } from '../services/phoneCheck';
 import { SelectComponent } from '../select/select.component';
 import { ConfirmDialogComponent } from '../shared/ui/component/confirm-dialog/confirm-dialog.component';
-import { finalize } from 'rxjs';
-import { ChangeDetectorRef } from '@angular/core';
+import { Subject, merge, finalize } from 'rxjs';
+import { debounceTime, takeUntil } from 'rxjs/operators';
 import { baseUrl } from '../environment';
+
+function safeJsonParse<T>(raw: string | null, fallback: T): T {
+  if (raw == null || raw === '') return fallback;
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    return fallback;
+  }
+}
 
 @Component({
   selector: 'app-delivery-details',
@@ -43,7 +59,7 @@ import { baseUrl } from '../environment';
   templateUrl: './delivery-details.component.html',
   styleUrls: ['./delivery-details.component.css'],
 })
-export class DeliveryDetailsComponent implements OnInit {
+export class DeliveryDetailsComponent implements OnInit, OnDestroy {
   form!: FormGroup;
   // selectedCountry!: Country ;
   selectedCountry: Country = {
@@ -69,9 +85,13 @@ export class DeliveryDetailsComponent implements OnInit {
   whatsappCountryCode: string = this.selectedWhatsappCountry.code;
   whatsappPhone: any;
 
-  selectedAddress = JSON.parse(localStorage.getItem('selected_address')!);
+  selectedAddress = safeJsonParse<any>(
+    localStorage.getItem('selected_address'),
+    null
+  );
   userStoredAddress: { name: string; id: number; delivery_fees: string }[] =
     this.selectedAddress ? [this.selectedAddress] : [];
+  private readonly destroy$ = new Subject<void>();
   @ViewChild('confirmDialog') confirmationDialog!: ConfirmDialogComponent;
   userId!: number;
   searchTerm: any;
@@ -146,15 +166,19 @@ export class DeliveryDetailsComponent implements OnInit {
     //   const formDataWithNote = { ...formValue, notes: noteValue };
     //   localStorage.setItem('form_data', JSON.stringify(formDataWithNote));
     // });
-    this.selectedHotel = JSON.parse(localStorage.getItem('selectedHotel')!);
+    this.selectedHotel = safeJsonParse(
+      localStorage.getItem('selectedHotel'),
+      null
+    );
     this.form.get('country_code')?.setValue(this.selectedCountry);
     // this.form.get('country_code')?.setValue(this.selectedCountry.code);
     // this.form.get('country_code')?.setValue('+20');
 
     this.listenPhoneNumberChange();
     if (localStorage.getItem('selected_address') && !this.selectedHotel) {
-      this.selectedAddress = JSON.parse(
-        localStorage.getItem('selected_address')!
+      this.selectedAddress = safeJsonParse(
+        localStorage.getItem('selected_address'),
+        null
       );
       this.selectedHotel = this.selectedAddress;
       console.log(this.selectedAddress.name);
@@ -166,11 +190,12 @@ export class DeliveryDetailsComponent implements OnInit {
       // Patch everything from storage
       this.form.patchValue(parsed);
 
+      const wa = (parsed.whatsapp_number ?? '').toString();
       // Detect if it's the same as phone to set toggle state
       if (
         parsed.whatsapp_number_code &&
-        (parsed.whatsapp_number.trim() == '' ||
-          parsed.whatsapp_number === parsed.address_phone) &&
+        parsed.country_code &&
+        (wa.trim() === '' || wa === parsed.address_phone) &&
         parsed.whatsapp_number_code.code === parsed.country_code.code
       ) {
         this.useSameNumberForWhatsapp = true;
@@ -182,7 +207,98 @@ export class DeliveryDetailsComponent implements OnInit {
     }
     this.updateWhatsappValidators();
     this.cdr.detectChanges();
-    this.listenToAddressChange()
+    this.listenToAddressChange();
+    this.subscribeCustomerFieldsPersist();
+  }
+
+  ngOnDestroy(): void {
+    this.mergePersistedCustomerInfo();
+    this.destroy$.next();
+    this.destroy$.complete();
+    if (!this.isCustomerSectionEmpty()) return;
+    const hadDeliverySnapshot =
+      localStorage.getItem('form_data') != null ||
+      localStorage.getItem('deliveryForm') != null;
+    this.clearPersistedDeliveryCustomer(hadDeliverySnapshot);
+  }
+
+  /** True when name and phone are both empty (trimmed). */
+  private isCustomerSectionEmpty(): boolean {
+    if (!this.form) return false;
+    const name = (this.form.get('client_name')?.value ?? '').toString().trim();
+    const phone = (this.form.get('address_phone')?.value ?? '')
+      .toString()
+      .trim();
+    return name === '' && phone === '';
+  }
+
+  /**
+   * Remove delivery customer snapshot from localStorage.
+   * @param clearIndexedDb When true, also clears the formData store (skip when leaving an empty form that was never saved).
+   */
+  private clearPersistedDeliveryCustomer(clearIndexedDb = true): void {
+    localStorage.removeItem('form_data');
+    localStorage.removeItem('deliveryForm');
+    localStorage.removeItem('notes');
+    localStorage.removeItem('address_id');
+    localStorage.removeItem('selected_address');
+    localStorage.removeItem('selectedHotel');
+    localStorage.removeItem('delivery_fees');
+    localStorage.removeItem('hotel_id');
+    if (clearIndexedDb) {
+      this.dbService.clearFormData().catch(() => {});
+    }
+  }
+
+  /**
+   * Keep localStorage in sync when the user edits or clears customer fields
+   * without submitting (so navigating away does not restore stale values).
+   */
+  private mergePersistedCustomerInfo(): void {
+    const raw = localStorage.getItem('form_data');
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      const name = this.form.get('client_name')?.value ?? '';
+      const phone = this.form.get('address_phone')?.value ?? '';
+      let whatsapp = this.form.get('whatsapp_number')?.value ?? '';
+      if (this.useSameNumberForWhatsapp) {
+        whatsapp = phone;
+      } else if (this.whatsappPhone != null && this.whatsappPhone !== '') {
+        whatsapp = this.whatsappPhone;
+      }
+      const updated = {
+        ...parsed,
+        client_name: name,
+        address_phone: phone,
+        whatsapp_number: whatsapp,
+      };
+      localStorage.setItem('form_data', JSON.stringify(updated));
+      const d = localStorage.getItem('deliveryForm');
+      if (d) {
+        const dp = JSON.parse(d);
+        localStorage.setItem(
+          'deliveryForm',
+          JSON.stringify({
+            ...dp,
+            client_name: name,
+            address_phone: phone,
+            whatsapp_number: whatsapp,
+          })
+        );
+      }
+    } catch {
+      /* ignore corrupt JSON */
+    }
+  }
+
+  private subscribeCustomerFieldsPersist(): void {
+    const name$ = this.form.get('client_name')!.valueChanges;
+    const phone$ = this.form.get('address_phone')!.valueChanges;
+    const wa$ = this.form.get('whatsapp_number')!.valueChanges;
+    merge(name$, phone$, wa$)
+      .pipe(debounceTime(400), takeUntil(this.destroy$))
+      .subscribe(() => this.mergePersistedCustomerInfo());
   }
   listenPhoneNumberChange() {
     const addressId = localStorage.getItem('address_id');
@@ -654,6 +770,14 @@ export class DeliveryDetailsComponent implements OnInit {
         .get('whatsapp_number_code')
         ?.setValue(this.form.get('country_code')?.value || '');
     }
+
+    if (this.isCustomerSectionEmpty()) {
+      this.submitted = false;
+      this.clearPersistedDeliveryCustomer(true);
+      this.location.back();
+      return;
+    }
+
     this.submitted = true;
     if (this.userAddNewAddress == false) {
       this.form.markAllAsTouched();
@@ -1099,10 +1223,11 @@ export class DeliveryDetailsComponent implements OnInit {
     this.selectedAddress = [];
     this.userAddNewAddress = true;
 
-    if (
-      JSON.parse(localStorage.getItem('form_data')!)?.address_phone !=
-      this.form.get('address_phone')?.value
-    ) {
+    const stored = safeJsonParse<{ address_phone?: string } | null>(
+      localStorage.getItem('form_data'),
+      null
+    );
+    if (stored?.address_phone != this.form.get('address_phone')?.value) {
       localStorage.removeItem('selected_address');
       localStorage.removeItem('address_id');
       localStorage.removeItem('delivery_fees');
