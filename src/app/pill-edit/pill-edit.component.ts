@@ -768,7 +768,12 @@ export class PillEditComponent {
         coupon_code: this.couponCode || this.invoices?.[0]?.invoice_summary?.coupon_code || '',
         coupon_value: this.discountAmount || this.invoices?.[0]?.invoice_summary?.coupon_value || 0,
         coupon_type: this.couponType || this.invoices?.[0]?.invoice_summary?.coupon_type || '',
-        coupon_title: this.couponTitle || this.invoices?.[0]?.invoice_summary?.coupon_title || ''
+        coupon_title: this.couponTitle || this.invoices?.[0]?.invoice_summary?.coupon_title || '',
+        delivery_fees: Number(
+          this.invoices?.[0]?.invoice_summary?._original_delivery_fees ??
+          this.invoices?.[0]?.invoice_summary?.delivery_fees ??
+          0
+        )
       } : undefined;
 
       // ✅ إعداد بيانات الإكرامية إذا كانت موجودة
@@ -987,11 +992,20 @@ export class PillEditComponent {
     const servicePerc = Number(summary.service_percentage || 0);
     const taxPerc = Number(summary.tax_percentage || 0);
     const taxApplication = summary.tax_application ?? false;
-    const deliveryFees = Number(summary.delivery_fees || 0);
+    if (summary._original_delivery_fees === undefined || summary._original_delivery_fees === null) {
+      summary._original_delivery_fees = Number(summary.delivery_fees || 0);
+    }
+    const originalDeliveryFees = Number(summary._original_delivery_fees || 0);
 
     // Step 2: Apply Discount/Coupon
     const discountValue = Math.min(discount, productValueBeforeDiscount);
     const productValueAfterDiscount = Math.max(0, productValueBeforeDiscount - discountValue);
+
+    const isFullCouponDiscount =
+      type === 'percentage' &&
+      productValueBeforeDiscount > 0 &&
+      discountValue >= productValueBeforeDiscount;
+    const deliveryFees = isFullCouponDiscount ? 0 : originalDeliveryFees;
 
     // Step 3: Calculate Service Charge (on product value AFTER discount)
     let serviceAmount = 0;
@@ -1047,6 +1061,7 @@ export class PillEditComponent {
     summary.tax_value = Number(taxAmount.toFixed(3));
     summary.tax = Number(taxAmount.toFixed(3));
     summary.service_fees = serviceAmount;
+    summary.delivery_fees = deliveryFees;
 
     // ✅ تحديث invoiceSummary أيضاً (المستخدم في العرض)
     if (this.invoiceSummary && this.invoiceSummary[0]) {
@@ -1063,6 +1078,7 @@ export class PillEditComponent {
       this.invoiceSummary[0].tax_value = Number(taxAmount.toFixed(3));
       this.invoiceSummary[0].tax = Number(taxAmount.toFixed(3));
       this.invoiceSummary[0].service_fees = serviceAmount;
+      this.invoiceSummary[0].delivery_fees = deliveryFees;
     }
 
     this.discountAmount = discountValue;
