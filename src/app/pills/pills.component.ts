@@ -34,7 +34,7 @@ export class PillsComponent implements OnInit, OnDestroy {
     hold: 'معلقة',
     done: 'مكتملة',
   };
-  selectedStatusLabel: string = 'hold';
+  selectedStatusLabel: string = 'all';
   searchOrderNumber: string = '';
   searchText: any;
   filteredPillsByStatus: any[] | undefined;
@@ -348,6 +348,11 @@ console.log(newOrder);
   onSearchChange(): void {
     // Strip '#' from search input so users can paste e.g. '#1234'
     this.searchOrderNumber = this.searchOrderNumber.replace(/#/g, '');
+    
+    // Reset to 'all' status tab when searching so the user can see all related items (INV and CN)
+    this.selectedStatus = 0;
+    this.selectedStatusLabel = 'all';
+
     this.searchSubject.next(this.searchOrderNumber);
   }
 
@@ -419,6 +424,8 @@ console.log(newOrder);
   selectOrderTypeFilter(type: string): void {
     this.orderTypeFilter = type;
     this.currentPage = 1;
+    this.selectedStatus = 0;
+    this.selectedStatusLabel = 'all';
     if (this.usingOfflineData) {
       this.updatePillsByStatus();
       this.cdr.detectChanges();
@@ -510,8 +517,8 @@ console.log(newOrder);
   // }
   selectStatusGroup(index: number): void {
     this.selectedStatus = index;
-    const allStatuses = ['hold', 'done', 'cancelled', 'returned'];
-    this.selectedStatusLabel = allStatuses[index] || 'hold';
+    const allStatuses = ['all', 'hold', 'done', 'cancelled', 'returned'];
+    this.selectedStatusLabel = allStatuses[index] || 'all';
     if (this.usingOfflineData) {
       this.updatePillsByStatus();
       this.cdr.detectChanges();
@@ -552,7 +559,7 @@ console.log(newOrder);
   //   this.filterPills();
   // }
   private updatePillsByStatus(): void {
-    const allStatuses = ['hold', 'done', 'cancelled', 'returned'];
+    const allStatuses = ['all', 'hold', 'done', 'cancelled', 'returned'];
 
     // عند الـ offline أو عند وجود فلتر: نستخدم قائمة معالجة حسب نوع الطلب والبحث
     let list = this.pills;
@@ -612,15 +619,6 @@ console.log(newOrder);
 
       if (match) {
         this.highlightedPillId = `pill-${match.order_number}`;
-
-        // 👇 Set the correct status group tab (hold, urgent, done)
-        const statusIndex = this.pillsByStatus.findIndex(
-          (group: { status: any }) =>
-            group.status === match.invoice_print_status
-        );
-        if (statusIndex !== -1) {
-          this.selectedStatus = statusIndex;
-        }
 
         // 👇 Scroll into view
         setTimeout(() => {

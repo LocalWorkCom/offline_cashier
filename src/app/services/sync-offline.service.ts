@@ -55,14 +55,14 @@ export class SyncOfflineService {
 
     console.log('🔄 Starting pull from Cloud for branch', branchId);
 
-    this.http.post(`${baseUrl}api/syncoffline/pull`, { branch_id: branchId }, { headers }).subscribe({
-      next: (res: any) => {
-        console.log('✅ Offline database successfully synced from Cloud!', res?.summary);
-      },
-      error: (err) => {
-        console.error('❌ Failed to pull data from Cloud', err);
-      }
-    });
+    // this.http.post(`${baseUrl}api/syncoffline/pull`, { branch_id: branchId }, { headers }).subscribe({
+    //   next: (res: any) => {
+    //     console.log('✅ Offline database successfully synced from Cloud!', res?.summary);
+    //   },
+    //   error: (err) => {
+    //     console.error('❌ Failed to pull data from Cloud', err);
+    //   }
+    // });
   }
 }
 
