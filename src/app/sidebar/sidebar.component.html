@@ -558,37 +558,77 @@
   </div>
 
   @if (branchShiftReport) {
-  <p class="text-center fw-bold my-2 total">
-    {{ branchShiftReport.report_scope === 'cashier_machine' ? 'ملخص وردية نقطة البيع (جميع الجلسات على الجهاز)' : 'ملخص وردية الفرع (جميع الجلسات)' }}
-  </p>
-  <div class="border border-1 border-black">
-    <div class="table-content">
-      <span> أول رصيد فتح </span>
-      <span>{{ branchShiftReport.first_open_balance | number:'1.2-2' }} {{ currency_Symbol }}</span>
+  <div class="branch-shift-print-block">
+    <p class="text-center fw-bold my-2 total branch-shift-print-title">
+      {{ branchShiftReport.report_scope === 'cashier_machine' ? 'ملخص وردية نقطة البيع' : 'ملخص وردية الفرع' }}
+    </p>
+    <p class="text-center branch-shift-print-subtitle">
+      {{ branchShiftReport.report_scope === 'cashier_machine' ? 'جميع جلسات الكاشير على هذا الجهاز لتاريخ اليوم' : 'جميع جلسات الكاشير بالفرع لتاريخ اليوم' }}
+    </p>
+    <div class="branch-shift-meta border border-1 border-black">
+      <div class="branch-shift-meta-row">
+        <span class="branch-shift-meta-label">تاريخ الوردية</span>
+        <span class="branch-shift-meta-value">{{ branchShiftReport.shift_date || '—' }}</span>
+      </div>
+      <div class="branch-shift-meta-row">
+        <span class="branch-shift-meta-label">بداية النطاق (حسب النظام)</span>
+        <span class="branch-shift-meta-value branch-shift-datetime">{{ branchShiftReport.shift_start || '—' }}</span>
+      </div>
+      <div class="branch-shift-meta-row">
+        <span class="branch-shift-meta-label">نهاية النطاق (حسب النظام)</span>
+        <span class="branch-shift-meta-value branch-shift-datetime">{{ branchShiftReport.shift_end || '—' }}</span>
+      </div>
+      @if (branchShiftReport.report_scope === 'cashier_machine') {
+      <div class="branch-shift-meta-row">
+        <span class="branch-shift-meta-label">نقطة البيع</span>
+        <span class="branch-shift-meta-value">{{ posMachineDisplay }}</span>
+      </div>
+      }
+      <div class="branch-shift-meta-row">
+        <span class="branch-shift-meta-label">حالة إغلاق وردية الفرع</span>
+        <span class="branch-shift-meta-value">{{ branchShiftReport.is_closed ? 'مُغلقة' : 'لم تُغلق بعد' }}</span>
+      </div>
+      @if (branchShiftReport.closed_at) {
+      <div class="branch-shift-meta-row">
+        <span class="branch-shift-meta-label">وقت إغلاق الفرع</span>
+        <span class="branch-shift-meta-value branch-shift-datetime">{{ branchShiftReport.closed_at }}</span>
+      </div>
+      }
     </div>
-    <div class="table-content">
-      <span> آخر رصيد إغلاق </span>
-      <span>{{ branchShiftReport.last_close_balance | number:'1.2-2' }} {{ currency_Symbol }}</span>
-    </div>
-    <div class="table-content">
-      <span> إجمالي مبيعات كاش </span>
-      <span>{{ branchShiftReport.total_cash_sales | number:'1.2-2' }} {{ currency_Symbol }}</span>
-    </div>
-    <div class="table-content">
-      <span> مرتجعات كاش </span>
-      <span>{{ branchShiftReport.total_cash_returns | number:'1.2-2' }} {{ currency_Symbol }}</span>
-    </div>
-    <div class="table-content">
-      <span> النقدية المتوقعة (وردية الفرع) </span>
-      <span>{{ branchShiftReport.expected_cash | number:'1.2-2' }} {{ currency_Symbol }}</span>
-    </div>
-    <div class="table-content">
-      <span> النقدية الفعلية </span>
-      <span>{{ branchShiftActualCashDisplay != null ? (branchShiftActualCashDisplay | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span>
-    </div>
-    <div class="table-content">
-      <span> الفرق (متوقع vs فعلي) </span>
-      <span>{{ branchShiftDifferenceDisplay != null ? (branchShiftDifferenceDisplay | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span>
+
+    <div class="border border-1 border-black branch-shift-rows">
+      <div class="branch-shift-row">
+        <span class="branch-shift-row-label">أول رصيد فتح (كاش)</span>
+        <span class="branch-shift-row-value">{{ branchShiftReport.first_open_balance | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
+      </div>
+      <div class="branch-shift-row">
+        <span class="branch-shift-row-label">آخر رصيد إغلاق مسجّل</span>
+        <span class="branch-shift-row-value">{{ branchShiftReport.last_close_balance | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
+      </div>
+      <div class="branch-shift-row">
+        <span class="branch-shift-row-label">إجمالي مبيعات كاش (مدفوع)</span>
+        <span class="branch-shift-row-value">{{ branchShiftReport.total_cash_sales | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
+      </div>
+      <div class="branch-shift-row">
+        <span class="branch-shift-row-label">مرتجعات كاش</span>
+        <span class="branch-shift-row-value">{{ branchShiftReport.total_cash_returns | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
+      </div>
+      <div class="branch-shift-row">
+        <span class="branch-shift-row-label">خصومات كاش (إن وُجدت)</span>
+        <span class="branch-shift-row-value">{{ (branchShiftReport.total_cash_discounts ?? 0) | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
+      </div>
+      <div class="branch-shift-row branch-shift-row-emphasis">
+        <span class="branch-shift-row-label">النقدية المتوقعة (حسب وردية الفرع/الماكينة)</span>
+        <span class="branch-shift-row-value">{{ branchShiftReport.expected_cash | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
+      </div>
+      <div class="branch-shift-row">
+        <span class="branch-shift-row-label">النقدية الفعلية عند إغلاق الفرع</span>
+        <span class="branch-shift-row-value">{{ branchShiftActualCashDisplay != null ? (branchShiftActualCashDisplay | number:'1.2-2':'en-US') + ' ' + currency_Symbol : '—' }}</span>
+      </div>
+      <div class="branch-shift-row branch-shift-row-emphasis">
+        <span class="branch-shift-row-label">الفرق (فعلي − متوقع)</span>
+        <span class="branch-shift-row-value">{{ branchShiftDifferenceDisplay != null ? (branchShiftDifferenceDisplay | number:'1.2-2':'en-US') + ' ' + currency_Symbol : '—' }}</span>
+      </div>
     </div>
   </div>
   }
@@ -810,15 +850,77 @@
     </div>
 
     @if (branchShiftReport) {
-    <div class="border border-1 border-black mt-3 p-2 text-center">
-      <p class="fw-bold total">{{ branchShiftReport.report_scope === 'cashier_machine' ? 'ملخص وردية نقطة البيع (جميع الجلسات على الجهاز)' : 'ملخص وردية الفرع (جميع الجلسات)' }}</p>
-      <p class="fw-bold">أول رصيد فتح: <span>{{ branchShiftReport.first_open_balance | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
-      <p class="fw-bold">آخر رصيد إغلاق: <span>{{ branchShiftReport.last_close_balance | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
-      <p class="fw-bold">إجمالي مبيعات كاش: <span>{{ branchShiftReport.total_cash_sales | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
-      <p class="fw-bold">مرتجعات كاش: <span>{{ branchShiftReport.total_cash_returns | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
-      <p class="fw-bold">المتوقع: <span>{{ branchShiftReport.expected_cash | number:'1.2-2' }} {{ currency_Symbol }}</span></p>
-      <p class="fw-bold">الفعلي: <span>{{ branchShiftActualCashDisplay != null ? (branchShiftActualCashDisplay | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span></p>
-      <p class="fw-bold">الفرق: <span>{{ branchShiftDifferenceDisplay != null ? (branchShiftDifferenceDisplay | number:'1.2-2') + ' ' + currency_Symbol : '—' }}</span></p>
+    <div class="branch-shift-print-block mt-3 text-start">
+      <p class="text-center fw-bold my-2 total branch-shift-print-title">
+        {{ branchShiftReport.report_scope === 'cashier_machine' ? 'ملخص وردية نقطة البيع' : 'ملخص وردية الفرع' }}
+      </p>
+      <p class="text-center branch-shift-print-subtitle">
+        {{ branchShiftReport.report_scope === 'cashier_machine' ? 'جميع جلسات الكاشير على هذا الجهاز لتاريخ اليوم' : 'جميع جلسات الكاشير بالفرع لتاريخ اليوم' }}
+      </p>
+      <div class="branch-shift-meta border border-1 border-black">
+        <div class="branch-shift-meta-row">
+          <span class="branch-shift-meta-label">تاريخ الوردية</span>
+          <span class="branch-shift-meta-value">{{ branchShiftReport.shift_date || '—' }}</span>
+        </div>
+        <div class="branch-shift-meta-row">
+          <span class="branch-shift-meta-label">بداية النطاق (حسب النظام)</span>
+          <span class="branch-shift-meta-value branch-shift-datetime">{{ branchShiftReport.shift_start || '—' }}</span>
+        </div>
+        <div class="branch-shift-meta-row">
+          <span class="branch-shift-meta-label">نهاية النطاق (حسب النظام)</span>
+          <span class="branch-shift-meta-value branch-shift-datetime">{{ branchShiftReport.shift_end || '—' }}</span>
+        </div>
+        @if (branchShiftReport.report_scope === 'cashier_machine') {
+        <div class="branch-shift-meta-row">
+          <span class="branch-shift-meta-label">نقطة البيع</span>
+          <span class="branch-shift-meta-value">{{ posMachineDisplay }}</span>
+        </div>
+        }
+        <div class="branch-shift-meta-row">
+          <span class="branch-shift-meta-label">حالة إغلاق وردية الفرع</span>
+          <span class="branch-shift-meta-value">{{ branchShiftReport.is_closed ? 'مُغلقة' : 'لم تُغلق بعد' }}</span>
+        </div>
+        @if (branchShiftReport.closed_at) {
+        <div class="branch-shift-meta-row">
+          <span class="branch-shift-meta-label">وقت إغلاق الفرع</span>
+          <span class="branch-shift-meta-value branch-shift-datetime">{{ branchShiftReport.closed_at }}</span>
+        </div>
+        }
+      </div>
+      <div class="border border-1 border-black branch-shift-rows">
+        <div class="branch-shift-row">
+          <span class="branch-shift-row-label">أول رصيد فتح (كاش)</span>
+          <span class="branch-shift-row-value">{{ branchShiftReport.first_open_balance | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
+        </div>
+        <div class="branch-shift-row">
+          <span class="branch-shift-row-label">آخر رصيد إغلاق مسجّل</span>
+          <span class="branch-shift-row-value">{{ branchShiftReport.last_close_balance | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
+        </div>
+        <div class="branch-shift-row">
+          <span class="branch-shift-row-label">إجمالي مبيعات كاش (مدفوع)</span>
+          <span class="branch-shift-row-value">{{ branchShiftReport.total_cash_sales | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
+        </div>
+        <div class="branch-shift-row">
+          <span class="branch-shift-row-label">مرتجعات كاش</span>
+          <span class="branch-shift-row-value">{{ branchShiftReport.total_cash_returns | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
+        </div>
+        <div class="branch-shift-row">
+          <span class="branch-shift-row-label">خصومات كاش (إن وُجدت)</span>
+          <span class="branch-shift-row-value">{{ (branchShiftReport.total_cash_discounts ?? 0) | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
+        </div>
+        <div class="branch-shift-row branch-shift-row-emphasis">
+          <span class="branch-shift-row-label">النقدية المتوقعة (حسب وردية الفرع/الماكينة)</span>
+          <span class="branch-shift-row-value">{{ branchShiftReport.expected_cash | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
+        </div>
+        <div class="branch-shift-row">
+          <span class="branch-shift-row-label">النقدية الفعلية عند إغلاق الفرع</span>
+          <span class="branch-shift-row-value">{{ branchShiftActualCashDisplay != null ? (branchShiftActualCashDisplay | number:'1.2-2':'en-US') + ' ' + currency_Symbol : '—' }}</span>
+        </div>
+        <div class="branch-shift-row branch-shift-row-emphasis">
+          <span class="branch-shift-row-label">الفرق (فعلي − متوقع)</span>
+          <span class="branch-shift-row-value">{{ branchShiftDifferenceDisplay != null ? (branchShiftDifferenceDisplay | number:'1.2-2':'en-US') + ' ' + currency_Symbol : '—' }}</span>
+        </div>
+      </div>
     </div>
     }
 

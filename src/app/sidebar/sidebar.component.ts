@@ -82,7 +82,10 @@ export class SidebarComponent implements OnInit {
     return Number.isFinite(fromLogout) ? fromLogout : null;
   }
 
-  /** الفرق (متوقع − فعلي) يتم حسابه عند توفر الفعلي حتى لو لم يُرجعه الـ API */
+  /**
+   * الفرق كما يحسبه الباك عند إغلاق الفرع: actual_cash − expected_cash
+   * (موجب = زيادة عن المتوقع، سالب = نقص عن المتوقع).
+   */
   get branchShiftDifferenceDisplay(): number | null {
     const r = this.branchShiftReport;
     if (!r) return null;
@@ -93,7 +96,7 @@ export class SidebarComponent implements OnInit {
     const actual = this.branchShiftActualCashDisplay;
     const expected = Number(r.expected_cash);
     if (actual == null || Number.isNaN(expected)) return null;
-    return Math.round((expected - actual) * 100) / 100;
+    return Math.round((actual - expected) * 100) / 100;
   }
   reportData: {
     cashTotal: number;
