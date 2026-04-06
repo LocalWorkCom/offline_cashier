@@ -1473,7 +1473,7 @@ export class OrdersComponent implements OnDestroy {
     let deliveryTotal = 0;
     let hasReturnedQty = false;
     let isFullReturn = items.length > 0;
-    for (const item of items.filter((item: any) => (item.dish_status !== 'cancel' && item.isChecked))) {
+    for (const item of items) {
       const totalQty = Number(item.quantity) || 0;
       const selectedQty =
         item.selectedQuantity !== undefined && item.selectedQuantity !== null
@@ -1542,12 +1542,17 @@ export class OrdersComponent implements OnDestroy {
     couponTotal = Number(couponTotal.toFixed(2));
     grandTotal = Number(grandTotal.toFixed(2));
 
-    console.log(   
-      'order_id',order.id,
+    console.log(
+      'isFullReturn',isFullReturn,
+      'order_id',order.details_order.order_summary.order_number,
       'taxTotal',taxTotal,
       'serviceTotal',serviceTotal,
       'priceTotal',priceTotal,
-      'grandTotal',grandTotal);
+      'grandTotal',grandTotal,
+      'couponTotal',couponTotal,
+      'deliveryTotal',deliveryTotal,
+      'items' , items
+    );
       
     return {
       taxTotal,
