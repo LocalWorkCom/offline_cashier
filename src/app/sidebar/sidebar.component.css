@@ -461,3 +461,290 @@
     line-height: 1.5 !important;
   }
 }
+
+/* —— تقرير تحويل النقدية (إيصال): هامش ضيق، هيدر في المنتصف، أيقونة على الخط —— */
+#print-section.cash-transfer-print {
+  direction: rtl;
+  unicode-bidi: isolate;
+  box-sizing: border-box;
+  font-size: 9.5px !important;
+}
+
+#print-section.cash-transfer-print .ct-print-sheet {
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 4px 10px 12px;
+  box-sizing: border-box;
+}
+
+#print-section.cash-transfer-print #body-logo,
+#print-section.cash-transfer-print .ct-print-logo-wrap {
+  text-align: center;
+  margin: 0 0 8px;
+  background: transparent !important;
+  background-image: none !important;
+}
+
+#print-section.cash-transfer-print .ct-print-logo-img {
+  display: block;
+  margin: 0 auto;
+  max-width: 88%;
+  max-height: 56px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  background: transparent !important;
+  mix-blend-mode: normal;
+}
+
+#print-section.cash-transfer-print .ct-print-branch-under-logo {
+  text-align: center !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  margin: 6px 0 0 !important;
+  line-height: 1.35;
+  padding: 0 4px;
+}
+
+#print-section.cash-transfer-print .ct-print-header-center {
+  text-align: center !important;
+  margin: 0 0 0;
+  padding: 0 4px;
+}
+
+#print-section.cash-transfer-print .ct-print-header-center .ct-print-header-line {
+  display: block;
+  text-align: center !important;
+  margin-left: auto;
+  margin-right: auto;
+  max-width: 100%;
+}
+
+#print-section.cash-transfer-print .ct-print-header-black-rule {
+  height: 0;
+  margin: 8px 0 10px;
+  border: 0;
+  border-bottom: 2px solid #000;
+}
+
+#print-section.cash-transfer-print .ct-print-header-line {
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  margin: 2px 0 !important;
+  line-height: 1.4;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+#print-section.cash-transfer-print .ct-print-header-muted {
+  font-weight: 600 !important;
+}
+
+#print-section.cash-transfer-print .ct-print-datetime {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}
+
+#print-section.cash-transfer-print .ct-print-meta-block {
+  text-align: right;
+  padding: 4px 2px 10px;
+  margin: 0 0 4px;
+  border-bottom: 2px solid #000;
+}
+
+#print-section.cash-transfer-print .ct-print-meta-row {
+  margin: 2px 0;
+  font-size: 9.5px !important;
+  font-weight: 700 !important;
+  line-height: 1.45;
+}
+
+#print-section.cash-transfer-print .ct-print-meta-row--currency {
+  margin-bottom: 0;
+  padding-bottom: 2px;
+}
+
+#print-section.cash-transfer-print .ct-print-card {
+  margin-top: 14px;
+}
+
+#print-section.cash-transfer-print .ct-print-card-rail {
+  position: relative;
+  height: 12px;
+  border-top: 2px solid #000;
+  margin: 0 0 2px;
+}
+
+#print-section.cash-transfer-print .ct-print-card-icon {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translate(-50%, -50%);
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: #6f42c1;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 0 3px #fff;
+}
+
+#print-section.cash-transfer-print .ct-print-card-title {
+  text-align: center;
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+  margin: 6px 0 8px !important;
+  padding: 0 4px;
+  line-height: 1.35;
+}
+
+#print-section.cash-transfer-print .ct-print-card-box {
+  border: 1px solid #000;
+  overflow: hidden;
+}
+
+#print-section.cash-transfer-print .ct-print-card-box .table-content {
+  padding: 5px 6px;
+  font-size: 9px !important;
+  border-bottom: 1px solid #000;
+}
+
+#print-section.cash-transfer-print .ct-print-card-box .table-content span {
+  font-size: 9px !important;
+}
+
+#print-section.cash-transfer-print .ct-print-card-box .table-content:last-child {
+  border-bottom: none;
+}
+
+#print-section.cash-transfer-print .ct-print-card-box .table-content--total {
+  border-top: 2px solid #000;
+  margin-top: 0;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  font-size: 10.5px !important;
+  font-weight: 800 !important;
+}
+
+#print-section.cash-transfer-print .ct-print-card-box .table-content--total span {
+  font-size: 10.5px !important;
+}
+
+#print-section.cash-transfer-print .ct-print-card--lined {
+  margin-top: 16px;
+}
+
+#print-section.cash-transfer-print .ct-print-lined-title-wrap {
+  border-top: 2px solid #000;
+  border-bottom: 2px solid #000;
+  padding: 8px 6px;
+  margin-bottom: 0;
+}
+
+#print-section.cash-transfer-print .ct-print-card-title--lined {
+  margin: 0 !important;
+}
+
+#print-section.cash-transfer-print .ct-print-card--lined .ct-print-card-box {
+  border-top: none;
+}
+
+#print-section.cash-transfer-print .ct-print-branch-shift {
+  margin-top: 14px;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-title {
+  border-top: none !important;
+  padding-top: 0.25rem !important;
+  margin-bottom: 0.2rem !important;
+  font-size: 10px !important;
+}
+
+#print-section.cash-transfer-print .ct-print-footer {
+  margin-top: 16px;
+  text-align: center;
+  padding: 0 2px;
+}
+
+#print-section.cash-transfer-print .ct-print-footer-thanks {
+  display: block;
+  margin: 0 0 8px !important;
+  font-weight: 800 !important;
+  font-size: 10px !important;
+}
+
+#print-section.cash-transfer-print .ct-print-footer-rule {
+  border-top: 1px dashed #333;
+  padding-top: 10px;
+}
+
+#print-section.cash-transfer-print .ct-print-footer-time,
+#print-section.cash-transfer-print .ct-print-footer-address {
+  display: block;
+  margin: 4px 0 !important;
+  font-size: 9.5px !important;
+  font-weight: 600 !important;
+  line-height: 1.5;
+  text-align: center;
+}
+
+#print-section.cash-transfer-print .ct-print-footer-time {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
+/* أقسام ما بعد العهدة: نفس هامش الورقة */
+#print-section.cash-transfer-print > .ct-print-sheet > p.text-center.total {
+  margin-top: 12px !important;
+  margin-bottom: 6px !important;
+  font-size: 10px !important;
+}
+
+#print-section.cash-transfer-print > .ct-print-sheet > p.text-center.total span {
+  font-size: 10px !important;
+}
+
+/* تقرير تحويل النقدية: خط أساسي أصغر من إعدادات styles.css العامة */
+#print-section.cash-transfer-print,
+#print-section.cash-transfer-print p,
+#print-section.cash-transfer-print span,
+#print-section.cash-transfer-print .total {
+  font-family: 'Cairo', sans-serif !important;
+  font-weight: 600;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-subtitle {
+  font-size: 8px !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-meta-row {
+  font-size: 8px !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-row {
+  font-size: 8.5px !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-row span {
+  font-size: 8.5px !important;
+}
+
+#print-section.cash-transfer-print > .ct-print-sheet > .border {
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+}
+
+#print-section.cash-transfer-print > .ct-print-sheet > .border .table-content {
+  font-size: 9px !important;
+  padding: 5px 6px;
+}
+
+#print-section.cash-transfer-print > .ct-print-sheet > .border .table-content span {
+  font-size: 9px !important;
+}

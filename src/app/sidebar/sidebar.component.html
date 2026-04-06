@@ -452,118 +452,105 @@
 
 <!-- <ng-template  #print> -->
 @if(printingData){
-<div id="print-section" class="fw-bold  d-none">
+<div id="print-section" class="fw-bold d-none cash-transfer-print">
 
-  <div id="body-logo" class="mb-2">
-    <img src="../assets/images/Group.png" id="logo" alt="" srcset="" class="w-100">
-  </div>
-  <div class="mb-0 mt-2 " style="margin-bottom: 0px;">
-    <span class="total">{{printingData?.branch}}</span>
-    <p class="total" style="margin-bottom: 0px;"><span>ملخص وردية المطعم :</span> <span class="fw-normal"> 24
-        ساعة</span> </p>
-  </div>
-  <div class="total">
-    <span>من : </span>
-    <span class="fw-normal">{{printingData?.start_shift}}</span>
-  </div>
-  <div class="total">
-    <span>الي : </span>
-    <span class="fw-normal">{{printingData?.end_shift}}</span>
-  </div>
-
-
-
-  <div class="dots mt-2">
-    <p class="total"><span> وقت طباعة الوردية:</span> <span class="fw-normal">{{ printTime | date:'dd/MM/yyyy HH:mm:ss' }}</span> </p>
-  </div>
-
-  <div class="mt-2 total">
-    <span>المستخدم : </span>
-    <span class="fw-normal">{{printingData?.cashier_name}}</span>
-
-  </div>
-  <div class="total">
-    <span>مدير الفرع : </span>
-    <span class="fw-normal">{{printingData?.branchManeger}}</span>
-
-  </div>
-  <div class="total">
-    <span>مجموع مبلغ الفتح (العهدة) : </span>
-    <span class="fw-normal">{{printingData?.open_balance}} ج.م</span>
-  </div>
-  <div class="line total">
-    <span> العملة : </span>
-    <span class="fw-normal"> ج.م</span>
-  </div>
-  <p class="text-center fw-bold my-2 total">اجمالي المدفوعات</p>
-  <div class="border border-1 border-black">
-    <div class=" table-content">
-      <span> عدد الاوردرات </span>
-      <span>{{printingData?.orders_number}}</span>
-    </div>
-    <div class=" table-content">
-      <span> صافي مبلغ نقدية </span>
-      <span>{{printingData?.cashTotal}}</span>
+  <div class="ct-print-sheet">
+    <div id="body-logo" class="ct-print-logo-wrap">
+      <img src="assets/images/logo-with-white-bg.png" id="logo" alt="" class="ct-print-logo-img">
+      <p class="ct-print-branch-under-logo">{{ printingData?.branch }}</p>
     </div>
 
-    <div class="table-content">
-      <span> صافي مبلغ بطاقة </span>
-      <span>{{printingData?.visaTotal}}</span>
+    <div class="ct-print-header-center">
+      <p class="ct-print-header-line">
+        <span>ملخص وردية المطعم :</span>
+        <span class="ct-print-header-muted">24 ساعة</span>
+      </p>
+      <p class="ct-print-header-line">
+        <span>من :</span>
+        <span class="ct-print-header-muted ct-print-datetime">{{ printingData?.start_shift }}</span>
+      </p>
+      <p class="ct-print-header-line">
+        <span>إلى :</span>
+        <span class="ct-print-header-muted ct-print-datetime">{{ printingData?.end_shift }}</span>
+      </p>
+      <p class="ct-print-header-line ct-print-printtime">
+        <span>وقت طباعة الوردية :</span>
+        <span class="ct-print-header-muted ct-print-datetime">{{ printTime | date:'dd-MM-yyyy, HH:mm:ss' }}</span>
+      </p>
+    </div>
+    <div class="ct-print-header-black-rule" aria-hidden="true"></div>
+
+    <div class="ct-print-meta-block">
+      <p class="ct-print-meta-row">
+        <span class="ct-print-meta-label">المستخدم :</span>
+        <span class="ct-print-meta-value">{{ printingData?.cashier_name }}</span>
+      </p>
+      <p class="ct-print-meta-row">
+        <span class="ct-print-meta-label">مدير الفرع :</span>
+        <span class="ct-print-meta-value">{{ printingData?.branchManeger }}</span>
+      </p>
+      <p class="ct-print-meta-row">
+        <span class="ct-print-meta-label">مجموع مبلغ الفتح (العهدة) :</span>
+        <span class="ct-print-meta-value">{{ printingData?.open_balance }} {{ currency_Symbol || 'ج.م' }}</span>
+      </p>
+      <p class="ct-print-meta-row ct-print-meta-row--currency">
+        <span class="ct-print-meta-label">العملة :</span>
+        <span class="ct-print-meta-value">{{ currency_Symbol || 'ج.م' }}</span>
+      </p>
     </div>
 
-
-    <div class="table-content">
-      <span> إجمالي الصافي </span>
-      <span>{{ (printingData?.visaTotal + printingData?.cashTotal) | number }}</span>
-    </div>
-    <!-- <div class="table-content">
-      <span> مبيعات </span>
-      <span>{{printingData?.totalSales}} </span>
-    </div>
- <div class="table-content">
-      <span> مبيعات نقدية </span>
-
-      <span>{{printingData?.cashTotalwithoutRefund}}</span>
-    </div>
-  <div class="table-content">
-      <span> مبيعات بطاقة </span>
-      <span>{{printingData?.visaTotalwithoutRefund}} </span>
-    </div>  -->
-    <!--    <div class="table-content">
-      <span> خدمة </span>
-      <span>{{printingData?.service.toFixed(2)}} </span>
-    </div>
-    <div class="table-content">
-      <span> ضريبة القيمة المضافة </span>
-      <span>{{printingData?.Tax.toFixed(2)}} </span>
-    </div> -->
-  </div>
-
-  <p class="text-center fw-bold my-2 total"> اجمالي تفاصيل العهدة</p>
-  <div class="border border-1 border-black">
-    <div class=" table-content">
-      <span> النقدية المتوقعة </span>
-      <span>{{printingData?.cashTotalwithoutRefund}} </span>
+    <div class="ct-print-card ct-print-card--with-icon">
+      <div class="ct-print-card-rail" aria-hidden="true">
+        <span class="ct-print-card-icon">S</span>
+      </div>
+      <p class="ct-print-card-title">اجمالي المدفوعات</p>
+      <div class="ct-print-card-box">
+        <div class="table-content">
+          <span>عدد الاوردرات</span>
+          <span>{{ printingData?.orders_number }}</span>
+        </div>
+        <div class="table-content">
+          <span>صافي مبلغ نقدية</span>
+          <span>{{ printingData?.cashTotal | number:'1.2-2' }} {{ currency_Symbol || 'ج.م' }}</span>
+        </div>
+        <div class="table-content">
+          <span>صافي مبلغ بطاقة</span>
+          <span>{{ printingData?.visaTotal | number:'1.2-2' }} {{ currency_Symbol || 'ج.م' }}</span>
+        </div>
+        <div class="table-content table-content--total">
+          <span>إجمالي الصافي</span>
+          <span>{{ ((printingData?.visaTotal ?? 0) + (printingData?.cashTotal ?? 0)) | number:'1.2-2' }} {{ currency_Symbol || 'ج.م' }}</span>
+        </div>
+      </div>
     </div>
 
-    <div class="table-content">
-      <span> النقدية الموجودة </span>
-      <span>{{printingData?.actualAmount}} </span>
+    <div class="ct-print-card ct-print-card--lined">
+      <div class="ct-print-lined-title-wrap">
+        <p class="ct-print-card-title ct-print-card-title--lined">اجمالى تفاصيل العهدة</p>
+      </div>
+      <div class="ct-print-card-box">
+        <div class="table-content">
+          <span>النقدية المتوقعة</span>
+          <span>{{ printingData?.cashTotalwithoutRefund | number:'1.2-2' }} {{ currency_Symbol || 'ج.م' }}</span>
+        </div>
+        <div class="table-content">
+          <span>النقدية الموجودة</span>
+          <span>{{ printingData?.actualAmount | number:'1.2-2' }} {{ currency_Symbol || 'ج.م' }}</span>
+        </div>
+        <div class="table-content">
+          <span>الفرق</span>
+          <span>{{ printingDeficitCash | number:'1.2-2' }} {{ currency_Symbol || 'ج.م' }}</span>
+        </div>
+      </div>
     </div>
-    <div class="table-content">
-      <span> الفرق </span>
-      <span>{{ printingDeficitCash | number:'1.2-2' }} </span>
-    </div>
-
-  </div>
 
   @if (branchShiftReport) {
-  <div class="branch-shift-print-block">
+  <div class="branch-shift-print-block ct-print-branch-shift">
     <p class="text-center fw-bold my-2 total branch-shift-print-title">
-      {{ branchShiftReport.report_scope === 'cashier_machine' ? 'ملخص وردية نقطة البيع' : 'ملخص وردية الفرع' }}
+      ملخص وردية تفاصيل البيع
     </p>
     <p class="text-center branch-shift-print-subtitle">
-      {{ branchShiftReport.report_scope === 'cashier_machine' ? 'جميع جلسات الكاشير على هذا الجهاز لتاريخ اليوم' : 'جميع جلسات الكاشير بالفرع لتاريخ اليوم' }}
+      {{ branchShiftReport.report_scope === 'cashier_machine' ? '(جميع الجلسات على الجهاز)' : '(جميع جلسات الكاشير بالفرع لتاريخ اليوم)' }}
     </p>
     <div class="branch-shift-meta border border-1 border-black">
       <div class="branch-shift-meta-row">
@@ -764,14 +751,15 @@
       <span>{{printingData?.tipVisa | number:'1.2-2'}} ج.م</span>
     </div>
   </div>
-  <div class="mt-3" style="clear: both; position: relative; display: block; margin-top: 1rem;">
-    <p style="display: block; margin: 0 0 0.75rem 0; font-weight: bold;">شكرا لثقتكم بخدمتنا</p>
-    <div style="border-top: 1px dashed #333; padding-top: 0.75rem; margin-top: 0.5rem; display: block;">
-      <p style="display: block; margin: 0 0 0.75rem 0; line-height: 1.6; min-height: 1.6em; text-align: center;">{{ printTime | date:'dd/MM/yyyy HH:mm:ss' }}</p>
-      <p style="display: block; margin: 0; line-height: 1.6; min-height: 1.6em; text-align: center; word-wrap: break-word;">{{ branchData?.address }}</p>
+  <div class="ct-print-footer">
+    <p class="ct-print-footer-thanks">شكرا لثقتكم بخدمتنا</p>
+    <div class="ct-print-footer-rule">
+      <p class="ct-print-footer-time">{{ printTime | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+      <p class="ct-print-footer-address">{{ branchData?.address }}</p>
     </div>
   </div>
 
+  </div>
 </div>
 }
 

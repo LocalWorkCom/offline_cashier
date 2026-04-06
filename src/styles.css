@@ -1,11 +1,11 @@
 @import "../node_modules/@fortawesome/fontawesome-free/css/all.min.css";
 @import "../node_modules/ngx-countries-dropdown/assets/styles.css";
 
-/* تقرير الوردية والطباعة – خط Cairo أوضح وأكبر قليلاً */
-#print-section,
-#print-section p,
-#print-section span,
-#print-section .total,
+/* تقرير الوردية والطباعة – خط Cairo أوضح وأكبر قليلاً (ما عدا تقرير تحويل النقدية يُضبط من الـ component) */
+#print-section:not(.cash-transfer-print),
+#print-section:not(.cash-transfer-print) p,
+#print-section:not(.cash-transfer-print) span,
+#print-section:not(.cash-transfer-print) .total,
 #logout-report-section,
 #logout-report-section p,
 #logout-report-section span,
