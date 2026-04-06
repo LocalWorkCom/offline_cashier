@@ -724,9 +724,10 @@
                                   placeholder="0.00"
                                   />
                               </div>
-                              @if (!isReturnCashCreditAmountsValid(order)) {
+                              @if (!isReturnCashCreditAmountsValid(order) || !isReturnCreditAmountsValid(order)) {
+                                @let totals = getReturnTotals(order);
                                 <p class="text-danger small mt-2 mb-0">
-                                  يجب أن يساوي مجموع النقدي + البطاقة إجمالي المرتجع: {{ totals.grandTotal }} {{ order.currency_symbol }}
+                                  يجب أن يكون مجموع النقدي والبطاقة {{ totals.grandTotal }} {{ order.currency_symbol }}، ومبلغ البطاقة لا يتجاوز {{ totals.creditTotal }}
                                 </p>
                               }
                             }
@@ -764,7 +765,7 @@
 
 
                         <button type="button" class="btn w-100 my-2 py-2" (click)="submitCancelRequest(order)"
-                          [disabled]="isSubmitting || (selectedReturnPaymentMethod === 'cash + credit' && !isReturnCashCreditAmountsValid(order))">
+                          [disabled]="isSubmitting || (selectedReturnPaymentMethod === 'cash + credit' && (!isReturnCashCreditAmountsValid(order) || !isReturnCreditAmountsValid(order)))">
                           <span *ngIf="isSubmitting" class="spinner-border spinner-border-sm me-2"></span>
                           {{ isSubmitting ? 'جاري الإرسال...' : 'إرسال طلب المرتجع' }} </button>
 

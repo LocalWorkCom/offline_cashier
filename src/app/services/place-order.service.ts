@@ -26,7 +26,7 @@ export class PlaceOrderService {
     //   'Content-Type': 'application/json'
     // });
   
-    return this.http.post(`${this.apiUrl}/orders/cashier/store-v3/api`, orderData);
+    return this.http.post(`${this.apiUrl}/orders/cashier/store/api`, orderData);
   }
   
   
