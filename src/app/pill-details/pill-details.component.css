@@ -92,3 +92,6 @@ small,.bg_black{
     opacity: 1 !important;
 
 }
+.overflow-hidden{
+  overflow: hidden !important;
+}
