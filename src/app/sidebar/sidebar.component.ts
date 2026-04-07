@@ -592,6 +592,25 @@ proceedToLogout(): void {
     }
   }
 
+  /** تطبيع أرقام التقرير للعرض؛ يُحتفظ بـ sessions كما أرسلها الـ API إن وُجدت */
+  private normalizeBranchShiftReport(data: any): any {
+    if (!data || typeof data !== 'object') {
+      return null;
+    }
+    const num = (v: unknown): number => (v == null || v === '' ? 0 : Number(v));
+    return {
+      ...data,
+      first_open_balance: num(data.first_open_balance),
+      last_close_balance: num(data.last_close_balance),
+      total_cash_sales: num(data.total_cash_sales),
+      total_cash_returns: num(data.total_cash_returns),
+      total_cash_discounts: num(data.total_cash_discounts),
+      expected_cash: num(data.expected_cash),
+      actual_cash: data.actual_cash == null ? null : num(data.actual_cash),
+      difference: data.difference == null ? null : num(data.difference),
+    };
+  }
+
   private buildReportDataAndPrintLogout(): void {
     const cashTotalStr = localStorage.getItem('start_total_cash');
     const visaTotalStr = localStorage.getItem('start_total_credit');
@@ -1000,11 +1019,16 @@ waitForImagesInSection(selector: string): Promise<void> {
     ? this.balanceService.getBranchShiftReport(branchId, date, machineId).pipe(
         tap((r) => {
           if (r?.status && r?.data) {
-            this.branchShiftReport = r.data;
+            this.branchShiftReport = this.normalizeBranchShiftReport(r.data);
+          } else {
+            this.branchShiftReport = null;
           }
           this.cdr.detectChanges();
         }),
-        catchError(() => of(undefined))
+        catchError(() => {
+          this.branchShiftReport = null;
+          return of(undefined);
+        })
       )
     : of(undefined);
 

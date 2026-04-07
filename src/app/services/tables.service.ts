@@ -64,7 +64,7 @@ export class TablesService {
     );
     const body = {
       table_id: tableId,
-      order_id: orderId
+      order_id: orderId,
     };
     return this.http.post(`${this.apiUrl}/orders/order-change-table`, body, { headers });
   }

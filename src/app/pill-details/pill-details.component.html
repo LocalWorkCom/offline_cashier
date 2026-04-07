@@ -239,7 +239,11 @@
             {{
            invoices[0].transactions[0].payment_method === "credit" && invoices[0].transactions[0].payment_status === "paid"
             ? "فيزا"
-            :   invoices[0].transactions[0].payment_method === "cash" && invoices[0].transactions[0].payment_status === "paid" ? "كاش" : "غير محدد"
+            : invoices[0].transactions[0].payment_method === "cash" && invoices[0].transactions[0].payment_status === "paid"
+              ? "كاش"
+              : invoices[0].transactions[0].payment_method === "deferred"
+                ? "آجل"
+                : "غير محدد" 
             }}
           </span>
         </h5>
@@ -256,7 +260,7 @@
           <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
             *ngIf="invoices[0].transactions[0]?.payment_status == 'paid'">
             <div>
-              {{ inv.payment_method === "cash" && inv.payment_status === 'paid' ? " الكاش" : inv.payment_method === "credit" && inv.payment_status === 'paid' ? " الفيزا" : "غير محدد" }}
+              {{ inv.payment_method === "cash" && inv.payment_status === 'paid' ? " الكاش" : inv.payment_method === "credit" && inv.payment_status === 'paid' ? " الفيزا" : inv.payment_method === "deferred" ? "آجل" : "غير محدد" }}
             </div>
             <div>{{ inv.paid | number:'1.2-2' }} {{ invoices[0].currency_symbol }}</div>
           </div>

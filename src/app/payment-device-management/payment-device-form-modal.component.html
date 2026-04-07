@@ -1,0 +1,56 @@
+<div class="payment-device-modal " dir="rtl">
+  <div class="modal-header border-0 pb-0">
+    <button type="button" class="btn-close-red" aria-label="Close" (click)="activeModal.dismiss()">×</button>
+  </div>
+
+  <div class="modal-body pt-0">
+    <h2 class="modal-title-main">{{ mode === 'edit' ? 'تعديل جهاز الدفع' : 'اضافة جهاز جديد' }}</h2>
+
+    <div class="row g-3 mt-3">
+      <div class="col-md-6">
+        <input class="form-control input-pill" [(ngModel)]="form.name" placeholder="اسم الجهاز" />
+      </div>
+      <div class="col-md-6">
+        <input class="form-control input-pill" [(ngModel)]="form.ip" placeholder="IP Address" />
+      </div>
+    </div>
+    <br>
+
+    <div class="status-row mt-3">
+      <div class="status-label">الحالة</div>
+      <div class="status-options">
+        <div class="form-check status-check">
+          <input
+            class="form-check-input"
+            type="radio"
+            name="paymentDeviceStatus"
+            id="paymentDeviceStatusActive"
+            [value]="'active'"
+            [(ngModel)]="form.status"
+          />
+          <label class="form-check-label" for="paymentDeviceStatusActive">نشط</label>
+        </div>
+        <div class="form-check status-check">
+          <input
+            class="form-check-input"
+            type="radio"
+            name="paymentDeviceStatus"
+            id="paymentDeviceStatusInactive"
+            [value]="'inactive'"
+            [(ngModel)]="form.status"
+          />
+          <label class="form-check-label" for="paymentDeviceStatusInactive">غير نشط</label>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-footer border-0 pt-0">
+    <button class="btn btn-save" (click)="submit()">
+      {{ mode === 'edit' ? 'حفظ' : 'حفظ' }}
+    </button>
+    <button class="btn btn-cancel" (click)="activeModal.dismiss()">الغاء</button>
+    
+  </div>
+</div>
+

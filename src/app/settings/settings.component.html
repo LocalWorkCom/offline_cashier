@@ -28,6 +28,14 @@
           </button>
 
           <button class="list-group-item list-group-item-action border-0 py-3 d-flex align-items-center gap-3" 
+                  id="v-pills-payment-devices-tab" data-bs-toggle="pill" data-bs-target="#v-payment-devices" 
+                  type="button" role="tab">
+            <div class="nav-icon rounded-circle d-flex align-items-center justify-content-center">
+              <i class="fas fa-credit-card fs-5"></i>
+            </div>
+            <span>إدارة أجهزه الدفع</span>
+          </button>
+          <button class="list-group-item list-group-item-action border-0 py-3 d-flex align-items-center gap-3" 
                   id="v-pills-dishes-tab" data-bs-toggle="pill" data-bs-target="#v-pills-dishes" 
                   type="button" role="tab">
             <div class="nav-icon rounded-circle d-flex align-items-center justify-content-center">
@@ -153,6 +161,17 @@
                 </div>
               </div>
               <app-dish-management></app-dish-management>
+            </div>
+
+            <!-- Payment Devices Management Tab -->
+            <div class="tab-pane fade h-100" id="v-payment-devices" role="tabpanel">
+              <div class="d-flex align-items-center justify-content-between mb-4">
+                <div class="d-flex align-items-center gap-2">
+                  <i class="fas fa-credit-card text-danger fs-4"></i>
+                  <h5 class="fw-bold mb-0">إدارة أجهزة الدفع</h5>
+                </div>
+              </div>
+              <app-payment-device-management></app-payment-device-management>
             </div>
 
           </div>
