@@ -2580,6 +2580,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       itemsWithCategory.push(itemData);
     }
+    
+    
+
 
     // ✅ لو الكوبون أو الخصم جعل المبلغ المستحق = 0 (بدون طلبات)
     // نعتبر الطلب "مدفوع" حتى لو لم يغيّر الكاشير الحالة يدوياً.
@@ -2607,7 +2610,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       delivery_id: this.selectedDriverId || null,
       branch_id: branchId,
       payment_method: this.selectedPaymentMethod ?? 'cash',
-      payment_status: this.selectedPaymentStatus,
+      payment_status: resolvedPaymentStatus,
       // cash_amount: this.selectedPaymentMethod === "cash" ? this.finalTipSummary?.billAmount ?? 0 : 0,
       // credit_amount: this.selectedPaymentMethod === "credit" ? this.finalTipSummary?.billAmount ?? 0 : 0,
       cash_amount: this.cash_amountt,
@@ -2634,7 +2637,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       total_with_tip: this.finalTipSummary?.grandTotalWithTip ?? ((this.finalTipSummary?.tipAmount ?? 0) + (this.finalTipSummary?.billAmount ?? 0)) ?? this.getCartTotal(),
       returned_amount: this.finalTipSummary?.changeToReturn ?? 0,
       menu_integration: this.selectedOrderType === 'talabat' ? true : false,
-      payment_status_menu_integration: this.selectedPaymentStatus,
+      payment_status_menu_integration: resolvedPaymentStatus,
       payment_method_menu_integration: this.selectedPaymentMethod,
 
       // dalia end tips

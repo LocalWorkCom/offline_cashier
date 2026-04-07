@@ -128,6 +128,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     this.error = '';
     // Convert orderId to number
     const numericOrderId = this.orderId;
+    const id = typeof this.orderId === 'string' ? parseInt(this.orderId, 10) : this.orderId;
+
     if (isNaN(numericOrderId)) {
       this.error = 'Invalid order ID';
       this.loading = false;
@@ -601,14 +603,14 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   }
 
   /** حالة الدفع الفعلية للعرض (مدفوعة / غير مدفوعة). لو الإجمالي = 0 نعتبرها مدفوعة. */
-  get displayPaymentStatus(): 'paid' | 'unpaid' {
-    const d = this.orderDetails;
-    if (!d) return 'unpaid';
-    const fromTx = d.transactions?.[0]?.payment_status ?? d.payment_status;
-    if (fromTx === 'paid') return 'paid';
-    const total = Number(this.orderSummary?.total_price ?? this.orderSummary?.total ?? 0);
-    return (!isNaN(total) && total <= 0) ? 'paid' : 'unpaid';
-  }
+  // get displayPaymentStatus(): 'paid' | 'unpaid' {
+  //   const d = this.orderDetails;
+  //   if (!d) return 'unpaid';
+  //   const fromTx = d.transactions?.[0]?.payment_status ?? d.payment_status;
+  //   if (fromTx === 'paid') return 'paid';
+  //   const total = Number(this.orderSummary?.total_price ?? this.orderSummary?.total ?? 0);
+  //   return (!isNaN(total) && total <= 0) ? 'paid' : 'unpaid';
+  // }
 
   /** Safe grand total for display (never NaN). */
   get displayTotalPrice(): number {
