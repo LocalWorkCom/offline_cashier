@@ -610,10 +610,10 @@
             </label>
           </div>
           <ng-container *ngIf="selectedOrderType === 'talabat' && selectedPaymentStatus === 'paid'">
-            <label class="payment-option-label" [class.active-payment]="selectedPaymentMethod === 'cash'"
-              (click)="selectPaymentMethod('cash')">
+            <label class="payment-option-label" [class.active-payment]="selectedPaymentMethod === 'deferred'"
+              (click)="selectPaymentMethod('deferred')">
               <i class="fas fa-money-bill-wave me-1"></i>
-              <span class="label-text">كاش</span>
+              <span class="label-text">آجل</span>
             </label>
           </ng-container>
         </div>
@@ -828,19 +828,19 @@
       </div>
       }
       <!-- في حالة غير مدفوع -->
-      <div *ngIf="selectedOrderType === 'talabat' && selectedPaymentStatus === 'unpaid'" class="card p-3 mb-3">
-        <div class="d-flex justify-content-between flex-wrap gap-2">
+      <!-- <div *ngIf="selectedOrderType === 'talabat' && selectedPaymentStatus === 'unpaid'" class="card p-3 mb-3">
+        <div class="d-flex justify-content-between flex-wrap gap-2"> -->
           <!-- الحالة الخاصة بطلبات + غير مدفوع - تظهر آجل فقط -->
           <!-- <ng-container *ngIf="selectedOrderType === 'talabat' && selectedPaymentStatus === 'unpaid'"> -->
-          <label class="payment-option-label" [class.active-payment]="selectedPaymentMethod === 'deferred'"
+          <!-- <label class="payment-option-label" [class.active-payment]="selectedPaymentMethod === 'deferred'"
             (click)="selectPaymentMethod('deferred')">
             <i class="fas fa-calendar-alt me-1"></i>
             <span class="label-text">آجل</span>
-          </label>
+          </label> -->
           <!-- </ng-container> -->
 
-        </div>
-      </div>
+        <!-- </div>
+      </div> -->
 
       @if (trueMessage) {
       <p class="message">{{ trueMessage }}</p>

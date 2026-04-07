@@ -2940,7 +2940,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         let totalEntered = 0;
         const cartTotal = Number(this.getCartTotal().toFixed(2));
         // ✅ حالة خاصة لطلبات + مدفوع + كاش - استخدام الإجمالي مباشرة
-        if (isTalabat && this.selectedPaymentMethod === 'cash') {
+        if (isTalabat && this.selectedPaymentMethod === 'deferred') {
           totalEntered = cartTotal;
           console.log('💰 Talabat + Paid + Cash: Using cart total directly', totalEntered);
           // تعيين القيم مباشرة
@@ -2950,7 +2950,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             serviceFee: 0,
             billAmount: cartTotal,
             paymentAmount: cartTotal,
-            paymentMethod: 'كاش',
+            paymentMethod: 'آجل',
             tipAmount: 0,
             grandTotalWithTip: cartTotal,
             changeToReturn: 0
@@ -3300,7 +3300,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           }
         } else if (this.selectedPaymentMethod === 'deferred') {
           orderData.cash_amount = 0;
-          orderData.credit_amount = 0;
+          orderData.credit_amount = this.getCartTotal();
         }
 
         // 🔒 تأكيد أن المبلغ المدفوع لا يقل عن الإجمالي مع الإكرامية قبل متابعة الطلب
@@ -4819,8 +4819,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
 
 
-    // ✅ الشرط الجديد: إذا كان الطلب من طلبات وغير مدفوع، اختيار آجل تلقائياً
-    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
+    // ✅ إذا كان الطلب من طلبات، اختاري "آجل" تلقائياً
+    if (this.selectedOrderType === 'talabat') {
       this.selectedPaymentMethod = 'deferred';
     }
 
@@ -5277,18 +5277,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   onPaymentStatusChange() {
     // const savedStatus = localStorage.getItem('selectedPaymentStatus');
     // this.selectedPaymentStatus = savedStatus || 'unpaid';
-    // ✅ الشرط الجديد: إذا كان الطلب من طلبات وغير مدفوع، اختيار آجل تلقائياً
-    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
+    // ✅ إذا كان الطلب من طلبات، اختاري "آجل" تلقائياً
+    if (this.selectedOrderType === 'talabat') {
       this.selectedPaymentMethod = 'deferred';
     }
 
-    // إذا كان نوع الطلب "طلبات"، عيّن طريقة الدفع المناسبة
+    // إذا كان نوع الطلب "طلبات"، تبقى الطريقة آجل في الحالتين
     if (this.selectedOrderType === 'talabat') {
-      if (this.selectedPaymentStatus === 'paid') {
-        this.selectedPaymentMethod = 'cash'; // مدفوع → كاش
-      } else if (this.selectedPaymentStatus === 'unpaid') {
-        this.selectedPaymentMethod = 'deferred'; // غير مدفوع → آجل
-      }
+      this.selectedPaymentMethod = 'deferred';
     }
     console.log('Payment Status:', this.selectedPaymentStatus); // paid or unpaid
     if (this.selectedPaymentStatus === 'unpaid') {
@@ -5966,9 +5962,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     }
 
-    // إذا كان نوع الطلب "طلبات" ومدفوع، تأكدي أن الطريقة هي "كاش"
+    // إذا كان نوع الطلب "طلبات" ومدفوع، اجعلي الطريقة "آجل"
     if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'paid') {
-      this.selectedPaymentMethod = 'cash';
+      this.selectedPaymentMethod = 'deferred';
       // return;
     }
     // إعادة تعيين القيم عند تغيير طريقة الدفع
