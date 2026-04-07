@@ -58,7 +58,8 @@
 
       <!-- Sync Data -->
       <li class="sidebar-item mt-2">
-        <button class="transfer-money-btn sync-btn" (click)="openSyncModal()" style="background-color: #28a745 !important;">
+        <button class="transfer-money-btn sync-btn" (click)="openSyncModal()"
+          style="background-color: #28a745 !important;">
           <i class="fa-solid fa-rotate me-1"></i> مزامنة البيانات
         </button>
       </li>
@@ -78,7 +79,8 @@
       <div class="modal-body text-center py-4">
         <i class="fa-solid fa-rotate main-color mb-3" [class.fa-spin]="isSyncing" style="font-size: 3rem;"></i>
         <h4 class="fw-bold mb-3">مزامنة البيانات</h4>
-        <div *ngIf="syncMessage" class="alert mb-4" [class.alert-info]="!syncStatus" [class.alert-success]="syncStatus === 'success'" [class.alert-danger]="syncStatus === 'error'">
+        <div *ngIf="syncMessage" class="alert mb-4" [class.alert-info]="!syncStatus"
+          [class.alert-success]="syncStatus === 'success'" [class.alert-danger]="syncStatus === 'error'">
           {{ syncMessage }}
         </div>
 
@@ -102,7 +104,9 @@
         <h5 class="fw-bold">سيتم تسجيل خروجك ؟</h5>
         <div class="mt-4 p-3 bg-light rounded shadow-sm border">
           <p class="mb-2 text-dark">نوصي بمزامنة بياناتك لضمان تحديث كافة العمليات مع النظام السحابي.</p>
-          <button type="button" class="btn btn-primary d-flex align-items-center justify-content-center mx-auto gap-2 px-4 text-white" (click)="openSyncModal()">
+          <button type="button"
+            class="btn btn-primary d-flex align-items-center justify-content-center mx-auto gap-2 px-4 text-white"
+            (click)="openSyncModal()">
             <i class="fa-solid fa-rotate"></i>
             مزامنة البيانات الآن
           </button>
@@ -239,7 +243,8 @@
         </div>
 
         <!-- تنبيه الفارق: يظهر فقط عند وجود فارق حقيقي (ليس 0 ولا "0.00" من الـ API) -->
-        <div *ngIf="currentBalance && (hasMoneyDeficit(currentBalance.deficitCash) || hasMoneyDeficit(currentBalance.deficitVisa))"
+        <div
+          *ngIf="currentBalance && (hasMoneyDeficit(currentBalance.deficitCash) || hasMoneyDeficit(currentBalance.deficitVisa))"
           class="text-center alert alert-warning">
 
           <h6 *ngIf="hasMoneyDeficit(currentBalance.deficitCash)" class="alert alert-warning w-100">
@@ -452,105 +457,432 @@
 
 <!-- <ng-template  #print> -->
 @if(printingData){
-<div id="print-section" class="fw-bold d-none cash-transfer-print">
+<div id="print-section" class="fw-bold  d-none cash-transfer-print">
 
-  <div class="ct-print-sheet">
-    <div id="body-logo" class="ct-print-logo-wrap">
-      <img src="assets/images/logo-with-white-bg.png" id="logo" alt="" class="ct-print-logo-img">
-      <p class="ct-print-branch-under-logo">{{ printingData?.branch }}</p>
+  <div id="body-logo" class="mb-2 print-section-logo-wrap">
+    <img src="../assets/images/logo.png" id="logo" alt="" srcset="" class="w-100">
+  </div>
+
+  <div class="print-transfer-centered-head">
+    <div class="mb-0 text-center" style="margin-bottom: 0px;">
+      <span class="total d-block">{{ printingData?.branch }}</span>
+      <p class="total" style="margin-bottom: 0px;"><span>ملخص وردية المطعم :</span> <span class="fw-normal">24 ساعة</span></p>
     </div>
-
-    <div class="ct-print-header-center">
-      <p class="ct-print-header-line">
-        <span>ملخص وردية المطعم :</span>
-        <span class="ct-print-header-muted">24 ساعة</span>
-      </p>
-      <p class="ct-print-header-line">
-        <span>من :</span>
-        <span class="ct-print-header-muted ct-print-datetime">{{ printingData?.start_shift }}</span>
-      </p>
-      <p class="ct-print-header-line">
-        <span>إلى :</span>
-        <span class="ct-print-header-muted ct-print-datetime">{{ printingData?.end_shift }}</span>
-      </p>
-      <p class="ct-print-header-line ct-print-printtime">
-        <span>وقت طباعة الوردية :</span>
-        <span class="ct-print-header-muted ct-print-datetime">{{ printTime | date:'dd-MM-yyyy, HH:mm:ss' }}</span>
-      </p>
+    <div class="total text-center">
+      <span>من : </span> 
+      <span class="fw-normal print-transfer-datetime">{{ printingData?.start_shift }}</span>
     </div>
-    <div class="ct-print-header-black-rule" aria-hidden="true"></div>
-
-    <div class="ct-print-meta-block">
-      <p class="ct-print-meta-row">
-        <span class="ct-print-meta-label">المستخدم :</span>
-        <span class="ct-print-meta-value">{{ printingData?.cashier_name }}</span>
-      </p>
-      <p class="ct-print-meta-row">
-        <span class="ct-print-meta-label">مدير الفرع :</span>
-        <span class="ct-print-meta-value">{{ printingData?.branchManeger }}</span>
-      </p>
-      <p class="ct-print-meta-row">
-        <span class="ct-print-meta-label">مجموع مبلغ الفتح (العهدة) :</span>
-        <span class="ct-print-meta-value">{{ printingData?.open_balance }} {{ currency_Symbol || 'ج.م' }}</span>
-      </p>
-      <p class="ct-print-meta-row ct-print-meta-row--currency">
-        <span class="ct-print-meta-label">العملة :</span>
-        <span class="ct-print-meta-value">{{ currency_Symbol || 'ج.م' }}</span>
-      </p>
+    <div class="total text-center">
+      <span>إلى : </span>
+      <span class="fw-normal print-transfer-datetime">{{ printingData?.end_shift }}</span>
     </div>
+    <div class="line text-center">
+      <p class="total"><span>وقت طباعة الوردية :</span> <span class="fw-normal print-transfer-datetime">{{printTime | date:'dd/MM/yyyy HH:mm:ss'}}</span></p>
+    </div>
+  </div>
 
-    <div class="ct-print-card ct-print-card--with-icon">
-      <div class="ct-print-card-rail" aria-hidden="true">
-        <span class="ct-print-card-icon">S</span>
+  <div class="print-transfer-centered-meta text-center">
+      <div class="mt-2 total">
+        <span>المستخدم : </span>
+        <span class="fw-normal">{{printingData?.cashier_name}}</span>
+
       </div>
-      <p class="ct-print-card-title">اجمالي المدفوعات</p>
-      <div class="ct-print-card-box">
-        <div class="table-content">
-          <span>عدد الاوردرات</span>
-          <span>{{ printingData?.orders_number }}</span>
+      <div class="total">
+        <span>مدير الفرع : </span>
+        <span class="fw-normal">{{printingData?.branchManeger}}</span>
+
+      </div>
+      <div class="total">
+        <span>مجموع مبلغ الفتح (العهدة) : </span>
+        <span class="fw-normal">{{printingData?.open_balance}} ج.م</span>
+      </div>
+      <div class="line total">
+        <span> العملة : </span>
+        <span class="fw-normal"> ج.م</span>
+      </div>
+  </div>
+
+  <p class="text-center fw-bold my-2 total">اجمالي المدفوعات</p>
+    <div class="cash-transfer-print-table-wrap">
+      <div class=" table-content">
+        <span> عدد الاوردرات </span>
+        <span>{{printingData?.orders_number}}</span>
+      </div>
+      <div class=" table-content">
+        <span> صافي مبلغ نقدية </span>
+        <span>{{printingData?.cashTotal}}</span>
+      </div>
+
+      <div class="table-content">
+        <span> صافي مبلغ بطاقة </span>
+        <span>{{printingData?.visaTotal}}</span>
+      </div>
+
+
+      <div class="table-content table-content-total-net">
+        <span> إجمالي الصافي </span>
+        <span>{{ (printingData?.visaTotal + printingData?.cashTotal) | number }}</span>
+      </div>
+      <!-- <div class="table-content">
+      <span> مبيعات </span>
+      <span>{{printingData?.totalSales}} </span>
+    </div>
+ <div class="table-content">
+      <span> مبيعات نقدية </span>
+
+      <span>{{printingData?.cashTotalwithoutRefund}}</span>
+    </div>
+  <div class="table-content">
+      <span> مبيعات بطاقة </span>
+      <span>{{printingData?.visaTotalwithoutRefund}} </span>
+    </div>  -->
+      <!--    <div class="table-content">
+      <span> خدمة </span>
+      <span>{{printingData?.service.toFixed(2)}} </span>
+    </div>
+    <div class="table-content">
+      <span> ضريبة القيمة المضافة </span>
+      <span>{{printingData?.Tax.toFixed(2)}} </span>
+    </div> -->
+    </div>
+
+    <p class="text-center fw-bold my-2 total"> اجمالي تفاصيل العهدة</p>
+    <div class="cash-transfer-print-table-wrap">
+      <div class=" table-content">
+        <span> النقدية المتوقعة </span>
+        <span>{{printingData?.cashTotalwithoutRefund}} </span>
+      </div>
+
+      <div class="table-content">
+        <span> النقدية الموجودة </span>
+        <span>{{printingData?.actualAmount}} </span>
+      </div>
+      <div class="table-content">
+        <span> الفرق </span>
+        <span>{{ printingDeficitCash | number:'1.2-2' }} </span>
+      </div>
+
+    </div>
+
+    @if (branchShiftReport) {
+    <div class="branch-shift-print-block">
+      @if (branchShiftReport.report_scope === 'cashier_machine') {
+      <div class="branch-shift-print-heading branch-shift-print-heading--figma text-center">
+        <p class="fw-bold my-1 mb-0 total branch-shift-print-title branch-shift-print-title--figma">ملخص وردية تفاصيل البيع</p>
+        <p class="mb-0 total branch-shift-print-subtitle branch-shift-print-subtitle--figma">(جميع الجلسات على الجهاز)</p>
+      </div>
+      } @else {
+      <p class="text-center fw-bold my-2 total branch-shift-print-title">ملخص وردية الفرع</p>
+      <p class="text-center branch-shift-print-subtitle">جميع جلسات الكاشير بالفرع لتاريخ اليوم</p>
+      }
+      <div class="cash-transfer-print-table-wrap branch-shift-print-tables-outer">
+      @if (branchShiftReport.report_scope !== 'cashier_machine') {
+      <div class="branch-shift-meta">
+        <div class="branch-shift-meta-row">
+          <span class="branch-shift-meta-label">تاريخ الوردية</span>
+          <span class="branch-shift-meta-value">{{ branchShiftReport.shift_date || '—' }}</span>
         </div>
-        <div class="table-content">
-          <span>صافي مبلغ نقدية</span>
-          <span>{{ printingData?.cashTotal | number:'1.2-2' }} {{ currency_Symbol || 'ج.م' }}</span>
+        <div class="branch-shift-meta-row">
+          <span class="branch-shift-meta-label">بداية النطاق (حسب النظام)</span>
+          <span class="branch-shift-meta-value branch-shift-datetime">{{ branchShiftReport.shift_start || '—' }}</span>
         </div>
-        <div class="table-content">
-          <span>صافي مبلغ بطاقة</span>
-          <span>{{ printingData?.visaTotal | number:'1.2-2' }} {{ currency_Symbol || 'ج.م' }}</span>
+        <div class="branch-shift-meta-row">
+          <span class="branch-shift-meta-label">نهاية النطاق (حسب النظام)</span>
+          <span class="branch-shift-meta-value branch-shift-datetime">{{ branchShiftReport.shift_end || '—' }}</span>
         </div>
-        <div class="table-content table-content--total">
-          <span>إجمالي الصافي</span>
-          <span>{{ ((printingData?.visaTotal ?? 0) + (printingData?.cashTotal ?? 0)) | number:'1.2-2' }} {{ currency_Symbol || 'ج.م' }}</span>
+        @if (branchShiftReport.report_scope === 'cashier_machine') {
+        <div class="branch-shift-meta-row">
+          <span class="branch-shift-meta-label">نقطة البيع</span>
+          <span class="branch-shift-meta-value">{{ posMachineDisplay }}</span>
         </div>
+        }
+        <div class="branch-shift-meta-row">
+          <span class="branch-shift-meta-label">حالة إغلاق وردية الفرع</span>
+          <span class="branch-shift-meta-value">{{ branchShiftReport.is_closed ? 'مُغلقة' : 'لم تُغلق بعد' }}</span>
+        </div>
+        @if (branchShiftReport.closed_at) {
+        <div class="branch-shift-meta-row">
+          <span class="branch-shift-meta-label">وقت إغلاق الفرع</span>
+          <span class="branch-shift-meta-value branch-shift-datetime">{{ branchShiftReport.closed_at }}</span>
+        </div>
+        }
+      </div>
+      }
+
+      <div class="branch-shift-rows">
+        <div class="branch-shift-row">
+          <span class="branch-shift-row-label">{{ branchShiftReport.report_scope === 'cashier_machine' ? 'أول رصيد فتح' : 'أول رصيد فتح (كاش)' }}</span>
+          <span class="branch-shift-row-value">{{ branchShiftReport.first_open_balance | number:'1.2-2':'en-US' }} {{
+            currency_Symbol }}</span>
+        </div>
+        <div class="branch-shift-row">
+          <span class="branch-shift-row-label">{{ branchShiftReport.report_scope === 'cashier_machine' ? 'آخر رصيد إغلاق' : 'آخر رصيد إغلاق مسجّل' }}</span>
+          <span class="branch-shift-row-value">{{ branchShiftReport.last_close_balance | number:'1.2-2':'en-US' }} {{
+            currency_Symbol }}</span>
+        </div>
+        <div class="branch-shift-row">
+          <span class="branch-shift-row-label branch-shift-row-label--keep-phrase">{{ branchShiftReport.report_scope === 'cashier_machine' ? 'اجمالى مبيعات الكاش' : 'إجمالي مبيعات كاش (مدفوع)' }}</span>
+          <span class="branch-shift-row-value">{{ branchShiftReport.total_cash_sales | number:'1.2-2':'en-US' }} {{currency_Symbol}}</span>
+        </div>
+        <div class="branch-shift-row">
+          <span class="branch-shift-row-label">مرتجعات كاش</span>
+          <span class="branch-shift-row-value">{{ branchShiftReport.total_cash_returns | number:'1.2-2':'en-US' }} {{
+            currency_Symbol }}</span>
+        </div>
+        @if (branchShiftReport.report_scope !== 'cashier_machine') {
+        <div class="branch-shift-row">
+          <span class="branch-shift-row-label">خصومات كاش (إن وُجدت)</span>
+          <span class="branch-shift-row-value">{{ (branchShiftReport.total_cash_discounts ?? 0) | number:'1.2-2':'en-US'
+            }} {{ currency_Symbol }}</span>
+        </div>
+        }
+        <div class="branch-shift-row branch-shift-row-emphasis">
+          <span class="branch-shift-row-label">{{ branchShiftReport.report_scope === 'cashier_machine' ? 'النقدية المتوقعة (وردية الفرع)' : 'النقدية المتوقعة (حسب وردية الفرع/الماكينة)' }}</span>
+          <span class="branch-shift-row-value">{{ branchShiftReport.expected_cash | number:'1.2-2':'en-US' }} {{
+            currency_Symbol }}</span>
+        </div>
+        <div class="branch-shift-row">
+          <span class="branch-shift-row-label">{{ branchShiftReport.report_scope === 'cashier_machine' ? 'النقدية الفعلية' : 'النقدية الفعلية عند إغلاق الفرع' }}</span>
+          <span class="branch-shift-row-value">{{ branchShiftActualCashDisplay != null ? (branchShiftActualCashDisplay |
+            number:'1.2-2':'en-US') + ' ' + currency_Symbol : '—' }}</span>
+        </div>
+        <div class="branch-shift-row branch-shift-row-emphasis">
+          <span class="branch-shift-row-label">{{ branchShiftReport.report_scope === 'cashier_machine' ? 'الفرق (متوقع vs فعلى)' : 'الفرق (فعلي − متوقع)' }}</span>
+          <span class="branch-shift-row-value">{{ branchShiftDifferenceDisplay != null ? (branchShiftDifferenceDisplay |
+            number:'1.2-2':'en-US') + ' ' + currency_Symbol : '—' }}</span>
+        </div>
+      </div>
+      </div>
+    </div>
+    }
+
+    <!--   <p class="text-center fw-bold my-2 total"> الإكرامية</p>
+  <div class="border border-1 border-black">
+    <div class=" table-content">
+      <span> اجمالي اكرامية نقدية </span>
+      <span>0 ج.م</span>
+    </div>
+
+    <div class="table-content">
+      <span> اجمالي اكرامية بطاقة </span>
+      <span>{{printingData?.totalSales}} </span>
+    </div>
+
+  </div> -->
+
+    <p class="text-center fw-bold my-2 total"> اجمالي المرتجعات</p>
+    <div class="cash-transfer-print-table-wrap">
+      <div class=" table-content">
+        <span> عدد الطلبات المرتجعة </span>
+        <span>{{printingData?.orders_number_refund}}</span>
+      </div>
+
+      <div class="table-content">
+        <span> مبيعات المرتجع </span>
+        <span>{{printingData?.priceRefund}} </span>
+      </div>
+
+    </div>
+    <p class="text-center fw-bold my-2 total"> اجمالي الخصومات</p>
+    <div class="cash-transfer-print-table-wrap">
+      <div class=" table-content">
+        <span> عدد الخصومات </span>
+        <span>{{printingData?.couponCountFixed || 0}}</span>
+      </div>
+      <div class=" table-content">
+        <span> مبلغ الخصم </span>
+        <span>{{printingData?.couponTotalFixed}}</span>
+      </div>
+
+
+    </div>
+
+    <p class="text-center fw-bold my-2 total"> المبيعات</p>
+    <div class="cash-transfer-print-table-wrap">
+      <div class="table-content">
+        <span> مبيعات </span>
+        <span>{{printingData?.totalSales}} </span>
+      </div>
+      <div class="table-content">
+        <span> مبيعات نقدية </span>
+
+        <span>{{printingData?.cashTotalwithoutRefund}}</span>
+      </div>
+      <div class="table-content">
+        <span> مبيعات بطاقة </span>
+        <span>{{printingData?.visaTotalwithoutRefund}} </span>
+      </div>
+
+
+    </div>
+    <div *ngIf="printingData?.categories.length>0">
+
+      <p class="text-center fw-bold my-2 total"> الفئات</p>
+      <div *ngFor="let item of printingData?.categories">
+        <div class="cash-transfer-print-table-wrap cash-transfer-print-table-wrap--category">
+
+
+          <div class="table-content">
+            <span> {{ item.name }} </span>
+            <span>{{ item.quantity }}</span>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+    <p class="text-center fw-bold my-2 total"> الطلبات التابعة لطلبات</p>
+    <div class="cash-transfer-print-table-wrap">
+      <div class="table-content">
+        <span> العدد الاجمالى </span>
+        <span>{{printingData?.talabatcount}} </span>
+      </div>
+      <div class="table-content">
+        <span> عدد نقدية طلبات</span>
+        <span>{{printingData?.talabat_cash_count}}</span>
+      </div>
+      <div class="table-content">
+        <span> مبيعات نقدية طلبات</span>
+        <span>{{printingData?.talabatcash}} </span>
+      </div>
+      <div class="table-content">
+        <span> عدد اجل طلبات</span>
+        <span>{{ printingData?.talabat_deferred_count ?? printingData?.talabat_visa_count }}</span>
+      </div>
+      <div class="table-content">
+        <span> مبيعات اجل طلبات</span>
+        <span>{{ printingData?.talabatdeferred ?? printingData?.talabatvisa }}</span>
+      </div>
+
+
+    </div>
+
+
+    <p class="text-center fw-bold my-2 total"> اجمالي المرتجعات التابعة للطلبات</p>
+    <div class="cash-transfer-print-table-wrap">
+      <div class=" table-content">
+        <span> عدد الطلبات المرتجعة التابعة للطلبات </span>
+        <span>{{printingData?.talabat_full_return_count}}</span>
+      </div>
+
+      <div class="table-content">
+        <span> مبيعات المرتجع التابعة للطلبات </span>
+        <span>{{printingData?.talabat_full_return}} </span>
+      </div>
+
+    </div>
+
+    <p class="text-center fw-bold my-2 total"> الإكراميات</p>
+    <div class="cash-transfer-print-table-wrap">
+      <div class="table-content">
+        <span> مجموع الإكراميات </span>
+        <span>{{printingData?.tipTotal | number:'1.2-2'}} ج.م</span>
+      </div>
+      <div class="table-content">
+        <span> الإكراميات كاش </span>
+        <span>{{printingData?.tipCash | number:'1.2-2'}} ج.م</span>
+      </div>
+      <div class="table-content">
+        <span> الإكراميات فيزا </span>
+        <span>{{printingData?.tipVisa | number:'1.2-2'}} ج.م</span>
+      </div>
+    </div>
+    <div class="mt-3" style="clear: both; position: relative; display: block; margin-top: 1rem;">
+      <p style="display: block; margin: 0 0 0.75rem 0; font-weight: bold;text-align: center;">شكرا لثقتكم بخدمتنا</p>
+      <div style=" display: block;">
+        <p style="display: block; margin: 0 0 0.75rem 0; line-height: 1.6; min-height: 1.6em; text-align: center;font-weight: bold;">{{
+          printTime | date:'dd/MM/yyyy HH:mm:ss' }}</p>
+        <p
+          style="display: block;line-height: 1.6; min-height: 1.6em; text-align: center;font-weight: bold; word-wrap: break-word;">
+          {{ branchData?.address }}</p>
       </div>
     </div>
 
-    <div class="ct-print-card ct-print-card--lined">
-      <div class="ct-print-lined-title-wrap">
-        <p class="ct-print-card-title ct-print-card-title--lined">اجمالى تفاصيل العهدة</p>
-      </div>
-      <div class="ct-print-card-box">
-        <div class="table-content">
-          <span>النقدية المتوقعة</span>
-          <span>{{ printingData?.cashTotalwithoutRefund | number:'1.2-2' }} {{ currency_Symbol || 'ج.م' }}</span>
-        </div>
-        <div class="table-content">
-          <span>النقدية الموجودة</span>
-          <span>{{ printingData?.actualAmount | number:'1.2-2' }} {{ currency_Symbol || 'ج.م' }}</span>
-        </div>
-        <div class="table-content">
-          <span>الفرق</span>
-          <span>{{ printingDeficitCash | number:'1.2-2' }} {{ currency_Symbol || 'ج.م' }}</span>
-        </div>
-      </div>
+</div>
+}
+
+  <!-- Logout Report Section -->
+@if(reportData){
+<div id="logout-report-section" class="fw-bold d-none text-center">
+  <div id="body-logo" class="mb-2">
+    <img src="assets/images/logo-with-white-bg.png" id="logo" alt="" srcset="" class="w-100">
+  </div>
+  <div class="m-2" style="border-bottom: 1px dotted black;">
+    <div class="text-center justify-content-center">
+      <h6>
+        العنوان :
+        <span>{{branchData?.address }}</span>
+      </h6>
+      <h6>
+        الهاتف :
+        <span>{{branchData?.phone }}</span>
+      </h6>
+      <h6>
+        المطعم :
+        <span>{{branchData?.name }}</span>
+      </h6>
     </div>
+  </div>
+
+  <div class="total text-right border-bottom border-1 border-black mb-2">
+    <p class="fw-bold">اسم الكاشير :
+      <span>{{fullName}}</span>
+    </p>
+    <p class="fw-bold">
+      وقت انتهاء الوردية :
+      <span>{{ printTime | date:'dd/MM/yyyy HH:mm' }}</span>
+    </p>
+    <p class="fw-bold">
+      رقم نقطة البيع :
+      <span class="fw-bold">{{ posMachineDisplay }}</span>
+    </p>
+  </div>
+
+  <div class="text-center">
+    <p class="fw-bold"> الرصيد الافتتاحى :
+      <span class="fw-bold">{{reportData.cashTotal | number:'1.2-2'}} {{currency_Symbol}}</span>
+    </p>
+    <p class="fw-bold"> رصيد الاغلاق :
+      <span class="fw-bold">{{reportData.cashTotalLogout | number:'1.2-2'}} {{currency_Symbol}}</span>
+    </p>
+  </div>
+
+  <table class="text-right fw-bold border border-1 border-black w-100">
+    <tr>
+      <td class="border border-1 border-black">مبيعات كاش</td>
+      <td class="border border-1 border-black">مبيعات فيزا</td>
+      <td class="border border-1 border-black">إجمالي </td>
+    </tr>
+    <tr>
+      <td class="border border-1 border-black">{{reportData.cash_sales | number:'1.2-2'}} </td>
+      <td class="border border-1 border-black">{{reportData.visa_sales | number:'1.2-2'}} </td>
+      <td class="border border-1 border-black">{{reportData.cash_sales + reportData.visa_sales | number:'1.2-2'}}</td>
+    </tr>
+  </table>
+
+
+  <div class="text-center mt-3">
+    <p class="fw-bold"> النقدية المتوقعة :
+      <span>{{ reportData.expectedCash | number:'1.2-2' }} {{currency_Symbol}}</span>
+    </p>
+    <p class="fw-bold"> النقدية الموجودة :
+      <span>{{reportData.cashTotalLogout | number:'1.2-2'}} {{currency_Symbol}}</span>
+    </p>
+    <p class="fw-bold">الفرق :
+      <span [class.text-black]="reportData.cashDifference < 0" [class.text-black]="reportData.cashDifference >= 0">
+        {{reportData.cashDifference | number:'1.2-2'}} {{currency_Symbol}}
+      </span>
+    </p>
+  </div>
 
   @if (branchShiftReport) {
-  <div class="branch-shift-print-block ct-print-branch-shift">
+  <div class="branch-shift-print-block mt-3 text-start">
     <p class="text-center fw-bold my-2 total branch-shift-print-title">
-      ملخص وردية تفاصيل البيع
+      {{ branchShiftReport.report_scope === 'cashier_machine' ? 'ملخص وردية نقطة البيع' : 'ملخص وردية الفرع' }}
     </p>
     <p class="text-center branch-shift-print-subtitle">
-      {{ branchShiftReport.report_scope === 'cashier_machine' ? '(جميع الجلسات على الجهاز)' : '(جميع جلسات الكاشير بالفرع لتاريخ اليوم)' }}
+      {{ branchShiftReport.report_scope === 'cashier_machine' ? 'جميع جلسات الكاشير على هذا الجهاز لتاريخ اليوم' :
+      'جميع جلسات الكاشير بالفرع لتاريخ اليوم' }}
     </p>
     <div class="branch-shift-meta border border-1 border-black">
       <div class="branch-shift-meta-row">
@@ -582,335 +914,50 @@
       </div>
       }
     </div>
-
     <div class="border border-1 border-black branch-shift-rows">
       <div class="branch-shift-row">
         <span class="branch-shift-row-label">أول رصيد فتح (كاش)</span>
-        <span class="branch-shift-row-value">{{ branchShiftReport.first_open_balance | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
+        <span class="branch-shift-row-value">{{ branchShiftReport.first_open_balance | number:'1.2-2':'en-US' }} {{
+          currency_Symbol }}</span>
       </div>
       <div class="branch-shift-row">
         <span class="branch-shift-row-label">آخر رصيد إغلاق مسجّل</span>
-        <span class="branch-shift-row-value">{{ branchShiftReport.last_close_balance | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
+        <span class="branch-shift-row-value">{{ branchShiftReport.last_close_balance | number:'1.2-2':'en-US' }} {{
+          currency_Symbol }}</span>
       </div>
       <div class="branch-shift-row">
         <span class="branch-shift-row-label">إجمالي مبيعات كاش (مدفوع)</span>
-        <span class="branch-shift-row-value">{{ branchShiftReport.total_cash_sales | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
+        <span class="branch-shift-row-value">{{ branchShiftReport.total_cash_sales | number:'1.2-2':'en-US' }} {{
+          currency_Symbol }}</span>
       </div>
       <div class="branch-shift-row">
         <span class="branch-shift-row-label">مرتجعات كاش</span>
-        <span class="branch-shift-row-value">{{ branchShiftReport.total_cash_returns | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
+        <span class="branch-shift-row-value">{{ branchShiftReport.total_cash_returns | number:'1.2-2':'en-US' }} {{
+          currency_Symbol }}</span>
       </div>
       <div class="branch-shift-row">
         <span class="branch-shift-row-label">خصومات كاش (إن وُجدت)</span>
-        <span class="branch-shift-row-value">{{ (branchShiftReport.total_cash_discounts ?? 0) | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
+        <span class="branch-shift-row-value">{{ (branchShiftReport.total_cash_discounts ?? 0) | number:'1.2-2':'en-US'
+          }} {{ currency_Symbol }}</span>
       </div>
       <div class="branch-shift-row branch-shift-row-emphasis">
         <span class="branch-shift-row-label">النقدية المتوقعة (حسب وردية الفرع/الماكينة)</span>
-        <span class="branch-shift-row-value">{{ branchShiftReport.expected_cash | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
+        <span class="branch-shift-row-value">{{ branchShiftReport.expected_cash | number:'1.2-2':'en-US' }} {{
+          currency_Symbol }}</span>
       </div>
       <div class="branch-shift-row">
         <span class="branch-shift-row-label">النقدية الفعلية عند إغلاق الفرع</span>
-        <span class="branch-shift-row-value">{{ branchShiftActualCashDisplay != null ? (branchShiftActualCashDisplay | number:'1.2-2':'en-US') + ' ' + currency_Symbol : '—' }}</span>
+        <span class="branch-shift-row-value">{{ branchShiftActualCashDisplay != null ? (branchShiftActualCashDisplay |
+          number:'1.2-2':'en-US') + ' ' + currency_Symbol : '—' }}</span>
       </div>
       <div class="branch-shift-row branch-shift-row-emphasis">
         <span class="branch-shift-row-label">الفرق (فعلي − متوقع)</span>
-        <span class="branch-shift-row-value">{{ branchShiftDifferenceDisplay != null ? (branchShiftDifferenceDisplay | number:'1.2-2':'en-US') + ' ' + currency_Symbol : '—' }}</span>
+        <span class="branch-shift-row-value">{{ branchShiftDifferenceDisplay != null ? (branchShiftDifferenceDisplay |
+          number:'1.2-2':'en-US') + ' ' + currency_Symbol : '—' }}</span>
       </div>
     </div>
   </div>
   }
-
-  <!--   <p class="text-center fw-bold my-2 total"> الإكرامية</p>
-  <div class="border border-1 border-black">
-    <div class=" table-content">
-      <span> اجمالي اكرامية نقدية </span>
-      <span>0 ج.م</span>
-    </div>
-
-    <div class="table-content">
-      <span> اجمالي اكرامية بطاقة </span>
-      <span>{{printingData?.totalSales}} </span>
-    </div>
-
-  </div> -->
-
-  <p class="text-center fw-bold my-2 total"> اجمالي المرتجعات</p>
-  <div class="border border-1 border-black">
-    <div class=" table-content">
-      <span> عدد الطلبات المرتجعة </span>
-      <span>{{printingData?.orders_number_refund}}</span>
-    </div>
-
-    <div class="table-content">
-      <span> مبيعات المرتجع </span>
-      <span>{{printingData?.priceRefund}} </span>
-    </div>
-
-  </div>
-  <p class="text-center fw-bold my-2 total"> اجمالي الخصومات</p>
-  <div class="border border-1 border-black">
-    <div class=" table-content">
-      <span> عدد الخصومات </span>
-      <span>{{printingData?.couponCountFixed || 0}}</span>
-    </div>
-    <div class=" table-content">
-      <span> مبلغ الخصم </span>
-      <span>{{printingData?.couponTotalFixed}}</span>
-    </div>
-
-
-  </div>
-
-  <p class="text-center fw-bold my-2 total"> المبيعات</p>
-  <div class="border border-1 border-black">
-    <div class="table-content">
-      <span> مبيعات </span>
-      <span>{{printingData?.totalSales}} </span>
-    </div>
-    <div class="table-content">
-      <span> مبيعات نقدية </span>
-
-      <span>{{printingData?.cashTotalwithoutRefund}}</span>
-    </div>
-    <div class="table-content">
-      <span> مبيعات بطاقة </span>
-      <span>{{printingData?.visaTotalwithoutRefund}} </span>
-    </div>
-
-
-  </div>
-  <div *ngIf="printingData?.categories.length>0">
-
-    <p class="text-center fw-bold my-2 total"> الفئات</p>
-    <div *ngFor="let item of printingData?.categories">
-      <div class="border border-1 border-black border-bottom-0 ll">
-
-
-        <div class="table-content">
-          <span> {{ item.name }} </span>
-          <span>{{ item.quantity }}</span>
-        </div>
-
-      </div>
-    </div>
-
-  </div>
-  <p class="text-center fw-bold my-2 total"> الطلبات التابعة لطلبات</p>
-  <div class="border border-1 border-black">
-    <div class="table-content">
-      <span> العدد الاجمالى </span>
-      <span>{{printingData?.talabatcount}} </span>
-    </div>
-    <div class="table-content">
-      <span> عدد نقدية طلبات</span>
-      <span>{{printingData?.talabat_cash_count}}</span>
-    </div>
-    <div class="table-content">
-      <span> مبيعات نقدية طلبات</span>
-      <span>{{printingData?.talabatcash}} </span>
-    </div>
-    <div class="table-content">
-      <span> عدد اجل طلبات</span>
-      <span>{{printingData?.talabat_visa_count}}</span>
-    </div>
-    <div class="table-content">
-      <span> مبيعات اجل طلبات</span>
-      <span>{{printingData?.talabatvisa}} </span>
-    </div>
-
-
-  </div>
-
-
-  <p class="text-center fw-bold my-2 total"> اجمالي المرتجعات التابعة للطلبات</p>
-  <div class="border border-1 border-black">
-    <div class=" table-content">
-      <span> عدد الطلبات المرتجعة التابعة للطلبات </span>
-      <span>{{printingData?.talabat_full_return_count}}</span>
-    </div>
-
-    <div class="table-content">
-      <span> مبيعات المرتجع التابعة للطلبات </span>
-      <span>{{printingData?.talabat_full_return}} </span>
-    </div>
-
-  </div>
-
-  <p class="text-center fw-bold my-2 total"> الإكراميات</p>
-  <div class="border border-1 border-black">
-    <div class="table-content">
-      <span> مجموع الإكراميات </span>
-      <span>{{printingData?.tipTotal | number:'1.2-2'}} ج.م</span>
-    </div>
-    <div class="table-content">
-      <span> الإكراميات كاش </span>
-      <span>{{printingData?.tipCash | number:'1.2-2'}} ج.م</span>
-    </div>
-    <div class="table-content">
-      <span> الإكراميات فيزا </span>
-      <span>{{printingData?.tipVisa | number:'1.2-2'}} ج.م</span>
-    </div>
-  </div>
-  <div class="ct-print-footer">
-    <p class="ct-print-footer-thanks">شكرا لثقتكم بخدمتنا</p>
-    <div class="ct-print-footer-rule">
-      <p class="ct-print-footer-time">{{ printTime | date:'dd/MM/yyyy HH:mm:ss' }}</p>
-      <p class="ct-print-footer-address">{{ branchData?.address }}</p>
-    </div>
-  </div>
-
-  </div>
-</div>
-}
-
-<!-- Logout Report Section -->
-@if(reportData){
-<div id="logout-report-section" class="fw-bold d-none text-center">
-  <div id="body-logo" class="mb-2">
-    <img src="assets/images/logo-with-white-bg.png" id="logo" alt="" srcset="" class="w-100">
-  </div>
-  <div class="m-2" style="border-bottom: 1px dotted black;">
-    <div class="text-center justify-content-center">
-      <h6>
-        العنوان :
-        <span>{{branchData?.address }}</span>
-      </h6>
-      <h6>
-        الهاتف :
-        <span>{{branchData?.phone }}</span>
-      </h6>
-      <h6>
-        المطعم :
-        <span>{{branchData?.name }}</span>
-      </h6>
-    </div>
-  </div>
-
-  <div class="total text-right border-bottom border-1 border-black mb-2">
-    <p class="fw-bold">اسم الكاشير :
-      <span>{{fullName}}</span>
-    </p>
-    <p class="fw-bold">
-      وقت انتهاء الوردية :
-      <span>{{ printTime | date:'dd/MM/yyyy HH:mm' }}</span>
-    </p>
-     <p class="fw-bold">
-      رقم نقطة البيع :
-      <span class="fw-bold">{{ posMachineDisplay }}</span>
-    </p>
-  </div>
-
-  <div class="text-center">
-    <p class="fw-bold"> الرصيد الافتتاحى :
-      <span class="fw-bold">{{reportData.cashTotal | number:'1.2-2'}} {{currency_Symbol}}</span>
-    </p>
-    <p class="fw-bold"> رصيد الاغلاق :
-      <span class="fw-bold">{{reportData.cashTotalLogout | number:'1.2-2'}} {{currency_Symbol}}</span>
-    </p>
-  </div>
-
-  <table class="text-right fw-bold border border-1 border-black w-100">
-    <tr>
-      <td class="border border-1 border-black">مبيعات كاش</td>
-      <td class="border border-1 border-black">مبيعات فيزا</td>
-      <td class="border border-1 border-black">إجمالي </td>
-    </tr>
-    <tr>
-      <td  class="border border-1 border-black" >{{reportData.cash_sales | number:'1.2-2'}} </td>
-      <td  class="border border-1 border-black" >{{reportData.visa_sales | number:'1.2-2'}} </td>
-      <td  class="border border-1 border-black" >{{reportData.cash_sales + reportData.visa_sales | number:'1.2-2'}}</td>
-    </tr>
-  </table>
-
-
-    <div class="text-center mt-3">
-      <p class="fw-bold"> النقدية المتوقعة :
-        <span>{{ reportData.expectedCash | number:'1.2-2' }} {{currency_Symbol}}</span>
-      </p>
-      <p class="fw-bold"> النقدية الموجودة :
-        <span>{{reportData.cashTotalLogout | number:'1.2-2'}} {{currency_Symbol}}</span>
-      </p>
-      <p class="fw-bold">الفرق :
-        <span [class.text-black]="reportData.cashDifference < 0" [class.text-black]="reportData.cashDifference >= 0">
-          {{reportData.cashDifference | number:'1.2-2'}} {{currency_Symbol}}
-        </span>
-      </p>
-    </div>
-
-    @if (branchShiftReport) {
-    <div class="branch-shift-print-block mt-3 text-start">
-      <p class="text-center fw-bold my-2 total branch-shift-print-title">
-        {{ branchShiftReport.report_scope === 'cashier_machine' ? 'ملخص وردية نقطة البيع' : 'ملخص وردية الفرع' }}
-      </p>
-      <p class="text-center branch-shift-print-subtitle">
-        {{ branchShiftReport.report_scope === 'cashier_machine' ? 'جميع جلسات الكاشير على هذا الجهاز لتاريخ اليوم' : 'جميع جلسات الكاشير بالفرع لتاريخ اليوم' }}
-      </p>
-      <div class="branch-shift-meta border border-1 border-black">
-        <div class="branch-shift-meta-row">
-          <span class="branch-shift-meta-label">تاريخ الوردية</span>
-          <span class="branch-shift-meta-value">{{ branchShiftReport.shift_date || '—' }}</span>
-        </div>
-        <div class="branch-shift-meta-row">
-          <span class="branch-shift-meta-label">بداية النطاق (حسب النظام)</span>
-          <span class="branch-shift-meta-value branch-shift-datetime">{{ branchShiftReport.shift_start || '—' }}</span>
-        </div>
-        <div class="branch-shift-meta-row">
-          <span class="branch-shift-meta-label">نهاية النطاق (حسب النظام)</span>
-          <span class="branch-shift-meta-value branch-shift-datetime">{{ branchShiftReport.shift_end || '—' }}</span>
-        </div>
-        @if (branchShiftReport.report_scope === 'cashier_machine') {
-        <div class="branch-shift-meta-row">
-          <span class="branch-shift-meta-label">نقطة البيع</span>
-          <span class="branch-shift-meta-value">{{ posMachineDisplay }}</span>
-        </div>
-        }
-        <div class="branch-shift-meta-row">
-          <span class="branch-shift-meta-label">حالة إغلاق وردية الفرع</span>
-          <span class="branch-shift-meta-value">{{ branchShiftReport.is_closed ? 'مُغلقة' : 'لم تُغلق بعد' }}</span>
-        </div>
-        @if (branchShiftReport.closed_at) {
-        <div class="branch-shift-meta-row">
-          <span class="branch-shift-meta-label">وقت إغلاق الفرع</span>
-          <span class="branch-shift-meta-value branch-shift-datetime">{{ branchShiftReport.closed_at }}</span>
-        </div>
-        }
-      </div>
-      <div class="border border-1 border-black branch-shift-rows">
-        <div class="branch-shift-row">
-          <span class="branch-shift-row-label">أول رصيد فتح (كاش)</span>
-          <span class="branch-shift-row-value">{{ branchShiftReport.first_open_balance | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
-        </div>
-        <div class="branch-shift-row">
-          <span class="branch-shift-row-label">آخر رصيد إغلاق مسجّل</span>
-          <span class="branch-shift-row-value">{{ branchShiftReport.last_close_balance | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
-        </div>
-        <div class="branch-shift-row">
-          <span class="branch-shift-row-label">إجمالي مبيعات كاش (مدفوع)</span>
-          <span class="branch-shift-row-value">{{ branchShiftReport.total_cash_sales | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
-        </div>
-        <div class="branch-shift-row">
-          <span class="branch-shift-row-label">مرتجعات كاش</span>
-          <span class="branch-shift-row-value">{{ branchShiftReport.total_cash_returns | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
-        </div>
-        <div class="branch-shift-row">
-          <span class="branch-shift-row-label">خصومات كاش (إن وُجدت)</span>
-          <span class="branch-shift-row-value">{{ (branchShiftReport.total_cash_discounts ?? 0) | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
-        </div>
-        <div class="branch-shift-row branch-shift-row-emphasis">
-          <span class="branch-shift-row-label">النقدية المتوقعة (حسب وردية الفرع/الماكينة)</span>
-          <span class="branch-shift-row-value">{{ branchShiftReport.expected_cash | number:'1.2-2':'en-US' }} {{ currency_Symbol }}</span>
-        </div>
-        <div class="branch-shift-row">
-          <span class="branch-shift-row-label">النقدية الفعلية عند إغلاق الفرع</span>
-          <span class="branch-shift-row-value">{{ branchShiftActualCashDisplay != null ? (branchShiftActualCashDisplay | number:'1.2-2':'en-US') + ' ' + currency_Symbol : '—' }}</span>
-        </div>
-        <div class="branch-shift-row branch-shift-row-emphasis">
-          <span class="branch-shift-row-label">الفرق (فعلي − متوقع)</span>
-          <span class="branch-shift-row-value">{{ branchShiftDifferenceDisplay != null ? (branchShiftDifferenceDisplay | number:'1.2-2':'en-US') + ' ' + currency_Symbol : '—' }}</span>
-        </div>
-      </div>
-    </div>
-    }
 
   <footer class="m-3 text-center">
     <div *ngIf="hasMoneyDeficit(reportData.cashDifference)" class="border border-1 border-black p-2 w-100 m-2">
