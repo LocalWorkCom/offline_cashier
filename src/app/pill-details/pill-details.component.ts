@@ -290,7 +290,7 @@ private processPillDetails(data: any): void {
     ).subscribe({
       next: (response: any) => {
         this.order_id = response.data.order_id;
-        
+
         this.invoices = (response.data.invoices || []).map((inv: any) => {
           const creatorName = inv.created_by_username || response.data.created_by_username || '---';
           const closerName = inv.closed_by_username || response.data.closed_by_username || '---';
@@ -642,7 +642,7 @@ if ((window as any).deviceAPI) {
           setTimeout(() => {
             window.print();
             resolve(true);
-          }, 200)
+          }, 100)
         );
       }
 

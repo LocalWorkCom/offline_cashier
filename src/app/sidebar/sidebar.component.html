@@ -295,7 +295,7 @@
           <!-- Visa Input -->
           <h6><small><i class="fa-solid fa-credit-card main-color ms-1"></i>إجمالي مدفوعات البطاقة</small></h6>
           <div *ngIf="visaTotal !== null" class="input-group position-relative mb-3">
-            <h3 class="bg-grey p-3">{{ visaTotal }} {{ currency_Symbol }}</h3>
+            <h3 class="bg-grey p-3">{{ visaTotal | number:'1.2-2' }} {{ currency_Symbol }}</h3>
           </div>
           <div *ngIf="errorMessage" class="mt-2">
             <small class="text-danger">{{ errorMessage }}</small>

@@ -13,6 +13,7 @@
         *ngIf="orderDetails.status == 'cancelled' || orderDetails.status == 'cancel'">ملغي</span></h4>
   </div>
 
+  @if(orderDetails?.status_order !== 'cancelled') {
   <div *ngIf="!loading && orderDetails && canShowOrderActions()" class="d-flex w-100 gap-2 my-2">
     <button type="button" class="btn reversed main-color flex-fill py-2 text-center" (click)="openChangeOrderTypeModalFromDetails()" title="تغيير نوع الطلب">
       <i class="fa-solid fa-arrows-rotate px-1"></i>
@@ -29,7 +30,7 @@
       تغيير الطاولة
     </a>
   </div>
-
+  }
   <p class="fs-4  text-center" [ngClass]="status_order? 'text-success' : 'main-color' ">{{errorMessage}}</p>
   <div *ngIf="loading" class="card px-4 py-2 my-2">
     <div class="d-flex justify-content-between">
@@ -67,7 +68,7 @@
 
     </div>
     <!-- Cash - visa -->
-    <div *ngIf="orderDetails.transactions?.length > 1">
+    <div *ngIf="orderDetails.transactions?.length > 0">
       <div *ngFor="let inv of orderDetails.transactions">
         <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
           *ngIf="orderDetails.transactions[0].payment_status == 'paid' && inv.is_refund == 0">

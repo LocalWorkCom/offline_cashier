@@ -287,8 +287,6 @@ export class PillEditComponent {
 
         this.addressDetails = this.invoices?.map((e: any) => e.address_details);
 
-        this.enrichAddressDetailsFromOrder(response.data?.order_id);
-
         if (this.branchDetails?.length) {
           this.extractDateAndTime(this.branchDetails[0]);
         }
@@ -772,7 +770,12 @@ export class PillEditComponent {
         coupon_code: this.couponCode || this.invoices?.[0]?.invoice_summary?.coupon_code || '',
         coupon_value: this.discountAmount || this.invoices?.[0]?.invoice_summary?.coupon_value || 0,
         coupon_type: this.couponType || this.invoices?.[0]?.invoice_summary?.coupon_type || '',
-        coupon_title: this.couponTitle || this.invoices?.[0]?.invoice_summary?.coupon_title || ''
+        coupon_title: this.couponTitle || this.invoices?.[0]?.invoice_summary?.coupon_title || '',
+        delivery_fees: Number(
+          this.invoices?.[0]?.invoice_summary?._original_delivery_fees ??
+          this.invoices?.[0]?.invoice_summary?.delivery_fees ??
+          0
+        )
       } : undefined;
 
       // ✅ إعداد بيانات الإكرامية إذا كانت موجودة
@@ -991,11 +994,20 @@ export class PillEditComponent {
     const servicePerc = Number(summary.service_percentage || 0);
     const taxPerc = Number(summary.tax_percentage || 0);
     const taxApplication = summary.tax_application ?? false;
-    const deliveryFees = Number(summary.delivery_fees || 0);
+    if (summary._original_delivery_fees === undefined || summary._original_delivery_fees === null) {
+      summary._original_delivery_fees = Number(summary.delivery_fees || 0);
+    }
+    const originalDeliveryFees = Number(summary._original_delivery_fees || 0);
 
     // Step 2: Apply Discount/Coupon
     const discountValue = Math.min(discount, productValueBeforeDiscount);
     const productValueAfterDiscount = Math.max(0, productValueBeforeDiscount - discountValue);
+
+    const isFullCouponDiscount =
+      type === 'percentage' &&
+      productValueBeforeDiscount > 0 &&
+      discountValue >= productValueBeforeDiscount;
+    const deliveryFees = isFullCouponDiscount ? 0 : originalDeliveryFees;
 
     // Step 3: Calculate Service Charge (on product value AFTER discount)
     let serviceAmount = 0;
@@ -1051,6 +1063,7 @@ export class PillEditComponent {
     summary.tax_value = Number(taxAmount.toFixed(3));
     summary.tax = Number(taxAmount.toFixed(3));
     summary.service_fees = serviceAmount;
+    summary.delivery_fees = deliveryFees;
 
     // ✅ تحديث invoiceSummary أيضاً (المستخدم في العرض)
     if (this.invoiceSummary && this.invoiceSummary[0]) {
@@ -1067,6 +1080,7 @@ export class PillEditComponent {
       this.invoiceSummary[0].tax_value = Number(taxAmount.toFixed(3));
       this.invoiceSummary[0].tax = Number(taxAmount.toFixed(3));
       this.invoiceSummary[0].service_fees = serviceAmount;
+      this.invoiceSummary[0].delivery_fees = deliveryFees;
     }
 
     this.discountAmount = discountValue;
@@ -1678,134 +1692,6 @@ export class PillEditComponent {
     };
 
     return map[type] || type;
-  }
-
-  /**
-   * استجابة الفاتورة غالباً لا تُرجع address_type داخل address_details بينما تفاصيل الطلب تفعل.
-   * يُصلح عرض «مكتب» بدون انتظار تعديل الباكند على مسار invoice فقط.
-   */
-  private enrichAddressDetailsFromOrder(orderId: string | null | undefined): void {
-    if (!orderId || this.invoices?.[0]?.order_type !== 'Delivery') return;
-    const ad = this.addresDetails;
-    if (!ad || typeof ad !== 'object') return;
-    if (ad.address_type || ad.addressType) return;
-
-    this.orderListDetailsService.getOrderById(String(orderId)).subscribe({
-      next: (res) => {
-        const order = res?.data?.orderDetails?.[0];
-        if (!order) return;
-        const od = order.order_details || {};
-        const at = od.address_type ?? od.addressType;
-        if (!at) return;
-        const merged = {
-          ...ad,
-          address_type: at,
-          building: ad.building ?? od.building ?? undefined,
-          apartment_number: ad.apartment_number ?? od.apartment_number ?? undefined,
-          floor_number: ad.floor_number ?? od.floor_number ?? undefined,
-          address: ad.address ?? od.address ?? od.delivery_address ?? undefined,
-        };
-        this.addresDetails = merged;
-        if (this.invoices?.[0]) {
-          this.invoices[0].address_details = merged;
-        }
-        if (this.addressDetails?.[0]) {
-          this.addressDetails[0] = merged;
-        }
-        this.cdr.detectChanges();
-      },
-      error: () => {},
-    });
-  }
-
-  /**
-   * نص العنوان في الفاتورة يأتي جاهزاً من السيرفر (client_address). التسميات الخاطئة
-   * (عمارة رقم / شقة لعنوان مكتب) تُنشأ هناك عند الحفظ وليس من Angular.
-   * نصحّح العرض عندما يكون address_type = office أو يُستنتج من النص/الحقول.
-   */
-  getFormattedDeliveryAddress(): string {
-    const primary = this.addresDetails;
-    const d =
-      primary &&
-      typeof primary === 'object' &&
-      Object.keys(primary).length > 0 &&
-      primary
-        ? primary
-        : this.addressDetails?.[0] || primary || {};
-
-    if (!d || typeof d !== 'object' || Object.keys(d).length === 0) {
-      return 'غير متوفر';
-    }
-
-    const inv = this.invoices?.[0];
-    const raw = String(d.client_address ?? '').trim();
-    const typeRaw = String(
-      d.address_type ??
-        d.addressType ??
-        inv?.address_type ??
-        inv?.delivery_address_type ??
-        ''
-    )
-      .trim()
-      .toLowerCase();
-    const isOfficeType = typeRaw === 'office' || typeRaw === 'مكتب';
-    const looksLikeOfficeEnglish = /\boffice\b/i.test(raw);
-    const applyOffice = isOfficeType || looksLikeOfficeEnglish;
-
-    const areaFrom = (v: unknown): string => {
-      if (v == null || v === '') return '';
-      if (typeof v === 'object' && v !== null) {
-        const o = v as Record<string, unknown>;
-        return String(o['name_ar'] ?? o['name_en'] ?? o['name'] ?? '').trim();
-      }
-      return String(v).trim();
-    };
-    const area =
-      areaFrom(d.area_name) ||
-      areaFrom(d.area_name_ar) ||
-      areaFrom(d.district_name) ||
-      areaFrom(d.area) ||
-      '';
-    const street = String(d.address ?? d.street ?? d.address_line ?? '').trim();
-    const building = String(
-      d.building ?? d.building_name ?? d.office_name ?? ''
-    ).trim();
-    const unitNum = String(
-      d.apartment_number ?? d.office_number ?? d.unit_number ?? ''
-    ).trim();
-    const floor = String(d.floor_number ?? d.floor ?? '').trim();
-
-    if (applyOffice && (area || street || building || unitNum || floor)) {
-      const parts: string[] = [];
-      if (area) parts.push(area);
-      if (street) parts.push(street);
-      if (building) parts.push(`اسم المكتب ${building}`);
-      if (floor) parts.push(`دور ${floor}`);
-      if (unitNum) parts.push(`رقم المكتب ${unitNum}`);
-      if (parts.length > 0) {
-        return parts.join(' - ');
-      }
-    }
-
-    if (!raw) {
-      return 'غير متوفر';
-    }
-
-    if (!applyOffice) {
-      return raw;
-    }
-
-    let s = raw;
-    s = s.replace(/عمارة\s*رقم\s+/gi, 'اسم المكتب ');
-    s = s.replace(/عمارة\s*رقم\s*-\s*/gi, ' - ');
-    s = s.replace(/-\s*عمارة\s*رقم\s*-/g, ' - ');
-    s = s.replace(/عمارة\s*رقم\s*$/g, '');
-    s = s.replace(/شقة\s+([\d٠-٩]+)/g, 'رقم المكتب $1');
-    s = s.replace(/شقة([\d٠-٩]+)/g, 'رقم المكتب $1');
-    s = s.replace(/\s*-\s*-\s*/g, ' - ');
-    s = s.replace(/\s{2,}/g, ' ');
-    s = s.replace(/^\s*-\s*|\s*-\s*$/g, '');
-    return s.trim();
   }
 
   // دالة لمسح الرسائل عند تغيير القيمة (بدون تطبيق تلقائي)

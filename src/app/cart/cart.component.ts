@@ -823,4 +823,20 @@ export class CartComponent {
     };
     return icons[type] || 'fa-solid fa-circle';
   }
+
+  private normalizePaymentMethod(method: any): string {
+    return String(method ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '_');
+  }
+
+  getPaymentMethodLabel(method: any): string {
+    const m = this.normalizePaymentMethod(method);
+    if (m === 'cash') return 'كاش';
+    if (['credit', 'visa', 'card', 'mastercard', 'mada'].includes(m)) return 'فيزا';
+    if (['deferred', 'later', 'postpaid'].includes(m)) return 'آجل';
+    if (m === 'online') return 'أونلاين';
+    return 'غير محدد';
+  }
 }

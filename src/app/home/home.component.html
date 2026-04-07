@@ -100,7 +100,7 @@
                    min="0">
           </div> -->
           <div *ngIf="visaTotal !== null" class="input-group position-relative mb-3">
-            <h4 class="form-control ">{{ visaTotal }} {{ currency_Symbol }}</h4>
+            <h4 class="form-control ">{{ visaTotal | number:'1.2-2' }} {{ currency_Symbol }}</h4>
           </div>
           <div *ngIf="errorMessage" class="mt-2">
             <small class="text-danger">{{ errorMessage }}</small>
