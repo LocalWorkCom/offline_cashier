@@ -18,8 +18,12 @@
 
 .nav-pills .nav-link {
     font-size: 1.25rem;
-    min-width: 135px;
+    width: 95% !important;
     height: 125px;
+}
+
+.nav-item.mb-2 {
+    width: 25% !important;
 }
 
 .icon {

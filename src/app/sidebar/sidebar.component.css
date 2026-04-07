@@ -1,4 +1,3 @@
-
 .sidebar-logo {
   width: 100%;
   height: 100px;
@@ -14,46 +13,63 @@
 }
 
 .active_link {
-    background: #fe0000;
-    color: #fff;
-  }
-  .active_link  img{
-    filter: brightness(0) invert(1);
-  }
-  .sidebar .sidebar-item img{
-    height: 25px;
-  }
-  .sidebar-man{
-    height: 275px;
-    width: 100%;
-    object-fit: contain;
-    object-position: bottom;
-  }
-  .btn-transparent {
-    box-shadow: none;
-    color: #FE0000;
-    background-color: transparent;
-    border-radius: 10px;
-    transition: all 0.3s ease-in-out;
-    font-weight: bold;
-
-    opacity: 1;
-    border: 2px solid #FE0000;
-    padding-block: 0.65rem ;
+  background: #fe0000;
+  color: #fff;
 }
-.transfer-money-btn{
-  background-color: #FE0000;
+.active_link img {
+  filter: brightness(0) invert(1);
+}
+.sidebar .sidebar-item img {
+  height: 25px;
+}
+.sidebar-man {
+  height: 275px;
+  width: 100%;
+  object-fit: contain;
+  object-position: bottom;
+}
+.btn-transparent {
+  box-shadow: none;
+  color: #fe0000;
+  background-color: transparent;
+  border-radius: 10px;
+  transition: all 0.3s ease-in-out;
+  font-weight: bold;
+
+  opacity: 1;
+  border: 2px solid #fe0000;
+  padding-block: 0.65rem;
+}
+.transfer-money-btn {
+  background-color: #fe0000;
   color: #f1eff1;
   box-shadow: none;
   border: none;
   width: 100%;
-padding: 10px 15px;
+  padding: 10px 15px;
   border-radius: 10px;
   font-weight: 900;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: all 0.3s ease;
 }
 
+.sync-btn {
+  background-color: #28a745 !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.sync-btn:hover {
+  background-color: #218838 !important;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
+}
+
+.sync-btn:active {
+  transform: translateY(0);
+}
 
 /* Modal styles */
 #transferMoneyModal .modal-header {
@@ -80,38 +96,47 @@ padding: 10px 15px;
   background-color: #218838;
   border-color: #1e7e34;
 }
- /* login-logout cash amount modal   */
- .user img{
-  height:8vh;
+/* login-logout cash amount modal   */
+.user img {
+  height: 8vh;
   margin-left: 1rem;
   border-radius: 50%;
-
 }
 
-.input-group input{
+.input-group input {
   border: 1px solid #f1eff1;
   border-radius: 15px;
 }
-.input-group:not(.has-validation) > .dropdown-toggle:nth-last-child(n+3), .input-group:not(.has-validation) > .form-floating:not(:last-child) > .form-control, .input-group:not(.has-validation) > .form-floating:not(:last-child) > .form-select, .input-group:not(.has-validation) > :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu):not(.form-floating) {
+.input-group:not(.has-validation) > .dropdown-toggle:nth-last-child(n + 3),
+.input-group:not(.has-validation)
+  > .form-floating:not(:last-child)
+  > .form-control,
+.input-group:not(.has-validation)
+  > .form-floating:not(:last-child)
+  > .form-select,
+.input-group:not(.has-validation)
+  > :not(:last-child):not(.dropdown-toggle):not(.dropdown-menu):not(
+    .form-floating
+  ) {
   border-top-right-radius: 15px !important;
   border-bottom-right-radius: 15px !important;
 }
-.input-group input::placeholder{
- color: #808080;
- font-size: 0.8rem;
+.input-group input::placeholder {
+  color: #808080;
+  font-size: 0.8rem;
 }
-.mobile-view{
+.mobile-view {
   display: none;
 }
-.user-img-modal{
-  width: 100px ;
+.user-img-modal {
+  width: 100px;
 }
 
-.man-img{  
-    /* height: 28vh; */
-        max-height: 28vh;
-    max-width: 100%;
-    height: auto;
+.man-img {
+  /* height: 28vh; */
+  max-height: 28vh;
+  max-width: 100%;
+  height: auto;
 }
 
 .sidebar {
@@ -130,7 +155,6 @@ padding: 10px 15px;
 .sidebar-logo {
   width: 100%;
   height: 100px;
-
 }
 
 .sidebar-item .sidebar-link {
@@ -150,103 +174,140 @@ padding: 10px 15px;
   height: 100vh;
   overflow: auto;
 }
-@media (max-width:768px) {
+@media (max-width: 768px) {
   .sidebar-item .sidebar-link span {
     display: block;
-      }
-      .sidebar-item .sidebar-link{
-        padding: 0.5rem;
-        width:100%;
-        display: flex;
-    }
-  .mobile-view{
+  }
+  .sidebar-item .sidebar-link {
+    padding: 0.5rem;
+    width: 100%;
     display: flex;
   }
-  .desktop-view{
+  .mobile-view {
+    display: flex;
+  }
+  .desktop-view {
     display: none;
   }
   .sidebar-logo {
     width: auto;
     height: 90px;
-}
-.sidebar-item .sidebar-link img {
-  width: 8vw; 
-  margin-right: 1.2rem;
-}
-.sidebar-item .sidebar-link span {
-  font-size: 1.1rem;
-  padding-right: 1rem !important;
-
-}
-.sidebar{
-  padding-inline: 0.7rem;
-  padding-top: 0rem;
-  display: none;
-}
-}
-
-@media (max-width:425px) {
-.sidebar-logo {
-  width: auto;
-  height: 70px;
-}
-}
-
-@media (max-width:1440px) {
-  .sidebar-itemو .sidebar-link {
-    padding: 0.30rem;
-}
-.sidebar-item .sidebar-link img {
-  width: 2.5vw; 
-  margin-right: 0.2rem;
-}
-.sidebar-item .sidebar-link span {
-  font-size: 0.9rem;
-  padding-right: 0.2rem !important;
-}
-
-}
-
-@media (max-width:768px) {
-  .sidebar{
-  display: none;
-}
-  .sidebar-item .sidebar-link span {
-display: none;
   }
   .sidebar-item .sidebar-link img {
-    width: 4.5vw; 
+    width: 8vw;
+    margin-right: 1.2rem;
+  }
+  .sidebar-item .sidebar-link span {
+    font-size: 1.1rem;
+    padding-right: 1rem !important;
+  }
+  .sidebar {
+    padding-inline: 0.7rem;
+    padding-top: 0rem;
+    display: none;
+  }
+}
+
+@media (max-width: 425px) {
+  .sidebar-logo {
+    width: auto;
+    height: 70px;
+  }
+}
+
+@media (max-width: 1440px) {
+  .sidebar-itemو .sidebar-link {
+    padding: 0.3rem;
+  }
+  .sidebar-item .sidebar-link img {
+    width: 2.5vw;
     margin-right: 0.2rem;
   }
-  .sidebar-item .sidebar-link{
-    padding: 0.5rem;
-    width:auto;
+  .sidebar-item .sidebar-link span {
+    font-size: 0.9rem;
+    padding-right: 0.2rem !important;
+  }
 }
-.sidebar{
-  padding: 1rem;
- padding-top: 0rem;
 
-}
+@media (max-width: 768px) {
+  .sidebar {
+    display: none;
+  }
+  .sidebar-item .sidebar-link span {
+    display: none;
+  }
+  .sidebar-item .sidebar-link img {
+    width: 4.5vw;
+    margin-right: 0.2rem;
+  }
+  .sidebar-item .sidebar-link {
+    padding: 0.5rem;
+    width: auto;
+  }
+  .sidebar {
+    padding: 1rem;
+    padding-top: 0rem;
+  }
 }
 
 .custom-cursor[readonly] {
   cursor: not-allowed; /* شكل ممنوع عند readonly */
 }
 
-#body-logo{
- /* background-image: url('../../../public/assets/images/Group.png'); */
- background-position: center center;
- background-size: contain;
+#body-logo {
+  /* background-image: url('../../../public/assets/images/Group.png'); */
+  background-position: center center;
+  background-size: contain;
 
- background-repeat: no-repeat;
+  background-repeat: no-repeat;
 }
 
-.table-content{
+/* طباعة تحويل النقدية: الشعار + أسطر الملخص والتواريخ ووقت الطباعة في المنتصف فقط */
+#print-section .print-section-logo-wrap {
+  text-align: center;
+}
+
+#print-section .print-transfer-centered-head,
+#print-section .print-transfer-centered-head .total,
+#print-section .print-transfer-centered-head p,
+#print-section .print-transfer-centered-head span {
+  text-align: center !important;
+  font-weight: 700;
+}
+
+/* نفس وزن صفوف الجداول (مع styles.css عند الطباعة بعد executePrint) */
+#print-section.cash-transfer-print .print-transfer-centered-meta,
+#print-section.cash-transfer-print .print-transfer-centered-meta .total,
+#print-section.cash-transfer-print .print-transfer-centered-meta span,
+#print-section.cash-transfer-print .print-transfer-centered-meta p {
+  font-weight: 700 !important;
+}
+
+#print-section.cash-transfer-print .print-transfer-centered-meta span.fw-normal,
+#print-section.cash-transfer-print .print-transfer-centered-head span.fw-normal {
+  font-weight: 700 !important;
+}
+
+#print-section .print-transfer-centered-head .total,
+#print-section .print-transfer-centered-head p {
+  line-height: 1.4;
+  margin: 3px 0;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+#print-section .print-transfer-datetime {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}
+
+.table-content {
   display: flex;
   padding: 5px;
   justify-content: space-between;
   align-items: center;
-  border-bottom:1px solid black;
+  border-bottom: 1px solid black;
   font-size: 10px;
   font-weight: bold;
 }
@@ -255,24 +316,219 @@ display: none;
   border-bottom: none;
 }
 .ll .table-content:last-child {
-  border-bottom:1px solid black;
+  border-bottom: 1px solid black;
 }
 
-.img{
-  min-height: 70px;
-max-width: 100%; 
+/* تحويل النقدية: بدون خطوط بين صفوف .table-content (الإطار علوي/سفلي من .cash-transfer-print-table-wrap في styles.css) */
+#print-section.cash-transfer-print .cash-transfer-print-table-wrap .table-content,
+#print-section.cash-transfer-print .cash-transfer-print-table-wrap .table-content:last-child {
+  border-bottom: none !important;
 }
-#print-section p ,#print-section span,.total,
-#logout-report-section p, #logout-report-section span, #logout-report-section .total{
-  font-family: 'Cairo', sans-serif;
-  font-size: 15px;
+
+/* تحويل النقدية: المحتوى تحت عناوين الأقسام أوضح من وزن 600 الافتراضي في styles.css */
+#print-section.cash-transfer-print .cash-transfer-print-table-wrap .table-content,
+#print-section.cash-transfer-print .cash-transfer-print-table-wrap .table-content span {
+  font-weight: 700 !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-block .branch-shift-print-subtitle {
+  font-weight: 700 !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-meta-row,
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-meta-row span,
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-row,
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-row span {
+  font-weight: 700 !important;
+}
+
+/* نقطة البيع — عنوان فيغما + تنسيق عمودين للصفوف */
+#print-section.cash-transfer-print .branch-shift-print-heading--figma {
+  margin-bottom: 0.45rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #000;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-title--figma {
+  border-top: none !important;
+  padding-top: 0 !important;
+  margin-bottom: 0.2rem !important;
+  font-size: 16px !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-subtitle--figma {
+  font-size: 13px !important;
+  line-height: 1.35;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-tables-outer {
+  direction: rtl !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-meta-row,
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-row {
+  display: flex !important;
+  flex-direction: row !important;
+  direction: rtl !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-meta-label,
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-row-label {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  text-align: right !important;
+  padding-inline-end: 8px !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-row-label.branch-shift-row-label--keep-phrase {
+  white-space: nowrap !important;
+  flex: 0 1 auto !important;
+  min-width: min-content !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-meta-value {
+  flex: 0 0 auto !important;
+  min-width: 0 !important;
+  max-width: 48% !important;
+  text-align: left !important;
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-row-value {
+  flex: 0 0 auto !important;
+  min-width: 5.75rem !important;
+  max-width: 48% !important;
+  text-align: left !important;
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
+  white-space: nowrap !important;
+}
+
+/* —— ملخص وردية الفرع / الماكينة (طباعة بعد تحويل النقدية + نفس البلوك إن وُجد في تقرير الخروج) —— */
+#print-section .branch-shift-print-block,
+#logout-report-section .branch-shift-print-block {
+  margin-top: 0.75rem;
+  page-break-inside: avoid;
+}
+#print-section .branch-shift-print-title,
+#logout-report-section .branch-shift-print-title {
+  font-size: 12px !important;
+  padding-top: 0.35rem;
+  border-top: 2px solid #000;
+  margin-bottom: 0.15rem !important;
+}
+#print-section .branch-shift-print-subtitle,
+#logout-report-section .branch-shift-print-subtitle {
+  font-size: 9px !important;
   font-weight: 600;
+  color: #333;
+  margin-bottom: 0.35rem !important;
+  line-height: 1.35;
 }
+#print-section .branch-shift-meta,
+#logout-report-section .branch-shift-meta {
+  margin-bottom: 0.35rem;
+}
+#print-section .branch-shift-meta-row,
+#logout-report-section .branch-shift-meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 4px 6px;
+  border-bottom: 1px solid #000;
+  font-size: 9px;
+  font-weight: 700;
+}
+#print-section .branch-shift-meta-row:last-child,
+#logout-report-section .branch-shift-meta-row:last-child {
+  border-bottom: none;
+}
+#print-section .branch-shift-meta-label,
+#logout-report-section .branch-shift-meta-label {
+  flex: 1;
+  text-align: right;
+}
+#print-section .branch-shift-meta-value,
+#logout-report-section .branch-shift-meta-value {
+  flex: 1;
+  text-align: left;
+  font-weight: 700;
+  word-break: break-word;
+}
+#print-section .branch-shift-datetime,
+#logout-report-section .branch-shift-datetime {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}
+#print-section .branch-shift-rows,
+#logout-report-section .branch-shift-rows {
+  overflow: hidden;
+}
+#print-section .branch-shift-row,
+#logout-report-section .branch-shift-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-bottom: 1px solid #000;
+  font-size: 10px;
+  font-weight: 700;
+}
+#print-section .branch-shift-row:last-child {
+  border-bottom: none;
+}
+#print-section .branch-shift-row-emphasis,
+#logout-report-section .branch-shift-row-emphasis {
+  background: #f5f5f5;
+}
+#print-section .branch-shift-row-label,
+#logout-report-section .branch-shift-row-label {
+  flex: 1;
+  text-align: right;
+  line-height: 1.35;
+}
+#print-section .branch-shift-row-value,
+#logout-report-section .branch-shift-row-value {
+  flex: 0 0 auto;
+  min-width: 6rem;
+  text-align: left;
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.img {
+  min-height: 70px;
+  max-width: 100%;
+}
+#print-section p ,#print-section span,.total{
+  font-size: 11px;
+}
+
 #print-section,
 #logout-report-section{
   font-family: 'Cairo', sans-serif;
 }
-#dd{
+#logout-report-section p, #logout-report-section span, #logout-report-section{
+  font-family: 'Cairo', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+#dd {
   width: 100%;
   position: relative;
   margin-top: 1rem;
@@ -280,7 +536,7 @@ max-width: 100%;
   page-break-inside: avoid;
 }
 /* Avoid absolute positioning in print – keeps footer in flow and prevents overlapping */
-#print-section .footer{
+#print-section .footer {
   position: static;
   bottom: auto;
   left: auto;
@@ -292,12 +548,12 @@ max-width: 100%;
   border-top: 1px dashed #333;
   page-break-inside: avoid;
 }
-#print-section .footer p{
+#print-section .footer p {
   display: block;
   margin: 0.25rem 0;
   line-height: 1.4;
 }
-.footer{
+.footer {
   position: absolute;
   bottom: 0;
   left: 50%;
@@ -307,18 +563,20 @@ max-width: 100%;
   display: flex;
   padding: 0 12px;
 }
- 
 
-.dots{
-  border-bottom:3px dashed black
+.dots {
+  border-bottom: 3px dashed black;
 }
-.line{
-  padding-bottom:10px;
-  border-bottom:3px solid black
+.line {
+  padding-bottom: 10px;
+  border-bottom: 1px solid black;
 }
 
 /* Shift Closing Report – prevent footer overlap when printing */
 @media print {
+  /* تحويل النقدية: الهوامش العرضية تُضبط في styles.css + كلاس html من executePrint
+     (عنصر الطباعة المُنشأ بـ JS لا يحمل _ngcontent فلا تصله أنماط هذا الملف) */
+
   #print-section .print-report-footer,
   #print-section .print-report-footer-bottom,
   #print-section #dd {

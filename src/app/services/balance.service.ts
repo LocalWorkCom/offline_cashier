@@ -219,7 +219,10 @@ PrintBalance(id:number): Observable<any> {
   /**
    * تقرير وردية الفرع (أول فتح، آخر إغلاق، إجماليات، متوقع، فعلي، فرق) - User Story 7
    */
-  getBranchShiftReport(branchId: number, date: string): Observable<any> {
+  /**
+   * @param cashierMachineId When set, summary is scoped to this POS (all sessions on the device that day).
+   */
+  getBranchShiftReport(branchId: number, date: string, cashierMachineId?: string | null): Observable<any> {
     const token = this.authService.getToken();
     if (!token) {
       return throwError(() => new Error('Authentication token is missing'));
@@ -228,7 +231,10 @@ PrintBalance(id:number): Observable<any> {
       Authorization: `Bearer ${token}`,
       'Content-Type': 'application/json',
     });
-    const params = { branch_id: branchId.toString(), date };
+    const params: Record<string, string> = { branch_id: branchId.toString(), date };
+    if (cashierMachineId) {
+      params['cashier_machine_id'] = cashierMachineId;
+    }
     return this.http.get<any>(`${baseUrl}api/cashier/branch-shift-report`, { headers, params }).pipe(
       catchError((error) => {
         console.warn('Branch shift report unavailable (printing continues without branch block):', error);

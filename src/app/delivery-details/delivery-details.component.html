@@ -143,8 +143,19 @@
       <div class="mb-3">
         <div class="d-flex align-items-center mb-1">
           <h6 class="mb-0">هل هذا رقم واتساب ؟</h6>
-          <a class="text-success fw-bold p-1 mx-2 text-decoration-underline" (click)="useSameWhatsapp(true)">نعم</a>
-          <a class="text-danger fw-bold p-1 mx-2 text-decoration-underline" (click)="useSameWhatsapp(false)">لا</a>
+          <input
+            type="checkbox"
+            class="form-check-input mx-2"
+            [checked]="useSameNumberForWhatsapp"
+            (change)="useSameWhatsapp(true)" />
+          <a class="text-success fw-bold p-1 mx-1 text-decoration-underline" (click)="useSameWhatsapp(true)">نعم</a>
+
+          <input
+            type="checkbox"
+            class="form-check-input mx-2"
+            [checked]="!useSameNumberForWhatsapp"
+            (change)="useSameWhatsapp(false)" />
+          <a class="text-danger fw-bold p-1 mx-1 text-decoration-underline" (click)="useSameWhatsapp(false)">لا</a>
         </div>
         <div *ngIf="submitted && form.controls['whatsapp_number'].invalid&& form.controls['whatsapp_number'].value==''"
           class="invalid-feedback d-block text-danger small">

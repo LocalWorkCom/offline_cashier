@@ -13,13 +13,14 @@
         *ngIf="orderDetails.status == 'cancelled' || orderDetails.status == 'cancel'">ملغي</span></h4>
   </div>
 
+  @if(orderDetails?.status_order !== 'cancelled') {
   <div *ngIf="!loading && orderDetails && canShowOrderActions()" class="d-flex w-100 gap-2 my-2">
     <button type="button" class="btn reversed main-color flex-fill py-2 text-center" (click)="openChangeOrderTypeModalFromDetails()" title="تغيير نوع الطلب">
       <i class="fa-solid fa-arrows-rotate px-1"></i>
       تغيير نوع الطلب
     </button>
 
-    <button type="button" class="btn reversed main-color flex-fill py-2 text-center" (click)="cancelOrder()" title="حذف الطلب">
+    <button type="button" class="btn btn-action-delete flex-fill py-2 text-center text-white" (click)="cancelOrder()" title="حذف الطلب">
       <i class="fa-solid fa-trash-can px-1"></i>
       حذف الطلب
     </button>
@@ -29,7 +30,7 @@
       تغيير الطاولة
     </a>
   </div>
-
+  }
   <p class="fs-4  text-center" [ngClass]="status_order? 'text-success' : 'main-color' ">{{errorMessage}}</p>
   <div *ngIf="loading" class="card px-4 py-2 my-2">
     <div class="d-flex justify-content-between">
@@ -70,12 +71,16 @@
 
     </div>
     <!-- Cash - visa -->
+<<<<<<< HEAD
     <div *ngIf="orderDetails.transactions?.length > 1">
+=======
+    <div *ngIf="orderDetails.transactions?.length > 0">
+>>>>>>> 348e3ea5e46c2b0e127ee33c2f40dfb0d3b02ab1
       <div *ngFor="let inv of orderDetails.transactions">
         <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
           *ngIf="orderDetails.transactions[0].payment_status == 'paid' && inv.is_refund == 0">
           <div>
-            {{ inv.payment_method === 'cash' ? ' الكاش' : inv.payment_method === 'credit' ? ' الفيزا' : 'غير محدد' }}
+            {{ getPaymentMethodLabel(inv.payment_method) }}
           </div>
           <div>{{ inv.paid }} {{currencySymbol}}</div>
         </div>
@@ -83,6 +88,23 @@
       </div>
     </div>
     <!-- Cash - visa -->
+  </div>
+
+  <div *ngIf="!loading && orderDetails" class="card p-3 my-2">
+    <div class="row g-2 mt-1">
+      <div class="col-6">
+        <div class="p-2 border rounded bg-light">
+          <small class="text-muted d-block mb-1">منشئ الطلب:</small>
+          <span class="fw-bold">{{ orderDetails?.created_by_username || orderDetails?.order_details?.created_by_username || '---' }}</span>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="p-2 border rounded bg-light">
+          <small class="text-muted d-block mb-1">مغلق الطلب:</small>
+          <span class="fw-bold">{{ orderDetails?.closed_by_username || orderDetails?.order_details?.closed_by_username || '---' }}</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   <div *ngIf="loading" class="card p-3 my-2">
@@ -93,46 +115,42 @@
 
   <div *ngIf="!loading && orderItems.length > 0" class="card p-3 my-2">
     <div class="accordion accordion-flush" id="accordionFlushExample">
-      <div class="accordion-item">
+      <div class="accordion-item border-0">
         <h2 class="accordion-header" id="flush-headingOne">
-          <button class="accordion-button collapsed p-2" type="button" data-bs-toggle="collapse"
-            data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
-            <h5>
+          <button class="accordion-button p-2" type="button" 
+            [class.collapsed]="!isOrderDetailsOpen"
+            (click)="isOrderDetailsOpen = !isOrderDetailsOpen"
+            aria-expanded="true">
+            <h5 class="mb-0">
               <i class="fas fa-file-alt main-color fs-4 ps-2"></i> تفاصيل الطلب
             </h5>
           </button>
         </h2>
-        <div id="flush-collapseOne" class="accordion-collapse collapse show" aria-labelledby="flush-headingOne"
-          data-bs-parent="#accordionFlushExample">
-          <div class="accordion-body p-0">
-            <div class="d-flex justify-content-between  mb-1 align-items-start" *ngFor="let item of orderItems" [ngClass]="{'text-warning': isItemCancelled(item)}">
+        <div id="flush-collapseOne" class="accordion-collapse collapse" [class.show]="isOrderDetailsOpen">
+          <div class="accordion-body p-2" style="max-height: 420px; overflow-y: auto; scroll-behavior: smooth;">
+            <div class="d-flex justify-content-between mb-3 align-items-start pb-2 border-bottom" *ngFor="let item of orderItems" [ngClass]="{'text-warning': isItemCancelled(item)}">
               <div class="d-flex flex-column" [ngClass]="{'text-warning': isItemCancelled(item)}">
-                <h6 class="d-flex align-items-center gap-1">
+                <h6 class="d-flex align-items-center gap-1 mb-1 text-dark">
                   <span class="d-inline-flex align-items-center justify-content-center bg-secondary rounded text-white ms-2" style="min-width: 1.75rem; height: 1.75rem; font-weight: 600;">{{ item.quantity }}</span>
                   x
-                  <span>{{ item.dish_name }}</span>
+                  <span class="fw-bold">{{ item.dish_name }}</span>
                 </h6>
-                <h6 class="text-muted mx-5 fw-medium" *ngIf="item.size">
-                  الحجم: {{ item.size }}
-                </h6>
-                <h6 class="text-muted mx-5 fw-medium" *ngIf="item.addons?.length > 0">
-                  إضافة: {{ item.addons }}
-                </h6>
-
-                <h6 class="text-muted mx-5 fw-medium" *ngIf="item.note">
-                  ملاحظات: {{ item.note }}
-                </h6>
+                <div class="mx-5">
+                  <small class="text-muted d-block" *ngIf="item.size"><i class="fas fa-arrows-alt-h me-1 small"></i> الحجم: {{ item.size }}</small>
+                  <small class="text-muted d-block" *ngIf="item.addons?.length > 0"><i class="fas fa-plus me-1 small"></i> إضافة: {{ item.addons }}</small>
+                  <small class="text-muted d-block italic" *ngIf="item.note"><i class="fas fa-sticky-note me-1 small"></i> ملاحظات: {{ item.note }}</small>
+                </div>
               </div>
               <div class="d-flex align-items-center gap-2">
                 <h6 class="fw-bold mb-0">
-                  <span>{{ item.total_dish_price }}</span> {{ currencySymbol }}
+                  <span>{{ item.total_dish_price | number:'1.2-2' }}</span> {{ currencySymbol }}
                 </h6>
                 <ng-container *ngIf="canShowItemActions(item)">
-                  <button type="button" class="btn btn-sm py-1 px-2 bg-white border border-danger" (click)="openDeleteItemModal(item)" [disabled]="removeItemLoading === (item.id || item.order_detail_id)" title="إلغاء صنف">
+                  <button type="button" class="btn btn-action-delete btn-sm py-1 px-2 text-white" (click)="openDeleteItemModal(item)" [disabled]="removeItemLoading === (item.id || item.order_detail_id)" title="إلغاء صنف">
                     <span *ngIf="removeItemLoading === (item.id || item.order_detail_id)">...</span>
-                    <i *ngIf="removeItemLoading !== (item.id || item.order_detail_id)" class="fa-solid fa-trash-can fa-sm main-color"></i>
+                    <i *ngIf="removeItemLoading !== (item.id || item.order_detail_id)" class="fa-solid fa-trash-can fa-sm"></i>
                   </button>
-                  <button type="button" class="btn btn-sm py-1 px-2 bg-white border border-danger" (click)="openEditModalFromDetails(item)" title="تعديل صنف">
+                  <button type="button" class="btn btn-sm py-1 px-2 bg-white border border-danger shadow-sm" (click)="openEditModalFromDetails(item)" title="تعديل صنف">
                     <i class="fa-solid fa-pen fa-sm main-color"></i>
                   </button>
                 </ng-container>
@@ -206,7 +224,7 @@
     <div class="d-flex justify-content-between px-2 mb-1">
       <h6>مجموع طلبى</h6>
       <h6>
-        <span>{{ orderSummary.subtotal_price_before_coupon }}</span> {{ currencySymbol }}
+        <span>{{ orderSummary.subtotal_price_before_coupon | number:'1.2-2' }}</span> {{ currencySymbol }}
       </h6>
     </div>
     <div class="d-flex justify-content-between px-2 mb-1 main-color" *ngIf="!isCouponZero">
@@ -215,28 +233,28 @@
           }} </span>
       </h6>
       <h6>
-        <span>- {{ orderSummary.coupon_value }}</span> {{ currencySymbol }}
+        <span>- {{ orderSummary.coupon_value | number:'1.2-2' }}</span> {{ currencySymbol }}
       </h6>
     </div>
     <div class="d-flex justify-content-between px-2 mb-1 " *ngIf="orderDetails?.order_type === 'Delivery' && orderSummary.delivery_fees">
       <h6> رسوم التوصيل</h6>
-      <h6 *ngIf="orderDetails?.status !== 'cancelled'">
-        <span>{{ orderSummary.delivery_fees }}</span> {{ currencySymbol }}
+      <h6 *ngIf="orderDetails?.status_order !== 'cancelled'">
+        <span>{{ orderSummary.delivery_fees | number:'1.2-2' }}</span> {{ currencySymbol }}
       </h6>
-      <h6 *ngIf="orderDetails?.status === 'cancelled'">
+      <h6 *ngIf="orderDetails?.status_order === 'cancelled'">
         <span>0</span> {{ currencySymbol }}
       </h6>
     </div>
     <div class="d-flex justify-content-between px-2 mb-1 " *ngIf="hasServiceFees">
       <h6> رسوم الخدمة <span class="main-color">بنسبة {{orderSummary.service_percentage}} % </span></h6>
       <h6>
-        @if(orderDetails?.status === 'cancelled')
+        @if(orderDetails?.status_order === 'cancelled')
         {
           <span>0</span> {{ currencySymbol }}
         }
         @else
         {
-          <span>{{ orderSummary.service_fees }} {{ currencySymbol }}</span>
+          <span>{{ orderSummary.service_fees | number:'1.2-2' }} {{ currencySymbol }}</span>
         }
 
       </h6>
@@ -249,14 +267,21 @@
       <h6>
         تضاف ضريبة القيمة المضافة
         <span class="main-color" *ngIf="orderDetails?.status !== 'cancelled'">بنسبة {{ orderSummary.tax_percentage }}% </span> بمعنى اخر
-        <span *ngIf="orderDetails?.status !== 'cancelled'">{{ orderSummary.tax_value }} {{currencySymbol }}</span>
-        <span *ngIf="orderDetails?.status === 'cancelled'">0 {{currencySymbol }}</span>
+        <span *ngIf="orderDetails?.status_order !== 'cancelled'">{{ orderSummary.tax_value | number:'1.2-2' }} {{currencySymbol }}</span>
+        <span *ngIf="orderDetails?.status_order === 'cancelled'">0 {{currencySymbol }}</span>
       </h6>
     </div>
     <div class="d-flex justify-content-between px-2 mb-1 border-top py-2">
       <h4>المجموع الكلى</h4>
       <h4>
-          <span>{{ displayTotalPrice }}</span> {{ currencySymbol }}
+        @if(orderDetails?.status_order !== 'cancelled')
+        {
+          <span>{{ displayTotalPrice | number:'1.2-2' }}</span> {{ currencySymbol }}
+        }
+        @else
+        {
+          <span>0</span> {{ currencySymbol }}
+        }
       </h4>
     </div>
   </div>
@@ -489,7 +514,18 @@
           <div class="mb-3">
             <div class="d-flex align-items-center gap-2 mb-1">
               <h6 class="mb-0">هل هذا رقم واتساب؟</h6>
+              <input
+                type="checkbox"
+                class="form-check-input mx-1"
+                [checked]="changeTypeDeliveryUseSameWhatsapp"
+                (change)="useSameWhatsappChangeType(true)" />
               <a class="text-success fw-bold text-decoration-underline" style="cursor:pointer" (click)="useSameWhatsappChangeType(true)">نعم</a>
+
+              <input
+                type="checkbox"
+                class="form-check-input mx-1"
+                [checked]="!changeTypeDeliveryUseSameWhatsapp"
+                (change)="useSameWhatsappChangeType(false)" />
               <a class="text-danger fw-bold text-decoration-underline" style="cursor:pointer" (click)="useSameWhatsappChangeType(false)">لا</a>
             </div>
             <div *ngIf="!changeTypeDeliveryUseSameWhatsapp" class="d-flex gap-2 align-items-start">

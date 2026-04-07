@@ -5,11 +5,11 @@
       تغيير نوع الطلب
     </button>
     
-    <button type="button" class="btn reversed main-color flex-fill py-2 text-center" (click)="cancelOrder()" title="حذف الطلب" style="font-size: 13px;">
+    <button type="button" class="btn btn-action-delete flex-fill py-2 text-center text-white" (click)="cancelOrder()" title="حذف الطلب" style="font-size: 13px;">
       <i class="fa-solid fa-trash-can px-1"></i>
       حذف الطلب
     </button>
-    
+
     <a *ngIf="isDineIn()" [routerLink]="['/tableavailable', cartId]" class="btn reversed main-color flex-fill py-2 text-decoration-none text-center" title="تغيير الطاولة" style="font-size: 13px;">
       <i class="fa-solid fa-chair px-1"></i>
       تغيير الطاولة
@@ -146,16 +146,33 @@
     <h5 class="fw-bold">تفاصيل الطلب</h5>
   </div>
 
-  
+
   <div class="alert alert-success" *ngIf="message">{{ message }}</div>
   <div class="alert alert-danger" *ngIf="error">{{ error }}</div>
 
-  <div class="d-flex justify-content-between mb-2">
-    <div class="d-flex">
-      <p>رقم الطلب </p>
-      <p class="text-muted me-2">{{orderSummary?.order_number}}</p>
+  <div class="d-flex justify-content-between mb-2 flex-wrap gap-2">
+    <div class="d-flex align-items-center">
+      <p class="mb-0">رقم الطلب </p>
+      <p class="text-muted me-2 mb-0">{{orderSummary?.order_number}}</p>
     </div>
-    <p>{{ getTotalItemCount() }} عناصر</p>
+    <p class="mb-0">{{ getTotalItemCount() }} عناصر</p>
+  </div>
+
+  <div *ngIf="orderDetails" class="card p-3 my-2 border-0 shadow-sm bg-white">
+    <div class="row g-2 mt-0">
+      <div class="col-6">
+        <div class="p-2 border rounded bg-light text-center">
+          <small class="text-muted d-block mb-1">منشئ الطلب</small>
+          <span class="fw-bold fs-7">{{ orderDetails?.created_by_username || orderDetails?.order_details?.created_by_username || '---' }}</span>
+        </div>
+      </div>
+      <div class="col-6">
+        <div class="p-2 border rounded bg-light text-center">
+          <small class="text-muted d-block mb-1">مغلق الطلب</small>
+          <span class="fw-bold fs-7">{{ orderDetails?.closed_by_username || orderDetails?.order_details?.closed_by_username || '---' }}</span>
+        </div>
+      </div>
+    </div>
   </div>
 
   @for (item of cartItems; track $index) {
@@ -187,9 +204,9 @@
         <span>{{ item.total_dish_price }}</span> {{ currencySymbol }}
       </h6>
       <ng-container *ngIf="canShowItemActions(item)">
-        <button type="button" class="btn btn-sm py-1 px-2 bg-white border border-danger" (click)="openDeleteItemModal(item)" [disabled]="removeItemLoading === (item.id || item.order_detail_id)" title="إلغاء صنف">
+        <button type="button" class="btn btn-action-delete btn-sm py-1 px-2 text-white" (click)="openDeleteItemModal(item)" [disabled]="removeItemLoading === (item.id || item.order_detail_id)" title="إلغاء صنف">
           <span *ngIf="removeItemLoading === (item.id || item.order_detail_id)">...</span>
-          <i *ngIf="removeItemLoading !== (item.id || item.order_detail_id)" class="fa-solid fa-trash-can fa-sm main-color"></i>
+          <i *ngIf="removeItemLoading !== (item.id || item.order_detail_id)" class="fa-solid fa-trash-can fa-sm"></i>
         </button>
         <button type="button" class="btn btn-sm py-1 px-2 bg-white border border-danger" (click)="openEditModalFromDetails(item)" title="تعديل صنف">
           <i class="fa-solid fa-pen fa-sm main-color"></i>
@@ -254,20 +271,24 @@
         {{ orderSummary?.total_price }} {{ currencySymbol }}
       </p>
     </div>
-    <div class="d-flex justify-content-between align-items-center">
-      <div class="form-check mb-3 ">
-        <input class="form-check-input" type="radio" name="options" id="option1" value="option1" checked />
-        <label class="form-check-label" for="option3">
-          <img src="assets/images/money.svg" alt="" />
-          {{ orderDetails?.transactions[0].payment_method === 'cash' ? 'كاش' :
-          orderDetails?.transactions[0].payment_method }}
-        </label>
 
-      </div>
-      <div class="fw-bold">
+    <div class="fw-bold">
         {{ orderDetails.transactions[0].payment_status === 'paid' ? 'مدفوعة' :" غير مدفوعة" }}
+    </div>
+
+    <!-- Cash - visa -->
+    <div *ngIf="orderDetails.transactions?.length > 0">
+      <div *ngFor="let inv of orderDetails.transactions">
+        <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
+          *ngIf="inv.payment_status == 'paid' && inv.is_refund == 0">
+          <div>
+            {{ getPaymentMethodLabel(inv.payment_method) }}
+          </div>
+          <div>{{ inv.paid }} {{currencySymbol}}</div>
+        </div>
       </div>
     </div>
+    <!-- Cash - visa -->
 
   </div>
 
@@ -402,8 +423,8 @@
                [style.border]="selectedNewOrderType === 'dine-in' ? '2px solid #0d6efd' : '1px solid #dee2e6'">
             <input class="form-check-input flex-shrink-0 ms-3 me-2" type="radio" name="newOrderTypeDetails" id="typeDineInDetails" value="dine-in"
                    [(ngModel)]="selectedNewOrderType">
-            <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end">
-              <label class="form-check-label text-end cursor-pointer mb-0" for="typeDineInDetails">
+            <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end ">
+              <label class="text-end cursor-pointer mb-0" for="typeDineInDetails">
                 <strong class="d-block">داخل المطعم (محلي)</strong>
                 <span class="text-muted small">تقديم الطلب على طاولة داخل المطعم</span>
               </label>
@@ -415,7 +436,7 @@
             <input class="form-check-input flex-shrink-0 ms-3 me-2" type="radio" name="newOrderTypeDetails" id="typeTakeawayDetails" value="Takeaway"
                    [(ngModel)]="selectedNewOrderType">
             <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end">
-              <label class="form-check-label text-end cursor-pointer mb-0" for="typeTakeawayDetails">
+              <label class=" text-end cursor-pointer mb-0" for="typeTakeawayDetails">
                 <strong class="d-block">استلام من الفرع (سفري)</strong>
                 <span class="text-muted small">يأتي العميل لاستلام الطلب بنفسه</span>
               </label>
@@ -427,7 +448,7 @@
             <input class="form-check-input flex-shrink-0 ms-3 me-2" type="radio" name="newOrderTypeDetails" id="typeDeliveryDetails" value="Delivery"
                    [(ngModel)]="selectedNewOrderType">
             <div class="d-flex align-items-center gap-2 flex-grow-1 justify-content-end">
-              <label class="form-check-label text-end cursor-pointer mb-0" for="typeDeliveryDetails">
+              <label class=" text-end cursor-pointer mb-0" for="typeDeliveryDetails">
                 <strong class="d-block">توصيل</strong>
                 <span class="text-muted small">توصيل الطلب إلى موقع العميل</span>
               </label>

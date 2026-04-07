@@ -636,10 +636,22 @@ export class CartComponent {
         console.log('Order cancelled successfully:', response);
         this.message = response.message;
         this.status_order = response.status;
+          // ✅ تحديث لحظى لحالة الطلب فى الموديل المعروض
+          setTimeout(() => {
+            const id = this.cartId;
+            // نروح لصفحة وهمية بدون ما نغيّر الـ URL فعليًا
+            this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+              // نرجع تانى لنفس صفحة التفاصيل مع refresh=true
+              this.router.navigate(
+                ['/order-details', id],
+                { queryParams: { refresh: 'true' } }
+              );
+            });
+          }, 700);
         setTimeout(() => {
           this.message = '';
         }, 2000);
-        this.fetchOrderDetails();
+        // this.fetchOrderDetails();
       },
       error: (error) => {
         console.error('Failed to cancel order:', error);
@@ -769,10 +781,16 @@ export class CartComponent {
           this.message = res?.message || 'تم تغيير نوع الطلب بنجاح';
           this.status_order = true;
           setTimeout(() => { this.message = ''; }, 3000);
-          this.fetchOrderDetails();
+          const id = this.currentOrderForTypeChange.order_details.order_id;
           this.currentOrderForTypeChange = null;
           this.selectedNewOrderType = '';
           this.selectedTableIdForTypeChange = '';
+          setTimeout(() => {
+            this.router.navigate(
+              ['/order-details', id],
+              { queryParams: { refresh: 'true' } }
+            );
+          }, 700);
         } else {
           this.message = (res?.errorData && typeof res.errorData === 'object' && Object.values(res.errorData).flat().filter(Boolean)[0]) || res?.message || 'حدث خطأ أثناء تغيير نوع الطلب';
           setTimeout(() => { this.message = ''; }, 4000);
@@ -796,7 +814,7 @@ export class CartComponent {
     return short[type] || type;
   }
 
-  getOrderTypeIconClass(type: string): string {
+  getOrderTypeIconClass(type: string | undefined): string {
     if (!type) return 'fa-solid fa-circle';
     const icons: Record<string, string> = {
       'dine-in': 'fa-solid fa-utensils',
@@ -804,5 +822,21 @@ export class CartComponent {
       'Delivery': 'fa-solid fa-truck',
     };
     return icons[type] || 'fa-solid fa-circle';
+  }
+
+  private normalizePaymentMethod(method: any): string {
+    return String(method ?? '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '_');
+  }
+
+  getPaymentMethodLabel(method: any): string {
+    const m = this.normalizePaymentMethod(method);
+    if (m === 'cash') return 'كاش';
+    if (['credit', 'visa', 'card', 'mastercard', 'mada'].includes(m)) return 'فيزا';
+    if (['deferred', 'later', 'postpaid'].includes(m)) return 'آجل';
+    if (m === 'online') return 'أونلاين';
+    return 'غير محدد';
   }
 }

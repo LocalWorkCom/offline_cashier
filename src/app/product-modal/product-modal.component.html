@@ -12,7 +12,7 @@
                 <h5>{{selectedProduct.name}}</h5>
                 <small class="text-muted d-block py-2">
                     {{selectedProduct.description}} </small>
-                <h4 class="fw-bold"> {{ finalPrice }} {{selectedProduct.currency_symbol}}</h4>
+                <h4 class="fw-bold"> {{ finalPrice | number:'1.2-2' }} {{selectedProduct.currency_symbol}}</h4>
                 <div class="qty mt-3 d-flex justify-content-center align-items-center">
                     <span class="pro-dec me-3" (click)="decreaseQuantity()">
                         <i class="fa fa-minus" aria-hidden="true"></i>
@@ -27,7 +27,7 @@
             </figcaption>
         </figure>
     </div>
- <button class="btn reversed w-100 main-color mt-3" (click)="ShowAddNote()" [hidden]="addNote">أضف ملاحظة</button>    
+ <button class="btn reversed w-100 main-color mt-3" (click)="ShowAddNote()" [hidden]="addNote">أضف ملاحظة</button>
     <div class="notes my-3" *ngIf="addNote">
         <h4>
             <i class="fas fa-file-alt main-color fa-xs"></i>
@@ -38,10 +38,10 @@
                 style="height: 100px" (input)="updateNote($event)"></textarea>
             <label for="floatingTextarea2">من فضلك اكتب ملاحظتك</label>
         </div>
-    </div> 
+    </div>
     <button class="btn w-100 d-flex justify-content-between mt-3" (click)="handleAddToCart()">
         <span> + أضف إلى العربة ({{ quantity }})</span>
-        <span>{{ finalPrice }} {{selectedProduct.currency_symbol}}</span>
+        <span>{{ finalPrice | number:'1.2-2' }} {{selectedProduct.currency_symbol}}</span>
     </button>
     } @else {
     <h2 class="text-center mb-4">تفاصيل الوجبة</h2>
@@ -63,7 +63,7 @@
                                     {{ size.name }}
                                 </label>
                             </div>
-                            <span>{{ size.price }} {{ size.currency_symbol }}</span>
+                            <span>{{ size.price | number:'1.2-2' }} {{ size.currency_symbol }}</span>
                         </div>
                         }
                     </form>
@@ -88,7 +88,7 @@
                                     {{ addon.name }}
                                 </label>
                             </div>
-                            <span>{{ addon.price }} {{ addon.currency_symbol }}</span>
+                            <span>{{ addon.price | number:'1.2-2' }} {{ addon.currency_symbol }}</span>
                         </div>
                         }
                     </form>
@@ -113,7 +113,7 @@
                         <small class="text-muted d-block py-2">
                             {{ selectedProduct.description }}
                         </small>
-                        <h4 class="fw-bold"> {{ finalPrice }} {{selectedProduct.currency_symbol}}</h4>
+                        <h4 class="fw-bold"> {{ finalPrice | number:'1.2-2' }} {{selectedProduct.currency_symbol}}</h4>
                         <div class="qty mt-3 d-flex justify-content-center align-items-center">
                             <span class="pro-dec me-3" (click)="decreaseQuantity()">
                                 <i class="fa fa-minus" aria-hidden="true"></i>
@@ -126,7 +126,7 @@
                     </figcaption>
                 </figure>
             </div>
- <button class="btn reversed w-100 main-color mt-3" (click)="ShowAddNote()" [hidden]="addNote">أضف ملاحظة</button>    
+ <button class="btn reversed w-100 main-color mt-3" (click)="ShowAddNote()" [hidden]="addNote">أضف ملاحظة</button>
             <div class="notes my-3" *ngIf="addNote">
                 <h4>
                     <i class="fas fa-file-alt main-color fa-xs"></i>
@@ -141,7 +141,7 @@
             <button class="btn w-100 d-flex justify-content-between mt-3" (click)="handleAddToCart()"
                 [disabled]="!canAddToCart()">
                 <span> + أضف إلى العربة ({{ quantity }})</span>
-                <span>{{ finalPrice }} {{selectedProduct.currency_symbol}}</span>
+                <span>{{ finalPrice | number:'1.2-2' }} {{selectedProduct.currency_symbol}}</span>
             </button>
         </div>
     </div>

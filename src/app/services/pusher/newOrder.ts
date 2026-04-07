@@ -67,20 +67,28 @@ export class NewOrderService {
 
           this.printedInvoiceService.printMenu(order_id, printData).subscribe({
             next: async (response) => {
-              if (response.order && response.order.make_type != 'cashier') {
-                console.log('🖨️ [Kitchen Print] Processing printers...', response.printers?.length);
-                if (response.status && response.printers && response.printers.length > 0) {
-                  for (const group of response.printers) {
-                    if (group.items && group.items.length > 0) {
-                      try {
-                        await this.printInvoiceImage(group.items, response.order, group.ip, group.port);
-                      } catch (err) {
-                        console.error(`❌ Printer error (${group.ip}):`, err);
-                      }
-                      await new Promise(resolve => setTimeout(resolve, 500));
-                    }
+              if (!response.status || !response.printers?.length) {
+                return;
+              }
+              if (!this.printedInvoiceService.acquireKitchenPrintSlot(order_id)) {
+                console.log('🖨️ [Kitchen Print] Skipped (dedupe window) for order', order_id);
+                return;
+              }
+              console.log('🖨️ [Kitchen Print] Processing printers...', response.printers.length);
+              let anyPrinted = false;
+              for (const group of response.printers) {
+                if (group.items && group.items.length > 0) {
+                  try {
+                    await this.printInvoiceImage(group.items, response.order, group.ip, group.port);
+                    anyPrinted = true;
+                  } catch (err) {
+                    console.error(`❌ Printer error (${group.ip}):`, err);
                   }
+                  await new Promise(resolve => setTimeout(resolve, 250));
                 }
+              }
+              if (!anyPrinted) {
+                this.printedInvoiceService.releaseKitchenPrintSlot(order_id);
               }
             },
             error: (error) => console.error('❌ Print menu API error:', error)
@@ -234,6 +242,12 @@ export class NewOrderService {
     }
   }
 
+  private flushIframeLayout(): Promise<void> {
+    return new Promise((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    });
+  }
+
   async printInvoiceImage(data?: any[], order?: any, printerIP: string = "192.168.100.102" , port: number = 9100, type: string |null = null) {
     console.log('🖨️ [printInvoiceImage] Function called', { dataLength: data?.length, order, printerIP });
     let iframe: HTMLIFrameElement | null = null;
@@ -288,9 +302,7 @@ export class NewOrderService {
       iframeDoc.close();
       console.log('🖨️ [printInvoiceImage] HTML written to iframe');
 
-      // ========== WAIT for HTML + images ==========
-      console.log('🖨️ [printInvoiceImage] Waiting 800ms for HTML/images to load...');
-      await new Promise((res) => setTimeout(res, 800));
+      await this.flushIframeLayout();
 
       const images = iframeDoc.querySelectorAll("img");
       console.log('🖨️ [printInvoiceImage] Found', images.length, 'images, waiting for load...');
@@ -321,13 +333,12 @@ export class NewOrderService {
                 img.addEventListener('load', onLoad, { once: true });
                 img.addEventListener('error', onError, { once: true });
 
-                // Timeout after 5 seconds to prevent hanging
                 setTimeout(() => {
                   console.warn('🖨️ [printInvoiceImage] Image load timeout:', img.src.substring(0, 50));
                   img.removeEventListener('load', onLoad);
                   img.removeEventListener('error', onError);
-                  resolve(null); // Resolve anyway to continue
-                }, 5000);
+                  resolve(null);
+                }, 2000);
               })
           )
         );
@@ -357,6 +368,8 @@ export class NewOrderService {
         useCORS: true,
         allowTaint: false,
         backgroundColor: "#ffffff",
+        logging: false,
+        imageTimeout: 2000,
       });
 
       console.log('🖨️ [printInvoiceImage] html2canvas completed', {
@@ -443,7 +456,9 @@ export class NewOrderService {
     const tableNumber = order?.table?.table_number || order?.table_id || 'N/A';
     const orderType = order?.type || 'N/A';
     const orderStatus = order?.status || 'N/A';
-    const orderCreatedAt = order?.created_at
+    // وقت الطباعة الحالي (بعد التعديل يجب أن يعكس لحظة الطباعة وليس أول إنشاء للطلب)
+    const printStampAt = this.printTime.formatOrderDateTime(new Date());
+    const orderPlacedAt = order?.created_at
       ? this.printTime.formatOrderDateTime(order.created_at)
       : this.printTime.parseAndFormatOrderDateTime(order?.date, order?.time);
     const orderNote = order?.note || 'N/A';
@@ -672,7 +687,8 @@ html += `</div>
             <p>رقم الطاولة: ${escapeHtml(String(tableNumber))}</p>
             <p>نوع الطلب: ${escapeHtml(translateOrderType(String(orderType)))}</p>
             <p>حالة الطلب: ${escapeHtml(String(orderStatus))}</p>
-            <p>تاريخ الطلب: ${escapeHtml(String(orderCreatedAt))}</p>
+            <p>وقت الطباعة: ${escapeHtml(String(printStampAt))}</p>
+            <p>وقت إنشاء الطلب: ${escapeHtml(String(orderPlacedAt))}</p>
         </div>
 
         <table>

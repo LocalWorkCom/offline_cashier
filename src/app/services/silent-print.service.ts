@@ -30,8 +30,9 @@ export class SilentPrintService {
     // Clone the content to control dimensions for the printer
     const clone = element.cloneNode(true) as HTMLElement;
 
-    // Ensure the clone is visible by removing d-none class if present
+    // Ensure the clone is visible by removing d-none and overflow-hidden classes
     clone.classList.remove('d-none');
+    clone.classList.remove('overflow-hidden');
 
     const printerWidth = 576; // Standard 80mm printer width at 203 DPI (approx)
     const captureWidth = 288; // Half of printerWidth to use with scale: 2
@@ -39,13 +40,14 @@ export class SilentPrintService {
     // Reset styles for capture to ensure no inherited margins/padding affect layout
     clone.style.margin = '0';
     clone.style.padding = '0';
-    clone.style.position = 'absolute';
-    clone.style.top = '0';
-    clone.style.left = '-2000px'; // Position far off-screen
+    clone.style.position = 'fixed'; // Use fixed instead of absolute to avoid creating a scrollbar
+    clone.style.top = '-9999px';    // Move above the viewport so it's not visible
+    clone.style.left = '-9999px';
     clone.style.zIndex = '-1000';
     clone.style.backgroundColor = 'white';
     clone.style.width = `${captureWidth}px`;
     clone.style.maxWidth = 'none';
+    clone.style.overflow = 'visible';
 
     // Override max-width on inner elements commonly used in receipts
     const innerSections = clone.querySelectorAll('.printSection, .receipt-content');

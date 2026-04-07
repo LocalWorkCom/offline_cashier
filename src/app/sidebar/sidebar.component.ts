@@ -13,6 +13,7 @@ import * as bootstrap from 'bootstrap';
 import { HttpClientModule } from '@angular/common/http';
 import { from, lastValueFrom, Observable, of } from 'rxjs';
 import { baseUrl } from '../environment';
+import { SyncOfflineService } from '../services/sync-offline.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -63,9 +64,46 @@ export class SidebarComponent implements OnInit {
     const actual = Number(this.printingData?.actualAmount) || 0;
     return expected - actual;
   }
+
+  /**
+   * ملخص وردية نقطة البيع: إذا لم يُرسل actual_cash من الـ API (مثل تقرير بعد تحويل للخزنة)،
+   * نعرض نفس رقم «النقدية الموجودة» من جدول عهدة هذا التحويل.
+   */
+  get branchShiftActualCashDisplay(): number | null {
+    const r = this.branchShiftReport;
+    if (!r) return null;
+    const apiVal = r.actual_cash;
+    if (apiVal != null && apiVal !== '' && !Number.isNaN(Number(apiVal))) {
+      return Number(apiVal);
+    }
+    const fromPrint = Number(this.printingData?.actualAmount);
+    if (Number.isFinite(fromPrint)) return fromPrint;
+    const fromLogout = Number(this.reportData?.cashTotalLogout);
+    return Number.isFinite(fromLogout) ? fromLogout : null;
+  }
+
+  /**
+   * الفرق كما يحسبه الباك عند إغلاق الفرع: actual_cash − expected_cash
+   * (موجب = زيادة عن المتوقع، سالب = نقص عن المتوقع).
+   */
+  get branchShiftDifferenceDisplay(): number | null {
+    const r = this.branchShiftReport;
+    if (!r) return null;
+    const apiDiff = r.difference;
+    if (apiDiff != null && apiDiff !== '' && !Number.isNaN(Number(apiDiff))) {
+      return Number(apiDiff);
+    }
+    const actual = this.branchShiftActualCashDisplay;
+    const expected = Number(r.expected_cash);
+    if (actual == null || Number.isNaN(expected)) return null;
+    return Math.round((actual - expected) * 100) / 100;
+  }
   reportData: {
     cashTotal: number;
     cashTotalLogout: number;
+    /** متوقع في الدرج = open + مبيعات الجلسة − ما تم تحويله للخزنة (نفس منطق الـ API) */
+    expectedCash: number;
+    expectedVisa: number;
     cashDifference: number;
     visaTotal: number;
     visaTotalLogout: number;
@@ -75,8 +113,16 @@ export class SidebarComponent implements OnInit {
   } | null = null;
   /** بيانات وردية الفرع (أول فتح، آخر إغلاق، متوقع، فعلي، فرق) - يظهر في التقرير المطبوع وتقرير الخروج */
   branchShiftReport: any = null;
-  /** Date فقط — DatePipe لا يقبل نص toLocaleString() */
-  printTime: Date | null = null;
+  /** ملخص آخر جلسة من استجابة إغلاق الرصيد (مبيعات الكاشير على نفس الماكينة) */
+  private logoutSessionSummary: {
+    openCash: number;
+    openVisa: number;
+    cashSales: number;
+    visaSales: number;
+    /** من استجابة الإغلاق: open + مبيعات − balance_after_sent_to_safe */
+    expectedCloseCash?: number;
+    expectedCloseVisa?: number;
+  } | null = null;
   currentBalance: {
     cash: number;
     visa: number;
@@ -90,9 +136,86 @@ export class SidebarComponent implements OnInit {
     private http: HttpClient,
     private balanceService: BalanceService,
     private closeBalanceService: CloseBalanceService,
+    private syncService: SyncOfflineService,
     @Inject(PLATFORM_ID) private platformId: Object,
     private cdr: ChangeDetectorRef
   ) {}
+
+  isSyncing = false;
+  syncMessage: string | null = null;
+  syncStatus: 'success' | 'error' | null = null;
+
+  syncData() {
+    this.isSyncing = true;
+    this.syncMessage = 'جاري مزامنة البيانات...';
+    this.syncStatus = null;
+
+    this.syncService.triggerSync().subscribe({
+      next: (response) => {
+        // After general sync, sync activity logs
+        this.syncMessage = 'جاري مزامنة سجل النشاط...';
+        this.syncService.triggerActivityLogSync().subscribe({
+          next: () => {
+            // After sending all local data, pull changes from the cloud
+            this.syncService.pullOnlineData();
+
+            this.isSyncing = false;
+            this.syncStatus = 'success';
+            this.syncMessage = 'تمت المزامنة بنجاح';
+            setTimeout(() => {
+              this.syncMessage = null;
+              this.syncStatus = null;
+              this.closeSyncModal();
+            }, 2000);
+          },
+          error: (err) => {
+            this.isSyncing = false;
+            this.syncStatus = 'error';
+            this.syncMessage = 'فشلت مزامنة سجل النشاط.';
+            console.error('Activity log sync error:', err);
+          }
+        });
+      },
+      error: (err) => {
+        this.isSyncing = false;
+        this.syncStatus = 'error';
+        this.syncMessage = 'فشلت المزامنة. يرجى المحاولة مرة أخرى.';
+        console.error('Sync error:', err);
+      }
+    });
+  }
+
+  async openSyncModal() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const { Modal } = await import('bootstrap');
+    
+    // Hide logout modal if it's open
+    const logoutModalElement = document.getElementById('logoutModal');
+    if (logoutModalElement) {
+      const logoutInstance = Modal.getInstance(logoutModalElement);
+      if (logoutInstance) logoutInstance.hide();
+    }
+
+    const modalElement = document.getElementById('syncModal');
+    if (modalElement) {
+      this.syncMessage = null;
+      this.syncStatus = null;
+      const modalInstance = Modal.getInstance(modalElement) || new Modal(modalElement);
+      modalInstance.show();
+    }
+  }
+
+  closeSyncModal() {
+    const modalElement = document.getElementById('syncModal');
+    if (modalElement) {
+      import('bootstrap').then(({ Modal }) => {
+        const modalInstance = Modal.getInstance(modalElement);
+        if (modalInstance) {
+          modalInstance.hide();
+        }
+      });
+    }
+  }
 
   ngOnInit() {
 /*      this.printt(2)
@@ -169,12 +292,16 @@ export class SidebarComponent implements OnInit {
           //     0,
           // };
           this.currentBalance = {
-  cash: response.data.open_cash || response.data[0].value || 0,
-  visa: response.data.open_visa || response.data[1].value || 0,
-  total: (response.data[0].value || 0) + (response.data[1].value || 0),
-  deficitCash: response.data.deficit_cash_close ?? 0,
-  deficitVisa: response.data.deficit_visa_close ?? 0,
-};
+            cash: response.data.open_cash || response.data[0].value || 0,
+            visa: response.data.open_visa || response.data[1].value || 0,
+            total: (response.data[0].value || 0) + (response.data[1].value || 0),
+            deficitCash: this.normalizeMoneyValue(
+              response.data.deficit_cash_close ?? response.data.deficit_cash ?? 0
+            ),
+            deficitVisa: this.normalizeMoneyValue(
+              response.data.deficit_visa_close ?? response.data.deficit_visa ?? 0
+            ),
+          };
 
           console.log('Processed balance:', this.currentBalance);
 
@@ -217,10 +344,10 @@ export class SidebarComponent implements OnInit {
       this.closeVisa = Number(balanceData.open_visa);
       this.currency_Symbol =
         balanceData.currency_symbol || this.currency_Symbol;
-      this.deficitCash = balanceData.deficit_cash || 0;
-      this.deficitVisa = balanceData.deficit_visa || 0;
+      this.deficitCash = this.normalizeMoneyValue(balanceData.deficit_cash ?? 0);
+      this.deficitVisa = this.normalizeMoneyValue(balanceData.deficit_visa ?? 0);
 
-      if (this.deficitCash !== 0 || this.deficitVisa !== 0) {
+      if (this.hasMoneyDeficit(this.deficitCash) || this.hasMoneyDeficit(this.deficitVisa)) {
         this.showDeficitMessage = true;
         this.buildDeficitMessage();
       }
@@ -230,22 +357,38 @@ export class SidebarComponent implements OnInit {
   }
 
   private buildDeficitMessage(): void {
-    if (this.deficitCash === 0 && this.deficitVisa === 0) {
+    const dc = this.normalizeMoneyValue(this.deficitCash);
+    const dv = this.normalizeMoneyValue(this.deficitVisa);
+    if (!this.hasMoneyDeficit(dc) && !this.hasMoneyDeficit(dv)) {
       this.deficitMessage = 'لا يوجد فارق في الرصيد';
     } else {
       let messages = [];
-      if (this.deficitCash !== 0) {
+      if (this.hasMoneyDeficit(dc)) {
         messages.push(
-          `يوجد فارق نقدي بقيمة  نقدي: ${this.deficitCash} ${this.currency_Symbol} في الوردية السابقه`
+          `يوجد فارق نقدي بقيمة  نقدي: ${dc} ${this.currency_Symbol} في الوردية السابقه`
         );
       }
-      if (this.deficitVisa !== 0) {
+      if (this.hasMoneyDeficit(dv)) {
         messages.push(
-          `فارق إلكتروني: ${this.deficitVisa} ${this.currency_Symbol}`
+          `فارق إلكتروني: ${dv} ${this.currency_Symbol}`
         );
       }
       this.deficitMessage = messages.join(' - ');
     }
+  }
+
+  /** Parse API / form values to 2-decimal number (avoids string "0.00" !== 0 in templates). */
+  normalizeMoneyValue(value: unknown): number {
+    const n = Number(value);
+    if (!Number.isFinite(n)) {
+      return 0;
+    }
+    return Math.round(n * 100) / 100;
+  }
+
+  /** True only if there is a real cash/visa gap to warn about (not 0 / "0.00" / float noise). */
+  hasMoneyDeficit(value: unknown): boolean {
+    return Math.abs(this.normalizeMoneyValue(value)) >= 0.005;
   }
 
   formatTime(time: string | null): string {
@@ -386,32 +529,35 @@ export class SidebarComponent implements OnInit {
       console.log('Close Balance Response:', response);
 
       if (response?.status && response.data) {
+        const exCash = Number(response.data.expected_close_cash);
+        const exVisa = Number(response.data.expected_close_visa);
+        this.logoutSessionSummary = {
+          openCash: Number(response.data.open_cash) || 0,
+          openVisa: Number(response.data.open_visa) || 0,
+          cashSales: Number(response.data.session_cash_sales) || 0,
+          visaSales: Number(response.data.session_visa_sales) || 0,
+          expectedCloseCash: Number.isFinite(exCash) ? exCash : undefined,
+          expectedCloseVisa: Number.isFinite(exVisa) ? exVisa : undefined,
+        };
+
         // Set form as submitted
         this.formSubmitted = true;
 
-        // Update current balance with new deficit values
-        // Note: Adjust this based on actual API response structure
-        const deficitCash =
-          response.data.deficit_cash_close ;
-        const deficitVisa =
-          response.data.deficit_visa_close ;
-
-          console.log( response.data.deficit_cash_close,"alaaaaaa");
+        const deficitCash = this.normalizeMoneyValue(response.data.deficit_cash_close);
+        const deficitVisa = this.normalizeMoneyValue(response.data.deficit_visa_close);
 
         if (this.currentBalance) {
           this.currentBalance.deficitCash = deficitCash;
           this.currentBalance.deficitVisa = deficitVisa;
-           console.log( this.currentBalance.deficitCash ,"alaaaaaa");
-           this.showDeficitMessage2=true
+          this.showDeficitMessage2 =
+            this.hasMoneyDeficit(deficitCash) || this.hasMoneyDeficit(deficitVisa);
         }
 
-        // Always show deficit message after submission
         this.showDeficitMessage = true;
         this.buildDeficitMessage();
 
-        // If logout is true (user clicked "تسجيل خروج" button), proceed to logout even with deficit
-        // Otherwise, only auto-proceed if no deficit
-        if (logout || (deficitCash === 0 && deficitVisa === 0)) {
+        const noDeficit = !this.hasMoneyDeficit(deficitCash) && !this.hasMoneyDeficit(deficitVisa);
+        if (logout || noDeficit) {
           this.proceedToLogout();
         }
 
@@ -437,23 +583,10 @@ proceedToLogout(): void {
         localStorage.setItem('cashTotallogout', JSON.stringify(this.enteredCash));
       }
 
-      const branchId = this.authService.getBranchId();
-      const date = new Date().toISOString().slice(0, 10);
-      const fetchShift = branchId != null
-        ? this.balanceService.getBranchShiftReport(branchId, date)
-        : of({ status: false });
-
-      fetchShift.subscribe({
-        next: (r) => {
-          if (r?.status && r?.data) {
-            this.branchShiftReport = this.normalizeBranchShiftReport(r.data);
-          } else {
-            this.branchShiftReport = null;
-          }
-        },
-        error: () => { this.branchShiftReport = null; },
-        complete: () => this.buildReportDataAndPrintLogout()
-      });
+      // Per-cashier logout print: only session totals (reportData / close-balance response).
+      // Do not attach machine-wide branch-shift totals here — that belongs on balance-transfer print (print()).
+      this.branchShiftReport = null;
+      this.buildReportDataAndPrintLogout();
     } else {
       this.performLogout();
     }
@@ -496,18 +629,33 @@ proceedToLogout(): void {
       }
     };
 
-    const cashTotal = parseValue(cashTotalStr);
-    const visaTotal = parseValue(visaTotalStr);
+    const summary = this.logoutSessionSummary;
+    const cashTotal = summary?.openCash ?? parseValue(cashTotalStr);
+    const visaTotal = summary?.openVisa ?? parseValue(visaTotalStr);
     const cashTotalLogout = parseValue(cashTotalLogoutStr);
     const visaTotalLogout = parseValue(visaTotalLogoutStr);
-    const cash_sales = parseValue(cash_salesStr);
-    const visa_sales = parseValue(visa_salesStr);
-    const cashDifference = cashTotalLogout - (cashTotal + cash_sales);
-    const visaDifference = visaTotalLogout - (visaTotal + visa_sales);
+    const cash_sales = summary?.cashSales ?? parseValue(cash_salesStr);
+    const visa_sales = summary?.visaSales ?? parseValue(visa_salesStr);
+
+    const expectedCash =
+      summary?.expectedCloseCash !== undefined
+        ? summary.expectedCloseCash
+        : cashTotal + cash_sales;
+    const expectedVisa =
+      summary?.expectedCloseVisa !== undefined
+        ? summary.expectedCloseVisa
+        : visaTotal + visa_sales;
+
+    const cashDifference = cashTotalLogout - expectedCash;
+    const visaDifference = visaTotalLogout - expectedVisa;
+
+    this.logoutSessionSummary = null;
 
     this.reportData = {
       cashTotal,
       cashTotalLogout,
+      expectedCash,
+      expectedVisa,
       cashDifference,
       visaTotal,
       visaTotalLogout,
@@ -845,13 +993,30 @@ waitForImagesInSection(selector: string): Promise<void> {
     });
   });
 }
+  printTime: Date | null = null;
+
+  get posMachineDisplay(): string {
+    if (this.branchShiftReport?.report_scope === 'cashier_machine' && this.branchShiftReport?.cashier_machine_id != null) {
+      const name = this.branchShiftReport.cashier_machine_name;
+      const id = this.branchShiftReport.cashier_machine_id;
+      return name ? `${name} — #${id}` : `POS — #${id}`;
+    }
+    if (isPlatformBrowser(this.platformId)) {
+      const id = localStorage.getItem('cashier_machine_id');
+      if (id) {
+        return `POS — ماكينة #${id}`;
+      }
+    }
+    return 'POS';
+  }
 
   print(id: number): void {
   this.branchShiftReport = null;
   const branchId = this.authService.getBranchId();
   const date = new Date().toISOString().slice(0, 10);
+  const machineId = isPlatformBrowser(this.platformId) ? localStorage.getItem('cashier_machine_id') : null;
   const shiftReport$ = branchId != null
-    ? this.balanceService.getBranchShiftReport(branchId, date).pipe(
+    ? this.balanceService.getBranchShiftReport(branchId, date, machineId).pipe(
         tap((r) => {
           if (r?.status && r?.data) {
             this.branchShiftReport = this.normalizeBranchShiftReport(r.data);
@@ -940,14 +1105,47 @@ private waitForRender(selector: string): Observable<Element> {
   const printContents = printSection.innerHTML;
   const originalContents = document.body.innerHTML;
 
-  // Wrap in div#print-section so #print-section .footer CSS still applies after body replace
-  document.body.innerHTML = '<div id="print-section" class="fw-bold">' + printContents + '</div>';
+  const sectionClass = printSection.className
+    .split(/\s+/)
+    .filter((c) => c && c !== 'd-none')
+    .join(' ');
 
-  window.print();
+  const root = document.documentElement;
+  root.classList.add('cash-transfer-print-session');
+  const pageStyleEl = document.createElement('style');
+  pageStyleEl.setAttribute('data-cash-transfer-print-page', '');
+  pageStyleEl.textContent = '@media print { @page { size: auto; margin: 3mm 2mm; } }';
+  document.head.appendChild(pageStyleEl);
 
-  document.body.innerHTML = originalContents;
+  document.body.innerHTML = `<div id="print-section" class="${sectionClass}">${printContents}</div>`;
 
- location.reload();
+  try {
+    window.print();
+  } finally {
+    document.body.innerHTML = originalContents;
+    pageStyleEl.remove();
+    root.classList.remove('cash-transfer-print-session');
+  }
+
+  this.clearPosSessionSalesAccumulators();
+  location.reload();
+  }
+
+  /** After branch-safe transfer print: reset client-side sales counters so the next segment starts from zero. */
+  private clearPosSessionSalesAccumulators(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    const keys = [
+      'paid_order_cash',
+      'paid_order_credit',
+      'cash_amountt',
+      'credit_amountt',
+      'cash_value',
+      'credit_value',
+      'totalcash',
+    ];
+    keys.forEach((k) => localStorage.removeItem(k));
   }
   printt(id: number): void {
   this.balanceService.PrintBalance(id).subscribe({

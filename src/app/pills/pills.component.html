@@ -1,6 +1,11 @@
 @if (errorMessage) {
-<div class="alert alert-danger text-center my-3">
-  {{ errorMessage }}
+<div class="alert alert-danger text-center my-3 d-flex flex-column align-items-center gap-2">
+  <span>{{ errorMessage }}</span>
+  @if (isOnline) {
+  <button class="btn btn-outline-danger btn-sm" (click)="fetchPillsData()">
+    إعادة المحاولة
+  </button>
+  }
 </div>
 }
 
@@ -100,14 +105,14 @@
                 }
                 <div class="d-flex align-items-center justify-content-end my-2">
                   @if (pill.payment_status == "unpaid") {
-                  <small class="rounded-circle bg-main d-flex justify-content-center align-items-center text-white ms-1"
+                  <small class="rounded-circle badge-unpaid d-flex justify-content-center align-items-center ms-1"
                     style="width: 16px;height: 16px;">
                     <i class="fa-solid fa-xmark fs-6"></i>
                   </small>
-                  <small class="main-color fw-bold">غير مدفوع</small>
+                  <small class="fw-bold text-danger">غير مدفوع</small>
                   } @else {
                   <small
-                    class="rounded-circle bg-success d-flex justify-content-center align-items-center text-white ms-1"
+                    class="rounded-circle badge-paid d-flex justify-content-center align-items-center ms-1"
                     style="width: 16px;height: 16px;">
                     <i class="fa-solid fa-check fs-6"></i>
                   </small>

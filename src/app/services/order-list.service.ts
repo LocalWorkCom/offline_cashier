@@ -2,6 +2,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { AuthService } from './auth.service';
 import { Observable } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { baseUrl } from '../environment';
 import { IndexeddbService } from './indexeddb.service';
 
@@ -88,6 +89,90 @@ fetchAndSaveOrders(): Observable<any> {
     }
 
     return this.http.get(url, { headers });
+  }
+
+  /**
+   * يجمع طلبات listv2 من كل الصفحات (نفس منطق المزامنة مع IndexedDB).
+   */
+  private async collectAllOrdersListPages(
+    type: string,
+    status: string,
+    orderNumber: string = ''
+  ): Promise<any[]> {
+    let page = 1;
+    let allOrders: any[] = [];
+    const perPage = 100;
+    const maxPages = 200;
+    let totalFromApi: number | null = null;
+
+    while (page <= maxPages) {
+      const res = await firstValueFrom(
+        this.getOrdersListV2(type, page, orderNumber, perPage, status)
+      );
+      const orders = res?.data?.orders ?? [];
+      if (!orders.length) break;
+
+      allOrders = allOrders.concat(orders);
+      const pagination = res?.data?.pagination;
+      const total = pagination?.total ?? res?.data?.order_counts ?? res?.data?.total ?? null;
+      if (total != null) totalFromApi = total;
+
+      const hasMoreFromApi = pagination?.has_more;
+      const hasMoreByCount = totalFromApi != null && allOrders.length < totalFromApi;
+      const hasMore = hasMoreFromApi ?? hasMoreByCount ?? (orders.length >= perPage);
+
+      if (!hasMore) break;
+      page++;
+    }
+    return allOrders;
+  }
+
+  /**
+   * كل طلبات listv2 لنوع/حالة معيّنة (للمودالات مثل دمج الطلبات دون الاعتماد على صفحة الشاشة).
+   */
+  getAllOrdersListV2(
+    type: string = 'All',
+    status: string = 'all',
+    orderNumber: string = ''
+  ): Observable<any[]> {
+    return new Observable((observer) => {
+      (async () => {
+        try {
+          const all = await this.collectAllOrdersListPages(type, status, orderNumber);
+          observer.next(all);
+        } catch (err) {
+          observer.error(err);
+        } finally {
+          observer.complete();
+        }
+      })();
+    });
+  }
+
+  /**
+   * جلب كل الطلبات (كل الصفحات) وحفظها في IndexedDB للعمل offline
+   * يمر على كل الصفحات حتى يتم جلب العدد الكلي (استناداً إلى pagination أو order_counts)
+   */
+  fetchAllOrdersAndSaveToIndexedDB(type: string = 'All', status: string = 'all'): Observable<{ count: number }> {
+    return new Observable(observer => {
+      const run = async () => {
+        try {
+          const allOrders = await this.collectAllOrdersListPages(type, status, '');
+          if (allOrders.length > 0) {
+            await this.db.saveOrders(allOrders);
+            await this.db.setOrdersLastSync(Date.now());
+            console.log('✅ كل الطلبات محفوظة في IndexedDB:', allOrders.length);
+          }
+          observer.next({ count: allOrders.length });
+        } catch (err) {
+          console.error('❌ خطأ في مزامنة كل الطلبات إلى IndexedDB:', err);
+          observer.error(err);
+        } finally {
+          observer.complete();
+        }
+      };
+      run();
+    });
   }
 
   getOrderTypesCounts(): Observable<any> {

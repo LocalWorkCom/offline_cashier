@@ -2,10 +2,12 @@ import { Component, Input, Output, EventEmitter, OnInit } from '@angular/core';
 import { ProductsService } from '../services/products.service';
 import { ProductModalComponent } from '../product-modal/product-modal.component';
 import { NgbModal, ModalDismissReasons } from '@ng-bootstrap/ng-bootstrap';
+import { Router } from '@angular/router';
+import { CommonModule } from '@angular/common';
 
 @Component({
   selector: 'app-product-card',
-  imports: [],
+  imports: [CommonModule],
   templateUrl: './product-card.component.html',
   styleUrl: './product-card.component.css'
 })
@@ -16,11 +18,13 @@ export class ProductCardComponent  {
   category: any;
   products: any[] = [];
   selectedProduct: any | null = null;
+  showInlineQty = false;
+  inlineQuantity = 1;
   // deleteProduct(id: string) {
   //   // console.log(id)
   //   this.sendToCategories.emit(id) //method byakhod l value de todyha ll parent
   // }
-  constructor(private productService: ProductsService, public modalService: NgbModal) { }
+  constructor(private productService: ProductsService, public modalService: NgbModal, private router: Router) { }
 
   // openModal(item: any) : void{
   //   this.selectedProduct = item;
@@ -31,7 +35,7 @@ export class ProductCardComponent  {
   openModal(item: any): void {
 
     const orderType = localStorage.getItem('selectedOrderType');
-    console.log("selected order type in product card ",orderType); 
+    console.log("selected order type in product card ",orderType);
     // // if localStorage.get
     // if(!localStorage.getItem('selectedOrderType')){
     //   alert("يرجى تحديد نوع الطلب أولا");
@@ -47,19 +51,15 @@ export class ProductCardComponent  {
       }
 
     }
-     let Talabat = null;
-    const isTalabat = orderType === 'talabat';
     if (Array.isArray(item.Id_menus_integrations)) {
       for (let integration of item.Id_menus_integrations) {
         if (integration.name_en.toLowerCase().includes('talabat')) {
           console.log('✅ هذا الطبق تابع لطلبات:', integration);
-          Talabat = integration;
           break;
-          // هنا اكتبي اللي عايزة تعمليه لما تلاقي طلبات
         }
       }
     }
-    
+
     this.productService.setProduct(item);
     let processedData;
     if (Array.isArray(item)) {
@@ -93,5 +93,66 @@ export class ProductCardComponent  {
     // console.log(`Modal Size: ${modalSize}`, modalRef.componentInstance.src);
   }
 
+  handleAddClick(item: any): void {
+    const hasAddonCategories = Array.isArray(item.addon_categories) && item.addon_categories.length > 0;
+    const hasSizes = Array.isArray(item.sizes) && item.sizes.length > 0;
+
+    if (hasAddonCategories || hasSizes) {
+      this.openModal(item);
+    } else {
+      this.showInlineQty = !this.showInlineQty;
+      if (!this.showInlineQty) {
+        this.inlineQuantity = 1;
+      }
+    }
+  }
+
+  increaseInlineQty(): void {
+    this.inlineQuantity++;
+  }
+
+  decreaseInlineQty(): void {
+    if (this.inlineQuantity > 1) {
+      this.inlineQuantity--;
+    }
+  }
+
+  addDirectToCart(item: any): void {
+    const dishData = item.dish ?? item;
+
+    const dish = {
+      id: dishData.id,
+      name: dishData.name,
+      description: dishData.description,
+      price: dishData.price,
+      currency_symbol: dishData.currency_symbol || 'ج.م',
+      has_size: false,
+      has_addon: false,
+      image: dishData.image,
+      share_link: dishData.share_link || '',
+      is_favorites: dishData.is_favorites || false,
+      mostOrdered: dishData.mostOrdered || false,
+    };
+
+    const productToAdd = {
+      dish,
+      sizes: [],
+      addon_categories: [],
+      selectedSize: null,
+      selectedAddons: [],
+      quantity: this.inlineQuantity,
+      finalPrice: dishData.price * this.inlineQuantity,
+      note: '',
+    };
+
+    if (this.router.url.includes('/onhold-orders/')) {
+      this.productService.addToHoldCart(productToAdd);
+    } else {
+      this.productService.addToCart(productToAdd);
+    }
+
+    this.showInlineQty = false;
+    this.inlineQuantity = 1;
+  }
 
 }

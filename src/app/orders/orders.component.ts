@@ -39,6 +39,7 @@ import { switchMap } from 'rxjs/operators';
 import { TablesService } from '../services/tables.service';
 import { AddAddressService } from '../services/add-address.service';
 import { PhoneCheckService } from '../services/phoneCheck';
+import { totalBalance } from '../services/pusher/totalBalance';
 @Component({
   selector: 'app-orders',
   standalone: true,
@@ -114,11 +115,12 @@ export class OrdersComponent implements OnDestroy {
     private http: HttpClient,
     private NgbModal: NgbModal,
     private productsService: ProductsService,
-    private tablesService: TablesService, // private dbService: IndexeddbService
-    private _OrderListDetailsService: OrderListDetailsService ,
-     private dbService: IndexeddbService,
+    private tablesService: TablesService,
+    private _OrderListDetailsService: OrderListDetailsService,
+    private dbService: IndexeddbService,
     private addAddressService: AddAddressService,
-    private phoneCheckService: PhoneCheckService
+    private phoneCheckService: PhoneCheckService,
+    private totalBalance: totalBalance
   ) {
     // const navigation = this.router.getCurrentNavigation();
     // this.orderDetails = navigation?.extras.state?.['orderData'];
@@ -132,10 +134,44 @@ export class OrdersComponent implements OnDestroy {
   isLoadMoreLoading: boolean = false;
   orderTypeCounts: any = {};
   orderStatusCounts: any = {};
+  /** عند العمل offline: القائمة الكاملة من IndexedDB لعرض 30 لكل صفحة */
+  private offlineOrdersFull: any[] = [];
+  private readonly ORDERS_PER_PAGE = 30;
 
   ngOnInit(): void {
     // console.log("this.isOnline", this.isOnline);
     this.selectedOrderTypeStatus = 'All';
+
+
+       // cal api of Get Balance info
+
+       const shiftData = JSON.parse(localStorage.getItem('shiftData')!);
+
+       const bodyGetBalanceInfo = {
+         cashier_machine_id: localStorage.getItem('cashier_machine_id'),
+         employee_schedule_id: localStorage.getItem('employee_schedule_id'),
+         shift_start: shiftData?.shift_start || null,
+         shift_end: shiftData?.shift_end || null,
+       };
+       this.http.post<any>(`${baseUrl}api/cashier/get-current-balance`, bodyGetBalanceInfo).subscribe({
+         next: (res) => {
+           console.log('res of Get Balance info',res);
+           // this.paymentSummary = res.data;
+                // localStorage.setItem('paymentSummary', JSON.stringify(this.paymentSummary));
+               localStorage.setItem('totalcash', res.data[0].value);
+               localStorage.setItem('totalvisa', res.data[1].value);
+                // localStorage.setItem('total', res.data[2].value);
+           if(res.status==false){
+               // this.errorMsg=res.message;
+               // alert(this.errorMsg)
+
+           }
+         },
+         error: (err) => {
+           console.error('Failed to fetch total money:', err);
+         }
+       });
+       
     this.fetchOrdersData();
     this.fetchOrderTypeCounts();
     // if (this.isOnline == false) {
@@ -192,61 +228,101 @@ export class OrdersComponent implements OnDestroy {
     if (this.isOnline) {
       this.fetchOrdersFromAPI();
     } else {
-      // this.loadFromIndexedDB();
-      this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+      this.loadOrdersFromIndexedDB();
     }
   }
   //start dalia
 
   // Load orders from IndexedDB
-  // private loadOrdersFromIndexedDB(): void {
-  //   this.dbService.getOrders().then(orders => {
-  //     if (orders && orders.length > 0) {
-  //       console.log('Orders loaded from IndexedDB:', orders.length);
+  private loadOrdersFromIndexedDB(): void {
+    this.dbService.getOrders().then(orders => {
+      if (orders && orders.length > 0) {
+        console.log('Orders loaded from IndexedDB:', orders.length);
 
-  //       this.processOrders(orders);
+        this.processOrders(orders);
+        // عند offline نضع القائمة الكاملة في orders و offlineOrdersFull ليعمل الفلتر على الكل
+        this.offlineOrdersFull = [...this.orders];
+        this.totalOrdersCount = this.offlineOrdersFull.length;
+        this.hasMoreOrders = false; // كل البيانات محمّلة من IDB
+        this.currentPage = 1;
+        this.computeOfflineCounts();
+        this.filterOrders();
+        this.loading = true; // إيقاف الـ spinner وعرض الطلبات
+        this.cdr.detectChanges();
 
-  // Check if data is stale (older than 5 minutes)
-  //       this.dbService.getOrdersLastSync().then(lastSync => {
-  //         const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
-  //         if (this.isOnline && lastSync < fiveMinutesAgo) {
-  //           this.fetchOrdersFromAPI();
-  //         }
-  //       }).catch(err => {
-  //         console.error('Error getting last sync time:', err);
-  //         if (this.isOnline) {
-  //           this.fetchOrdersFromAPI();
-  //         }
-  //       });
-  //     } else if (this.isOnline) {
-  //       // No data in IndexedDB, fetch from API
-  //       this.fetchOrdersFromAPI();
-  //     } else {
-  //       // Offline and no data available
-  //       this.loading = false;
-  //       console.warn('No orders available offline');
-  //     }
-  //   }).catch(err => {
-  //     console.error('Error loading orders from IndexedDB:', err);
-  //     if (this.isOnline) {
-  //       this.fetchOrdersFromAPI();
-  //     } else {
-  //       this.loading = false;
-  //     }
-  //   });
-  // }
+        // Check if data is stale (older than 5 minutes)
+        this.dbService.getOrdersLastSync().then(lastSync => {
+          const fiveMinutesAgo = Date.now() - (5 * 60 * 1000);
+          if (this.isOnline && lastSync < fiveMinutesAgo) {
+            this.fetchOrdersFromAPI();
+          }
+        }).catch(err => {
+          console.error('Error getting last sync time:', err);
+          if (this.isOnline) {
+            this.fetchOrdersFromAPI();
+          }
+        });
+      } else if (this.isOnline) {
+        // No data in IndexedDB, fetch from API
+        this.fetchOrdersFromAPI();
+      } else {
+        // Offline and no data available
+        this.loading = true; // إيقاف الـ spinner لعرض رسالة الخطأ
+        this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+        console.warn('No orders available offline');
+        this.cdr.detectChanges();
+      }
+    }).catch(err => {
+      console.error('Error loading orders from IndexedDB:', err);
+      if (this.isOnline) {
+        this.fetchOrdersFromAPI();
+      } else {
+        this.loading = true; // إيقاف الـ spinner لعرض رسالة الخطأ
+        this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+        this.cdr.detectChanges();
+      }
+    });
+  }
   // Fetch orders from API
   private fetchOrdersFromAPI(isLoadMore: boolean = false): void {
+    // عند عدم الاتصال: تحميل من IndexedDB بدلاً من مسح القائمة واستدعاء API
+    if (!navigator.onLine) {
+      this.dbService.getOrders().then(orders => {
+        if (orders && orders.length > 0) {
+          this.processOrders(orders);
+          this.offlineOrdersFull = [...this.orders];
+          this.totalOrdersCount = this.offlineOrdersFull.length;
+          this.hasMoreOrders = false;
+          this.computeOfflineCounts();
+          this.filterOrders();
+          this.filterOrdersInput();
+        }
+        this.loading = true;
+        this.isLoadMoreLoading = false;
+        this.cdr.detectChanges();
+      }).catch(() => {
+        this.loading = true;
+        this.isLoadMoreLoading = false;
+        this.cdr.detectChanges();
+      });
+      return;
+    }
+
     if (!isLoadMore) {
       this.loading = false;
       this.currentPage = 1;
       this.orders = [];
+      this.offlineOrdersFull = []; // استخدام الـ API وليس القائمة المحلية
     } else {
       this.isLoadMoreLoading = true;
     }
 
     let statusParam = this.selectedStatus;
-    if (statusParam === 'in_progress') {
+    if (statusParam === 'static') {
+      // 'static' is a frontend-only concept (on-hold orders from localStorage).
+      // The backend does NOT know about it — sending it to the API causes "invalid status".
+      statusParam = 'all';
+    } else if (statusParam === 'in_progress') {
       statusParam = 'inprogress';
     } else if (statusParam === 'readyForPickup') {
       statusParam = 'packing';
@@ -287,14 +363,19 @@ export class OrdersComponent implements OnDestroy {
 
             this.processOrders(this.orders);
 
-            // Save to IndexedDB (only for the first page usually, but here we save current list)
+            // حفظ الطلبات في IndexedDB: أولاً الصفحة الحالية فوراً، ثم مزامنة كل الصفحات في الخلفية
             if (!isLoadMore) {
               this.dbService.saveOrders(this.orders).then(() => {
-                console.log('Orders saved to IndexedDB');
-                return this.dbService.setOrdersLastSync(Date.now());
-              }).catch(err => {
-                console.error('Error saving orders to IndexedDB:', err);
-              });
+                this.dbService.setOrdersLastSync(Date.now());
+              }).catch(err => console.error('Error saving orders to IndexedDB:', err));
+              // مزامنة كل الطلبات (كل الأنواع والحالات) إلى IndexedDB للعمل offline
+              this.ordersListService
+                .fetchAllOrdersAndSaveToIndexedDB('All', 'all')
+                .pipe(takeUntil(this.destroy$))
+                .subscribe({
+                  next: (r) => console.log('✅ تم حفظ كل الطلبات في IndexedDB:', r.count),
+                  error: () => {},
+                });
             }
           } else {
             console.warn('No orders found in API response.');
@@ -315,15 +396,63 @@ export class OrdersComponent implements OnDestroy {
             'حدث خطأ فى الاتصال يرجى المحاولة مره اخرى',
             'error'
           );
+
+          // عند فشل API: استخدام بيانات IndexedDB (سواء أونلاين أو أوفلاين)
+          this.dbService.getOrders().then(orders => {
+            if (orders && orders.length > 0) {
+              console.log('Using IndexedDB data as fallback:', orders.length);
+              this.processOrders(orders);
+              this.offlineOrdersFull = [...this.orders];
+              this.totalOrdersCount = this.offlineOrdersFull.length;
+              this.hasMoreOrders = false;
+              this.computeOfflineCounts();
+              this.filterOrders();
+              this.filterOrdersInput();
+              this.cdr.detectChanges();
+            }
+          }).catch(() => {});
         },
       });
   }
 
   loadMore(): void {
-    if (this.hasMoreOrders && !this.isLoadMoreLoading) {
-      this.currentPage++;
-      this.fetchOrdersFromAPI(true);
+    if (!this.hasMoreOrders || this.isLoadMoreLoading) return;
+    // عند العمل offline: جلب الـ 30 التالية من القائمة المحلية
+    if (!this.isOnline && this.offlineOrdersFull.length > 0) {
+      const nextCount = this.orders.length + this.ORDERS_PER_PAGE;
+      this.orders = this.offlineOrdersFull.slice(0, nextCount);
+      this.hasMoreOrders = this.orders.length < this.totalOrdersCount;
+      this.filterOrders();
+      this.cdr.detectChanges();
+      return;
     }
+    this.currentPage++;
+    this.fetchOrdersFromAPI(true);
+  }
+
+  /** حساب أعداد الأنواع والحالات من القائمة المحلية (للعمل offline) */
+  private computeOfflineCounts(): void {
+    const list = this.offlineOrdersFull.length > 0 ? this.offlineOrdersFull : this.orders;
+    if (!list.length) return;
+
+    const typesMap: Record<string, number> = { All: list.length };
+    const statusMap: Record<string, number> = {};
+
+    for (const order of list) {
+      const type = order.order_details?.order_type;
+      if (type) {
+        typesMap[type] = (typesMap[type] || 0) + 1;
+      }
+      let status = order.order_details?.status;
+      if (status === 'packing') status = 'readyForPickup';
+      if (status === 'inprogress') status = 'in_progress';
+      if (status) {
+        statusMap[status] = (statusMap[status] || 0) + 1;
+      }
+    }
+
+    this.orderTypeCounts = typesMap;
+    this.orderStatusCounts = statusMap;
   }
 
   fetchOrderTypeCounts(): void {
@@ -359,22 +488,57 @@ export class OrdersComponent implements OnDestroy {
       }
     });
   }
+  /** توحيد نوع الطلب ليطابق القيم المتوقعة (API قد يرجع Delivery، الـ offline يحفظ delivery) */
+  private normalizeOrderType(type: string | undefined): string | undefined {
+    if (!type) return type;
+    const t = type.toString().toLowerCase();
+    if (t === 'delivery' || t === 'توصيل') return 'Delivery';
+    if (t === 'takeaway' || t === 'إستلام') return 'Takeaway';
+    if (t === 'dine-in' || t === 'في المطعم') return 'dine-in';
+    if (t === 'talabat') return 'talabat';
+    return type;
+  }
+
   // Process orders (common method for both API and IndexedDB data)
   private processOrders(orders: any[]): void {
-    this.currencySymbol = orders[0]?.currency_symbol;
+    this.currencySymbol = orders[0]?.currency_symbol ?? orders[0]?.details_order?.currency_symbol ?? 'ج.م';
     this.orders = orders
       .filter(
-        (order: any) =>
-          this.allowedOrderTypes.includes(order.order_details?.order_type) &&
-          (this.allowedStatuses.includes(order.order_details?.status) ||
-           order.order_details?.status === 'packing' ||
-           order.order_details?.status === 'inprogress')
+        (order: any) => {
+          // دعم طلبات من IndexedDB قد تكون order_details تحت جذر مختلف أو نوع مكتوب بحروف مختلفة
+          const rawType = order.order_details?.order_type ?? order.order_type;
+          const normalizedType = this.normalizeOrderType(rawType);
+          const status = order.order_details?.status ?? order.status;
+          const typeOk = normalizedType && this.allowedOrderTypes.includes(normalizedType);
+          const statusOk =
+            this.allowedStatuses.includes(status) ||
+            status === 'packing' ||
+            status === 'inprogress';
+          return !!typeOk && !!statusOk;
+        }
       )
       .map((order: any) => {
         const processedOrder = {
           ...order,
-          currency_symbol: this.currencySymbol,
+          currency_symbol: order.currency_symbol ?? this.currencySymbol,
         };
+        // توحيد order_details إن وُجد النوع/الحالة في الجذر (طلبات قديمة أو أوفلاين بصيغة مختلفة)
+        if (!processedOrder.order_details && (processedOrder.order_type || processedOrder.status)) {
+          processedOrder.order_details = {
+            order_id: processedOrder.order_number ?? processedOrder.order_id,
+            order_type: this.normalizeOrderType(processedOrder.order_type) ?? processedOrder.order_type,
+            status: processedOrder.status ?? 'pending',
+          };
+        }
+        if (processedOrder.order_details?.order_type) {
+          processedOrder.order_details.order_type =
+            this.normalizeOrderType(processedOrder.order_details.order_type) ?? processedOrder.order_details.order_type;
+        }
+
+        // طلبات الـ offline من savePendingOrder تأتي بـ order_items وليس items — توحيد الشكل للعرض
+        if (!processedOrder.items && processedOrder.order_items?.length) {
+          processedOrder.items = processedOrder.order_items;
+        }
 
         // Map backend status to frontend status
         if (processedOrder.order_details?.status === 'packing') {
@@ -723,6 +887,12 @@ export class OrdersComponent implements OnDestroy {
       item.dish_price = item.total_dish_price;
       item.selectedQuantity -= 1;
       item.dish_price = item.unitPrice * item.selectedQuantity;
+    }
+  }
+
+  onItemCheckChange(item: any): void {
+    if (!item.isChecked) {
+      item.selectedQuantity = item.quantity;
     }
   }
 
@@ -1133,6 +1303,11 @@ export class OrdersComponent implements OnDestroy {
   startFiltering(): void {
     let filtered = this.orders;
 
+    // Guard: skip orders without order_details (can happen with Pusher/background-sync objects)
+    if (this.selectedStatus !== 'static') {
+      filtered = filtered.filter((order) => !!order.order_details);
+    }
+
     // filter by order type (skip if "All")
     if (this.selectedOrderTypeStatus !== 'All') {
       filtered = filtered.filter(
@@ -1154,7 +1329,6 @@ export class OrdersComponent implements OnDestroy {
       if (this.selectedOrderTypeStatus === 'All') {
         filtered = parsed; //  take all saved orders
       } else {
-        ``;
         filtered = parsed.filter(
           (item: any) => item.type === this.selectedOrderTypeStatus
         );
@@ -1261,6 +1435,21 @@ export class OrdersComponent implements OnDestroy {
     return items.filter((item: any) => (Number(item.quantity) || 0) > 0);
   }
 
+  /** True when the order has any returned quantity (quantity - selectedQuantity > 0). */
+  hasReturnedItems(order: any): boolean {
+    const items = this.getDisplayOrderItems(order);
+    for (const item of items) {
+      if (!item.isChecked) continue; // Skip items that are not checked
+      const totalQty = Number(item.quantity) || 0;
+      const selectedQty =
+        item.selectedQuantity !== undefined && item.selectedQuantity !== null
+          ? Number(item.selectedQuantity)
+          : totalQty;
+      if (totalQty - selectedQty > 0) return true;
+    }
+    return false;
+  }
+
   /**
    * Compute total amounts (price + tax + service) for returned quantities
    * of all items in a given order. Used for the return invoice summary.
@@ -1282,6 +1471,8 @@ export class OrdersComponent implements OnDestroy {
     let priceTotal = 0;
     let couponTotal = 0;
     let deliveryTotal = 0;
+    let hasReturnedQty = false;
+    let isFullReturn = items.length > 0;
     for (const item of items) {
       const totalQty = Number(item.quantity) || 0;
       const selectedQty =
@@ -1291,7 +1482,12 @@ export class OrdersComponent implements OnDestroy {
 
       const returnedQty = totalQty - selectedQty;
       if (returnedQty <= 0) {
+        isFullReturn = false;
         continue;
+      }
+      hasReturnedQty = true;
+      if (selectedQty !== 0) {
+        isFullReturn = false;
       }
 
       // new calculation for the return totals
@@ -1299,28 +1495,18 @@ export class OrdersComponent implements OnDestroy {
       // let servicePart : number;
       let pricePart : number;
       // let couponPart : number;
+      
+      // Ensure unit price is calculated
+      if (!item.unitPrice) {
+        item.unitPrice = (item.total_dish_price || 0) / (item.quantity || 1);
+      }
+      
       const unitPrice = item.unitPrice;
       pricePart = unitPrice * returnedQty;
 
-
-      // if (order.details_order?.order_type === 'dine-in') {
-      //   servicePart = pricePart * 12 / 100;
-      //   taxPart = (pricePart + servicePart) * 14/100;
-
-      // } else {
-      //   servicePart =0;
-      //   taxPart = (pricePart + servicePart) * 14/100;
-
-      // }
-
-
-
-      // taxTotal += taxPart;
-      // serviceTotal += servicePart;
       priceTotal += pricePart;
     }
 
-    console.log('order_dalia',order);
     let precoupon = 0;
 
     if(order.details_order?.order_summary?.coupon_type == 'percentage'){
@@ -1342,10 +1528,32 @@ export class OrdersComponent implements OnDestroy {
         taxTotal = (couponTotal + serviceTotal) * 14/100;
 
       }
-      deliveryTotal = order.details_order?.order_summary?.delivery_fees;
+      if (hasReturnedQty && isFullReturn) {
+        deliveryTotal = Number(order.details_order?.order_summary?.delivery_fees) || 0;
+      } else {
+        deliveryTotal = 0;
+      }
 
-    const grandTotal = taxTotal + serviceTotal + couponTotal + deliveryTotal;
+    let grandTotal = taxTotal + serviceTotal + couponTotal + deliveryTotal;
 
+    taxTotal = Number(taxTotal.toFixed(2));
+    serviceTotal = Number(serviceTotal.toFixed(2));
+    priceTotal = Number(priceTotal.toFixed(2));
+    couponTotal = Number(couponTotal.toFixed(2));
+    grandTotal = Number(grandTotal.toFixed(2));
+
+    console.log(
+      'isFullReturn',isFullReturn,
+      'order_id',order.details_order.order_summary.order_number,
+      'taxTotal',taxTotal,
+      'serviceTotal',serviceTotal,
+      'priceTotal',priceTotal,
+      'grandTotal',grandTotal,
+      'couponTotal',couponTotal,
+      'deliveryTotal',deliveryTotal,
+      'items' , items
+    );
+      
     return {
       taxTotal,
       serviceTotal,
@@ -1370,6 +1578,16 @@ export class OrdersComponent implements OnDestroy {
     console.log('fatema', orderType, this.selectedOrderTypeStatus);
 
     this.selectedOrderTypeStatus = orderType;
+    // عند العمل offline: فلترة من القائمة المحلية بدلاً من استدعاء API
+    if (!this.isOnline && this.offlineOrdersFull.length > 0) {
+      this.orders = [...this.offlineOrdersFull];
+      this.filterOrders();
+      this.filterOrdersInput();
+      this.totalOrdersCount = this.filteredOrders.length;
+      this.hasMoreOrders = false;
+      this.cdr.detectChanges();
+      return;
+    }
     this.fetchOrderTypeCounts();
     if (this.selectedStatus !== 'static') {
       this.fetchOrdersFromAPI();
@@ -1379,16 +1597,26 @@ export class OrdersComponent implements OnDestroy {
     }
   }
   selectStatus(status: string): void {
+    const previousStatus = this.selectedStatus;
     this.selectedStatus = status;
+
+    // Clear current data to prevent "strange items" from previous view (like static results)
+    // from showing while new data is being fetched.
+    this.filteredOrders = [];
+    this.orders = [];
+
+    // عند العمل offline: فلترة من القائمة المحلية بدلاً من استدعاء API
+    if (!this.isOnline && this.offlineOrdersFull.length > 0) {
+      this.orders = [...this.offlineOrdersFull];
+      this.filterOrdersInput();
+      this.filterOrders();
+      this.totalOrdersCount = this.filteredOrders.length;
+      this.hasMoreOrders = false;
+      this.cdr.detectChanges();
+      return;
+    }
+
     if (this.selectedStatus !== 'static') {
-      // If we are switching away from static or between dynamic statuses,
-      // but the API doesn't support status filtering yet, we might still
-      // rely on client-side filtering of the already fetched orders.
-      // However, the user asked for "backend side not the front side".
-      // Let's assume listv2 also supports &status=... or we just fetch all for that type and filter.
-      // For now, let's just trigger a re-fetch if we change type,
-      // but for status we might still use client side if the API doesn't support it.
-      // But let's re-fetch to start from page 1.
       this.fetchOrdersFromAPI();
     } else {
       this.filterOrdersInput();
@@ -1967,6 +2195,28 @@ export class OrdersComponent implements OnDestroy {
       });
   } */
 
+  /**
+   * Resets the cancellation modal state for a fresh start when opening for an order.
+   * Fixes the issue where the reason or previous selection was cached between different orders.
+   */
+  prepareOrderForCancel(order: any): void {
+    this.cancelReason = '';
+    this.cancelReasonTouched = false;
+    this.cancelErrorMessage = '';
+    this.cancelSuccessMessage = '';
+    this.isSubmitting = false;
+    this.selectedReturnPaymentMethod = 'cash';
+    this.returnCashAmount = null;
+    this.returnCreditAmount = null;
+
+    if (order && order.order_items) {
+      order.order_items.forEach((item: any) => {
+        item.isChecked = false;
+        item.selectedQuantity = item.quantity;
+      });
+    }
+  }
+
   isSubmitting = false; // للتحكم في حالة الإرسال
 
   submitCancelRequest(order: any): void {
@@ -2157,6 +2407,7 @@ export class OrdersComponent implements OnDestroy {
               this.cancelErrorMessage = '';
               this.cancelReason = '';
               this.cancelReasonTouched = false;
+              this.refreshCashierTotalsAfterReturn();
               const modal_id = `modal-${order.order_details.order_id}`;
               const currentModal = document.getElementById(modal_id);
               console.log(currentModal);
@@ -2208,6 +2459,10 @@ export class OrdersComponent implements OnDestroy {
 
               // Refresh order data to get updated calculations (coupon, tax, total)
               this.refreshOrderAfterCancel(order.order_details.order_id);
+              
+              // Reload orders list and counts
+              this.fetchOrdersFromAPI();
+              this.fetchOrderTypeCounts();
 
               /*
               // Removed to prevent double printing (handled by global listener)
@@ -2259,6 +2514,34 @@ export class OrdersComponent implements OnDestroy {
     });
   }
 
+  /** Refresh home totals cards (cash / visa) after return; matches get-current-balance used by app-totals-card. */
+  private refreshCashierTotalsAfterReturn(): void {
+    let shiftData: { shift_start?: string; shift_end?: string } | null = null;
+    try {
+      shiftData = JSON.parse(localStorage.getItem('shiftData') || 'null');
+    } catch {
+      shiftData = null;
+    }
+    const body = {
+      cashier_machine_id: localStorage.getItem('cashier_machine_id'),
+      employee_schedule_id: localStorage.getItem('employee_schedule_id'),
+      shift_start: shiftData?.shift_start ?? null,
+      shift_end: shiftData?.shift_end ?? null,
+    };
+    this.http.post<any>(`${baseUrl}api/cashier/get-current-balance`, body).subscribe({
+      next: (r) => {
+        if (r?.status && Array.isArray(r.data)) {
+          this.totalBalance.emitTotals({ data: r.data });
+          const cash = r.data.find((x: { name?: string }) => x?.name === 'cash');
+          const visa = r.data.find((x: { name?: string }) => x?.name === 'visa');
+          if (cash) localStorage.setItem('totalcash', String(cash.value));
+          if (visa) localStorage.setItem('totalvisa', String(visa.value));
+        }
+      },
+      error: () => {},
+    });
+  }
+
   status_order: any;
 
   cancelOrder(order: any): void {
@@ -2288,6 +2571,14 @@ export class OrdersComponent implements OnDestroy {
           this.errorMessage = response.errorData.error[0];
           console.log('Order cancelled failed:', response);
         }
+        setTimeout(() => {
+          this.router.navigateByUrl('/', { skipLocationChange: true }).then(() => {
+            this.router.navigate(
+              ['/listv2'],
+              { queryParams: { refresh: 'true' } }
+            );
+          });
+        }, 700);
         setTimeout(() => {
           this.errorMessage = '';
         }, 2000);
@@ -2335,13 +2626,6 @@ export class OrdersComponent implements OnDestroy {
     editModal.componentInstance.itemId = item.order_detail_id;
 
     console.log('order_id', orderId);
-    // dalia
-    // save order_id to indexeddb
-    this.dbService.saveOrderToPrintkitchen(orderId, "edit").then(() => {
-      console.log('order_id saved to indexeddb', orderId);
-    }).catch((err) => {
-      console.error('error saving order_id to indexeddb', err);
-    });
 
     editModal.result.then(
       (result) => {
@@ -2350,37 +2634,10 @@ export class OrdersComponent implements OnDestroy {
           console.log('🔍 [DEBUG] Result is truthy, proceeding...');
           this.successMessage = 'تم تحديث الطلب بنجاح';
           this.successMessageModal.show();
-
-            /*
-            // Removed to prevent double printing (handled by global listener)
-            this.dbService.getOrderFromPrintkitchenById(orderId).then((orderMetadata: any) => {
-              console.log('🔍 [DEBUG] Order from printkitchen indexeddb:', orderMetadata);
-              if (!orderMetadata || !orderMetadata.order_data) {
-                console.error('❌ [DEBUG] Order not found in printkitchen indexeddb or order_data is missing');
-                return;
-              }
-
-              const editedItemOldState = orderMetadata.order_data.order_items.find(
-                (i: any) => i.order_detail_id === item.order_detail_id
-              );
-
-              if (!editedItemOldState) {
-                 console.error('❌ [DEBUG] Original item not found in old order state');
-                 return;
-              }
-
-              const oldItems = [{
-                item_id: editedItemOldState.order_detail_id,
-                quantity: editedItemOldState.quantity,
-                size: editedItemOldState.size,
-                dish_addons: editedItemOldState.dish_addons
-              }];
-
-              this.processKitchenPrint(orderId, oldItems, 'edit');
-            }).catch((err) => {
-              console.error('error getting order from printkitchen indexeddb', err);
-            });
-            */
+          if (result === 'updated') {
+            this.fetchOrdersFromAPI();
+            // Kitchen print once via Pusher Dish-status2 (avoid double with processKitchenPrint)
+          }
 
           setTimeout(() => {
             // Safe dismiss - only call if method exists
@@ -2528,53 +2785,6 @@ export class OrdersComponent implements OnDestroy {
           }, 2000);
         },
       });
-  }
-
-  processKitchenPrint(orderId: any, items: any[], flag: string): void {
-    const token = localStorage.getItem('authToken');
-    if (!token) {
-      console.error('Auth token not found');
-      return;
-    }
-
-    const printPayload = {
-      order_id: orderId,
-      items: items,
-      flag: flag
-    };
-
-    console.log(`Sending request to print-editor-cancel API with flag: ${flag}`, printPayload);
-    this.http.post(`${baseUrl}api/print-editor-cancel`, { order: printPayload }, { headers: { Authorization: `Bearer ${token}` } }).subscribe({
-      next: async (response: any) => {
-        console.log('order updated successfully', response);
-
-        if (response.status && response.printers && response.printers.length > 0) {
-          for (const printer of response.printers) {
-            if (printer.items && printer.items.length > 0) {
-              try {
-                await this.newOrder.printInvoiceImage(
-                  printer.items,
-                  response.order,
-                  printer.ip,
-                  printer.port,
-                  response.type
-                );
-                await new Promise(resolve => setTimeout(resolve, 500));
-              } catch (err) {
-                console.error(`Error printing to ${printer.ip}:`, err);
-              }
-            }
-          }
-        }
-
-        this.dbService.deleteOrderFromPrintkitchenById(orderId).catch((err) => {
-          console.error('error deleting order from printkitchen indexeddb', err);
-        });
-      },
-      error: (err) => {
-        console.error('error calling print-editor-cancel', err);
-      }
-    });
   }
 
   @ViewChild('messageModal') messageModal: any;
@@ -2770,7 +2980,7 @@ export class OrdersComponent implements OnDestroy {
   // Merge Order Properties
   currentMergeOrder: any = null;
   eligibleOrdersForMerge: any[] = [];
-  /** True while fetching the full list of orders for merge (so modal shows all mergeable orders, not just current page). */
+  /** True while fetching all dine-in pages for merge (not limited to the orders grid page). */
   isMergeListLoading: boolean = false;
   selectedOrderIdForMerge: number | null = null;
   selectedTableIdForMerge: string = '';
@@ -2909,6 +3119,7 @@ export class OrdersComponent implements OnDestroy {
 
   // Get eligible orders for merge from current page only (used when API list is not used)
   getEligibleOrdersForMerge(currentOrder: any): any[] {
+    // need to read the orders from the indexeddb and stoer in varaibale
     return this.getEligibleOrdersForMergeFromList(currentOrder, this.orders);
   }
 
@@ -3455,16 +3666,33 @@ export class OrdersComponent implements OnDestroy {
       modal.show();
     }
 
-    // Fetch dine-in orders with high per_page so merge list shows all mergeable orders, not just current page
-    const mergeListPerPage = 300;
+    // Offline: استخدم كل الطلبات المحفوظة في IndexedDB (بعد المزامنة) بدل الصفحة الحالية فقط
+    if (!navigator.onLine) {
+      this.dbService
+        .getOrders()
+        .then((stored) => {
+          const processed = this.processOrdersForMergeList(stored || []);
+          this.eligibleOrdersForMerge = this.getEligibleOrdersForMergeFromList(order, processed);
+        })
+        .catch(() => {
+          this.eligibleOrdersForMerge = this.getEligibleOrdersForMerge(order);
+        })
+        .finally(() => {
+          this.isMergeListLoading = false;
+          this.cdr.detectChanges();
+        });
+      return;
+    }
+
+    // Online: جلب كل صفحات dine-in (الـ API غالباً يحد per_page؛ طلب واحد بـ 300 لا يكفي)
     this.ordersListService
-      .getOrdersListV2('dine-in', 1, '', mergeListPerPage)
+      .getAllOrdersListV2('dine-in', 'all', '')
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (response) => {
+        next: (allOrders) => {
           this.isMergeListLoading = false;
-          if (response?.status && response?.data?.orders?.length) {
-            const processed = this.processOrdersForMergeList(response.data.orders);
+          if (allOrders?.length) {
+            const processed = this.processOrdersForMergeList(allOrders);
             this.eligibleOrdersForMerge = this.getEligibleOrdersForMergeFromList(order, processed);
           } else {
             this.eligibleOrdersForMerge = this.getEligibleOrdersForMerge(order);
@@ -4068,15 +4296,18 @@ export class OrdersComponent implements OnDestroy {
       body['client_name'] = this.changeTypeDeliveryName?.trim() || od?.client_name || '';
       body['client_phone'] = this.changeTypeDeliveryPhone?.trim() || od?.client_phone || '';
       body['client_country_code'] = (this.changeTypeDeliverySelectedCountry?.code || this.changeTypeDeliveryCountryCode || od?.client_country_code || '').trim();
+
+      console.log("this.changeTypeDeliveryAreaId",this.changeTypeDeliveryAreaId);
+      console.log("this.changeTypeDeliveryHotelName",this.changeTypeDeliveryHotelName);
       if (this.changeTypeDeliveryAreaId) {
         body['area_id'] = parseInt(this.changeTypeDeliveryAreaId, 10);
-        body['delivery_address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || 'عنوان التوصيل';
+        body['delivery_address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || this.changeTypeDeliveryHotelName?.trim() ||'عنوان التوصيل';
         // Full address payload for storeAddress (same as add-address)
         body['address_type'] = this.changeTypeDeliveryBuildingType || 'apartment';
         body['building'] = this.changeTypeDeliveryBuilding?.trim() || null;
         body['apartment_number'] = this.changeTypeDeliveryApartment?.trim() || null;
         body['floor_number'] = this.changeTypeDeliveryFloor?.trim() || null;
-        body['address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || 'عنوان التوصيل';
+        body['address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || this.changeTypeDeliveryHotelName?.trim()  || 'عنوان التوصيل';
         body['notes'] = this.changeTypeDeliveryNotes?.trim() || null;
         if (this.changeTypeDeliveryBuildingType === 'hotel' && this.changeTypeDeliveryHotelId) {
           body['hotel_id'] = parseInt(String(this.changeTypeDeliveryHotelId), 10);

@@ -27,11 +27,16 @@ export class WebsocketService {
   }
 
   connect(url: string) {
-    this.socket = io(url, {
-      transports: ['websocket'],
+    // Socket.io works best with http/https URLs for the initial handshake
+    const socketUrl = url.replace('ws://', 'http://').replace('wss://', 'https://');
+    
+    this.socket = io(socketUrl, {
+      transports: ['polling', 'websocket'], // Allow polling for easier handshake
+      withCredentials: true
     });
 
-    this.socket.on('connect', () => console.log('Connected to server'));
+    this.socket.on('connect', () => console.log('✅ Connected to Electron Hub via Socket.io'));
+    this.socket.on('connect_error', (error) => console.error('❌ Connection Error:', error));
   }
 
   joinChannel(channelName: string) {
@@ -42,7 +47,7 @@ export class WebsocketService {
     this.socket.emit('channelMessage', { channel: channelName, message });
   }
 
-listenToChannel(
+  listenToChannel(
     channelName: string,
     eventName: string,
     callback: (data: any) => void,
@@ -50,14 +55,26 @@ listenToChannel(
   ) {
     console.warn(`Listening to channel: ${channelName}, event: ${eventName}`);
 
+    // Listen via Laravel Echo (for Pusher/Soketi)
     const channel = isPrivate
       ? this.echo.private(channelName)
       : this.echo.channel(channelName);
 
     channel.listen(eventName, (data: any) => {
-      console.log('🎉 Event received raw data:', data);
+      console.log('🎉 Event received via Echo:', data);
       callback(data);
     });
+
+    // Listen via direct Socket.io (for Electron Hub)
+    if (this.socket) {
+      this.socket.on(`${channelName}:${eventName}`, (data: any) => {
+        console.log('🎉 Event received via Socket.io:', data);
+        callback(data);
+      });
+      
+      // Notify Electron side about the subscription
+      this.socket.emit('subscribe', { channel: channelName, event: eventName });
+    }
   }
 
 }

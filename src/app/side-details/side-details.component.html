@@ -251,12 +251,8 @@
 <!-- <button (click)="getAddressId()">tst</button> -->
 <div class="card p-3 mt-3">
   @if (cartItems.length) {
-  <div class="d-flex justify-content-between mb-1">
-    <h5 class="fw-bold">تفاصيل الطلب</h5>
-    <a class="text-decoration-underline main-color" data-bs-toggle="modal" data-bs-target="#cancelModal"
-      (click)="cancelMessagefn()">
-      حذف
-    </a>
+  <div class="mb-1">
+    <h5 class="fw-bold mb-0">تفاصيل الطلب</h5>
   </div>
   @if(finalOrderId){
   <div class="d-flex justify-content-between mb-1">
@@ -328,7 +324,7 @@
       </div>
     </div>
     <p class="fw-bold text-start">
-      {{ getItemTotal(item).toFixed(2)}} {{ item.dish.currency_symbol }}
+      {{ getItemTotal(item) | number:'1.2-2' }} {{ item.dish.currency_symbol }}
     </p>
   </div>
   }
@@ -372,7 +368,7 @@
     <ul class="list-unstyled p-0 m-0">
       <li class="order-list fw-bold">
         <p>المجموع</p>
-        <p class="fw-bold">{{ getTotal().toFixed(2) }} {{ currencySymbol }}</p>
+        <p class="fw-bold">{{ getTotal()| number:'1.2-2' }} {{ currencySymbol }}</p>
       </li>
       @if (discountAmount >= 0 && validCoupon && selectedOrderType !== 'talabat') {
       <li class="order-list">
@@ -384,7 +380,7 @@
         <p class="fw-bold main-color d-flex align-items-center gap-2">
           <span>
             -
-            {{ discountAmount.toFixed(2) || this.appliedCoupon.total_discount }}
+            {{ discountAmount | number:'1.2-2' || this.appliedCoupon.total_discount }}
             {{ currencySymbol }}
           </span>
           <i class="fa-solid fa-trash text-danger cursor-pointer" (click)="removeCoupon()"
@@ -408,7 +404,7 @@
           @if (appliedCoupon && validCoupon) {
           {{ getServiceOnAmountAfterCoupon() }}
           } @else {
-          {{ getServiceFeeAmount() }}
+          {{ getServiceFeeAmount() | number:'1.2-2' }}
           }{{ currencySymbol }}
         </p>
         }
@@ -449,7 +445,7 @@
     <div class="total">
       <p class="fw-bold">المجموع الكلى</p>
       <p class="fw-bold">
-        {{ getCartTotal().toFixed(2) }} {{ currencySymbol }}
+        {{ getCartTotal()| number:'1.2-2' }} {{ currencySymbol }}
       </p>
     </div>
     @if (branchData?.tax_application === true) {
@@ -617,6 +613,10 @@
             </label>
           </ng-container>
         </div>
+        <div *ngIf="formSubmitted && selectedPaymentStatus === 'paid' && !selectedPaymentMethod" class="alert alert-danger py-2 mt-2">
+          <small><i class="fas fa-exclamation-circle me-1"></i> يرجى اختيار طريقة الدفع (كاش/فيزا)</small>
+        </div>
+        
         <ng-container *ngIf="selectedOrderType !== 'talabat' && selectedPaymentStatus === 'paid'">
           <!-- إدخال الدفع عند اختيار كاش أو كاش + فيزا -->
           <div
@@ -882,11 +882,24 @@
     </button> -->
 
 
-      <button class="btn w-100 my-3 bg-success" (click)="submitOrder()" [disabled]="isLoading || (paymentError && paymentError.trim() !== '') || amountError">
-        <h5 class="mb-0">
-          {{ isLoading ? 'جاري التنفيذ...' : 'تنفيذ الطلب' }}
-        </h5>
-      </button>
+      <div class="d-flex flex-column gap-2 my-3">
+        <button type="button" class="btn btn-action-add w-100"
+          (click)="submitOrder()"
+          [disabled]="isLoading || (paymentError && paymentError.trim() !== '') || amountError">
+          <h5 class="mb-0 text-white">
+            {{ isLoading ? 'جاري التنفيذ...' : 'تنفيذ الطلب' }}
+          </h5>
+        </button>
+        @if (!currentOrderData) {
+        <button type="button" class="btn w-100 text-white border-0 bg-secondary" (click)="saveOrderToLocalStorage()">
+          <h5 class="mb-0">تعليق الطلب</h5>
+        </button>
+        }
+        <button type="button" class="btn btn-action-delete w-100 text-white" data-bs-toggle="modal"
+          data-bs-target="#cancelModal" (click)="cancelMessagefn()">
+          <h5 class="mb-0">إلغاء الطلب</h5>
+        </button>
+      </div>
       <!-- <button class="btn w-100 my-3 bg-success" [disabled]="" (click)="submitOrder()">
 
         <h5 class="mb-0">
@@ -898,13 +911,6 @@
         </h5>
       </button> -->
     </form>
-    @if(!currentOrderData){
-    <button class="btn reversed w-100  mb-3 bg-secondary border-0" (click)="saveOrderToLocalStorage()">
-      <h5 class="mb-0">
-        تعليق الطلب
-      </h5>
-    </button>
-    }
   </div>
 
   } @else {
@@ -1291,7 +1297,7 @@
             (click)=" closeModal()">
             لا
           </button>
-          <button type="button" class="btn w-50 mx-3" (click)="cancelOrder()">
+          <button type="button" class="btn btn-action-delete w-50 mx-3" (click)="cancelOrder()">
             نعم
           </button>
         </div>
@@ -1498,7 +1504,7 @@
   </div>
 
   <div class="modal-footer d-flex justify-content-center tip-modal-footer border-0 px-4 pb-4 pt-0">
-    <button type="button" class="btn btn-danger confirm-tip-btn w-100 py-3"
+    <button type="button" class="btn btn-action-delete confirm-tip-btn w-100 py-3 text-white"
       [disabled]="selectedTipType === 'tip_specific_amount' && specificTipAmount < 0"
       (click)="confirmTipAndClose(modal)">
       <span class="fw-bold">تكملة الدفع</span>

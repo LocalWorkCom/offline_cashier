@@ -1880,16 +1880,19 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
 
     if (isNaN(baseAmount)) {
-      this.errorMessage =
-        'فشل حساب إجمالي الطلب. تحقق من الأسعار والكميات.';
+      this.errorMessage = 'فشل حساب إجمالي الطلب. تحقق من الأسعار والكميات.';
       this.isLoading = false;
       return;
     }
 
-    if (!baseAmount || baseAmount <= 0) {
-      this.errorMessage = !this.cartItems.length
-        ? 'يرجى إضافة عناصر للطلب قبل تطبيق الكوبون.'
-        : 'لا يمكن تطبيق الكوبون على صنف بسعر 0.';
+    if (this.cartItems.length > 0 && baseAmount <= 0) {
+      this.errorMessage = 'لا يمكن تطبيق الكوبون على أصناف بسعر 0.';
+      this.isLoading = false;
+      return;
+    }
+
+    if (baseAmount <= 0) {
+      this.errorMessage = 'فشل حساب إجمالي الطلب. تحقق من الأسعار والكميات.';
       this.isLoading = false;
       return;
     }
@@ -2604,7 +2607,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       delivery_id: this.selectedDriverId || null,
       branch_id: branchId,
       payment_method: this.selectedPaymentMethod ?? 'cash',
-      payment_status: resolvedPaymentStatus,
+      payment_status: this.selectedPaymentStatus,
       // cash_amount: this.selectedPaymentMethod === "cash" ? this.finalTipSummary?.billAmount ?? 0 : 0,
       // credit_amount: this.selectedPaymentMethod === "credit" ? this.finalTipSummary?.billAmount ?? 0 : 0,
       cash_amount: this.cash_amountt,
@@ -2631,7 +2634,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       total_with_tip: this.finalTipSummary?.grandTotalWithTip ?? ((this.finalTipSummary?.tipAmount ?? 0) + (this.finalTipSummary?.billAmount ?? 0)) ?? this.getCartTotal(),
       returned_amount: this.finalTipSummary?.changeToReturn ?? 0,
       menu_integration: this.selectedOrderType === 'talabat' ? true : false,
-      payment_status_menu_integration: resolvedPaymentStatus,
+      payment_status_menu_integration: this.selectedPaymentStatus,
       payment_method_menu_integration: this.selectedPaymentMethod,
 
       // dalia end tips
@@ -2784,6 +2787,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   }
 
   async submitOrder() {
+    this.formSubmitted = true;
     console.log('🔍 قبل تعيين credit_amount:', {
       credit_amountt: this.credit_amountt,
       cashPaymentInput: this.cashPaymentInput,
@@ -2839,7 +2843,15 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-
+    if (this.selectedPaymentStatus === 'paid' && !this.selectedPaymentMethod) {
+      this.isLoading = false;
+      this.loading = false;
+      // Scroll to error if needed or let the template show the message
+      setTimeout(() => {
+        this.formSubmitted = false;
+      }, 3500);
+      return;
+    }
 
     // جلب البيانات الأساسية
     const branchId = Number(localStorage.getItem('branch_id')) || null;
@@ -2918,8 +2930,6 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.showError('فشل التحقق من الهوية. الرجاء تسجيل الدخول مجددًا.');
       return;
     }
-
-    this.formSubmitted = true;
     this.amountError = false;
 
     if (!this.selectedPaymentStatus) {
@@ -3483,7 +3493,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       if (this.selectedOrderType === 'Takeaway') {
         const dataOrderId = (response as any).data.order_id;
         this.createdOrderId = dataOrderId;
-        await this.fetchPillsDetails(this.pillId);
+        // Do not await: pill details are for UI/receipt only and were blocking kitchen print by one full API round-trip.
+        void this.fetchPillsDetails(this.pillId).catch((err) =>
+          console.error('fetchPillsDetails after Takeaway submit:', err)
+        );
 
         this.removeCouponFromLocalStorage();
 
@@ -3578,41 +3591,49 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.successMessage = 'تم تنفيذ طلبك بنجاح';
 
       if (this.successModal) {
-          this.printedInvoiceService
-          .printMenu(this.orderedId , body)
-          .subscribe({
-            next: async (response) => {
-              console.log('🖨️ [Print Menu] Response received:', response);
+        try {
+          const printResponse = await firstValueFrom(
+            this.printedInvoiceService.printMenu(this.orderedId, body)
+          );
+          console.log('🖨️ [Print Menu] Response received:', printResponse);
 
-              if (response.status && response.printers && response.printers.length > 0) {
-                for (const group of response.printers) {
+          if (printResponse?.status && printResponse.printers?.length > 0) {
+            if (!this.printedInvoiceService.acquireKitchenPrintSlot(this.orderedId)) {
+              console.log(
+                '🖨️ [Print Menu] Skipped physical print (dedupe window) for order',
+                this.orderedId
+              );
+            } else {
+              let anyPrinted = false;
+              try {
+                for (const group of printResponse.printers) {
                   if (group.items && group.items.length > 0) {
                     console.log(`🖨️ [Print Menu] Printing to ${group.ip}:${group.port}...`);
                     try {
-                      await this.printInvoiceImage(group.items, response.order, group.ip, group.port);
+                      await this.printInvoiceImage(
+                        group.items,
+                        printResponse.order,
+                        group.ip,
+                        group.port
+                      );
+                      anyPrinted = true;
                     } catch (err) {
                       console.error(`❌ [Print Menu] Error printing to ${group.ip}:`, err);
                     }
-                    // Small delay between different printers
-                    await new Promise(resolve => setTimeout(resolve, 500));
+                    await new Promise((resolve) => setTimeout(resolve, 250));
                   }
                 }
+              } finally {
+                if (!anyPrinted) {
+                  this.printedInvoiceService.releaseKitchenPrintSlot(this.orderedId);
+                }
               }
-            },
-            error: (error) => {
-              console.error('Print menu error:', error);
-              // location.reload();
             }
-          });
-
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        this.prepareForSuccessModal();
-        this.showSuccessModalAfterStackCleared();
-        // location.reload();
-
-        // Print invoice items without prices to network printer
-        // this.printInvoiceImage();
-
+          }
+        } catch (error) {
+          console.error('Print menu error:', error);
+        }
+        this.successModal.show();
       }
 
       setTimeout(() => {
@@ -4245,6 +4266,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   //   }
   // }
 
+  /** Wait for iframe layout/fonts without a fixed 800ms delay (faster first paint to canvas). */
+  private flushIframeLayout(): Promise<void> {
+    return new Promise((resolve) => {
+      requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+    });
+  }
+
   async printInvoiceImage(data?: any[], order?: any, printerIP: string = "192.168.100.102", port: number = 9100) {
     console.log('🖨️ [printInvoiceImage] Function called', { dataLength: data?.length, order, printerIP });
     let iframe: HTMLIFrameElement | null = null;
@@ -4299,9 +4327,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       iframeDoc.close();
       console.log('🖨️ [printInvoiceImage] HTML written to iframe');
 
-      // ========== WAIT for HTML + images ==========
-      console.log('🖨️ [printInvoiceImage] Waiting 800ms for HTML/images to load...');
-      await new Promise((res) => setTimeout(res, 800));
+      await this.flushIframeLayout();
 
       const images = iframeDoc.querySelectorAll("img");
       console.log('🖨️ [printInvoiceImage] Found', images.length, 'images, waiting for load...');
@@ -4332,13 +4358,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                 img.addEventListener('load', onLoad, { once: true });
                 img.addEventListener('error', onError, { once: true });
 
-                // Timeout after 5 seconds to prevent hanging
                 setTimeout(() => {
                   console.warn('🖨️ [printInvoiceImage] Image load timeout:', img.src.substring(0, 50));
                   img.removeEventListener('load', onLoad);
                   img.removeEventListener('error', onError);
-                  resolve(null); // Resolve anyway to continue
-                }, 5000);
+                  resolve(null);
+                }, 2000);
               })
           )
         );
@@ -4368,6 +4393,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         useCORS: true,
         allowTaint: false,
         backgroundColor: "#ffffff",
+        logging: false,
+        imageTimeout: 2000,
       });
 
       console.log('🖨️ [printInvoiceImage] html2canvas completed', {
@@ -4524,7 +4551,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                     padding: 10px;
                     background: white;
                     width: ${printerWidth}px;
-                    font-size: 30px;
+                    font-size: 24px;
                     height: auto;
                     min-height: auto;
                     overflow: visible;
@@ -4552,34 +4579,34 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                     text-align: center;
                     border: 3px solid #000;
                     font-weight: bold;
-                    font-size: 30px;
+                    font-size: 24px;
                 }
                 td {
                     padding: 10px 8px;
                     border: 3px solid #000;
                     text-align: center;
-                    font-size: 30px;
+                    font-size: 24px;
                 }
                 .item-number {
                     width: 40px;
                     font-weight: bold;
-                    font-size: 30px;
+                    font-size: 24px;
                 }
                 .item-name {
                     width: 100px;
                     text-align: right;
                     font-weight: bold;
-                    font-size: 30px;
+                    font-size: 24px;
                     word-spacing:10px;
                     margin-left: 15px;
                 }
                 .item-quantity {
                     width: 40px;
                     font-weight: bold;
-                    font-size: 30px;
+                    font-size: 24px;
                 }
                 .item-details {
-                    font-size: 30px;
+                    font-size: 24px;
                     color: #333;
                     margin-top: 3px;
                     display: block;
@@ -4587,7 +4614,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                 .size, .addons {
                     display: block;
                     margin-top: 3px;
-                    font-size: 30px;
+                    font-size: 24px;
                 }
                 .logo-container {
                     text-align: center;
@@ -4605,7 +4632,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
                 }
                 .order-details p {
                     margin: 4px 0;
-                    font-size: 30px;
+                    font-size: 24px;
                 }
             </style>
         </head>

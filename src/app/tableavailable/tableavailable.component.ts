@@ -26,7 +26,6 @@ export class TableAvailableComponent implements OnInit, OnDestroy {
   searchText: string = '';
   loading: boolean = true;
   errorMessage: any;
-  /** Primary key from API: UUID string (أو رقم قديم) — لا تستخدم + على المسار لأن UUID يصبح NaN ثم null في JSON */
   orderId: string | null = null;
 
   constructor(
@@ -39,22 +38,11 @@ export class TableAvailableComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit(): void {
-    const pathRaw = this.route.snapshot.paramMap.get('orderId');
-    this.orderId = this.normalizeOrderIdRaw(pathRaw);
-    if (!this.orderId) {
-      this.orderId = this.normalizeOrderIdRaw(this.route.snapshot.queryParamMap.get('orderId'));
-    }
-
-    this.route.paramMap.pipe(takeUntil(this.destroy$)).subscribe((pm) => {
-      const oid = this.normalizeOrderIdRaw(pm.get('orderId'));
-      this.orderId = oid;
-      if (!oid) {
-        this.orderId = this.normalizeOrderIdRaw(this.route.snapshot.queryParamMap.get('orderId'));
-      }
-    });
-    this.route.queryParamMap.pipe(takeUntil(this.destroy$)).subscribe(() => {
-      if (!this.normalizeOrderIdRaw(this.route.snapshot.paramMap.get('orderId'))) {
-        this.orderId = this.normalizeOrderIdRaw(this.route.snapshot.queryParamMap.get('orderId'));
+    // Get order_id from route parameter if available
+    this.route.params.subscribe(params => {
+      if (params['orderId']) {
+        this.orderId = params['orderId']; // UUID — do NOT convert to number
+        console.log('Order ID from route:', this.orderId);
       }
     });
 

@@ -204,6 +204,12 @@ export class ProductModalComponent implements OnInit {
 
     console.log("🚀 Addon validation initialized:", this.selectedAddonsByCategory);
   }
+  /** مزامنة حالة الـ checkbox مع selectedAddonsByCategory (بدون تكرار id بين الفئات) */
+  isAddonSelectedInCategory(addon: any, category: { id: string | number }): boolean {
+    const list = this.selectedAddonsByCategory[category.id.toString()] || [];
+    return list.some((a: any) => +a.id === +addon.id);
+  }
+
   toggleAddon(addon: any, event: any, category: { id: string | number; min_addons: number; max_addons: number }): void {
     const categoryId = category.id.toString();
 

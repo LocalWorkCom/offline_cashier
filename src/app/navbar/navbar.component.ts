@@ -8,6 +8,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
 import { BalanceService } from '../services/balance.service';
 import { NgbDropdownModule } from '@ng-bootstrap/ng-bootstrap';
 import { NotificationComponent } from '../shared/ui/component/notification/notification.component';
+import { SyncOfflineService } from '../services/sync-offline.service';
 
 @Component({
   selector: 'app-navbar',
@@ -47,8 +48,73 @@ export class NavbarComponent implements OnInit {
     private router: Router,
     private closeBalanceService: CloseBalanceService,
     private balanceService: BalanceService,
+    private syncService: SyncOfflineService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {}
+
+  isSyncing = false;
+  syncMessage: string | null = null;
+  syncStatus: 'success' | 'error' | null = null;
+
+  syncData() {
+    this.isSyncing = true;
+    this.syncMessage = 'جاري مزامنة البيانات...';
+    this.syncStatus = null;
+
+    this.syncService.triggerSync().subscribe({
+      next: (response) => {
+        // After sending local data, pull changes from the cloud
+        this.syncService.pullOnlineData();
+        
+        this.isSyncing = false;
+        this.syncStatus = 'success';
+        this.syncMessage = 'تمت المزامنة بنجاح';
+        setTimeout(() => {
+          this.syncMessage = null;
+          this.syncStatus = null;
+          this.closeSyncModal();
+        }, 2000);
+      },
+      error: (err) => {
+        this.isSyncing = false;
+        this.syncStatus = 'error';
+        this.syncMessage = 'فشلت المزامنة. يرجى المحاولة مرة أخرى.';
+        console.error('Sync error:', err);
+      }
+    });
+  }
+
+  async openSyncModal() {
+    if (!isPlatformBrowser(this.platformId)) return;
+    const { Modal } = await import('bootstrap');
+    
+    // Hide logout modal if it's open
+    const logoutModalElement = document.getElementById('logoutModal');
+    if (logoutModalElement) {
+      const logoutInstance = Modal.getInstance(logoutModalElement);
+      if (logoutInstance) logoutInstance.hide();
+    }
+
+    const modalElement = document.getElementById('syncModal');
+    if (modalElement) {
+      this.syncMessage = null;
+      this.syncStatus = null;
+      const modalInstance = Modal.getInstance(modalElement) || new Modal(modalElement);
+      modalInstance.show();
+    }
+  }
+
+  closeSyncModal() {
+    const modalElement = document.getElementById('syncModal');
+    if (modalElement) {
+      import('bootstrap').then(({ Modal }) => {
+        const modalInstance = Modal.getInstance(modalElement);
+        if (modalInstance) {
+          modalInstance.hide();
+        }
+      });
+    }
+  }
 
   ngOnInit() {
     this.initializeUserData();
@@ -215,8 +281,10 @@ export class NavbarComponent implements OnInit {
   proceedToLogout(): void {
     this.balanceService.clearBalanceData();
     this.hideBalanceoutModal();
-    this.authService.logout().subscribe(() => {
-      this.router.navigate(['/login']);
+    this.authService.setOpenBalanceStatus(false);
+    this.authService.logout().subscribe({
+      next: () => this.router.navigate(['/login']),
+      error: () => this.router.navigate(['/login']),
     });
   }
 

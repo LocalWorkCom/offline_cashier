@@ -1,6 +1,7 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
+import { firstValueFrom } from 'rxjs';
 import { AuthService } from './auth.service';
 import { baseUrl } from '../environment';
 import { IndexeddbService } from './indexeddb.service';
@@ -102,5 +103,42 @@ export class PillsService {
       url += `?type=${type}`;
     }
     return this.http.get(url, { headers });
+  }
+
+  /**
+   * جلب كل الفواتير (كل الصفحات) وحفظها في IndexedDB للعمل offline
+   */
+  fetchAllInvoicesAndSaveToIndexedDB(): Observable<{ count: number }> {
+    return new Observable(observer => {
+      const run = async () => {
+        let page = 1;
+        let allInvoices: any[] = [];
+        let hasMore = true;
+        const perPage = 100;
+        try {
+          while (hasMore) {
+            const res = await firstValueFrom(
+              this.getPillsV2(page, '', 'all', perPage, 'all')
+            );
+            if (!res?.data?.invoices?.length) break;
+            allInvoices = allInvoices.concat(res.data.invoices);
+            const total = res.data.pagination?.total ?? 0;
+            hasMore = res.data.pagination?.has_more ?? (page * perPage < total);
+            page++;
+          }
+          if (allInvoices.length > 0) {
+            await this.db.savePills(allInvoices);
+            console.log('✅ كل الفواتير محفوظة في IndexedDB:', allInvoices.length);
+          }
+          observer.next({ count: allInvoices.length });
+        } catch (err) {
+          console.error('❌ خطأ في مزامنة كل الفواتير إلى IndexedDB:', err);
+          observer.error(err);
+        } finally {
+          observer.complete();
+        }
+      };
+      run();
+    });
   }
 }
