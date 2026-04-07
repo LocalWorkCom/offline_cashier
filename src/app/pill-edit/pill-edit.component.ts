@@ -38,6 +38,8 @@ export class PillEditComponent {
   @ViewChild('tipModalContent') tipModalContent!: TemplateRef<any>;
 
   loading: boolean = false;
+  /** تفاصيل الطلب — طي/توسيع مثل order-details */
+  isOrderDetailsOpen = true;
   receiptData: any;
   isPrinting = false;
   // @ViewChild('deliveredButton', { static: false }) deliveredButton!: ElementRef;

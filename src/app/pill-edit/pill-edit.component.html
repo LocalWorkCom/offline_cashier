@@ -138,21 +138,23 @@
 
     </div>
 
-    <div class="card p-2 my-2">
-      <div class="accordion accordion-flush" id="accordionFlushExample">
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="flush-headingOne">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-              data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
-              <h5>
-                <i class="fas fa-file-alt main-color fs-4 ps-2"></i> تفاصيل
-                الطلب
+    <div class="card p-3 my-2">
+      <div class="accordion accordion-flush" id="pill-edit-order-accordion">
+        <div class="accordion-item border-0">
+          <h2 class="accordion-header" id="pill-edit-order-heading">
+            <button class="accordion-button p-2" type="button"
+              [class.collapsed]="!isOrderDetailsOpen"
+              (click)="isOrderDetailsOpen = !isOrderDetailsOpen"
+              [attr.aria-expanded]="isOrderDetailsOpen"
+              aria-controls="pill-edit-order-collapse">
+              <h5 class="mb-0">
+                <i class="fas fa-file-alt main-color fs-4 ps-2"></i> تفاصيل الطلب
               </h5>
             </button>
           </h2>
-          <div id="flush-collapseOne" class="accordion-collapse collapse show" aria-labelledby="flush-headingOne"
-            data-bs-parent="#accordionFlushExample">
-            <div class="accordion-body">
+          <div id="pill-edit-order-collapse" class="accordion-collapse collapse" [class.show]="isOrderDetailsOpen"
+            aria-labelledby="pill-edit-order-heading">
+            <div class="accordion-body p-2" style="max-height: 420px; overflow-y: auto; scroll-behavior: smooth;">
               <div *ngFor="let item of activeOrderDetails"
                 class="d-flex justify-content-between px-1 mb-1 align-items-start"
                 [ngClass]="{'text-warning': isItemCancelled(item)}">

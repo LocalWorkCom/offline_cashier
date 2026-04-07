@@ -68,6 +68,8 @@ export class PillDetailsComponent implements OnInit, OnDestroy {
   paymentMethod: any;
   loading: boolean = false;
   isPrinting = false;
+  /** تفاصيل الطلب — طي/توسيع مثل order-details (بدون data-bs-toggle) */
+  isOrderDetailsOpen = true;
 
   constructor(
     private pillDetailsService: PillDetailsService,
