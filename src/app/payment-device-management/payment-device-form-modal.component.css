@@ -1,0 +1,107 @@
+.payment-device-modal {
+  padding: 6px 8px 12px;
+  width: 100%;
+}
+
+.modal-title-main {
+  text-align: center;
+  font-size: clamp(1.6rem, 2.8vw, 2.2rem);
+  font-weight: 800;
+  color: #212529;
+  margin: 6px 0 0;
+}
+
+.btn-close-red {
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 6px;
+  background: #FE0000;
+  color: #fff;
+  font-size: 1.8rem;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: auto;
+}
+
+.input-pill {
+  border-radius: 14px;
+  min-height: 44px;
+  border: 1px solid #d8d8d8;
+  padding: 0 14px;
+  text-align: right;
+}
+
+.status-row {
+  /* display: flex; */
+  align-items: center;
+  /* justify-content: space-between; */
+  gap: 20px;
+}
+
+.status-label {
+  font-size: 1.1rem;
+  font-weight: 700;
+}
+
+.status-options {
+  display: flex;
+  justify-content:right;
+  gap: 36px;
+}
+
+.status-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+}
+
+.status-check .form-check-input {
+  float: none;
+  margin: 0;
+}
+
+.btn-cancel,
+.btn-save {
+  min-width: 150px;
+  border-radius: 14px;
+  font-size: clamp(1.2rem, 2.6vw, 2rem);
+  font-weight: 700;
+  line-height: 1.2;
+  padding: 8px 28px;
+}
+
+.btn-cancel {
+  background: #fff;
+  color: #FE0000;
+  border: 1px solid #FE0000;
+}
+
+.btn-save {
+  background: #FE0000;
+  color: #fff;
+  border: 1px solid #FE0000;
+}
+
+@media (max-width: 767.98px) {
+  .status-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .status-options {
+    width: 100%;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .btn-cancel,
+  .btn-save {
+    min-width: 120px;
+    padding: 8px 18px;
+  }
+}
