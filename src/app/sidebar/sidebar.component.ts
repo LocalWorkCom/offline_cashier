@@ -1081,12 +1081,27 @@ private waitForRender(selector: string): Observable<Element> {
   const printContents = printSection.innerHTML;
   const originalContents = document.body.innerHTML;
 
-  // Wrap in div#print-section so #print-section .footer CSS still applies after body replace
-  document.body.innerHTML = '<div id="print-section" class="fw-bold">' + printContents + '</div>';
+  const sectionClass = printSection.className
+    .split(/\s+/)
+    .filter((c) => c && c !== 'd-none')
+    .join(' ');
 
-  window.print();
+  const root = document.documentElement;
+  root.classList.add('cash-transfer-print-session');
+  const pageStyleEl = document.createElement('style');
+  pageStyleEl.setAttribute('data-cash-transfer-print-page', '');
+  pageStyleEl.textContent = '@media print { @page { size: auto; margin: 3mm 2mm; } }';
+  document.head.appendChild(pageStyleEl);
 
-  document.body.innerHTML = originalContents;
+  document.body.innerHTML = `<div id="print-section" class="${sectionClass}">${printContents}</div>`;
+
+  try {
+    window.print();
+  } finally {
+    document.body.innerHTML = originalContents;
+    pageStyleEl.remove();
+    root.classList.remove('cash-transfer-print-session');
+  }
 
   this.clearPosSessionSalesAccumulators();
   location.reload();
