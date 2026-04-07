@@ -103,3 +103,7 @@ code {
 .italic {
   font-style: italic;
 }
+.btn-close{
+  margin-right: auto ;
+  margin-left: unset !important;
+}

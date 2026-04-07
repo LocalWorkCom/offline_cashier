@@ -38,8 +38,8 @@
         </div>
       </div>
       <div class="col-md-3">
-        <button class="btn btn-danger w-100 py-2 rounded-3 d-flex align-items-center justify-content-center gap-2" 
-                [disabled]="!defaultPrinterId || isPrinterLoading" 
+        <button class="btn btn-danger w-100 py-2 rounded-3 d-flex align-items-center justify-content-center gap-2"
+                [disabled]="!defaultPrinterId || isPrinterLoading"
                 (click)="saveDefaultPrinter()">
           <span *ngIf="isPrinterLoading" class="spinner-border spinner-border-sm"></span>
           <i *ngIf="!isPrinterLoading" class="fas fa-save"></i>
@@ -166,6 +166,7 @@
           </div>
           {{ isEditingPrinter ? 'تعديل بيانات الجهاز' : 'إضافة جهاز جديد' }}
         </h5>
+
         <button type="button" class="btn-close shadow-none" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body p-4">
@@ -173,7 +174,7 @@
           <i class="fas fa-exclamation-circle me-2"></i>
           {{ printerModalMessage }}
         </div>
-        
+
         <div class="row g-4">
           <div class="col-md-6">
             <label class="form-label small fw-bold text-muted mb-2">
@@ -234,7 +235,7 @@
             </label>
             <textarea class="form-control rounded-3 border-light-subtle shadow-none" rows="2" [(ngModel)]="selectedPrinter.note" placeholder="أضف أي ملاحظات إضافية هنا..."></textarea>
           </div>
-          
+
           <div class="col-12 mt-4">
             <div class="d-flex align-items-center justify-content-between mb-3">
               <label class="form-label small fw-bold text-muted mb-0">
@@ -243,7 +244,7 @@
               <span class="badge bg-light text-dark fw-normal border">{{ selectedCategoryIds.length }} مختارة</span>
             </div>
             <div class="category-selection-grid d-flex flex-wrap gap-2 p-3 bg-light rounded-4 border border-dashed">
-              <div *ngFor="let cat of categories" 
+              <div *ngFor="let cat of categories"
                    (click)="toggleCategorySelection(cat.id)"
                    [class.active]="selectedCategoryIds.includes(cat.id)"
                    class="category-pill py-2 px-3 border rounded-pill cursor-pointer transition-all">
@@ -259,7 +260,7 @@
       </div>
       <div class="modal-footer border-0 pt-0 p-4">
         <button type="button" class="btn btn-light px-4 py-2 rounded-3 fw-bold" data-bs-dismiss="modal">إلغاء</button>
-        <button type="button" class="btn btn-danger px-5 py-2 rounded-3 fw-bold d-flex align-items-center gap-2 shadow-sm" 
+        <button type="button" class="btn btn-danger px-5 py-2 rounded-3 fw-bold d-flex align-items-center gap-2 shadow-sm"
                 [disabled]="isPrinterLoading"
                 (click)="savePrinter()">
           <span *ngIf="isPrinterLoading" class="spinner-border spinner-border-sm"></span>
@@ -288,7 +289,7 @@
       </div>
       <div class="modal-footer border-0 p-4 pt-0 gap-2">
         <button type="button" class="btn btn-light flex-fill py-2 rounded-3 fw-bold" data-bs-dismiss="modal">إلغاء</button>
-        <button type="button" class="btn btn-danger flex-fill py-2 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2" 
+        <button type="button" class="btn btn-danger flex-fill py-2 rounded-3 fw-bold d-flex align-items-center justify-content-center gap-2"
                 [disabled]="isPrinterLoading"
                 (click)="executeDelete()">
           <span *ngIf="isPrinterLoading" class="spinner-border spinner-border-sm"></span>
