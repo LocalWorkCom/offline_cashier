@@ -1459,6 +1459,7 @@ export class OrdersComponent implements OnDestroy {
     serviceTotal: number;
     priceTotal: number;
     grandTotal: number;
+    creditTotal: number;
   } {
     const items = this.getDisplayOrderItems(order);
 
@@ -1542,6 +1543,30 @@ export class OrdersComponent implements OnDestroy {
     couponTotal = Number(couponTotal.toFixed(2));
     grandTotal = Number(grandTotal.toFixed(2));
 
+    let creditTotal = 0;
+
+    //transactions of credit and refund 0
+    if (order.details_order?.transactions) {
+      const transactions = order.details_order.transactions;
+      const transValues = Array.isArray(transactions) ? transactions : Object.values(transactions);
+      for (const t of transValues) {
+        if ((t as any).payment_method === 'credit' && (t as any).refund === 0) {
+          creditTotal += Number((t as any).paid) || 0;
+        }
+      }
+    }
+    //refund transactions of credit and refund 1 by default
+    if (order.details_order?.refund_transactions) {
+      const transactions = order.details_order.refund_transactions;
+      const transValues = Array.isArray(transactions) ? transactions : Object.values(transactions);
+      for (const t of transValues) {
+        if ((t as any).payment_method === 'credit') {
+          creditTotal -= Number((t as any).refund) || 0;
+        }
+      }
+    }
+    creditTotal = Number(creditTotal.toFixed(2));
+
     console.log(
       'isFullReturn',isFullReturn,
       'order_id',order.details_order.order_summary.order_number,
@@ -1551,7 +1576,8 @@ export class OrdersComponent implements OnDestroy {
       'grandTotal',grandTotal,
       'couponTotal',couponTotal,
       'deliveryTotal',deliveryTotal,
-      'items' , items
+      'transactions' , order.details_order.transactions,
+      'creditTotal', creditTotal,
     );
       
     return {
@@ -1559,6 +1585,7 @@ export class OrdersComponent implements OnDestroy {
       serviceTotal,
       priceTotal,
       grandTotal,
+      creditTotal,
     };
   }
 
@@ -1574,6 +1601,13 @@ export class OrdersComponent implements OnDestroy {
     return Math.abs(sum - totals.grandTotal) < 0.01;
   }
 
+  isReturnCreditAmountsValid(order: any): boolean {
+    if (this.selectedReturnPaymentMethod !== 'cash + credit') return true;
+    const totals = this.getReturnTotals(order);
+    const credit = Number(this.returnCreditAmount) || 0;
+    return credit <= (totals.creditTotal || 0);
+  }
+  
   selectOrderType(orderType: string): void {
     console.log('fatema', orderType, this.selectedOrderTypeStatus);
 
@@ -2252,8 +2286,9 @@ export class OrdersComponent implements OnDestroy {
       return;
     }
 
-    if (this.selectedReturnPaymentMethod === 'cash + credit' && !this.isReturnCashCreditAmountsValid(order)) {
-      this.cancelErrorMessage = 'يجب أن يساوي مجموع المبلغ النقدي + البطاقة إجمالي المرتجع';
+    if (this.selectedReturnPaymentMethod === 'cash + credit' && (!this.isReturnCashCreditAmountsValid(order) || !this.isReturnCreditAmountsValid(order))) {
+      const totals = this.getReturnTotals(order);
+      this.cancelErrorMessage = `يجب أن يكون مجموع النقدي والبطاقة ${totals.grandTotal}، ومبلغ البطاقة لا يتجاوز ${totals.creditTotal}`;
       this.cancelSuccessMessage = '';
       this.isSubmitting = false;
       setTimeout(() => {
