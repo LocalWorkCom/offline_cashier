@@ -1,11 +1,11 @@
 @import "../node_modules/@fortawesome/fontawesome-free/css/all.min.css";
 @import "../node_modules/ngx-countries-dropdown/assets/styles.css";
 
-/* تقرير الوردية والطباعة – خط Cairo أوضح وأكبر قليلاً */
-#print-section,
-#print-section p,
-#print-section span,
-#print-section .total,
+/* تقارير الطباعة — خط Cairo (تحويل النقدية له إعدادات مطابقة للفاتورة في الكتلة التالية) */
+#print-section:not(.cash-transfer-print),
+#print-section:not(.cash-transfer-print) p,
+#print-section:not(.cash-transfer-print) span,
+#print-section:not(.cash-transfer-print) .total,
 #logout-report-section,
 #logout-report-section p,
 #logout-report-section span,
@@ -13,6 +13,68 @@
   font-family: 'Cairo', sans-serif !important;
   font-size: 15px !important;
   font-weight: 600;
+}
+
+/* تقرير تحويل النقدية: نفس إعدادات خط الفاتورة (receipt — .printSection داخل #printSection) */
+#print-section.cash-transfer-print,
+#print-section.cash-transfer-print * {
+  font-family: 'Cairo', sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: #000000 !important;
+  opacity: 1 !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+/* جلسة الطباعة (executePrint): أوضح حبراً على الطابعات الحرارية */
+html.cash-transfer-print-session #print-section.cash-transfer-print,
+html.cash-transfer-print-session #print-section.cash-transfer-print * {
+  color: #000000 !important;
+  opacity: 1 !important;
+  -webkit-font-smoothing: none !important;
+  text-rendering: optimizeSpeed !important;
+}
+
+html.cash-transfer-print-session #print-section.cash-transfer-print .fw-normal,
+html.cash-transfer-print-session #print-section.cash-transfer-print .fw-light,
+html.cash-transfer-print-session #print-section.cash-transfer-print .fw-lighter {
+  font-weight: 800 !important;
+}
+
+/* خلفية رمادية فاتحة تُطبَع بنقاط باهتة — إزالتها للطباعة */
+html.cash-transfer-print-session #print-section.cash-transfer-print .branch-shift-row-emphasis {
+  background: #ffffff !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+/* عناوين بارزة كما في الإيصال (.total في القالب) */
+#print-section.cash-transfer-print .total {
+  font-size: 16px !important;
+  font-weight: 700 !important;
+}
+
+/* شعار بحجم قريب من الفاتورة */
+#print-section.cash-transfer-print #logo,
+#print-section.cash-transfer-print .print-section-logo-wrap img {
+  max-width: 40mm !important;
+  height: auto !important;
+}
+
+/* عناوين ملخص الوردية (غير فيغما): نفس حجم نص الفاتورة */
+#print-section.cash-transfer-print .branch-shift-print-title:not(.branch-shift-print-title--figma) {
+  font-size: 11px !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-subtitle:not(.branch-shift-print-subtitle--figma) {
+  font-size: 11px !important;
+}
+
+/* تذييل الشكر كالإيصال (.thank-you ≈ 12px) */
+#print-section.cash-transfer-print .cash-transfer-print-thanks {
+  font-size: 12px !important;
+  font-weight: 700 !important;
 }
 
 /* رأس التقرير + بيانات المستخدم: نفس وزن خط صفوف الجداول (700) — القاعدة العامة أعلاه تضع 600 و Bootstrap fw-normal يخفّف القيم */
@@ -210,6 +272,13 @@
     padding-left: 2mm !important;
     padding-right: 2mm !important;
     box-sizing: border-box !important;
+    font-size: 12px !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    -webkit-font-smoothing: none !important;
+    text-rendering: optimizeSpeed !important;
   }
   html.cash-transfer-print-session #print-section.cash-transfer-print {
     display: block !important;
@@ -218,6 +287,42 @@
     margin: 0 !important;
     padding: 0 !important;
     box-sizing: border-box !important;
+    color: #000000 !important;
+    background: #ffffff !important;
+  }
+  /* حجم أوضح قليلاً على الورق الحراري (بعد 11px بدا باهتاً) */
+  html.cash-transfer-print-session #print-section.cash-transfer-print,
+  html.cash-transfer-print-session #print-section.cash-transfer-print * {
+    font-size: 12px !important;
+    font-weight: 800 !important;
+    color: #000000 !important;
+    opacity: 1 !important;
+    -webkit-font-smoothing: none !important;
+    text-rendering: optimizeSpeed !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  html.cash-transfer-print-session #print-section.cash-transfer-print .total {
+    font-size: 17px !important;
+    font-weight: 800 !important;
+  }
+  html.cash-transfer-print-session #print-section.cash-transfer-print .branch-shift-print-title--figma {
+    font-size: 17px !important;
+  }
+  html.cash-transfer-print-session #print-section.cash-transfer-print .branch-shift-print-subtitle--figma {
+    font-size: 14px !important;
+  }
+  html.cash-transfer-print-session #print-section.cash-transfer-print .cash-transfer-print-table-wrap .table-content-total-net,
+  html.cash-transfer-print-session #print-section.cash-transfer-print .cash-transfer-print-table-wrap .table-content-total-net span {
+    font-weight: 900 !important;
+  }
+  html.cash-transfer-print-session #print-section.cash-transfer-print .fw-normal,
+  html.cash-transfer-print-session #print-section.cash-transfer-print .fw-light,
+  html.cash-transfer-print-session #print-section.cash-transfer-print .fw-lighter {
+    font-weight: 800 !important;
+  }
+  html.cash-transfer-print-session #print-section.cash-transfer-print .branch-shift-row-emphasis {
+    background: #ffffff !important;
   }
 }
 
