@@ -10,10 +10,10 @@
 
   <div class="my-2">
     <h4 class="fw-bold">تفاصيل الطلب <span class="badge text-bg-danger"
-        *ngIf="orderDetails.status == 'cancelled' || orderDetails.status == 'cancel'">ملغي</span></h4>
+        *ngIf="isOrderCancelled()">ملغي</span></h4>
   </div>
 
-  @if(orderDetails?.status_order !== 'cancelled') {
+  @if (!isOrderCancelled()) {
   <div *ngIf="!loading && orderDetails && canShowOrderActions()" class="d-flex w-100 gap-2 my-2">
     <button type="button" class="btn reversed main-color flex-fill py-2 text-center" (click)="openChangeOrderTypeModalFromDetails()" title="تغيير نوع الطلب">
       <i class="fa-solid fa-arrows-rotate px-1"></i>
