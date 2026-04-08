@@ -312,6 +312,11 @@
   font-weight: bold;
 }
 
+#print-section.cash-transfer-print .table-content,
+#print-section.cash-transfer-print .table-content span {
+  font-size: 11px !important;
+}
+
 .table-content:last-child {
   border-bottom: none;
 }
@@ -430,7 +435,7 @@
 #logout-report-section .branch-shift-print-subtitle {
   font-size: 9px !important;
   font-weight: 600;
-  color: #333;
+  color: #000000;
   margin-bottom: 0.35rem !important;
   line-height: 1.35;
 }
@@ -514,9 +519,7 @@
   min-height: 70px;
   max-width: 100%;
 }
-#print-section p ,#print-section span,.total{
-  font-size: 11px;
-}
+/* حجم خط تقرير تحويل النقدية يُضبط في styles.css ليطابق الفاتورة (11px / .total 16px) */
 
 #print-section,
 #logout-report-section{

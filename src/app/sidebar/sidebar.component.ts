@@ -1114,7 +1114,38 @@ private waitForRender(selector: string): Observable<Element> {
   root.classList.add('cash-transfer-print-session');
   const pageStyleEl = document.createElement('style');
   pageStyleEl.setAttribute('data-cash-transfer-print-page', '');
-  pageStyleEl.textContent = '@media print { @page { size: auto; margin: 3mm 2mm; } }';
+  /* قواعد إضافية هنا لأنها تُحمَّل آخراً وتضمن وضوح الطابعات الحرارية (أسود كامل، بدون تمييع) */
+  pageStyleEl.textContent = `
+@media print {
+  @page { size: auto; margin: 3mm 2mm; }
+  html.cash-transfer-print-session body,
+  html.cash-transfer-print-session #print-section.cash-transfer-print,
+  html.cash-transfer-print-session #print-section.cash-transfer-print * {
+    color: #000000 !important;
+    opacity: 1 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    -webkit-font-smoothing: none !important;
+    text-rendering: optimizeSpeed !important;
+  }
+  html.cash-transfer-print-session #print-section.cash-transfer-print * {
+    font-weight: 800 !important;
+  }
+  html.cash-transfer-print-session #print-section.cash-transfer-print .total {
+    font-size: 17px !important;
+  }
+  html.cash-transfer-print-session #print-section.cash-transfer-print .cash-transfer-print-table-wrap .table-content-total-net,
+  html.cash-transfer-print-session #print-section.cash-transfer-print .cash-transfer-print-table-wrap .table-content-total-net span {
+    font-weight: 900 !important;
+  }
+  html.cash-transfer-print-session #print-section.cash-transfer-print .fw-normal,
+  html.cash-transfer-print-session #print-section.cash-transfer-print .fw-light {
+    font-weight: 800 !important;
+  }
+  html.cash-transfer-print-session #print-section.cash-transfer-print .branch-shift-row-emphasis {
+    background: #ffffff !important;
+  }
+}`;
   document.head.appendChild(pageStyleEl);
 
   document.body.innerHTML = `<div id="print-section" class="${sectionClass}">${printContents}</div>`;
