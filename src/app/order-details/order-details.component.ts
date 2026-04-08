@@ -126,9 +126,12 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   loadOrderDetailsFromIndexedDB(): void {
     this.loading = true;
     this.error = '';
+    // Convert orderId to number
+    const numericOrderId = this.orderId;
     const id = typeof this.orderId === 'string' ? parseInt(this.orderId, 10) : this.orderId;
-    if (isNaN(id)) {
-      this.error = 'رقم الطلب غير صالح';
+
+    if (isNaN(numericOrderId)) {
+      this.error = 'Invalid order ID';
       this.loading = false;
       return;
     }
@@ -264,11 +267,12 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       const details = order.details_order || order;
       this.currencySymbol = details.currency_symbol || order.currency_symbol || 'ج.م';
 
-      this.paymenMethod = (details.transactions && details.transactions[0]) ? details.transactions[0].payment_method : (order.order_details?.payment_method || 'Unknown');
-      this.deliveryData = details?.delivery_data ?? order.formdata_delivery ?? null;
-      const rawDeliveryFees = details?.order_summary?.delivery_fees ?? order.delivery_fees_amount ?? 0;
-      const summaryFromOrder = details?.order_summary || {
-        total_dish_price: order.total_price || 0,
+      this.paymenMethod = order.details_order.transactions?.[0]?.payment_method ?? order.details_order.payment_method ?? 'Unknown';
+      this.deliveryData = order.details_order?.delivery_data || "";
+      const rawDeliveryFees = order.details_order.order_summary?.delivery_fees ||
+        order.details_order.order_summary?.delivery_fees || 0;
+      const summaryFromOrder = order.details_order?.order_summary || {
+        total_dish_price: order.order_details?.total_dish_price || 0,
         total: order.total_price || 0,
         delivery_fees: order.delivery_fees_amount || 0,
         coupon_value: order.order_details?.coupon_value || 0,
@@ -395,9 +399,12 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   /**
    * Recalculate order summary from displayed items when backend summary is stale (e.g. after split).
    * Ensures "view original order" and invoice show the correct amount for the remaining items only.
+   * لا نستبدل الإجمالي لو الـ API رجّع total = 0 (كوبون 100%) حتى لا يظهر 900 بدل 0.
    */
   private recalculateSummaryFromDisplayedItems(summary: any, items: any[]): any {
     if (!summary || !items || items.length === 0) return summary;
+    const apiTotal = Number(summary.total_price ?? summary.total ?? NaN);
+    if (!isNaN(apiTotal) && apiTotal <= 0) return summary;
     const itemsSubtotal = items
       .filter((item: any) => !this.isItemCancelled(item))
       .reduce((sum: number, item: any) => sum + this.safeNum(item.total_dish_price), 0);
@@ -480,6 +487,21 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     // Persist corrected summary so saveOrderToIndexedDB stores correct totals (e.g. after split)
     order.order_summary = this.orderSummary;
 
+    // ✅ تطبيع transactions لو الـ API ما رجّعش مصفوفة
+    const totalPrice = Number(this.orderSummary?.total_price ?? this.orderSummary?.total ?? 0);
+    const isPaidByTotal = !isNaN(totalPrice) && totalPrice <= 0;
+    if (!order.transactions || !Array.isArray(order.transactions) || order.transactions.length === 0) {
+      const isPaid = order.payment_status === 'paid' || isPaidByTotal;
+      order.transactions = [{
+        payment_method: order.payment_method ?? this.paymenMethod ?? 'cash',
+        payment_status: isPaid ? 'paid' : (order.payment_status ?? 'unpaid'),
+        paid: isPaid ? totalPrice : 0
+      }];
+    } else if (isPaidByTotal && order.transactions[0]?.payment_status === 'unpaid') {
+      order.transactions[0].payment_status = 'paid';
+      order.transactions[0].paid = totalPrice;
+    }
+
     if (this.deliveryData?.delivery_name === ' ') {
       this.deliveryData.delivery_name = 'لا يوجد';
     }
@@ -553,6 +575,23 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
               };
             }
             order.order_summary = this.orderSummary;
+
+            // ✅ تطبيع transactions: لو الـ API ما رجّعش مصفوفة أو رجّعها فاضية
+            const totalPrice = Number(this.orderSummary?.total_price ?? this.orderSummary?.total ?? 0);
+            const isPaidByTotal = !isNaN(totalPrice) && totalPrice <= 0;
+            if (!order.transactions || !Array.isArray(order.transactions) || order.transactions.length === 0) {
+              const isPaid = order.payment_status === 'paid' || isPaidByTotal;
+              order.transactions = [{
+                payment_method: order.payment_method ?? this.paymenMethod ?? 'cash',
+                payment_status: isPaid ? 'paid' : (order.payment_status ?? 'unpaid'),
+                paid: isPaid ? totalPrice : 0
+              }];
+            } else if (isPaidByTotal && order.transactions[0]?.payment_status === 'unpaid') {
+              // لو الإجمالي = 0 (كوبون 100%) لكن الحالة غير مدفوعة → نصلحها
+              order.transactions[0].payment_status = 'paid';
+              order.transactions[0].paid = totalPrice;
+            }
+
             if (this.deliveryData?.delivery_name == ' ') {
               this.deliveryData.delivery_name = 'لا يوجد';
             }
@@ -579,6 +618,16 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   get hasServiceFees(): boolean {
     return Number(this.orderSummary.service_percentage) > 0;
   }
+
+  /** حالة الدفع الفعلية للعرض (مدفوعة / غير مدفوعة). لو الإجمالي = 0 نعتبرها مدفوعة. */
+  // get displayPaymentStatus(): 'paid' | 'unpaid' {
+  //   const d = this.orderDetails;
+  //   if (!d) return 'unpaid';
+  //   const fromTx = d.transactions?.[0]?.payment_status ?? d.payment_status;
+  //   if (fromTx === 'paid') return 'paid';
+  //   const total = Number(this.orderSummary?.total_price ?? this.orderSummary?.total ?? 0);
+  //   return (!isNaN(total) && total <= 0) ? 'paid' : 'unpaid';
+  // }
 
   /** Safe grand total for display (never NaN). */
   get displayTotalPrice(): number {

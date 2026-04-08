@@ -249,7 +249,7 @@
           isShow
         ">
         <div
-          *ngIf="invoices[0].order_type === 'Takeaway' ||invoices[0].order_type === 'dine-in' || invoices[0].order_type === 'Delivery'">
+          *ngIf="invoices[0].order_type === 'Takeaway' ||invoices[0].order_type === 'dine-in' || invoices[0].order_type === 'Delivery' || invoices[0].order_type === 'talabat'">
           <div class="d-flex gap-4" *ngIf="invoices[0]?.transactions">
             <button class="fs-6 rounded-4 w-50 btn" [ngClass]="{
               'btn-action-delete': paymentStatus === 'unpaid' || (invoices[0]?.transactions[0]?.payment_status === 'unpaid' && paymentStatus !== 'paid'),
@@ -268,7 +268,7 @@
         </div>
       </div>
       <div class=" w-100 my-3"
-        *ngIf="paymentStatus == 'paid' &&  ( invoices[0]?.order_type =='Takeaway' || invoices[0]?.order_type =='dine-in' || invoices[0]?.order_type =='Delivery')">
+        *ngIf="paymentStatus == 'paid' &&  ( invoices[0]?.order_type =='Takeaway' || invoices[0]?.order_type =='dine-in' || invoices[0]?.order_type =='Delivery' || invoices[0]?.order_type =='talabat')">
 
         <!-- خيارات الدفع -->
         <div class="card p-3 mb-4">

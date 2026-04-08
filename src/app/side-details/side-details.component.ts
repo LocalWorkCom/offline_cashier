@@ -2580,6 +2580,24 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       itemsWithCategory.push(itemData);
     }
+    
+    
+
+
+    // ✅ لو الكوبون أو الخصم جعل المبلغ المستحق = 0 (بدون طلبات)
+    // نعتبر الطلب "مدفوع" حتى لو لم يغيّر الكاشير الحالة يدوياً.
+    const effectiveBillAmount = this.finalTipSummary?.billAmount ?? this.getCartTotal();
+    let resolvedPaymentStatus = this.selectedPaymentStatus;
+
+    if (
+      effectiveBillAmount <= 0 &&
+      (this.appliedCoupon || this.validCoupon) &&
+      this.selectedOrderType !== 'talabat' &&
+      this.selectedOrderType !== 'طلبات'
+    ) {
+      resolvedPaymentStatus = 'paid';
+      this.selectedPaymentStatus = 'paid';
+    }
 
     return {
       isOnline: navigator.onLine,
@@ -2592,7 +2610,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       delivery_id: this.selectedDriverId || null,
       branch_id: branchId,
       payment_method: this.selectedPaymentMethod ?? 'cash',
-      payment_status: this.selectedPaymentStatus,
+      payment_status: resolvedPaymentStatus,
       // cash_amount: this.selectedPaymentMethod === "cash" ? this.finalTipSummary?.billAmount ?? 0 : 0,
       // credit_amount: this.selectedPaymentMethod === "credit" ? this.finalTipSummary?.billAmount ?? 0 : 0,
       cash_amount: this.cash_amountt,
@@ -2619,7 +2637,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       total_with_tip: this.finalTipSummary?.grandTotalWithTip ?? ((this.finalTipSummary?.tipAmount ?? 0) + (this.finalTipSummary?.billAmount ?? 0)) ?? this.getCartTotal(),
       returned_amount: this.finalTipSummary?.changeToReturn ?? 0,
       menu_integration: this.selectedOrderType === 'talabat' ? true : false,
-      payment_status_menu_integration: this.selectedPaymentStatus,
+      payment_status_menu_integration: resolvedPaymentStatus,
       payment_method_menu_integration: this.selectedPaymentMethod,
 
       // dalia end tips
@@ -2935,7 +2953,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         let totalEntered = 0;
         const cartTotal = Number(this.getCartTotal().toFixed(2));
         // ✅ حالة خاصة لطلبات + مدفوع + كاش - استخدام الإجمالي مباشرة
-        if (isTalabat && this.selectedPaymentMethod === 'cash') {
+        if (isTalabat && this.selectedPaymentMethod === 'deferred') {
           totalEntered = cartTotal;
           console.log('💰 Talabat + Paid + Cash: Using cart total directly', totalEntered);
           // تعيين القيم مباشرة
@@ -2945,7 +2963,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             serviceFee: 0,
             billAmount: cartTotal,
             paymentAmount: cartTotal,
-            paymentMethod: 'كاش',
+            paymentMethod: 'آجل',
             tipAmount: 0,
             grandTotalWithTip: cartTotal,
             changeToReturn: 0
@@ -3295,7 +3313,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           }
         } else if (this.selectedPaymentMethod === 'deferred') {
           orderData.cash_amount = 0;
-          orderData.credit_amount = 0;
+          orderData.credit_amount = this.getCartTotal();
         }
 
         // 🔒 تأكيد أن المبلغ المدفوع لا يقل عن الإجمالي مع الإكرامية قبل متابعة الطلب
@@ -4831,8 +4849,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
 
 
-    // ✅ الشرط الجديد: إذا كان الطلب من طلبات وغير مدفوع، اختيار آجل تلقائياً
-    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
+    // ✅ إذا كان الطلب من طلبات، اختاري "آجل" تلقائياً
+    if (this.selectedOrderType === 'talabat') {
       this.selectedPaymentMethod = 'deferred';
     }
 
@@ -5237,21 +5255,66 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const backdrops = document.querySelectorAll('.modal-backdrop');
     backdrops.forEach((backdrop) => backdrop.remove());
   }
+
+  /**
+   * قبل مودال «تم تنفيذ طلبك»: إغلاق مودالات Bootstrap المفتوحة (كوبون/ملاحظة/عميل…)
+   * ونوافذ ng-bootstrap حتى لا يتراكب الـ backdrop ويحدث تجمّد أو أخطاء Bootstrap غير مُلتقَطة.
+   */
+  private prepareForSuccessModal(): void {
+    try {
+      this.modalService.dismissAll();
+    } catch {
+      /* noop */
+    }
+    if (typeof document === 'undefined' || typeof bootstrap === 'undefined') {
+      return;
+    }
+    document.querySelectorAll('.modal.show').forEach((node) => {
+      const el = node as HTMLElement;
+      if (el.id === 'successModal') {
+        return;
+      }
+      let inst = bootstrap.Modal.getInstance(el);
+      if (!inst && typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+        inst = bootstrap.Modal.getOrCreateInstance(el);
+      }
+      if (inst) {
+        try {
+          inst.hide();
+        } catch {
+          /* ignore */
+        }
+      }
+    });
+    document.querySelectorAll('.modal-backdrop').forEach((b) => b.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.removeProperty('padding-right');
+    document.body.style.removeProperty('overflow');
+  }
+
+  /** بعد تنظيف المودالات، انتظر دورة قصيرة ثم اعرض مودال النجاح */
+  private showSuccessModalAfterStackCleared(): void {
+    setTimeout(() => {
+      if (this.successModal) {
+        try {
+          this.successModal.show();
+        } catch (e) {
+          console.error('successModal.show failed', e);
+        }
+      }
+    }, 120);
+  }
   onPaymentStatusChange() {
     // const savedStatus = localStorage.getItem('selectedPaymentStatus');
     // this.selectedPaymentStatus = savedStatus || 'unpaid';
-    // ✅ الشرط الجديد: إذا كان الطلب من طلبات وغير مدفوع، اختيار آجل تلقائياً
-    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
+    // ✅ إذا كان الطلب من طلبات، اختاري "آجل" تلقائياً
+    if (this.selectedOrderType === 'talabat') {
       this.selectedPaymentMethod = 'deferred';
     }
 
-    // إذا كان نوع الطلب "طلبات"، عيّن طريقة الدفع المناسبة
+    // إذا كان نوع الطلب "طلبات"، تبقى الطريقة آجل في الحالتين
     if (this.selectedOrderType === 'talabat') {
-      if (this.selectedPaymentStatus === 'paid') {
-        this.selectedPaymentMethod = 'cash'; // مدفوع → كاش
-      } else if (this.selectedPaymentStatus === 'unpaid') {
-        this.selectedPaymentMethod = 'deferred'; // غير مدفوع → آجل
-      }
+      this.selectedPaymentMethod = 'deferred';
     }
     console.log('Payment Status:', this.selectedPaymentStatus); // paid or unpaid
     if (this.selectedPaymentStatus === 'unpaid') {
@@ -5703,7 +5766,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.tableNumber = null;
     this.FormDataDetails = null;
     this.successMessage = 'تم حفظ طلبك بنجاح';
-    this.successModal.show();
+    this.prepareForSuccessModal();
+    this.showSuccessModalAfterStackCleared();
     localStorage.removeItem('finalOrderId');
     this.finalOrderId = '';
     this.currentOrderData = null;
@@ -5928,9 +5992,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     }
 
-    // إذا كان نوع الطلب "طلبات" ومدفوع، تأكدي أن الطريقة هي "كاش"
+    // إذا كان نوع الطلب "طلبات" ومدفوع، اجعلي الطريقة "آجل"
     if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'paid') {
-      this.selectedPaymentMethod = 'cash';
+      this.selectedPaymentMethod = 'deferred';
       // return;
     }
     // إعادة تعيين القيم عند تغيير طريقة الدفع

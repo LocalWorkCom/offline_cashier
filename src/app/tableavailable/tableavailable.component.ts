@@ -5,8 +5,7 @@ import { Router, ActivatedRoute } from '@angular/router';
 import { FormsModule } from '@angular/forms';
 import { TableCrudOperationService } from '../services/pusher/tableCrudOperation';
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
-import { finalize } from 'rxjs';
-import { COLORS } from 'html2canvas/dist/types/css/types/color';
+import { finalize, Subject, takeUntil } from 'rxjs';
 
 @Component({
   selector: 'app-tables',
@@ -16,6 +15,8 @@ import { COLORS } from 'html2canvas/dist/types/css/types/color';
   styleUrls: ['./tableavailable.component.css'],
 })
 export class TableAvailableComponent implements OnInit, OnDestroy {
+  private readonly destroy$ = new Subject<void>();
+
   tables: any[] = [];
   tabless: any[] = [];
   tablesByStatus: { status: number; label: string; tables: any[] }[] = [];
@@ -55,6 +56,27 @@ export class TableAvailableComponent implements OnInit, OnDestroy {
     this.listenToNewTable();
     this.listenOnTableChangeStatus();
   }
+
+  /** يحافظ على UUID كنص؛ تجنب Number() لأنها تُنتج NaN ثم order_id: null في الطلب */
+  private normalizeOrderIdRaw(raw: string | null | undefined): string | null {
+    if (raw == null) {
+      return null;
+    }
+    const s = decodeURIComponent(String(raw)).trim();
+    return s.length > 0 ? s : null;
+  }
+
+  private resolveOrderIdForTableChange(selectedTable: any): string | null {
+    if (this.orderId) {
+      return this.orderId;
+    }
+    const tid = selectedTable?.order_id;
+    if (tid != null && String(tid).trim() !== '') {
+      return String(tid).trim();
+    }
+    return null;
+  }
+
   listenToNewTable() {
     this.tableOperation.newTable();
 
@@ -215,8 +237,13 @@ export class TableAvailableComponent implements OnInit, OnDestroy {
       alert('هذه الطاولة مشغولة، يرجى اختيار طاولة أخرى.');
       return;
     }
-    // Use order_id from route if available, otherwise use table's order_id
-    const orderIdToUse = this.orderId || selectedTable.order_id;
+    const orderIdToUse = this.resolveOrderIdForTableChange(selectedTable);
+    if (!orderIdToUse) {
+      alert(
+        'لم يُعثر على رقم الطلب. افتح «تغيير الطاولة» من تفاصيل الطلب أو من قائمة الطلبات (مع ربط الطلب)، ثم اختر طاولة.'
+      );
+      return;
+    }
     this.tablesRequestService.updateTableStatus(tableId, orderIdToUse).subscribe({
       next: (response) => {
         console.log(response, 'response');
@@ -247,6 +274,8 @@ export class TableAvailableComponent implements OnInit, OnDestroy {
 
   }
   ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
     this.tableOperation.stopListeningForChangeTableStatus();
     this.tableOperation.stopListeningForNewTable();
   }
