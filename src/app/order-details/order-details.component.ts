@@ -177,6 +177,42 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       .replace(/\s+/g, '_');
   }
 
+  /**
+   * Prefer order-level payment_method (what the cashier chose at checkout) over the first
+   * transaction row. With a 100% coupon the API often leaves transaction.paid = 0 and
+   * payment_method = cash while order.payment_method is still credit.
+   */
+  private resolvePaymentMethodFromOrderBlob(blob: any): string {
+    if (!blob) return 'Unknown';
+    const root =
+      blob.payment_method ?? blob.payment_method_menu_integration;
+    if (root != null && String(root).trim() !== '') return String(root).trim();
+    const tx0 = blob.transactions?.[0]?.payment_method;
+    if (tx0 != null && String(tx0).trim() !== '') return String(tx0).trim();
+    return 'Unknown';
+  }
+
+  /** When grand total is 0, fix transaction rows that say cash + 0 paid though order was visa/credit. */
+  private alignTransactionsPaymentMethodForZeroTotal(blob: any, summary: any): void {
+    const txs = blob?.transactions;
+    if (!txs?.length || !blob) return;
+    const rootRaw = blob.payment_method ?? blob.payment_method_menu_integration;
+    const root = this.normalizePaymentMethod(rootRaw);
+    if (!root || !['credit', 'visa', 'card', 'mastercard', 'mada'].includes(root)) return;
+
+    const totalPrice = Number(summary?.total_price ?? summary?.total ?? NaN);
+    if (isNaN(totalPrice) || totalPrice > 0) return;
+
+    for (const tx of txs) {
+      if (tx.is_refund === 1 || tx.is_refund === true) continue;
+      const tm = this.normalizePaymentMethod(tx.payment_method);
+      const paid = this.safeNum(tx.paid);
+      if (tm === 'cash' && paid === 0) {
+        tx.payment_method = rootRaw || root;
+      }
+    }
+  }
+
   /** Payment status for display (safe, normalized). */
   get displayPaymentStatus(): string {
     const raw =
@@ -190,10 +226,17 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   /** Payment method label in Arabic (cash/visa/card/online/etc). */
   get displayPaymentMethodLabel(): string {
     if (this.displayPaymentStatus !== 'paid') return 'غير محدد';
-    const m = this.normalizePaymentMethod(
-      this.orderDetails?.transactions?.[0]?.payment_method ?? this.paymenMethod
-    );
+    const m = this.normalizePaymentMethod(this.resolvePaymentMethodFromOrderBlob(this.orderDetails));
     return this.getPaymentMethodLabel(m);
+  }
+
+  /** Green badge in payment card: نقدا / فيزا / مدفوع. */
+  get displayPaymentBadgeText(): string {
+    if (this.displayPaymentStatus !== 'paid') return 'غير محدد';
+    const m = this.normalizePaymentMethod(this.resolvePaymentMethodFromOrderBlob(this.orderDetails));
+    if (m === 'cash') return 'نقدا';
+    if (['credit', 'visa', 'card', 'mastercard', 'mada'].includes(m)) return 'فيزا';
+    return 'مدفوع';
   }
 
   getPaymentMethodLabel(method: any): string {
@@ -267,7 +310,6 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       const details = order.details_order || order;
       this.currencySymbol = details.currency_symbol || order.currency_symbol || 'ج.م';
 
-      this.paymenMethod = order.details_order.transactions?.[0]?.payment_method ?? order.details_order.payment_method ?? 'Unknown';
       this.deliveryData = order.details_order?.delivery_data || "";
       const rawDeliveryFees = order.details_order.order_summary?.delivery_fees ||
         order.details_order.order_summary?.delivery_fees || 0;
@@ -301,6 +343,12 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         status: (details as { status?: string }).status ?? order.status ?? (metaObj?.['status'] as string | undefined),
         status_order:
           (details as { status_order?: string }).status_order ?? order.status_order,
+        payment_method:
+          (details as { payment_method?: string }).payment_method ??
+          order.payment_method ??
+          (metaObj?.['payment_method'] as string | undefined) ??
+          (order as { payment_method_menu_integration?: string }).payment_method_menu_integration ??
+          (metaObj?.['payment_method_menu_integration'] as string | undefined),
       };
       this.orderItems = this.filterMovedOrderItems(itemsArray);
       this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
@@ -310,7 +358,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       if (!this.orderDetails.transactions || !Array.isArray(this.orderDetails.transactions) || this.orderDetails.transactions.length === 0) {
         const isPaid = this.orderDetails.payment_status === 'paid' || isPaidByTotal;
         this.orderDetails.transactions = [{
-          payment_method: this.paymenMethod ?? 'cash',
+          payment_method: this.orderDetails.payment_method ?? 'cash',
           payment_status: isPaid ? 'paid' : (this.orderDetails.payment_status ?? 'unpaid'),
           paid: isPaid ? totalPrice : 0
         }];
@@ -318,6 +366,9 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
         this.orderDetails.transactions[0].payment_status = 'paid';
         this.orderDetails.transactions[0].paid = totalPrice;
       }
+
+      this.alignTransactionsPaymentMethodForZeroTotal(this.orderDetails, this.orderSummary);
+      this.paymenMethod = this.resolvePaymentMethodFromOrderBlob(this.orderDetails);
 
       console.log("orderitems", this.orderItems);
 
@@ -438,7 +489,6 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   // Process order data from API
   private processOrderData(order: any): void {
     this.currencySymbol = order.currency_symbol;
-    this.paymenMethod = order.transactions?.[0]?.payment_method || 'Unknown';
     if (order.order_type === 'Delivery') {
       // Prefer structured delivery_data from API, but fall back to formdata_delivery or basic fields
       let delivery: any = order.delivery_data ?? order.formdata_delivery ?? null;
@@ -493,7 +543,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     if (!order.transactions || !Array.isArray(order.transactions) || order.transactions.length === 0) {
       const isPaid = order.payment_status === 'paid' || isPaidByTotal;
       order.transactions = [{
-        payment_method: order.payment_method ?? this.paymenMethod ?? 'cash',
+        payment_method:
+          order.payment_method ?? order.payment_method_menu_integration ?? this.paymenMethod ?? 'cash',
         payment_status: isPaid ? 'paid' : (order.payment_status ?? 'unpaid'),
         paid: isPaid ? totalPrice : 0
       }];
@@ -501,6 +552,9 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       order.transactions[0].payment_status = 'paid';
       order.transactions[0].paid = totalPrice;
     }
+
+    this.alignTransactionsPaymentMethodForZeroTotal(order, this.orderSummary);
+    this.paymenMethod = this.resolvePaymentMethodFromOrderBlob(order);
 
     if (this.deliveryData?.delivery_name === ' ') {
       this.deliveryData.delivery_name = 'لا يوجد';
@@ -546,7 +600,6 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
           if (response) {
             const order = response.data.orderDetails[0];
             this.currencySymbol = order.currency_symbol;
-            this.paymenMethod = order.transactions?.[0]?.payment_method ?? 'Unknown';
             this.deliveryData = order.order_type === 'Delivery' ? response.data.orderDetails[0].delivery_data : null;
             const summary = order.order_summary || {};
             const rawFee = summary.delivery_fees ?? 0;
@@ -582,7 +635,8 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
             if (!order.transactions || !Array.isArray(order.transactions) || order.transactions.length === 0) {
               const isPaid = order.payment_status === 'paid' || isPaidByTotal;
               order.transactions = [{
-                payment_method: order.payment_method ?? this.paymenMethod ?? 'cash',
+                payment_method:
+          order.payment_method ?? order.payment_method_menu_integration ?? this.paymenMethod ?? 'cash',
                 payment_status: isPaid ? 'paid' : (order.payment_status ?? 'unpaid'),
                 paid: isPaid ? totalPrice : 0
               }];
@@ -591,6 +645,9 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
               order.transactions[0].payment_status = 'paid';
               order.transactions[0].paid = totalPrice;
             }
+
+            this.alignTransactionsPaymentMethodForZeroTotal(order, this.orderSummary);
+            this.paymenMethod = this.resolvePaymentMethodFromOrderBlob(order);
 
             if (this.deliveryData?.delivery_name == ' ') {
               this.deliveryData.delivery_name = 'لا يوجد';

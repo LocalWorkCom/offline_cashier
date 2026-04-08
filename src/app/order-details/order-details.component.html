@@ -53,12 +53,7 @@
       <div *ngIf="orderDetails.transactions?.length == 1">
         <h5>
           <span class="badge bg-success text-white">
-            {{
-            displayPaymentStatus === 'paid' && paymenMethod === "cash" ? "نقدا"
-            : displayPaymentStatus === 'paid' && paymenMethod === "credit" ? "فيزا"
-            : displayPaymentStatus === 'paid' ? "مدفوع"
-            : "غير محدد"
-            }}
+            {{ displayPaymentBadgeText }}
           </span>
         </h5>
 
