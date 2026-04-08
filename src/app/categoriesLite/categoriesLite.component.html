@@ -37,7 +37,7 @@
         [attr.data-bs-target]="'#pills-' + category.id" type="button" role="tab"
         [attr.aria-controls]="'pills-' + category.id" [attr.aria-selected]="selectedCategory?.id === category.id">
         <div class="category-button">
-          <img [src]="category.image_path" alt="" class="category-img" />
+          <img [src]="category.image_path" alt="" class="category-img"  loading="lazy"/>
           <p class="mb-0">{{ category.name }}</p>
         </div>
       </button>
