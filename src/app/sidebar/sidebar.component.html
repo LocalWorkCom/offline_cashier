@@ -746,12 +746,20 @@
         <span>{{printingData?.talabatcash}} </span>
       </div>
       <div class="table-content">
+        <span> عدد فيزا طلبات</span>
+        <span>{{ printingData?.talabat_visa_count }}</span>
+      </div>
+      <div class="table-content">
+        <span> مبيعات فيزا طلبات</span>
+        <span>{{ printingData?.talabatvisa }}</span>
+      </div>
+      <div class="table-content">
         <span> عدد اجل طلبات</span>
-        <span>{{ printingData?.talabat_deferred_count ?? printingData?.talabat_visa_count }}</span>
+        <span>{{ printingData?.talabat_deferred_count }}</span>
       </div>
       <div class="table-content">
         <span> مبيعات اجل طلبات</span>
-        <span>{{ printingData?.talabatdeferred ?? printingData?.talabatvisa }}</span>
+        <span>{{ printingData?.talabatdeferred }}</span>
       </div>
 
 
@@ -788,7 +796,7 @@
       </div>
     </div>
     <div class="mt-3" style="clear: both; position: relative; display: block; margin-top: 1rem;">
-      <p style="display: block; margin: 0 0 0.75rem 0; font-weight: bold;text-align: center;">شكرا لثقتكم بخدمتنا</p>
+      <p class="cash-transfer-print-thanks" style="display: block; margin: 0 0 0.75rem 0; font-weight: bold;text-align: center;">شكرا لثقتكم بخدمتنا</p>
       <div style=" display: block;">
         <p style="display: block; margin: 0 0 0.75rem 0; line-height: 1.6; min-height: 1.6em; text-align: center;font-weight: bold;">{{
           printTime | date:'dd/MM/yyyy HH:mm:ss' }}</p>
