@@ -5179,7 +5179,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   }
   removeNote() {
     localStorage.removeItem('additionalNote');
-    this.additionalNote = ' ';
+    this.additionalNote = '';
     // Attempt to close the modal.
     const modalEl = document.getElementById('noteModal');
     if (modalEl) {
