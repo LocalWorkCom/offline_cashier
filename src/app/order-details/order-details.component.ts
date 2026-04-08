@@ -282,10 +282,27 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       const applied = this.normalizeSummaryByOrderType(orderType, summaryFromOrder, Number(rawDeliveryFees));
 
       this.deliveryFees = applied.deliveryFees;
-      // Set the main order details
-      const detailsOrder = order.details_order;
-      this.orderDetails = detailsOrder;
-      this.orderItems = this.filterMovedOrderItems(detailsOrder?.order_details || []);
+      let itemsArray = details?.order_details || order.order_items || [];
+      itemsArray = this.normalizeOfflineOrderItems(itemsArray);
+      const wrapperOd = order.order_details;
+      const metaObj =
+        wrapperOd && typeof wrapperOd === 'object' && !Array.isArray(wrapperOd)
+          ? (wrapperOd as Record<string, unknown>)
+          : null;
+      this.orderDetails = {
+        ...details,
+        order_id:
+          (metaObj?.['order_id'] as string | number | undefined) ??
+          order.order_details?.order_id ??
+          order.order_number ??
+          this.orderId,
+        order_type: orderType,
+        order_summary: applied.orderSummary,
+        status: (details as { status?: string }).status ?? order.status ?? (metaObj?.['status'] as string | undefined),
+        status_order:
+          (details as { status_order?: string }).status_order ?? order.status_order,
+      };
+      this.orderItems = this.filterMovedOrderItems(itemsArray);
       this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
 
       const totalPrice = Number(this.orderSummary?.total_price ?? this.orderSummary?.total ?? 0);
@@ -686,11 +703,31 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     });
   }
 
+  /** Whole-order cancelled: any API / IndexedDB shape (status, status_order, metadata object). */
+  isOrderCancelled(): boolean {
+    const d = this.orderDetails;
+    if (!d) return false;
+    const norm = (v: unknown): string =>
+      v == null ? '' : String(v).toLowerCase().trim().replace(/\s+/g, '');
+    const isCancelStr = (v: unknown): boolean => {
+      const s = norm(v);
+      return s === 'cancelled' || s === 'cancel' || s === 'canceled';
+    };
+    if (isCancelStr(d.status)) return true;
+    if (isCancelStr(d.status_order)) return true;
+    if (isCancelStr((d as { order_status?: string }).order_status)) return true;
+    const od = d.order_details;
+    if (od && typeof od === 'object' && !Array.isArray(od) && isCancelStr((od as { status?: string }).status)) {
+      return true;
+    }
+    return false;
+  }
+
   /** Whether to show the order actions card (unpaid, pending, not talabat). */
   canShowOrderActions(): boolean {
     const d = this.orderDetails;
     if (!d) return false;
-    if (d.status === 'cancelled' || d.status === 'cancel') return false;
+    if (this.isOrderCancelled()) return false;
     const paymentStatus = d.payment_status ?? d.transactions?.[0]?.payment_status;
     if (paymentStatus !== 'unpaid') return false;
     if (d.order_type === 'talabat') return false;
@@ -1156,7 +1193,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
   canShowItemActions(item: any): boolean {
     const d = this.orderDetails;
     if (!d) return false;
-    if (d.status === 'cancelled' || d.status === 'cancel') return false;
+    if (this.isOrderCancelled()) return false;
     const paymentStatus = d.payment_status ?? d.transactions?.[0]?.payment_status;
     if (paymentStatus !== 'unpaid') return false;
     const status = item?.dish_status;

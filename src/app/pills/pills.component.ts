@@ -421,6 +421,22 @@ console.log(newOrder);
     return this.invoiceStatusCounts[apiStatus] || 0;
   }
 
+  /**
+   * يطابق بطاقة الطلبات النشطة: عدد أسطر الأصناف (وليس مجموع الكميات).
+   * إن وُجدت تفاصيل الفاتورة في الاستجابة نحسب منها؛ وإلا نستخدم order_items_count من الـ API.
+   */
+  getPillItemLineCount(pill: any): number {
+    const details =
+      pill?.invoice_details?.orderDetails ?? pill?.invoice_details?.order_details;
+    if (Array.isArray(details) && details.length > 0) {
+      const lines = details.filter((d: any) => (Number(d?.quantity) || 0) > 0).length;
+      if (lines > 0) {
+        return lines;
+      }
+    }
+    return Number(pill?.order_items_count) || 0;
+  }
+
   selectOrderTypeFilter(type: string): void {
     this.orderTypeFilter = type;
     this.currentPage = 1;
