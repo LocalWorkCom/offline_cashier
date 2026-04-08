@@ -90,7 +90,7 @@ export class PillsComponent implements OnInit, OnDestroy {
     // });
 
     this.searchSubject.pipe(
-      debounceTime(500),
+      debounceTime(2000),
       distinctUntilChanged(),
       takeUntil(this.destroy$)
     ).subscribe(() => {
@@ -348,7 +348,7 @@ console.log(newOrder);
   onSearchChange(): void {
     // Strip '#' from search input so users can paste e.g. '#1234'
     this.searchOrderNumber = this.searchOrderNumber.replace(/#/g, '');
-    
+
     // Reset to 'all' status tab when searching so the user can see all related items (INV and CN)
     this.selectedStatus = 0;
     this.selectedStatusLabel = 'all';
@@ -412,7 +412,7 @@ console.log(newOrder);
       return this.totalInvoicesCount;
     }
     const apiStatusMap: any = {
-      'hold': 'hold', 
+      'hold': 'hold',
       'done': 'completed',
       'cancelled': 'cancelled',
       'returned': 'returned'
