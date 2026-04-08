@@ -71,11 +71,7 @@
 
     </div>
     <!-- Cash - visa -->
-<<<<<<< HEAD
-    <div *ngIf="orderDetails.transactions?.length > 1">
-=======
     <div *ngIf="orderDetails.transactions?.length > 0">
->>>>>>> 348e3ea5e46c2b0e127ee33c2f40dfb0d3b02ab1
       <div *ngFor="let inv of orderDetails.transactions">
         <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
           *ngIf="orderDetails.transactions[0].payment_status == 'paid' && inv.is_refund == 0">
