@@ -106,7 +106,6 @@ export class PillDetailsComponent implements OnInit, OnDestroy {
         this.fetchPillsDetails(this.pillId);
       }
     });
-    this.fetchTrackingStatus();
     // this.getNoteFromLocalStorage();
     this.cashier_machine_id = Number(
       localStorage.getItem('cashier_machine_id')
