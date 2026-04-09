@@ -715,6 +715,29 @@
 
 
     </div>
+    <div *ngIf="orderTypeBreakdownRows.length > 0">
+      <p class="text-center fw-bold my-2 total">ملخص أنواع الطلبات</p>
+      <div *ngFor="let item of orderTypeBreakdownRows" class="cash-transfer-print-table-wrap cash-transfer-print-table-wrap--category">
+        <div class="table-content">
+          <span>{{ item.label }}</span>
+          <span>{{ item.ordersCount }}</span>
+        </div>
+        <div class="table-content">
+          <span>الإجمالي</span>
+          <span>{{ item.totalAmount | number:'1.2-2' }}</span>
+        </div>
+      </div>
+      <div class="cash-transfer-print-table-wrap">
+        <div class="table-content">
+          <span>إجمالي عدد الطلبات</span>
+          <span>{{ orderTypeSummaryOrdersCount }}</span>
+        </div>
+        <div class="table-content">
+          <span>إجمالي المبلغ</span>
+          <span>{{ orderTypeSummaryTotalAmount | number:'1.2-2' }}</span>
+        </div>
+      </div>
+    </div>
     <div *ngIf="printingData?.categories.length>0">
 
       <p class="text-center fw-bold my-2 total"> الفئات</p>

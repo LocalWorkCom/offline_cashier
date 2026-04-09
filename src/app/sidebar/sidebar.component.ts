@@ -57,6 +57,7 @@ export class SidebarComponent implements OnInit {
   alertError: any;
   reasonError: any;
   printingData: any;
+  orderTypeBreakdownRows: Array<{ key: string; label: string; ordersCount: number; totalAmount: number }> = [];
   /** الفرق = النقدية المتوقعة - النقدية الموجودة (لطباعة التقرير) */
   get printingDeficitCash(): number {
     if (!this.printingData) return 0;
@@ -1010,6 +1011,64 @@ waitForImagesInSection(selector: string): Promise<void> {
     return 'POS';
   }
 
+  private normalizeBusinessOrderTypeLabel(value: unknown): string {
+    const key = String(value || '').toLowerCase();
+    const labels: Record<string, string> = {
+      client_meal: 'وجبات العميل',
+      staff_meal: 'وجبات الموظفين',
+      charity_meal: 'وجبات صدقات',
+      hospitality_meal: 'وجبات الضيافة',
+      regular: 'وجبات العميل',
+    };
+    return labels[key] || 'وجبات العميل';
+  }
+
+  private toNumberSafe(value: unknown): number {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : 0;
+  }
+
+  private buildOrderTypeBreakdownRows(data: any): Array<{ key: string; label: string; ordersCount: number; totalAmount: number }> {
+    const directArray =
+      data?.order_type_summary ||
+      data?.order_types_summary ||
+      data?.order_types_breakdown ||
+      data?.order_types ||
+      data?.orderTypeSummary;
+
+    if (Array.isArray(directArray)) {
+      return directArray.map((item: any) => {
+        const key = String(item?.order_type || item?.type || item?.name || 'client_meal');
+        return {
+          key,
+          label: this.normalizeBusinessOrderTypeLabel(key),
+          ordersCount: this.toNumberSafe(item?.orders_count ?? item?.count ?? item?.orders ?? item?.total_orders),
+          totalAmount: this.toNumberSafe(item?.total_amount ?? item?.amount ?? item?.total ?? item?.sum),
+        };
+      });
+    }
+
+    const objectData = data?.order_types;
+    if (objectData && typeof objectData === 'object' && !Array.isArray(objectData)) {
+      return Object.entries(objectData).map(([key, value]: [string, any]) => ({
+        key,
+        label: this.normalizeBusinessOrderTypeLabel(key),
+        ordersCount: this.toNumberSafe(value?.orders_count ?? value?.count ?? value?.orders),
+        totalAmount: this.toNumberSafe(value?.total_amount ?? value?.amount ?? value?.total),
+      }));
+    }
+
+    return [];
+  }
+
+  get orderTypeSummaryOrdersCount(): number {
+    return this.orderTypeBreakdownRows.reduce((sum, row) => sum + row.ordersCount, 0);
+  }
+
+  get orderTypeSummaryTotalAmount(): number {
+    return this.orderTypeBreakdownRows.reduce((sum, row) => sum + row.totalAmount, 0);
+  }
+
   print(id: number): void {
   this.branchShiftReport = null;
   const branchId = this.authService.getBranchId();
@@ -1038,6 +1097,7 @@ waitForImagesInSection(selector: string): Promise<void> {
         throw new Error('No data received for printing');
       }
       this.printingData = res.data;
+      this.orderTypeBreakdownRows = this.buildOrderTypeBreakdownRows(res.data);
       this.printTime = new Date();
     }),
     switchMap(() => shiftReport$),
