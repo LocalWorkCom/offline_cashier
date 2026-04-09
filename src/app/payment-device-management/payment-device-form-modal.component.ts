@@ -1,9 +1,12 @@
 import { CommonModule } from '@angular/common';
 import { Component, Input, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
+import { baseUrl2 } from '../environment';
 
 export interface PaymentDeviceFormResult {
+  id?: number;
   name: string;
   ip: string;
   balance: number;
@@ -29,7 +32,9 @@ export class PaymentDeviceFormModalComponent implements OnInit {
     status: 'active'
   };
 
-  constructor(public activeModal: NgbActiveModal) {}
+  isSubmitting = false;
+
+  constructor(public activeModal: NgbActiveModal, private httpClient: HttpClient) {}
 
   ngOnInit(): void {
     if (this.device) {
@@ -42,7 +47,46 @@ export class PaymentDeviceFormModalComponent implements OnInit {
       return;
     }
 
-    this.activeModal.close(this.form);
+    if (this.mode === 'edit') {
+      if (!this.device?.id) {
+        return;
+      }
+
+      this.isSubmitting = true;
+      this.httpClient
+        .post(`${baseUrl2}/payment-device/update/${this.device.id}`, {
+          device_name: this.form.name.trim(),
+          IP: this.form.ip.trim(),
+          // Balance: Number(this.form.balance) || 0,
+          status: this.form.status
+        })
+        .subscribe({
+          next: () => {
+            this.activeModal.close(this.form);
+          },
+          error: () => {
+            this.isSubmitting = false;
+          }
+        });
+      return;
+    }
+
+    this.isSubmitting = true;
+    this.httpClient
+      .post(`${baseUrl2}/payment-device/store`, {
+        device_name: this.form.name.trim(),
+        IP: this.form.ip.trim(),
+        Balance: Number(this.form.balance) || 0,
+        status: this.form.status
+      })
+      .subscribe({
+        next: () => {
+          this.activeModal.close(this.form);
+        },
+        error: () => {
+          this.isSubmitting = false;
+        }
+      });
   }
 }
 

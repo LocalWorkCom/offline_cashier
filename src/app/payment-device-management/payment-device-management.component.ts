@@ -3,6 +3,8 @@ import { Component, OnInit } from '@angular/core';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { PaymentDeviceDeleteModalComponent } from './payment-device-delete-modal.component';
 import { PaymentDeviceFormModalComponent, PaymentDeviceFormResult } from './payment-device-form-modal.component';
+import { baseUrl2 } from '../environment';
+import { HttpClient } from '@angular/common/http';
 
 interface PaymentDevice {
   id: number;
@@ -23,7 +25,7 @@ export class PaymentDeviceManagementComponent implements OnInit {
   private readonly storageKey = 'payment_devices';
   devices: PaymentDevice[] = [];
 
-  constructor(private modalService: NgbModal) {}
+  constructor(private modalService: NgbModal, private httpClient: HttpClient) {}
 
   ngOnInit(): void {
     this.loadDevices();
@@ -99,6 +101,7 @@ export class PaymentDeviceManagementComponent implements OnInit {
     });
 
     modalRef.componentInstance.deviceName = device.name;
+    modalRef.componentInstance.deviceId = device.id;
 
     modalRef.result
       .then((confirmed?: boolean) => {
@@ -121,16 +124,21 @@ export class PaymentDeviceManagementComponent implements OnInit {
   }
 
   private loadDevices(): void {
-    const savedDevices = localStorage.getItem(this.storageKey);
-    if (!savedDevices) {
-      return;
-    }
-
-    try {
-      this.devices = JSON.parse(savedDevices);
-    } catch {
-      this.devices = [];
-    }
+    this.httpClient.get<any>(`${baseUrl2}/payment-device/`).subscribe({
+      next: (res) => {
+        const apiDevices = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+        this.devices = apiDevices.map((device: any) => ({
+          id: Number(device?.id) || Date.now(),
+          name: device?.device_name ?? '',
+          ip: device?.IP ?? '',
+          balance: Number(device?.Balance) || 0,
+          status: device?.status === 'active' ? 'active' : 'inactive'
+        }));
+      },
+      error: () => {
+        this.devices = [];
+      }
+    });
   }
 
   private persistDevices(): void {
