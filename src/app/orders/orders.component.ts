@@ -160,6 +160,7 @@ export class OrdersComponent implements OnDestroy {
         // localStorage.setItem('paymentSummary', JSON.stringify(this.paymentSummary));
         localStorage.setItem('totalcash', res.data[0].value);
         localStorage.setItem('totalvisa', res.data[1].value);
+        localStorage.setItem('talabatData', res.data[2].value);
         // localStorage.setItem('total', res.data[2].value);
         if (res.status == false) {
           // this.errorMsg=res.message;
