@@ -76,6 +76,20 @@ export class OrdersComponent implements OnDestroy {
   orderTypeById?: string;
   selectedOrderType!: string;
   selectedOrderTypeStatus: string = 'All';
+  selectedBusinessOrderTypeFilter:
+    | 'client_meal'
+    | 'staff_meal'
+    | 'charity_meal'
+    | 'hospitality_meal' = 'client_meal';
+  readonly BUSINESS_ORDER_TYPES: Array<{
+    value: 'client_meal' | 'staff_meal' | 'charity_meal' | 'hospitality_meal';
+    label: string;
+  }> = [
+    { value: 'client_meal', label: 'وجبات العميل' },
+    { value: 'staff_meal', label: 'وجبات الموظفين' },
+    { value: 'charity_meal', label: 'وجبات صدقات' },
+    { value: 'hospitality_meal', label: 'وجبات الضيافة' },
+  ];
   // selectedOrderTypeStatus: string = 'dine-in';
   filteredCartItems: any;
   allowedOrderTypes = ['Takeaway', 'Delivery', 'dine-in', 'talabat'];
@@ -1321,6 +1335,12 @@ export class OrdersComponent implements OnDestroy {
       );
     }
 
+    // business order type filter (always active, default: client_meal)
+    filtered = filtered.filter((order) => {
+      const businessType = this.getBusinessOrderTypeFromOrder(order, this.selectedStatus === 'static');
+      return businessType === this.selectedBusinessOrderTypeFilter;
+    });
+
     // filter by status
     if (this.selectedStatus === 'completed') {
       // completed includes delivered
@@ -1356,6 +1376,41 @@ export class OrdersComponent implements OnDestroy {
     }
 
     this.filteredOrders = filtered;
+  }
+
+  setBusinessOrderTypeFilter(
+    value: 'client_meal' | 'staff_meal' | 'charity_meal' | 'hospitality_meal'
+  ): void {
+    this.selectedBusinessOrderTypeFilter = value || 'client_meal';
+    this.filterOrders();
+  }
+
+  private getBusinessOrderTypeFromOrder(order: any, isStaticOrder: boolean): string {
+    const dynamicCandidates = [
+      order?.order_details?.business_order_type,
+      order?.order_details?.meal_order_type,
+      order?.order_details?.order_type_classification,
+      order?.order_details?.order_purpose_type,
+      order?.details_order?.business_order_type,
+      order?.details_order?.meal_order_type,
+      order?.details_order?.order_type_classification,
+      order?.details_order?.order_purpose_type,
+      order?.business_order_type,
+      order?.meal_order_type,
+      order?.order_type_classification,
+      order?.order_purpose_type,
+    ];
+    const staticCandidates = [
+      order?.business_order_type,
+      order?.meal_order_type,
+      order?.order_type_classification,
+      order?.order_purpose_type,
+      order?.order_type,
+    ];
+    const candidates = isStaticOrder ? staticCandidates : dynamicCandidates;
+    const valid = ['client_meal', 'staff_meal', 'charity_meal', 'hospitality_meal'];
+    const match = candidates.find((value) => valid.includes(String(value || '').toLowerCase()));
+    return match ? String(match).toLowerCase() : 'client_meal';
   }
 
   // startFiltering(): void {
