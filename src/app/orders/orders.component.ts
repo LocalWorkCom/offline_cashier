@@ -1475,6 +1475,7 @@ export class OrdersComponent implements OnDestroy {
     let taxTotal = 0;
     let serviceTotal = 0;
     let priceTotal = 0;
+    let talabatPriceTotal = 0;
     let couponTotal = 0;
     let deliveryTotal = 0;
     let hasReturnedQty = false;
@@ -1512,6 +1513,9 @@ export class OrdersComponent implements OnDestroy {
       pricePart = unitPrice * returnedQty;
 
       priceTotal += pricePart;
+      if(order.details_order?.order_type == 'talabat'){
+        talabatPriceTotal += pricePart;
+      }
     }
 
     let precoupon = 0;
@@ -1571,6 +1575,14 @@ export class OrdersComponent implements OnDestroy {
       }
     }
     creditTotal = Number(creditTotal.toFixed(2));
+    
+    if(order.details_order?.order_type == 'talabat'){
+      taxTotal = 0;
+      serviceTotal = 0;
+      priceTotal = talabatPriceTotal;
+      grandTotal = talabatPriceTotal;
+      creditTotal = creditTotal;
+    }
 
     console.log(
       'isFullReturn',isFullReturn,
@@ -1584,6 +1596,7 @@ export class OrdersComponent implements OnDestroy {
       'items' , items,
       'creditTotal', creditTotal,
     );
+  
 
     return {
       taxTotal,
