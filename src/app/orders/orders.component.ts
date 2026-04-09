@@ -143,35 +143,35 @@ export class OrdersComponent implements OnDestroy {
     this.selectedOrderTypeStatus = 'All';
 
 
-       // cal api of Get Balance info
+    // cal api of Get Balance info
 
-       const shiftData = JSON.parse(localStorage.getItem('shiftData')!);
+    const shiftData = JSON.parse(localStorage.getItem('shiftData')!);
 
-       const bodyGetBalanceInfo = {
-         cashier_machine_id: localStorage.getItem('cashier_machine_id'),
-         employee_schedule_id: localStorage.getItem('employee_schedule_id'),
-         shift_start: shiftData?.shift_start || null,
-         shift_end: shiftData?.shift_end || null,
-       };
-       this.http.post<any>(`${baseUrl}api/cashier/get-current-balance`, bodyGetBalanceInfo).subscribe({
-         next: (res) => {
-           console.log('res of Get Balance info',res);
-           // this.paymentSummary = res.data;
-                // localStorage.setItem('paymentSummary', JSON.stringify(this.paymentSummary));
-               localStorage.setItem('totalcash', res.data[0].value);
-               localStorage.setItem('totalvisa', res.data[1].value);
-                // localStorage.setItem('total', res.data[2].value);
-           if(res.status==false){
-               // this.errorMsg=res.message;
-               // alert(this.errorMsg)
+    const bodyGetBalanceInfo = {
+      cashier_machine_id: localStorage.getItem('cashier_machine_id'),
+      employee_schedule_id: localStorage.getItem('employee_schedule_id'),
+      shift_start: shiftData?.shift_start || null,
+      shift_end: shiftData?.shift_end || null,
+    };
+    this.http.post<any>(`${baseUrl}api/cashier/get-current-balance`, bodyGetBalanceInfo).subscribe({
+      next: (res) => {
+        console.log('res of Get Balance info', res);
+        // this.paymentSummary = res.data;
+        // localStorage.setItem('paymentSummary', JSON.stringify(this.paymentSummary));
+        localStorage.setItem('totalcash', res.data[0].value);
+        localStorage.setItem('totalvisa', res.data[1].value);
+        // localStorage.setItem('total', res.data[2].value);
+        if (res.status == false) {
+          // this.errorMsg=res.message;
+          // alert(this.errorMsg)
 
-           }
-         },
-         error: (err) => {
-           console.error('Failed to fetch total money:', err);
-         }
-       });
-       
+        }
+      },
+      error: (err) => {
+        console.error('Failed to fetch total money:', err);
+      }
+    });
+
     this.fetchOrdersData();
     this.fetchOrderTypeCounts();
     // if (this.isOnline == false) {
@@ -374,7 +374,7 @@ export class OrdersComponent implements OnDestroy {
                 .pipe(takeUntil(this.destroy$))
                 .subscribe({
                   next: (r) => console.log('✅ تم حفظ كل الطلبات في IndexedDB:', r.count),
-                  error: () => {},
+                  error: () => { },
                 });
             }
           } else {
@@ -410,7 +410,7 @@ export class OrdersComponent implements OnDestroy {
               this.filterOrdersInput();
               this.cdr.detectChanges();
             }
-          }).catch(() => {});
+          }).catch(() => { });
         },
       });
   }
@@ -818,10 +818,10 @@ export class OrdersComponent implements OnDestroy {
 
     const search = this.searchOrderNumber?.trim().toLowerCase();
 
-  if (!search) {
-    this.filterOrders();
-    return;
-  }
+    if (!search) {
+      this.filterOrders();
+      return;
+    }
     const foundOrders = this.orders.filter((order) =>
       order.order_details?.order_number
         ?.toString()
@@ -1494,14 +1494,14 @@ export class OrdersComponent implements OnDestroy {
       // new calculation for the return totals
       // let taxPart : number;
       // let servicePart : number;
-      let pricePart : number;
+      let pricePart: number;
       // let couponPart : number;
-      
+
       // Ensure unit price is calculated
       if (!item.unitPrice) {
         item.unitPrice = (item.total_dish_price || 0) / (item.quantity || 1);
       }
-      
+
       const unitPrice = item.unitPrice;
       pricePart = unitPrice * returnedQty;
 
@@ -1510,30 +1510,29 @@ export class OrdersComponent implements OnDestroy {
 
     let precoupon = 0;
 
-    if(order.details_order?.order_summary?.coupon_type == 'percentage'){
+    if (order.details_order?.order_summary?.coupon_type == 'percentage') {
 
       precoupon = priceTotal * order.details_order?.order_summary?.coupon_percentage / 100;
       couponTotal = priceTotal - precoupon;
 
     }
-    else
-    {
+    else {
       couponTotal = priceTotal - order.details_order?.order_summary?.coupon_value;
     }
     if (order.details_order?.order_type === 'dine-in') {
-        serviceTotal = couponTotal * 12 / 100;
-        taxTotal = (couponTotal + serviceTotal) * 14/100;
+      serviceTotal = couponTotal * 12 / 100;
+      taxTotal = (couponTotal + serviceTotal) * 14 / 100;
 
-      } else {
-        serviceTotal =0;
-        taxTotal = (couponTotal + serviceTotal) * 14/100;
+    } else {
+      serviceTotal = 0;
+      taxTotal = (couponTotal + serviceTotal) * 14 / 100;
 
-      }
-      if (hasReturnedQty && isFullReturn) {
-        deliveryTotal = Number(order.details_order?.order_summary?.delivery_fees) || 0;
-      } else {
-        deliveryTotal = 0;
-      }
+    }
+    if (hasReturnedQty && isFullReturn) {
+      deliveryTotal = Number(order.details_order?.order_summary?.delivery_fees) || 0;
+    } else {
+      deliveryTotal = 0;
+    }
 
     let grandTotal = taxTotal + serviceTotal + couponTotal + deliveryTotal;
 
@@ -1568,18 +1567,18 @@ export class OrdersComponent implements OnDestroy {
     creditTotal = Number(creditTotal.toFixed(2));
 
     console.log(
-      'isFullReturn',isFullReturn,
-      'order_id',order.details_order.order_summary.order_number,
-      'taxTotal',taxTotal,
-      'serviceTotal',serviceTotal,
-      'priceTotal',priceTotal,
-      'grandTotal',grandTotal,
-      'couponTotal',couponTotal,
-      'deliveryTotal',deliveryTotal,
-      'transactions' , order.details_order.transactions,
+      'isFullReturn', isFullReturn,
+      'order_id', order.details_order.order_summary.order_number,
+      'taxTotal', taxTotal,
+      'serviceTotal', serviceTotal,
+      'priceTotal', priceTotal,
+      'grandTotal', grandTotal,
+      'couponTotal', couponTotal,
+      'deliveryTotal', deliveryTotal,
+      'transactions', order.details_order.transactions,
       'creditTotal', creditTotal,
     );
-      
+
     return {
       taxTotal,
       serviceTotal,
@@ -1607,7 +1606,7 @@ export class OrdersComponent implements OnDestroy {
     const credit = Number(this.returnCreditAmount) || 0;
     return credit <= (totals.creditTotal || 0);
   }
-  
+
   selectOrderType(orderType: string): void {
     console.log('fatema', orderType, this.selectedOrderTypeStatus);
 
@@ -2361,32 +2360,50 @@ export class OrdersComponent implements OnDestroy {
     const isFullReturn =
       selectedItems.length === order.order_items.length &&
       selectedItems.every((item: any) => item.isFullyReturned);
-      let paymentMethod ='';
-      let paymentMethod2 =null;
+    let paymentMethod = '';
+    let paymentMethod2 = null;
 
-      if(this.selectedReturnPaymentMethod == 'cash + credit') {
-        paymentMethod = 'cash';
-        paymentMethod2 = 'credit';
-      } else if(this.selectedReturnPaymentMethod == 'credit') {
-        paymentMethod = 'credit';
-      }
-      else {
-        paymentMethod = 'cash';
-      }
+    if (this.selectedReturnPaymentMethod == 'cash + credit') {
+      paymentMethod = 'cash';
+      paymentMethod2 = 'credit';
+    } else if (this.selectedReturnPaymentMethod == 'credit') {
+      paymentMethod = 'credit';
+    }
+    else {
+      paymentMethod = 'cash';
+    }
 
-    const body: any = {
-      order_id: order.order_details.order_id,
-      items: selectedItems.map((item: any) => ({
-        item_id: item.item_id,
-        quantity: item.quantity,
-        item_name: item.item_name,
+    let body: any = {};
+    if (order.order_details.order_type == 'talabat' && order.order_details.payment_method == 'deferred') {
+      body = {
+        order_id: order.order_details.order_id,
+        // items: selectedItems.map((item: any) => ({
+        //   item_id: item.item_id,
+        //   quantity: item.quantity,
+        //   item_name: item.item_name,
 
-      })),
-      type: isFullReturn ? 'full' : 'partial',
-      reason: this.cancelReason || '',
-      payment_method: paymentMethod,
-      payment_method2: paymentMethod2,
-    };
+        // })),
+        type: 'full',
+        reason: this.cancelReason || '',
+        payment_method: 'deferred',
+        payment_method2: null,
+      };
+    }
+    else {
+      body = {
+        order_id: order.order_details.order_id,
+        items: selectedItems.map((item: any) => ({
+          item_id: item.item_id,
+          quantity: item.quantity,
+          item_name: item.item_name,
+
+        })),
+        type: isFullReturn ? 'full' : 'partial',
+        reason: this.cancelReason || '',
+        payment_method: paymentMethod,
+        payment_method2: paymentMethod2,
+      };
+    }
     if (this.selectedReturnPaymentMethod === 'cash + credit') {
       body.cash_amount = Number(this.returnCashAmount) || 0;
       body.credit_amount = Number(this.returnCreditAmount) || 0;
@@ -2494,7 +2511,7 @@ export class OrdersComponent implements OnDestroy {
 
               // Refresh order data to get updated calculations (coupon, tax, total)
               this.refreshOrderAfterCancel(order.order_details.order_id);
-              
+
               // Reload orders list and counts
               this.fetchOrdersFromAPI();
               this.fetchOrderTypeCounts();
@@ -2573,7 +2590,7 @@ export class OrdersComponent implements OnDestroy {
           if (visa) localStorage.setItem('totalvisa', String(visa.value));
         }
       },
-      error: () => {},
+      error: () => { },
     });
   }
 
@@ -2774,16 +2791,16 @@ export class OrdersComponent implements OnDestroy {
 
 
 
-             /*
-             // Removed to prevent double printing (handled by global listener)
-             this.dbService.getOrderFromPrintkitchenById(order.order_details.order_id).then((orderMetadata: any) => {
-               if (orderMetadata) {
-                 this.processKitchenPrint(order.order_details.order_id, body.items, 'cancel');
-               }
-             }).catch((err) => {
-               console.error('error getting order from printkitchen indexeddb', err);
-             });
-             */
+            /*
+            // Removed to prevent double printing (handled by global listener)
+            this.dbService.getOrderFromPrintkitchenById(order.order_details.order_id).then((orderMetadata: any) => {
+              if (orderMetadata) {
+                this.processKitchenPrint(order.order_details.order_id, body.items, 'cancel');
+              }
+            }).catch((err) => {
+              console.error('error getting order from printkitchen indexeddb', err);
+            });
+            */
 
 
           } else {
@@ -2919,7 +2936,7 @@ export class OrdersComponent implements OnDestroy {
         discountAmount = (couponData.subtotal_price_before_coupon * parseFloat(couponValue)) / 100;
       } else {
         discountAmount = 0;
-        couponValue = '0' ;
+        couponValue = '0';
       }
 
       console.log('💰 Corrected coupon details (10%):', {
@@ -2968,6 +2985,11 @@ export class OrdersComponent implements OnDestroy {
   canShowReturnInvoice(order: any): boolean {
     const totalCash = localStorage.getItem('totalcash');
     const totalCredit = localStorage.getItem('totalvisa');
+    const totalTalabat = localStorage.getItem('talabatData');
+
+    if (order.order_details.order_type == 'talabat') {
+      return Number(totalTalabat) >= Number(order.total_price);
+    }
     // console.log("totalCash",totalCash,totalCredit);
 
     if (!totalCash && !totalCredit) {
@@ -2992,8 +3014,8 @@ export class OrdersComponent implements OnDestroy {
 
   shouldShowReturnInvoiceSection(order: any): boolean {
     return order.order_details.status !== 'cancelled' &&
-           !(order.order_details.payment_status == 'unpaid' && order.order_details.status === 'pending');
-            // && order.order_details.order_type != "talabat";
+      !(order.order_details.payment_status == 'unpaid' && order.order_details.status === 'pending');
+    // && order.order_details.order_type != "talabat";
   }
 
   // Split Order Properties
@@ -3950,7 +3972,7 @@ export class OrdersComponent implements OnDestroy {
           this.syncChangeTypeSelectedCountryFromCode();
         }
       },
-      error: () => {},
+      error: () => { },
     });
   }
 
@@ -4215,7 +4237,7 @@ export class OrdersComponent implements OnDestroy {
       next: (res) => {
         if (res?.status && Array.isArray(res.data)) this.deliveryAreas = res.data;
       },
-      error: () => {},
+      error: () => { },
     });
   }
 
@@ -4332,17 +4354,17 @@ export class OrdersComponent implements OnDestroy {
       body['client_phone'] = this.changeTypeDeliveryPhone?.trim() || od?.client_phone || '';
       body['client_country_code'] = (this.changeTypeDeliverySelectedCountry?.code || this.changeTypeDeliveryCountryCode || od?.client_country_code || '').trim();
 
-      console.log("this.changeTypeDeliveryAreaId",this.changeTypeDeliveryAreaId);
-      console.log("this.changeTypeDeliveryHotelName",this.changeTypeDeliveryHotelName);
+      console.log("this.changeTypeDeliveryAreaId", this.changeTypeDeliveryAreaId);
+      console.log("this.changeTypeDeliveryHotelName", this.changeTypeDeliveryHotelName);
       if (this.changeTypeDeliveryAreaId) {
         body['area_id'] = parseInt(this.changeTypeDeliveryAreaId, 10);
-        body['delivery_address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || this.changeTypeDeliveryHotelName?.trim() ||'عنوان التوصيل';
+        body['delivery_address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || this.changeTypeDeliveryHotelName?.trim() || 'عنوان التوصيل';
         // Full address payload for storeAddress (same as add-address)
         body['address_type'] = this.changeTypeDeliveryBuildingType || 'apartment';
         body['building'] = this.changeTypeDeliveryBuilding?.trim() || null;
         body['apartment_number'] = this.changeTypeDeliveryApartment?.trim() || null;
         body['floor_number'] = this.changeTypeDeliveryFloor?.trim() || null;
-        body['address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || this.changeTypeDeliveryHotelName?.trim()  || 'عنوان التوصيل';
+        body['address'] = this.changeTypeDeliveryAddress?.trim() || this.changeTypeDeliveryBuilding?.trim() || this.changeTypeDeliveryHotelName?.trim() || 'عنوان التوصيل';
         body['notes'] = this.changeTypeDeliveryNotes?.trim() || null;
         if (this.changeTypeDeliveryBuildingType === 'hotel' && this.changeTypeDeliveryHotelId) {
           body['hotel_id'] = parseInt(String(this.changeTypeDeliveryHotelId), 10);
@@ -4375,8 +4397,8 @@ export class OrdersComponent implements OnDestroy {
             const registerPayload = this.buildAddAddressPayloadFromChangeTypeDelivery();
             if (registerPayload) {
               this.addAddressService.submitForm(registerPayload).subscribe({
-                next: () => {},
-                error: () => {},
+                next: () => { },
+                error: () => { },
               });
             }
           }
@@ -4588,9 +4610,9 @@ export class OrdersComponent implements OnDestroy {
           toSave.order_details = typeof order.order_details === 'object' && !Array.isArray(order.order_details)
             ? { ...order.order_details, order_id: orderId }
             : { order_id: orderId };
-          this.dbService.saveOrder(toSave).catch(() => {});
+          this.dbService.saveOrder(toSave).catch(() => { });
         },
-        error: () => {}
+        error: () => { }
       });
   }
 
@@ -4708,14 +4730,14 @@ export class OrdersComponent implements OnDestroy {
     const byLocation = location === 'all'
       ? [...this.availableTables]
       : this.availableTables.filter((table: any) => {
-          switch (location) {
-            case 'main': return this.isTableInternal(table);
-            case 'terrace': return this.isTableExternal(table);
-            case 'upper': return this.isTableUpperFloor(table);
-            case 'family': return this.isTableFamily(table);
-            default: return false;
-          }
-        });
+        switch (location) {
+          case 'main': return this.isTableInternal(table);
+          case 'terrace': return this.isTableExternal(table);
+          case 'upper': return this.isTableUpperFloor(table);
+          case 'family': return this.isTableFamily(table);
+          default: return false;
+        }
+      });
     const locationList = byLocation.length > 0 ? byLocation : [...this.availableTables];
     this.applySplitTableStatusFilter(locationList);
   }
@@ -4868,7 +4890,7 @@ export class OrdersComponent implements OnDestroy {
                 const ids: string[] = JSON.parse(raw);
                 if (!ids.includes(primaryOrderId)) ids.push(primaryOrderId);
                 sessionStorage.setItem('splitPrimaryOrderIds', JSON.stringify(ids));
-              } catch (_) {}
+              } catch (_) { }
             }
 
             // Save new order ID from response
