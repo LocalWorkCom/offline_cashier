@@ -268,7 +268,9 @@ export class OrdersComponent implements OnDestroy {
       } else {
         // Offline and no data available
         this.loading = true; // إيقاف الـ spinner لعرض رسالة الخطأ
-        this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+        if (!this.errorMessage) {
+          this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+        }
         console.warn('No orders available offline');
         this.cdr.detectChanges();
       }
@@ -278,7 +280,9 @@ export class OrdersComponent implements OnDestroy {
         this.fetchOrdersFromAPI();
       } else {
         this.loading = true; // إيقاف الـ spinner لعرض رسالة الخطأ
-        this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+        if (!this.errorMessage) {
+          this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+        }
         this.cdr.detectChanges();
       }
     });
@@ -380,7 +384,7 @@ export class OrdersComponent implements OnDestroy {
           } else {
             console.warn('No orders found in API response.');
             if (!isLoadMore) {
-              this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+              this.errorMessage = response.message || '';
               this.orders = [];
               this.filteredOrders = [];
             }
@@ -389,11 +393,11 @@ export class OrdersComponent implements OnDestroy {
           }
         },
         error: (err) => {
-          this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+          this.errorMessage = err?.error?.message || err?.message || 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
           this.loading = true;
           this.isLoadMoreLoading = false;
           this.showMessageModal(
-            'حدث خطأ فى الاتصال يرجى المحاولة مره اخرى',
+            this.errorMessage,
             'error'
           );
 
@@ -1461,7 +1465,7 @@ export class OrdersComponent implements OnDestroy {
     grandTotal: number;
     creditTotal: number;
   } {
-    const items = this.getDisplayOrderItems(order);
+    let items = this.getDisplayOrderItems(order);
 
     // console.log("items_dalia",items);
     // console.log("order_dalia",order);
@@ -1473,6 +1477,7 @@ export class OrdersComponent implements OnDestroy {
     let couponTotal = 0;
     let deliveryTotal = 0;
     let hasReturnedQty = false;
+    items = items.filter((item: any) => (item.dish_status !== 'cancel'));
     let isFullReturn = items.length > 0;
     for (const item of items) {
       const totalQty = Number(item.quantity) || 0;
@@ -1576,7 +1581,7 @@ export class OrdersComponent implements OnDestroy {
       'grandTotal',grandTotal,
       'couponTotal',couponTotal,
       'deliveryTotal',deliveryTotal,
-      'transactions' , order.details_order.transactions,
+      'items' , items,
       'creditTotal', creditTotal,
     );
       

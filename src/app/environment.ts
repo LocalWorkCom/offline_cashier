@@ -8,6 +8,7 @@ export const baseUrl2 ='http://127.0.0.1:8000/api'
 //test
 export const environment = {
   production: false,
+  broadcast_type: 'socket', // 'pusher' or 'socket'
   pusher: {
     key: 'cfd52a74b92f9e278f2d',
     cluster: 'mt1',
