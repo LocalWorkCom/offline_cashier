@@ -2079,8 +2079,8 @@ export class PillEditComponent {
       return;
     }
 
-    if (currentPaymentInput < billAmount) {
-      const remaining = billAmount - currentPaymentInput;
+    if (Number(currentPaymentInput.toFixed(2)) < Number(billAmount.toFixed(2))) {
+      const remaining = Number(billAmount.toFixed(2)) - Number(currentPaymentInput.toFixed(2));
       this.paymentError = `المبلغ غير كافي. المتبقي: ${remaining.toFixed(2)} ${this.currencySymbol}`;
       this.paymentAmountError = this.paymentError;
       this.amountError = true;
@@ -2113,8 +2113,8 @@ export class PillEditComponent {
     const creditAmount = parseFloat(this.creditAmountMixed) || 0;
     const totalPaid = cashAmount + creditAmount;
 
-    if (totalPaid < billAmount) {
-      const remaining = billAmount - totalPaid;
+if (Number(totalPaid.toFixed(2)) < Number(billAmount.toFixed(2))) { 
+      const remaining = Number(billAmount.toFixed(2)) - Number(totalPaid.toFixed(2));
       this.paymentError = `المبلغ غير كافي. المتبقي: ${remaining.toFixed(2)} ${this.currencySymbol}`;
       this.paymentAmountError = this.paymentError;
       this.amountError = true;
