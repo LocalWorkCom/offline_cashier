@@ -1189,9 +1189,9 @@ function startWebSocketServer() {
     }
 
     console.log(`📦 Broadcast requested via HTTP: ${event} on ${channel}`);
-    
-    // Emit to all connected clients
-    io.emit(`${channel}:${event}`, data);
+
+    // Emit only to clients subscribed to this channel (joined the room)
+    io.to(channel).emit(`${channel}:${event}`, data);
     
     // Also send to Electron Main Process IPC if needed
     if (mainWindow) {
