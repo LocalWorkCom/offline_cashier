@@ -31,6 +31,15 @@
     </a>
   </div>
   }
+  <div *ngIf="!loading && orderDetails?.order_type" class="d-flex justify-content-end align-items-center gap-2 mb-2">
+    <span class="badge bg-main d-inline-flex align-items-center">
+      <i [ngClass]="getOrderTypeIconClass(orderDetails?.order_type)" class="ms-1"></i>
+      {{ getOrderTypeShortLabel(orderDetails?.order_type) }}
+    </span>
+    <span class="badge text-bg-light border text-dark">
+      {{ getBusinessOrderTypeShortLabel() }}
+    </span>
+  </div>
   <p class="fs-4  text-center" [ngClass]="status_order? 'text-success' : 'main-color' ">{{errorMessage}}</p>
   <div *ngIf="loading" class="card px-4 py-2 my-2">
     <div class="d-flex justify-content-between">

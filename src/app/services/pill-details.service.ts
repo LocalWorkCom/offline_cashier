@@ -46,7 +46,8 @@ export class PillDetailsService {
       coupon_value?: number;
       coupon_type?: string;
       coupon_title?: string;
-    }
+    },
+    paymentDeviceId?: number
   ): Observable<any> {
     const token = localStorage.getItem('authToken');
     if (!token) {
@@ -118,6 +119,11 @@ export class PillDetailsService {
       // إضافة رقم المرجع إذا كان موجودًا
       if (referenceNumber && referenceNumber.trim()) {
         payload.reference_number = referenceNumber.trim();
+      }
+
+      if (paymentDeviceId != null) {
+        payload.payment_device_id = Number(paymentDeviceId);
+        payload.payment_device = Number(paymentDeviceId);
       }
       
       // تحقق من أن المبلغين ليسا صفر معًا إذا كانت الفاتورة مدفوعة

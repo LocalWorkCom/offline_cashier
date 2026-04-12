@@ -337,6 +337,19 @@
       </a>
     </div>
     }
+    <div class="business-order-type-inline mb-3">
+      <div class="business-order-type-inline__label">
+        نوع الطلب :
+      </div>
+      <div class="business-order-type-inline__control">
+        <select class="form-select custom-cursor business-order-type-inline__select"
+          [ngModel]="selectedBusinessOrderType"
+          (ngModelChange)="setBusinessOrderType($event)"
+          [disabled]="!!currentOrderData">
+          <option *ngFor="let item of BUSINESS_ORDER_TYPES" [ngValue]="item.value">{{ item.label }}</option>
+        </select>
+      </div>
+    </div>
     @if (!currentOrderData) {
     <div class="d-flex flex-md-row flex-column justify-content-between mt-3 flex-wrap">
       @if (selectedOrderType !== 'talabat') {
@@ -612,6 +625,18 @@
               <span class="label-text">آجل</span>
             </label>
           </ng-container>
+        </div>
+        <div class="payment-device-select-wrap mb-3" *ngIf="shouldShowPaymentDeviceSelector()">
+          <select class="form-select payment-device-select" [ngModel]="selectedPaymentDeviceId"
+            (ngModelChange)="onPaymentDeviceChange($event)">
+            <option [ngValue]="null">اختر ماكينة الدفع</option>
+            <option *ngFor="let device of paymentDevices" [ngValue]="device.id">
+              {{ device.name }}{{ device.isRecommended ? ' (موصى بها)' : '' }}
+            </option>
+          </select>
+        </div>
+        <div *ngIf="paymentDeviceError && shouldShowPaymentDeviceSelector()" class="alert alert-danger py-2 mt-2">
+          <small><i class="fas fa-exclamation-circle me-1"></i> {{ paymentDeviceError }}</small>
         </div>
         <div *ngIf="formSubmitted && selectedPaymentStatus === 'paid' && !selectedPaymentMethod" class="alert alert-danger py-2 mt-2">
           <small><i class="fas fa-exclamation-circle me-1"></i> يرجى اختيار طريقة الدفع (كاش/فيزا)</small>

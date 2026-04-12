@@ -1236,8 +1236,44 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       'dine-in': 'fa-solid fa-utensils',
       'Takeaway': 'fa-solid fa-bag-shopping',
       'Delivery': 'fa-solid fa-truck',
+      'talabat': 'fa-solid fa-store',
     };
     return icons[type] || 'fa-solid fa-circle';
+  }
+
+  getBusinessOrderTypeValue(): 'client_meal' | 'staff_meal' | 'charity_meal' | 'hospitality_meal' {
+    const candidates = [
+      this.orderDetails?.business_order_type,
+      this.orderDetails?.meal_order_type,
+      this.orderDetails?.order_type_classification,
+      this.orderDetails?.order_purpose_type,
+      this.orderDetails?.order_type_business,
+      this.orderDetails?.order_type,
+      this.orderDetails?.order_details?.order_type,
+      this.orderDetails?.order_details?.business_order_type,
+      this.orderDetails?.order_details?.meal_order_type,
+      this.orderDetails?.order_details?.order_type_classification,
+      this.orderDetails?.order_details?.order_purpose_type,
+    ];
+    const valid = ['client_meal', 'staff_meal', 'charity_meal', 'hospitality_meal'];
+    for (const candidate of candidates) {
+      const key = String(candidate || '').toLowerCase();
+      if (valid.includes(key)) {
+        return key as 'client_meal' | 'staff_meal' | 'charity_meal' | 'hospitality_meal';
+      }
+    }
+    return 'client_meal';
+  }
+
+  getBusinessOrderTypeShortLabel(value?: string): string {
+    const key = String(value || this.getBusinessOrderTypeValue() || '').toLowerCase();
+    const labels: Record<string, string> = {
+      client_meal: 'عميل',
+      staff_meal: 'موظفين',
+      charity_meal: 'صدقات',
+      hospitality_meal: 'ضيافة',
+    };
+    return labels[key] || 'عميل';
   }
 
   /** Change Order Type: go to orders list (when user wants to complete Delivery form there). */

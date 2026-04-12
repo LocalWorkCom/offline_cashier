@@ -2,8 +2,8 @@
 //  export const baseUrlForWebSocket ='https://erpfortest.testdomain100.online/'
 
 //  export const baseUrl ='https://erp-cashier.testdomain100.online/'
-export const baseUrl ='https://erp-cashier-on.testdomain100.online/'
-export const baseUrl2 ='https://erp-cashier-on.testdomain100.online/api'
+export const baseUrl ='https://erp-cashier.testdomain100.online/'
+export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
 
 //test
 export const environment = {

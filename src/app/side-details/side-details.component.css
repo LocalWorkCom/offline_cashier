@@ -253,6 +253,53 @@
 
 }
 
+.business-order-type-inline {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 1px solid #e8e8e8;
+  border-radius: 14px;
+  padding: 0.5rem 0.75rem;
+  background-color: #fafafa;
+}
+
+.business-order-type-inline__label {
+  color: #6c757d;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.business-order-type-inline__control {
+  flex: 1;
+}
+
+.business-order-type-inline__select {
+  border: 0;
+  background-color: transparent;
+  font-weight: 700;
+  padding-inline: 0.25rem;
+  box-shadow: none !important;
+}
+
+.business-order-type-inline__select:disabled {
+  color: #212529;
+  opacity: 1;
+}
+
+.payment-device-select-wrap {
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.25rem 0.5rem;
+}
+
+.payment-device-select {
+  border: 0;
+  box-shadow: none !important;
+  background-color: transparent;
+  color: #555;
+}
+
 /* Chrome, Safari, Edge */
 input[type=number]::-webkit-inner-spin-button,
 input[type=number]::-webkit-outer-spin-button {
