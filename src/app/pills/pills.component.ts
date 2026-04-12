@@ -303,6 +303,7 @@ console.log(newOrder);
             console.warn('No invoices found in API response.');
             if (!isLoadMore) {
               this.pills = [];
+              this.errorMessage = response.message || '';
               this.updatePillsByStatus();
             }
             this.hasMoreInvoices = false;
@@ -471,7 +472,9 @@ console.log(newOrder);
         } else {
           this.pills = [];
           this.usingOfflineData = false;
-          this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+          if (!this.errorMessage) {
+            this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+          }
           this.updatePillsByStatus();
         }
         this.loading = true;
@@ -481,7 +484,9 @@ console.log(newOrder);
         console.error('Error loading from IndexedDB:', error);
         this.pills = [];
         this.usingOfflineData = false;
-        this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+        if (!this.errorMessage) {
+          this.errorMessage = 'فشل فى الاتصال . يرجى المحاوله مرة اخرى ';
+        }
         this.loading = true;
         this.cdr.detectChanges();
       });

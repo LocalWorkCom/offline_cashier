@@ -9,9 +9,9 @@ export const baseUrlForWebSocket ='https://erpfortest.testdomain100.online/'
 
 // export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
 
-export const baseUrl ='https://erp-cashier-on.testdomain100.online/'
+export const baseUrl ='http://192.168.11.228:8000/'
 // export const baseUrl2 ='https://productowner.testdomain100.online/api'
-export const baseUrl2 ='https://erp-cashier-on.testdomain100.online/api'
+export const baseUrl2 ='http://192.168.11.228:8000/api'
 
 // export const baseUrl2 ='https://erpmain.alkoot-restaurant.com/api'
 
@@ -19,6 +19,7 @@ export const baseUrl2 ='https://erp-cashier-on.testdomain100.online/api'
 // export const baseUrl='https://erpsystem.testdomain100.online/'
 export const environment = {
   production: true,
+  broadcast_type: 'pusher', // 'pusher' or 'socket'
   pusher: {
     key: 'cfd52a74b92f9e278f2d',
     cluster: 'mt1',
@@ -32,6 +33,8 @@ export const environment = {
 
 // export const baseUrl='https://erpmain.alkoot-restaurant.com/'
 //  export const environment = {
+//  broadcast_type: 'socket', // 'pusher' or 'socket'
+
 //    production: true,
 //    pusher: {
 //      key: '77f608d73899bd256cfa',
@@ -59,6 +62,7 @@ export const environment = {
 
 //  export const environment = {
 //    production: true,
+//    broadcast_type: 'socket', // 'pusher' or 'socket'
 //    pusher: {
 //      key: 'cfd52a74b92f9e278f2d',
 //      cluster: 'mt1',
