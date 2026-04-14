@@ -19,7 +19,7 @@ export const baseUrl2 ='http://192.168.11.101:8000/api'
 // export const baseUrl='https://erpsystem.testdomain100.online/'
 export const environment = {
   production: true,
-  broadcast_type: 'socket', // 'pusher' or 'socket'
+  broadcast_type: 'pusher', // 'pusher' or 'socket'
   pusher: {
     key: 'cfd52a74b92f9e278f2d',
     cluster: 'mt1',
