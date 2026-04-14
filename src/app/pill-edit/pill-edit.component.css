@@ -1,3 +1,16 @@
+.payment-device-select-wrap {
+  border: 1px solid #e6e6e6;
+  border-radius: 12px;
+  background: #fff;
+  padding: 0.25rem 0.5rem;
+}
+
+.payment-device-select {
+  border: 0;
+  box-shadow: none !important;
+  background-color: transparent;
+  color: #555;
+}
 /* Pay button: main app color (red), no blue; hover reverts to same color scheme */
 .pill-edit-pay-btn {
   background-color: #FE0000 !important;

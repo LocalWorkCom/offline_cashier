@@ -57,6 +57,7 @@ export class SidebarComponent implements OnInit {
   alertError: any;
   reasonError: any;
   printingData: any;
+  orderTypeBreakdownRows: Array<{ key: string; label: string; ordersCount: number; totalAmount: number }> = [];
   /** الفرق = النقدية المتوقعة - النقدية الموجودة (لطباعة التقرير) */
   get printingDeficitCash(): number {
     if (!this.printingData) return 0;
@@ -592,6 +593,25 @@ proceedToLogout(): void {
     }
   }
 
+  /** تطبيع أرقام التقرير للعرض؛ يُحتفظ بـ sessions كما أرسلها الـ API إن وُجدت */
+  private normalizeBranchShiftReport(data: any): any {
+    if (!data || typeof data !== 'object') {
+      return null;
+    }
+    const num = (v: unknown): number => (v == null || v === '' ? 0 : Number(v));
+    return {
+      ...data,
+      first_open_balance: num(data.first_open_balance),
+      last_close_balance: num(data.last_close_balance),
+      total_cash_sales: num(data.total_cash_sales),
+      total_cash_returns: num(data.total_cash_returns),
+      total_cash_discounts: num(data.total_cash_discounts),
+      expected_cash: num(data.expected_cash),
+      actual_cash: data.actual_cash == null ? null : num(data.actual_cash),
+      difference: data.difference == null ? null : num(data.difference),
+    };
+  }
+
   private buildReportDataAndPrintLogout(): void {
     const cashTotalStr = localStorage.getItem('start_total_cash');
     const visaTotalStr = localStorage.getItem('start_total_credit');
@@ -991,6 +1011,64 @@ waitForImagesInSection(selector: string): Promise<void> {
     return 'POS';
   }
 
+  private normalizeBusinessOrderTypeLabel(value: unknown): string {
+    const key = String(value || '').toLowerCase();
+    const labels: Record<string, string> = {
+      client_meal: 'وجبات العميل',
+      staff_meal: 'وجبات الموظفين',
+      charity_meal: 'وجبات صدقات',
+      hospitality_meal: 'وجبات الضيافة',
+      regular: 'وجبات العميل',
+    };
+    return labels[key] || 'وجبات العميل';
+  }
+
+  private toNumberSafe(value: unknown): number {
+    const num = Number(value);
+    return Number.isFinite(num) ? num : 0;
+  }
+
+  private buildOrderTypeBreakdownRows(data: any): Array<{ key: string; label: string; ordersCount: number; totalAmount: number }> {
+    const directArray =
+      data?.order_type_summary ||
+      data?.order_types_summary ||
+      data?.order_types_breakdown ||
+      data?.order_types ||
+      data?.orderTypeSummary;
+
+    if (Array.isArray(directArray)) {
+      return directArray.map((item: any) => {
+        const key = String(item?.order_type || item?.type || item?.name || 'client_meal');
+        return {
+          key,
+          label: this.normalizeBusinessOrderTypeLabel(key),
+          ordersCount: this.toNumberSafe(item?.orders_count ?? item?.count ?? item?.orders ?? item?.total_orders),
+          totalAmount: this.toNumberSafe(item?.total_amount ?? item?.amount ?? item?.total ?? item?.sum),
+        };
+      });
+    }
+
+    const objectData = data?.order_types;
+    if (objectData && typeof objectData === 'object' && !Array.isArray(objectData)) {
+      return Object.entries(objectData).map(([key, value]: [string, any]) => ({
+        key,
+        label: this.normalizeBusinessOrderTypeLabel(key),
+        ordersCount: this.toNumberSafe(value?.orders_count ?? value?.count ?? value?.orders),
+        totalAmount: this.toNumberSafe(value?.total_amount ?? value?.amount ?? value?.total),
+      }));
+    }
+
+    return [];
+  }
+
+  get orderTypeSummaryOrdersCount(): number {
+    return this.orderTypeBreakdownRows.reduce((sum, row) => sum + row.ordersCount, 0);
+  }
+
+  get orderTypeSummaryTotalAmount(): number {
+    return this.orderTypeBreakdownRows.reduce((sum, row) => sum + row.totalAmount, 0);
+  }
+
   print(id: number): void {
   this.branchShiftReport = null;
   const branchId = this.authService.getBranchId();
@@ -1000,11 +1078,16 @@ waitForImagesInSection(selector: string): Promise<void> {
     ? this.balanceService.getBranchShiftReport(branchId, date, machineId).pipe(
         tap((r) => {
           if (r?.status && r?.data) {
-            this.branchShiftReport = r.data;
+            this.branchShiftReport = this.normalizeBranchShiftReport(r.data);
+          } else {
+            this.branchShiftReport = null;
           }
           this.cdr.detectChanges();
         }),
-        catchError(() => of(undefined))
+        catchError(() => {
+          this.branchShiftReport = null;
+          return of(undefined);
+        })
       )
     : of(undefined);
 
@@ -1014,6 +1097,7 @@ waitForImagesInSection(selector: string): Promise<void> {
         throw new Error('No data received for printing');
       }
       this.printingData = res.data;
+      this.orderTypeBreakdownRows = this.buildOrderTypeBreakdownRows(res.data);
       this.printTime = new Date();
     }),
     switchMap(() => shiftReport$),
@@ -1081,12 +1165,58 @@ private waitForRender(selector: string): Observable<Element> {
   const printContents = printSection.innerHTML;
   const originalContents = document.body.innerHTML;
 
-  // Wrap in div#print-section so #print-section .footer CSS still applies after body replace
-  document.body.innerHTML = '<div id="print-section" class="fw-bold">' + printContents + '</div>';
+  const sectionClass = printSection.className
+    .split(/\s+/)
+    .filter((c) => c && c !== 'd-none')
+    .join(' ');
 
-  window.print();
+  const root = document.documentElement;
+  root.classList.add('cash-transfer-print-session');
+  const pageStyleEl = document.createElement('style');
+  pageStyleEl.setAttribute('data-cash-transfer-print-page', '');
+  /* قواعد إضافية هنا لأنها تُحمَّل آخراً وتضمن وضوح الطابعات الحرارية (أسود كامل، بدون تمييع) */
+  pageStyleEl.textContent = `
+@media print {
+  @page { size: auto; margin: 3mm 2mm; }
+  html.cash-transfer-print-session body,
+  html.cash-transfer-print-session #print-section.cash-transfer-print,
+  html.cash-transfer-print-session #print-section.cash-transfer-print * {
+    color: #000000 !important;
+    opacity: 1 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    -webkit-font-smoothing: none !important;
+    text-rendering: optimizeSpeed !important;
+  }
+  html.cash-transfer-print-session #print-section.cash-transfer-print * {
+    font-weight: 800 !important;
+  }
+  html.cash-transfer-print-session #print-section.cash-transfer-print .total {
+    font-size: 17px !important;
+  }
+  html.cash-transfer-print-session #print-section.cash-transfer-print .cash-transfer-print-table-wrap .table-content-total-net,
+  html.cash-transfer-print-session #print-section.cash-transfer-print .cash-transfer-print-table-wrap .table-content-total-net span {
+    font-weight: 900 !important;
+  }
+  html.cash-transfer-print-session #print-section.cash-transfer-print .fw-normal,
+  html.cash-transfer-print-session #print-section.cash-transfer-print .fw-light {
+    font-weight: 800 !important;
+  }
+  html.cash-transfer-print-session #print-section.cash-transfer-print .branch-shift-row-emphasis {
+    background: #ffffff !important;
+  }
+}`;
+  document.head.appendChild(pageStyleEl);
 
-  document.body.innerHTML = originalContents;
+  document.body.innerHTML = `<div id="print-section" class="${sectionClass}">${printContents}</div>`;
+
+  try {
+    window.print();
+  } finally {
+    document.body.innerHTML = originalContents;
+    pageStyleEl.remove();
+    root.classList.remove('cash-transfer-print-session');
+  }
 
   this.clearPosSessionSalesAccumulators();
   location.reload();

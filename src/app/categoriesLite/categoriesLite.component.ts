@@ -278,7 +278,7 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
     }
 
 
-    this.selectedCategoryProducts = normalizedDishes;
+    this.selectedCategoryProducts = this.applyOrderTypePrice(normalizedDishes);
     if(localStorage.getItem('selectedOrderType') === 'talabat'){
       this.selectedCategoryProducts = this.selectedCategoryProducts.filter(dish => dish.is_integration === true);
     }
@@ -311,6 +311,19 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
         };
       })
       .filter((dish: any) => this.isDishActive(dish));
+  }
+
+  private applyOrderTypePrice(dishes: any[]): any[] {
+    const selectedOrderType = localStorage.getItem('selectedOrderType');
+
+    if (selectedOrderType !== 'talabat') {
+      return dishes;
+    }
+
+    return dishes.map((dish: any) => ({
+      ...dish,
+      price: dish?.Id_menus_integrations?.[0]?.menus_integration_dishs?.[0]?.price ?? dish.price,
+    }));
   }
 
   isDishActive(dish: any): boolean {
@@ -389,7 +402,7 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
 
         // If user is currently viewing that category, update the view
         if (this.selectedCategory && this.selectedCategory.id === targetCategoryId) {
-          this.selectedCategoryProducts = targetCategory.dishes
+          const normalizedDishes = targetCategory.dishes
             .filter((d: any) => d && d.dish)
             .map((d: any) => ({
               ...d.dish,
@@ -398,6 +411,10 @@ export class CategoriesLiteComponent implements OnInit, OnDestroy {
             }))
             .filter((dish: any) => this.isDishActive(dish));
 
+          this.selectedCategoryProducts = this.applyOrderTypePrice(normalizedDishes);
+          if (localStorage.getItem('selectedOrderType') === 'talabat') {
+            this.selectedCategoryProducts = this.selectedCategoryProducts.filter((dish: any) => dish.is_integration === true);
+          }
           this.filteredOrders = [...this.selectedCategoryProducts];
         }
 

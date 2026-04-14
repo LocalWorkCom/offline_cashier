@@ -262,6 +262,46 @@
   background-repeat: no-repeat;
 }
 
+/* طباعة تحويل النقدية: الشعار + أسطر الملخص والتواريخ ووقت الطباعة في المنتصف فقط */
+#print-section .print-section-logo-wrap {
+  text-align: center;
+}
+
+#print-section .print-transfer-centered-head,
+#print-section .print-transfer-centered-head .total,
+#print-section .print-transfer-centered-head p,
+#print-section .print-transfer-centered-head span {
+  text-align: center !important;
+  font-weight: 700;
+}
+
+/* نفس وزن صفوف الجداول (مع styles.css عند الطباعة بعد executePrint) */
+#print-section.cash-transfer-print .print-transfer-centered-meta,
+#print-section.cash-transfer-print .print-transfer-centered-meta .total,
+#print-section.cash-transfer-print .print-transfer-centered-meta span,
+#print-section.cash-transfer-print .print-transfer-centered-meta p {
+  font-weight: 700 !important;
+}
+
+#print-section.cash-transfer-print .print-transfer-centered-meta span.fw-normal,
+#print-section.cash-transfer-print .print-transfer-centered-head span.fw-normal {
+  font-weight: 700 !important;
+}
+
+#print-section .print-transfer-centered-head .total,
+#print-section .print-transfer-centered-head p {
+  line-height: 1.4;
+  margin: 3px 0;
+  word-wrap: break-word;
+  overflow-wrap: anywhere;
+}
+
+#print-section .print-transfer-datetime {
+  direction: ltr;
+  unicode-bidi: isolate;
+  font-variant-numeric: tabular-nums;
+}
+
 .table-content {
   display: flex;
   padding: 5px;
@@ -272,11 +312,110 @@
   font-weight: bold;
 }
 
+#print-section.cash-transfer-print .table-content,
+#print-section.cash-transfer-print .table-content span {
+  font-size: 11px !important;
+}
+
 .table-content:last-child {
   border-bottom: none;
 }
 .ll .table-content:last-child {
   border-bottom: 1px solid black;
+}
+
+/* تحويل النقدية: بدون خطوط بين صفوف .table-content (الإطار علوي/سفلي من .cash-transfer-print-table-wrap في styles.css) */
+#print-section.cash-transfer-print .cash-transfer-print-table-wrap .table-content,
+#print-section.cash-transfer-print .cash-transfer-print-table-wrap .table-content:last-child {
+  border-bottom: none !important;
+}
+
+/* تحويل النقدية: المحتوى تحت عناوين الأقسام أوضح من وزن 600 الافتراضي في styles.css */
+#print-section.cash-transfer-print .cash-transfer-print-table-wrap .table-content,
+#print-section.cash-transfer-print .cash-transfer-print-table-wrap .table-content span {
+  font-weight: 700 !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-block .branch-shift-print-subtitle {
+  font-weight: 700 !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-meta-row,
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-meta-row span,
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-row,
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-row span {
+  font-weight: 700 !important;
+}
+
+/* نقطة البيع — عنوان فيغما + تنسيق عمودين للصفوف */
+#print-section.cash-transfer-print .branch-shift-print-heading--figma {
+  margin-bottom: 0.45rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid #000;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-title--figma {
+  border-top: none !important;
+  padding-top: 0 !important;
+  margin-bottom: 0.2rem !important;
+  font-size: 16px !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-subtitle--figma {
+  font-size: 13px !important;
+  line-height: 1.35;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-tables-outer {
+  direction: rtl !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-meta-row,
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-row {
+  display: flex !important;
+  flex-direction: row !important;
+  direction: rtl !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  justify-content: space-between !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-meta-label,
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-row-label {
+  flex: 1 1 0% !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  text-align: right !important;
+  padding-inline-end: 8px !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-row-label.branch-shift-row-label--keep-phrase {
+  white-space: nowrap !important;
+  flex: 0 1 auto !important;
+  min-width: min-content !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-meta-value {
+  flex: 0 0 auto !important;
+  min-width: 0 !important;
+  max-width: 48% !important;
+  text-align: left !important;
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
+  white-space: normal !important;
+  word-break: break-word !important;
+}
+
+#print-section.cash-transfer-print .branch-shift-print-tables-outer .branch-shift-row-value {
+  flex: 0 0 auto !important;
+  min-width: 5.75rem !important;
+  max-width: 48% !important;
+  text-align: left !important;
+  direction: ltr !important;
+  unicode-bidi: isolate !important;
+  white-space: nowrap !important;
 }
 
 /* —— ملخص وردية الفرع / الماكينة (طباعة بعد تحويل النقدية + نفس البلوك إن وُجد في تقرير الخروج) —— */
@@ -296,7 +435,7 @@
 #logout-report-section .branch-shift-print-subtitle {
   font-size: 9px !important;
   font-weight: 600;
-  color: #333;
+  color: #000000;
   margin-bottom: 0.35rem !important;
   line-height: 1.35;
 }
@@ -380,9 +519,7 @@
   min-height: 70px;
   max-width: 100%;
 }
-#print-section p ,#print-section span,.total{
-  font-size: 11px;
-}
+/* حجم خط تقرير تحويل النقدية يُضبط في styles.css ليطابق الفاتورة (11px / .total 16px) */
 
 #print-section,
 #logout-report-section{
@@ -435,11 +572,14 @@
 }
 .line {
   padding-bottom: 10px;
-  border-bottom: 3px solid black;
+  border-bottom: 1px solid black;
 }
 
 /* Shift Closing Report – prevent footer overlap when printing */
 @media print {
+  /* تحويل النقدية: الهوامش العرضية تُضبط في styles.css + كلاس html من executePrint
+     (عنصر الطباعة المُنشأ بـ JS لا يحمل _ngcontent فلا تصله أنماط هذا الملف) */
+
   #print-section .print-report-footer,
   #print-section .print-report-footer-bottom,
   #print-section #dd {

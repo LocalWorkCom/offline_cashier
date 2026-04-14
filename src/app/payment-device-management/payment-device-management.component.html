@@ -1,0 +1,49 @@
+<div class="d-flex justify-content-end mb-3">
+  <button class="btn btn-danger rounded-pill px-4" (click)="openCreateModal()">
+    <i class="fas fa-plus-circle me-2"></i>
+    إضافة جهاز
+  </button>
+</div>
+
+<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+  <div class="table-responsive">
+    <table class="table align-middle mb-0">
+      <thead class="table-light">
+        <tr>
+          <th class="text-end">اسم الجهاز</th>
+          <th class="text-end">IP</th>
+          <th class="text-end">الرصيد</th>
+          <th class="text-end">الحالة</th>
+          <th class="text-end">الإجراءات</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let device of devices">
+          <td>{{ device.name }}</td>
+          <td>{{ device.ip }}</td>
+          <td>{{ device.balance | number:'1.0-2' }} ج.م</td>
+          <td>
+            <span [class]="getStatusClass(device.status)">{{ getStatusLabel(device.status) }}</span>
+          </td>
+          <td>
+            <div class="d-flex gap-2">
+              <button class="btn btn-sm btn-outline-secondary" (click)="openEditModal(device)">
+                <i class="fas fa-edit"></i>
+              </button>
+              <button class="btn btn-sm btn-outline-danger" (click)="openDeleteModal(device)">
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+
+        <tr *ngIf="!devices.length">
+          <td colspan="5" class="text-center text-muted py-4">
+            لا توجد أجهزة دفع حالياً
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+

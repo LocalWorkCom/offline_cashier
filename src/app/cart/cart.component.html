@@ -4,7 +4,7 @@
       <i class="fa-solid fa-arrows-rotate px-1"></i>
       تغيير نوع الطلب
     </button>
-    
+
     <button type="button" class="btn btn-action-delete flex-fill py-2 text-center text-white" (click)="cancelOrder()" title="حذف الطلب" style="font-size: 13px;">
       <i class="fa-solid fa-trash-can px-1"></i>
       حذف الطلب
@@ -14,6 +14,16 @@
       <i class="fa-solid fa-chair px-1"></i>
       تغيير الطاولة
     </a>
+  </div>
+
+  <div *ngIf="!isLoading && (orderDetails?.order_type || orderDetails?.order_details?.order_type)" class="d-flex justify-content-end align-items-center gap-2 mb-2">
+    <span class="badge bg-main d-inline-flex align-items-center">
+      <i [ngClass]="getOrderTypeIconClass(orderDetails?.order_type || orderDetails?.order_details?.order_type)" class="ms-1"></i>
+      {{ getOrderTypeShortLabel(orderDetails?.order_type || orderDetails?.order_details?.order_type) }}
+    </span>
+    <span class="badge text-bg-light border text-dark">
+      {{ getBusinessOrderTypeShortLabel() }}
+    </span>
   </div>
 
   <ul class="nav nav-pills px-0 align-items-center" id="pills-tab" role="tablist">
@@ -201,7 +211,7 @@
     </div>
     <div class="d-flex align-items-center gap-2">
       <h6 class="fw-bold mb-0">
-        <span>{{ item.total_dish_price }}</span> {{ currencySymbol }}
+        <span>{{ item.total_dish_price | number:'1.2-2' }}</span> {{ currencySymbol }}
       </h6>
       <ng-container *ngIf="canShowItemActions(item)">
         <button type="button" class="btn btn-action-delete btn-sm py-1 px-2 text-white" (click)="openDeleteItemModal(item)" [disabled]="removeItemLoading === (item.id || item.order_detail_id)" title="إلغاء صنف">
@@ -220,7 +230,7 @@
     <ul class="list-unstyled p-0 m-0">
       <li class="order-list">
         <p>مجموع طلبي</p>
-        <p class="fw-bold">{{ orderSummary?.subtotal_price_before_coupon }}{{ currencySymbol }}</p>
+        <p class="fw-bold">{{ orderSummary?.subtotal_price_before_coupon | number:'1.2-2' }}{{ currencySymbol }}</p>
       </li>
 
       @if (+orderSummary?.coupon_value !== 0){
@@ -238,7 +248,7 @@
       <li class="order-list" *ngIf="deliveryFees">
         <p>رسوم التوصيل</p>
         <p class="fw-bold">
-          {{ orderSummary?.delivery_fees
+          {{ orderSummary?.delivery_fees | number:'1.2-2'
           }} {{ currencySymbol }}
         </p>
       </li>
@@ -249,7 +259,7 @@
       <small>
         تضاف ضريبة القيمة المضافة
         {{ orderSummary?.tax_percentage }}% بمعنى أخر
-        <span class="main-color fw-bold"> {{ orderSummary?.tax_value }}{{ currencySymbol }} </span>
+        <span class="main-color fw-bold"> {{ orderSummary?.tax_value | number:'1.2-2' }}{{ currencySymbol }} </span>
       </small>
     </div>
     }
@@ -268,7 +278,7 @@
         المجموع الكلى
       </p>
       <p class="fw-bold">
-        {{ orderSummary?.total_price }} {{ currencySymbol }}
+        {{ orderSummary?.total_price | number:'1.2-2' }} {{ currencySymbol }}
       </p>
     </div>
 
@@ -284,7 +294,7 @@
           <div>
             {{ getPaymentMethodLabel(inv.payment_method) }}
           </div>
-          <div>{{ inv.paid }} {{currencySymbol}}</div>
+          <div>{{ inv.paid | number:'1.2-2' }} {{currencySymbol}}</div>
         </div>
       </div>
     </div>

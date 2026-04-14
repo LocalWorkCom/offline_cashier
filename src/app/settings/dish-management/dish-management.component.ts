@@ -19,7 +19,7 @@ export class DishManagementComponent implements OnInit, OnDestroy {
   dishesLoading = false;
   successMessage: string = '';
   errorMessage: string = '';
-  
+
   // Search and Filters
   searchTerm: string = '';
   statusFilter: string = 'all'; // 'all', 'active', 'inactive'
@@ -36,7 +36,7 @@ export class DishManagementComponent implements OnInit, OnDestroy {
 
     // Setup search debouncing
     this.searchSubject.pipe(
-      debounceTime(500),
+      debounceTime(2000),
       distinctUntilChanged()
     ).subscribe(() => {
       this.loadDishes();
@@ -71,10 +71,10 @@ export class DishManagementComponent implements OnInit, OnDestroy {
     }
 
     this.dishesLoading = true;
-    
+
     this.productsService.getMenuDishesAll(
-      this.selectedCategoryId, 
-      this.searchTerm, 
+      this.selectedCategoryId,
+      this.searchTerm,
       this.statusFilter
     ).subscribe({
       next: (res: any) => {

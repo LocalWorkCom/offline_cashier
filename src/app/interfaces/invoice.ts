@@ -1,7 +1,7 @@
 export interface invoice {
    "invoice_number": string,
                 "invoice_print_status":string,
-                "order_id": number,
+               "order_id": string,
                 "order_type": string,
                 "order_number": string,
                 "order_items_count": number,

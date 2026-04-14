@@ -337,18 +337,37 @@
       </a>
     </div>
     }
+    <div class="business-order-type-inline mb-3">
+      <div class="business-order-type-inline__label">
+        نوع الطلب :
+      </div>
+      <div class="business-order-type-inline__control">
+        <select class="form-select custom-cursor business-order-type-inline__select"
+          [ngModel]="selectedBusinessOrderType"
+          (ngModelChange)="setBusinessOrderType($event)"
+          [disabled]="!!currentOrderData">
+          <option *ngFor="let item of BUSINESS_ORDER_TYPES" [ngValue]="item.value">{{ item.label }}</option>
+        </select>
+      </div>
+    </div>
     @if (!currentOrderData) {
     <div class="d-flex flex-md-row flex-column justify-content-between mt-3 flex-wrap">
       @if (selectedOrderType !== 'talabat') {
-      <button class="btn reversed main-color d-flex align-items-center mx-2 mb-3" data-bs-toggle="modal"
-        data-bs-target="#couponModal">
+      <button type="button" class="btn reversed main-color d-flex align-items-center mx-2 mb-3"
+        [attr.data-bs-toggle]="isLoading ? null : 'modal'"
+        [attr.data-bs-target]="isLoading ? null : '#couponModal'"
+        [disabled]="isLoading"
+        [attr.aria-disabled]="isLoading">
         <i class="fa fa-plus" aria-hidden="true"></i>
         <span class="mb-0 w-100"> أضف كوبون </span>
       </button>
       }
 
-      <button class="btn reversed main-color d-flex align-items-center mx-2 mb-3" data-bs-toggle="modal"
-        data-bs-target="#noteModal">
+      <button type="button" class="btn reversed main-color d-flex align-items-center mx-2 mb-3"
+        [attr.data-bs-toggle]="isLoading ? null : 'modal'"
+        [attr.data-bs-target]="isLoading ? null : '#noteModal'"
+        [disabled]="isLoading"
+        [attr.aria-disabled]="isLoading">
         <i class="fa fa-plus" aria-hidden="true"></i>
         <span class="mb-0 w-100"> أضف ملاحظة </span>
       </button>
@@ -600,12 +619,24 @@
             </label>
           </div>
           <ng-container *ngIf="selectedOrderType === 'talabat' && selectedPaymentStatus === 'paid'">
-            <label class="payment-option-label" [class.active-payment]="selectedPaymentMethod === 'cash'"
-              (click)="selectPaymentMethod('cash')">
+            <label class="payment-option-label" [class.active-payment]="selectedPaymentMethod === 'deferred'"
+              (click)="selectPaymentMethod('deferred')">
               <i class="fas fa-money-bill-wave me-1"></i>
-              <span class="label-text">كاش</span>
+              <span class="label-text">آجل</span>
             </label>
           </ng-container>
+        </div>
+        <div class="payment-device-select-wrap mb-3" *ngIf="shouldShowPaymentDeviceSelector()">
+          <select class="form-select payment-device-select" [ngModel]="selectedPaymentDeviceId"
+            (ngModelChange)="onPaymentDeviceChange($event)">
+            <option [ngValue]="null">اختر ماكينة الدفع</option>
+            <option *ngFor="let device of paymentDevices" [ngValue]="device.id">
+              {{ device.name }}{{ device.isRecommended ? ' (موصى بها)' : '' }}
+            </option>
+          </select>
+        </div>
+        <div *ngIf="paymentDeviceError && shouldShowPaymentDeviceSelector()" class="alert alert-danger py-2 mt-2">
+          <small><i class="fas fa-exclamation-circle me-1"></i> {{ paymentDeviceError }}</small>
         </div>
         <div *ngIf="formSubmitted && selectedPaymentStatus === 'paid' && !selectedPaymentMethod" class="alert alert-danger py-2 mt-2">
           <small><i class="fas fa-exclamation-circle me-1"></i> يرجى اختيار طريقة الدفع (كاش/فيزا)</small>
@@ -822,19 +853,19 @@
       </div>
       }
       <!-- في حالة غير مدفوع -->
-      <div *ngIf="selectedOrderType === 'talabat' && selectedPaymentStatus === 'unpaid'" class="card p-3 mb-3">
-        <div class="d-flex justify-content-between flex-wrap gap-2">
+      <!-- <div *ngIf="selectedOrderType === 'talabat' && selectedPaymentStatus === 'unpaid'" class="card p-3 mb-3">
+        <div class="d-flex justify-content-between flex-wrap gap-2"> -->
           <!-- الحالة الخاصة بطلبات + غير مدفوع - تظهر آجل فقط -->
           <!-- <ng-container *ngIf="selectedOrderType === 'talabat' && selectedPaymentStatus === 'unpaid'"> -->
-          <label class="payment-option-label" [class.active-payment]="selectedPaymentMethod === 'deferred'"
+          <!-- <label class="payment-option-label" [class.active-payment]="selectedPaymentMethod === 'deferred'"
             (click)="selectPaymentMethod('deferred')">
             <i class="fas fa-calendar-alt me-1"></i>
             <span class="label-text">آجل</span>
-          </label>
+          </label> -->
           <!-- </ng-container> -->
 
-        </div>
-      </div>
+        <!-- </div>
+      </div> -->
 
       @if (trueMessage) {
       <p class="message">{{ trueMessage }}</p>
@@ -1256,10 +1287,11 @@
             <i class="fas fa-file-alt main-color fa-xs"></i>
             لديك اى ملاحظات اضافيه؟
           </h6>
-          <div class="form-floating mt-3">
-            <textarea class="form-control" placeholder="من فضلك اكتب ملاحظتك" id="floatingTextarea2"
-              [(ngModel)]="additionalNote" style="height: 100px"></textarea>
-            <label for="floatingTextarea2">من فضلك اكتب ملاحظتك</label>
+          <div class="mt-3">
+            <textarea class="form-control" id="orderAdditionalNote" name="additionalNote" rows="4"
+              [(ngModel)]="additionalNote"
+              placeholder="من فضلك اكتب ملاحظاتك"
+              aria-label="من فضلك اكتب ملاحظاتك"></textarea>
           </div>
         </div>
       </div>

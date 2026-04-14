@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, BehaviorSubject, throwError } from 'rxjs';
+import { Observable, BehaviorSubject, throwError, of } from 'rxjs';
 import { tap, catchError } from 'rxjs/operators';
 import { AuthService } from './auth.service';
 import { baseUrl } from '../environment'; 
@@ -236,9 +236,9 @@ PrintBalance(id:number): Observable<any> {
       params['cashier_machine_id'] = cashierMachineId;
     }
     return this.http.get<any>(`${baseUrl}api/cashier/branch-shift-report`, { headers, params }).pipe(
-      catchError(error => {
-        console.error('Error fetching branch shift report:', error);
-        return throwError(() => error);
+      catchError((error) => {
+        console.warn('Branch shift report unavailable (printing continues without branch block):', error);
+        return of({ status: false, data: null });
       })
     );
   }

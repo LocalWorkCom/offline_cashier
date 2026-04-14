@@ -10,10 +10,10 @@
 
   <div class="my-2">
     <h4 class="fw-bold">تفاصيل الطلب <span class="badge text-bg-danger"
-        *ngIf="orderDetails.status == 'cancelled' || orderDetails.status == 'cancel'">ملغي</span></h4>
+        *ngIf="isOrderCancelled()">ملغي</span></h4>
   </div>
 
-  @if(orderDetails?.status_order !== 'cancelled') {
+  @if (!isOrderCancelled()) {
   <div *ngIf="!loading && orderDetails && canShowOrderActions()" class="d-flex w-100 gap-2 my-2">
     <button type="button" class="btn reversed main-color flex-fill py-2 text-center" (click)="openChangeOrderTypeModalFromDetails()" title="تغيير نوع الطلب">
       <i class="fa-solid fa-arrows-rotate px-1"></i>
@@ -31,6 +31,15 @@
     </a>
   </div>
   }
+  <div *ngIf="!loading && orderDetails?.order_type" class="d-flex justify-content-end align-items-center gap-2 mb-2">
+    <span class="badge bg-main d-inline-flex align-items-center">
+      <i [ngClass]="getOrderTypeIconClass(orderDetails?.order_type)" class="ms-1"></i>
+      {{ getOrderTypeShortLabel(orderDetails?.order_type) }}
+    </span>
+    <span class="badge text-bg-light border text-dark">
+      {{ getBusinessOrderTypeShortLabel() }}
+    </span>
+  </div>
   <p class="fs-4  text-center" [ngClass]="status_order? 'text-success' : 'main-color' ">{{errorMessage}}</p>
   <div *ngIf="loading" class="card px-4 py-2 my-2">
     <div class="d-flex justify-content-between">
@@ -53,9 +62,7 @@
       <div *ngIf="orderDetails.transactions?.length == 1">
         <h5>
           <span class="badge bg-success text-white">
-            {{
-            displayPaymentMethodLabel
-            }}
+            {{ displayPaymentBadgeText }}
           </span>
         </h5>
 

@@ -39,7 +39,7 @@ import { OrdersService } from '../services/orders.service';
 import { AuthService } from '../services/auth.service';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { NgxCountriesDropdownModule } from 'ngx-countries-dropdown';
-import { baseUrl } from '../environment';
+import { baseUrl, baseUrl2 } from '../environment';
 //start hanan
 import { IndexeddbService } from '../services/indexeddb.service';
 import { SyncService } from '../services/sync.service';
@@ -50,6 +50,14 @@ declare var bootstrap: any;
 interface Country {
   code: string;
   flag: string;
+}
+interface PaymentDeviceOption {
+  id: number;
+  name: string;
+  ip: string;
+  status: 'active' | 'inactive';
+  lastUsedAt?: string | null;
+  isRecommended?: boolean;
 }
 import { ReceiptComponent } from '../receipt/receipt.component';
 
@@ -91,7 +99,19 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   addressIdformData: any = null;
 
   selectedOrderType: any;
+  selectedBusinessOrderType: 'client_meal' | 'staff_meal' | 'charity_meal' | 'hospitality_meal' = 'client_meal';
+  readonly BUSINESS_ORDER_TYPE_STORAGE_KEY = 'selectedBusinessOrderType';
+  readonly BUSINESS_ORDER_TYPES: Array<{ value: 'client_meal' | 'staff_meal' | 'charity_meal' | 'hospitality_meal'; label: string }> = [
+    { value: 'client_meal', label: 'وجبات العميل' },
+    { value: 'staff_meal', label: 'وجبات الموظفين' },
+    { value: 'charity_meal', label: 'وجبات صدقات' },
+    { value: 'hospitality_meal', label: 'وجبات الضيافة' },
+  ];
   selectedPaymentMethod: any;
+  paymentDevices: PaymentDeviceOption[] = [];
+  selectedPaymentDeviceId: number | null = null;
+  paymentDeviceError: string = '';
+  readonly LAST_USED_PAYMENT_DEVICE_STORAGE_KEY = 'last_used_payment_device_id';
   selectedPaymentStatus: string = 'unpaid';
   appliedCoupon: any;
   branchData: any = null;
@@ -486,6 +506,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     });
 
     this.loadBranchData();
+    this.loadPaymentDevices();
     this.restoreCoupon();
     // this.loadSelectedCourier();
     // this.applyAdditionalNote();
@@ -587,6 +608,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.currentOrderId = +orderId; // خزناه عشان نستخدمه مع API
       console.log("🔄 نستكمل الطلب برقم:", this.currentOrderId);
     }
+    this.initializeBusinessOrderType();
     // const storedCart = localStorage.getItem('cart');
     // this.cartItems = storedCart ? JSON.parse(storedCart) : [];
 
@@ -2082,6 +2104,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   clearOrderType() {
     this.selectedOrderType = '';
     localStorage.removeItem('selectedOrderType');
+    this.selectedBusinessOrderType = 'client_meal';
+    localStorage.removeItem(this.BUSINESS_ORDER_TYPE_STORAGE_KEY);
   }
 
   removeCoupon() {
@@ -2580,6 +2604,24 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       itemsWithCategory.push(itemData);
     }
+    
+    
+
+
+    // ✅ لو الكوبون أو الخصم جعل المبلغ المستحق = 0 (بدون طلبات)
+    // نعتبر الطلب "مدفوع" حتى لو لم يغيّر الكاشير الحالة يدوياً.
+    const effectiveBillAmount = this.finalTipSummary?.billAmount ?? this.getCartTotal();
+    let resolvedPaymentStatus = this.selectedPaymentStatus;
+
+    if (
+      effectiveBillAmount <= 0 &&
+      (this.appliedCoupon || this.validCoupon) &&
+      this.selectedOrderType !== 'talabat' &&
+      this.selectedOrderType !== 'طلبات'
+    ) {
+      resolvedPaymentStatus = 'paid';
+      this.selectedPaymentStatus = 'paid';
+    }
 
     return {
       isOnline: navigator.onLine,
@@ -2589,15 +2631,18 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       table_number: table_number ?? null,
       table_id: table_number ?? null,
       type: this.selectedOrderType,
+      order_type: this.selectedBusinessOrderType || 'client_meal',
       delivery_id: this.selectedDriverId || null,
       branch_id: branchId,
       payment_method: this.selectedPaymentMethod ?? 'cash',
-      payment_status: this.selectedPaymentStatus,
+      payment_status: resolvedPaymentStatus,
       // cash_amount: this.selectedPaymentMethod === "cash" ? this.finalTipSummary?.billAmount ?? 0 : 0,
       // credit_amount: this.selectedPaymentMethod === "credit" ? this.finalTipSummary?.billAmount ?? 0 : 0,
       cash_amount: this.cash_amountt,
       credit_amount: this.credit_amountt,
       cashier_machine_id: localStorage.getItem('cashier_machine_id'),
+      payment_device_id: this.selectedPaymentDeviceId || null,
+      payment_device: this.selectedPaymentDeviceId || null,
       ...(this.clientPhoneStoredInLocal ? { client_country_code: this.selectedCountry.code || "+20" } : {}),
       ...(this.clientPhoneStoredInLocal ? { client_phone: this.clientPhoneStoredInLocal } : {}),
       ...(this.clientStoredInLocal ? { client_name: this.clientStoredInLocal } : {}),
@@ -2616,10 +2661,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       payment_amount: this.finalTipSummary?.paymentAmount ?? 0,
       bill_amount: this.finalTipSummary?.billAmount ?? this.getCartTotal(),
       // ✅ استخدام grandTotalWithTip مباشرة (المبلغ المستحق + الإكرامية)
-      total_with_tip: this.finalTipSummary?.grandTotalWithTip ?? ((this.finalTipSummary?.tipAmount ?? 0) + (this.finalTipSummary?.billAmount ?? 0)) ?? this.getCartTotal(),
+      total_with_tip: this.finalTipSummary?.grandTotalWithTip ?? ((this.finalTipSummary?.tipAmount ?? 0) + (this.finalTipSummary?.billAmount ?? 0)),
       returned_amount: this.finalTipSummary?.changeToReturn ?? 0,
       menu_integration: this.selectedOrderType === 'talabat' ? true : false,
-      payment_status_menu_integration: this.selectedPaymentStatus,
+      payment_status_menu_integration: resolvedPaymentStatus,
       payment_method_menu_integration: this.selectedPaymentMethod,
 
       // dalia end tips
@@ -2838,6 +2883,13 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       return;
     }
 
+    if (this.shouldShowPaymentDeviceSelector() && !this.selectedPaymentDeviceId) {
+      this.isLoading = false;
+      this.loading = false;
+      this.paymentDeviceError = 'يرجى اختيار ماكينة الدفع.';
+      return;
+    }
+
     // جلب البيانات الأساسية
     const branchId = Number(localStorage.getItem('branch_id')) || null;
     const tableId = Number(localStorage.getItem('table_id')) || this.table_id || this.currentOrderData?.order_details?.table_number || null;
@@ -2935,7 +2987,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         let totalEntered = 0;
         const cartTotal = Number(this.getCartTotal().toFixed(2));
         // ✅ حالة خاصة لطلبات + مدفوع + كاش - استخدام الإجمالي مباشرة
-        if (isTalabat && this.selectedPaymentMethod === 'cash') {
+        if (isTalabat && this.selectedPaymentMethod === 'deferred') {
           totalEntered = cartTotal;
           console.log('💰 Talabat + Paid + Cash: Using cart total directly', totalEntered);
           // تعيين القيم مباشرة
@@ -2945,7 +2997,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             serviceFee: 0,
             billAmount: cartTotal,
             paymentAmount: cartTotal,
-            paymentMethod: 'كاش',
+            paymentMethod: 'آجل',
             tipAmount: 0,
             grandTotalWithTip: cartTotal,
             changeToReturn: 0
@@ -3295,7 +3347,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
           }
         } else if (this.selectedPaymentMethod === 'deferred') {
           orderData.cash_amount = 0;
-          orderData.credit_amount = 0;
+          orderData.credit_amount = this.getCartTotal();
         }
 
         // 🔒 تأكيد أن المبلغ المدفوع لا يقل عن الإجمالي مع الإكرامية قبل متابعة الطلب
@@ -3555,6 +3607,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         this.showError('فشل حفظ الطلب. يرجى المحاولة مرة أخرى.');
         return;
       }
+
+      this.markSelectedPaymentDeviceAsLastUsed();
 
       // تنظيف البيانات
       const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
@@ -4831,8 +4885,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
 
 
-    // ✅ الشرط الجديد: إذا كان الطلب من طلبات وغير مدفوع، اختيار آجل تلقائياً
-    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
+    // ✅ إذا كان الطلب من طلبات، اختاري "آجل" تلقائياً
+    if (this.selectedOrderType === 'talabat') {
       this.selectedPaymentMethod = 'deferred';
     }
 
@@ -4863,6 +4917,57 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       // }, 300);
     }
   }
+
+  private initializeBusinessOrderType(): void {
+    const fromStorage = localStorage.getItem(this.BUSINESS_ORDER_TYPE_STORAGE_KEY);
+    const currentOrderType = this.extractBusinessOrderTypeFromCurrentOrder();
+    const resolved = this.isValidBusinessOrderType(fromStorage)
+      ? fromStorage
+      : (currentOrderType || 'client_meal');
+    this.selectedBusinessOrderType = resolved;
+    localStorage.setItem(this.BUSINESS_ORDER_TYPE_STORAGE_KEY, resolved);
+  }
+
+  private extractBusinessOrderTypeFromCurrentOrder(): 'client_meal' | 'staff_meal' | 'charity_meal' | 'hospitality_meal' | null {
+    const order = this.currentOrderData;
+    const candidates = [
+      order?.order_details?.business_order_type,
+      order?.order_details?.meal_order_type,
+      order?.order_details?.order_type_classification,
+      order?.order_details?.order_purpose_type,
+      order?.business_order_type,
+      order?.meal_order_type,
+      order?.order_type_classification,
+      order?.order_purpose_type,
+      order?.order_type,
+    ];
+    for (const candidate of candidates) {
+      if (this.isValidBusinessOrderType(candidate)) {
+        return candidate;
+      }
+    }
+    return null;
+  }
+
+  setBusinessOrderType(value: string): void {
+    this.selectedBusinessOrderType = this.isValidBusinessOrderType(value) ? value : 'client_meal';
+    localStorage.setItem(this.BUSINESS_ORDER_TYPE_STORAGE_KEY, this.selectedBusinessOrderType);
+  }
+
+  getBusinessOrderTypeLabel(value: string | null | undefined): string {
+    const map: Record<string, string> = {
+      client_meal: 'وجبات العميل',
+      staff_meal: 'وجبات الموظفين',
+      charity_meal: 'وجبات صدقات',
+      hospitality_meal: 'وجبات الضيافة',
+    };
+    return map[value || 'client_meal'] || 'وجبات العميل';
+  }
+
+  private isValidBusinessOrderType(value: unknown): value is 'client_meal' | 'staff_meal' | 'charity_meal' | 'hospitality_meal' {
+    return value === 'client_meal' || value === 'staff_meal' || value === 'charity_meal' || value === 'hospitality_meal';
+  }
+
   async findCategoryByDishId(cartItem: any): Promise<void> {
     try {
       console.log('🔍 Searching for category by dish ID:', cartItem);
@@ -5161,7 +5266,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   }
   removeNote() {
     localStorage.removeItem('additionalNote');
-    this.additionalNote = ' ';
+    this.additionalNote = '';
     // Attempt to close the modal.
     const modalEl = document.getElementById('noteModal');
     if (modalEl) {
@@ -5237,21 +5342,66 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const backdrops = document.querySelectorAll('.modal-backdrop');
     backdrops.forEach((backdrop) => backdrop.remove());
   }
+
+  /**
+   * قبل مودال «تم تنفيذ طلبك»: إغلاق مودالات Bootstrap المفتوحة (كوبون/ملاحظة/عميل…)
+   * ونوافذ ng-bootstrap حتى لا يتراكب الـ backdrop ويحدث تجمّد أو أخطاء Bootstrap غير مُلتقَطة.
+   */
+  private prepareForSuccessModal(): void {
+    try {
+      this.modalService.dismissAll();
+    } catch {
+      /* noop */
+    }
+    if (typeof document === 'undefined' || typeof bootstrap === 'undefined') {
+      return;
+    }
+    document.querySelectorAll('.modal.show').forEach((node) => {
+      const el = node as HTMLElement;
+      if (el.id === 'successModal') {
+        return;
+      }
+      let inst = bootstrap.Modal.getInstance(el);
+      if (!inst && typeof bootstrap.Modal.getOrCreateInstance === 'function') {
+        inst = bootstrap.Modal.getOrCreateInstance(el);
+      }
+      if (inst) {
+        try {
+          inst.hide();
+        } catch {
+          /* ignore */
+        }
+      }
+    });
+    document.querySelectorAll('.modal-backdrop').forEach((b) => b.remove());
+    document.body.classList.remove('modal-open');
+    document.body.style.removeProperty('padding-right');
+    document.body.style.removeProperty('overflow');
+  }
+
+  /** بعد تنظيف المودالات، انتظر دورة قصيرة ثم اعرض مودال النجاح */
+  private showSuccessModalAfterStackCleared(): void {
+    setTimeout(() => {
+      if (this.successModal) {
+        try {
+          this.successModal.show();
+        } catch (e) {
+          console.error('successModal.show failed', e);
+        }
+      }
+    }, 120);
+  }
   onPaymentStatusChange() {
     // const savedStatus = localStorage.getItem('selectedPaymentStatus');
     // this.selectedPaymentStatus = savedStatus || 'unpaid';
-    // ✅ الشرط الجديد: إذا كان الطلب من طلبات وغير مدفوع، اختيار آجل تلقائياً
-    if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'unpaid') {
+    // ✅ إذا كان الطلب من طلبات، اختاري "آجل" تلقائياً
+    if (this.selectedOrderType === 'talabat') {
       this.selectedPaymentMethod = 'deferred';
     }
 
-    // إذا كان نوع الطلب "طلبات"، عيّن طريقة الدفع المناسبة
+    // إذا كان نوع الطلب "طلبات"، تبقى الطريقة آجل في الحالتين
     if (this.selectedOrderType === 'talabat') {
-      if (this.selectedPaymentStatus === 'paid') {
-        this.selectedPaymentMethod = 'cash'; // مدفوع → كاش
-      } else if (this.selectedPaymentStatus === 'unpaid') {
-        this.selectedPaymentMethod = 'deferred'; // غير مدفوع → آجل
-      }
+      this.selectedPaymentMethod = 'deferred';
     }
     console.log('Payment Status:', this.selectedPaymentStatus); // paid or unpaid
     if (this.selectedPaymentStatus === 'unpaid') {
@@ -5259,10 +5409,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.credit_amountt = 0;
       this.referenceNumber = '';
       this.referenceNumberTouched = false;
+      this.selectedPaymentDeviceId = null;
+      this.paymentDeviceError = '';
       // this.selectedPaymentMethod = '';
       localStorage.removeItem('cash_amountt');
       localStorage.removeItem('credit_amountt');
       localStorage.removeItem('referenceNumber');
+    } else {
+      this.ensureSelectedPaymentDevice();
     }
 
     localStorage.setItem('selectedPaymentStatus', this.selectedPaymentStatus);
@@ -5703,7 +5857,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.tableNumber = null;
     this.FormDataDetails = null;
     this.successMessage = 'تم حفظ طلبك بنجاح';
-    this.successModal.show();
+    this.prepareForSuccessModal();
+    this.showSuccessModalAfterStackCleared();
     localStorage.removeItem('finalOrderId');
     this.finalOrderId = '';
     this.currentOrderData = null;
@@ -5875,6 +6030,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
   // hanan
   selectPaymentMethod(method: 'cash' | 'credit' | 'cash + credit' | 'deferred'): void {
     this.selectedPaymentMethod = method;
+    this.paymentDeviceError = '';
     console.log('Selected Payment Method:', this.selectedPaymentMethod);
     if (method === 'cash') {
       const cartTotal = this.getCartTotal();
@@ -5928,9 +6084,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
     }
 
-    // إذا كان نوع الطلب "طلبات" ومدفوع، تأكدي أن الطريقة هي "كاش"
+    // إذا كان نوع الطلب "طلبات" ومدفوع، اجعلي الطريقة "آجل"
     if (this.selectedOrderType === 'talabat' && this.selectedPaymentStatus === 'paid') {
-      this.selectedPaymentMethod = 'cash';
+      this.selectedPaymentMethod = 'deferred';
       // return;
     }
     // إعادة تعيين القيم عند تغيير طريقة الدفع
@@ -5963,6 +6119,90 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.cash_amountt = 0;
       this.credit_amountt = 0;
     }
+    this.ensureSelectedPaymentDevice();
+  }
+
+  shouldShowPaymentDeviceSelector(): boolean {
+    return this.selectedPaymentStatus === 'paid' && (this.selectedPaymentMethod === 'credit' || this.selectedPaymentMethod === 'cash + credit');
+  }
+
+  onPaymentDeviceChange(value: number | string): void {
+    const parsed = Number(value);
+    this.selectedPaymentDeviceId = Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    this.paymentDeviceError = '';
+  }
+
+  private ensureSelectedPaymentDevice(): void {
+    if (!this.shouldShowPaymentDeviceSelector()) {
+      return;
+    }
+    if (this.selectedPaymentDeviceId && this.paymentDevices.some((d) => d.id === this.selectedPaymentDeviceId)) {
+      return;
+    }
+    const recommended = this.paymentDevices.find((d) => d.isRecommended);
+    this.selectedPaymentDeviceId = recommended?.id ?? this.paymentDevices[0]?.id ?? null;
+  }
+
+  private markSelectedPaymentDeviceAsLastUsed(): void {
+    if (!this.shouldShowPaymentDeviceSelector() || !this.selectedPaymentDeviceId) {
+      return;
+    }
+    localStorage.setItem(this.LAST_USED_PAYMENT_DEVICE_STORAGE_KEY, String(this.selectedPaymentDeviceId));
+    this.paymentDevices = this.paymentDevices.map((d) => ({
+      ...d,
+      isRecommended: d.id === this.selectedPaymentDeviceId,
+    }));
+  }
+
+  private getSelectedPaymentDeviceName(): string | null {
+    if (!this.selectedPaymentDeviceId) {
+      return null;
+    }
+    const selectedDevice = this.paymentDevices.find((d) => d.id === this.selectedPaymentDeviceId);
+    const name = String(selectedDevice?.name || '').trim();
+    return name || null;
+  }
+
+  private loadPaymentDevices(): void {
+    this.http.get<any>(`${baseUrl2}/payment-device/`).subscribe({
+      next: (res) => {
+        const rawDevices = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+        const activeDevices = rawDevices
+          .map((device: any) => ({
+            id: Number(device?.id),
+            name: String(device?.device_name || '').trim(),
+            ip: String(device?.IP || '').trim(),
+            status: device?.status === 'active' ? 'active' : 'inactive',
+            lastUsedAt: device?.last_used_device || null,
+          }))
+          .filter((device: PaymentDeviceOption) => Number.isFinite(device.id) && device.id > 0 && device.status === 'active');
+
+        const storedLastUsedId = Number(localStorage.getItem(this.LAST_USED_PAYMENT_DEVICE_STORAGE_KEY));
+        const backendRecommended = [...activeDevices]
+          .filter((d: PaymentDeviceOption) => !!d.lastUsedAt)
+          .sort((a: PaymentDeviceOption, b: PaymentDeviceOption) => {
+            const aTime = a.lastUsedAt ? new Date(a.lastUsedAt).getTime() : 0;
+            const bTime = b.lastUsedAt ? new Date(b.lastUsedAt).getTime() : 0;
+            return bTime - aTime;
+          })[0];
+
+        const recommendedId = backendRecommended?.id
+          || (activeDevices.some((d: PaymentDeviceOption) => d.id === storedLastUsedId) ? storedLastUsedId : null)
+          || activeDevices[0]?.id
+          || null;
+
+        this.paymentDevices = activeDevices.map((d: PaymentDeviceOption) => ({
+          ...d,
+          isRecommended: recommendedId != null && d.id === recommendedId,
+        }));
+
+        this.ensureSelectedPaymentDevice();
+      },
+      error: () => {
+        this.paymentDevices = [];
+        this.selectedPaymentDeviceId = null;
+      },
+    });
   }
 
   getNearestAmount(amount: number, base: number): number {

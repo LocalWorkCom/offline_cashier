@@ -138,21 +138,23 @@
 
     </div>
 
-    <div class="card p-2 my-2">
-      <div class="accordion accordion-flush" id="accordionFlushExample">
-        <div class="accordion-item">
-          <h2 class="accordion-header" id="flush-headingOne">
-            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
-              data-bs-target="#flush-collapseOne" aria-expanded="false" aria-controls="flush-collapseOne">
-              <h5>
-                <i class="fas fa-file-alt main-color fs-4 ps-2"></i> تفاصيل
-                الطلب
+    <div class="card p-3 my-2">
+      <div class="accordion accordion-flush" id="pill-edit-order-accordion">
+        <div class="accordion-item border-0">
+          <h2 class="accordion-header" id="pill-edit-order-heading">
+            <button class="accordion-button p-2" type="button"
+              [class.collapsed]="!isOrderDetailsOpen"
+              (click)="isOrderDetailsOpen = !isOrderDetailsOpen"
+              [attr.aria-expanded]="isOrderDetailsOpen"
+              aria-controls="pill-edit-order-collapse">
+              <h5 class="mb-0">
+                <i class="fas fa-file-alt main-color fs-4 ps-2"></i> تفاصيل الطلب
               </h5>
             </button>
           </h2>
-          <div id="flush-collapseOne" class="accordion-collapse collapse show" aria-labelledby="flush-headingOne"
-            data-bs-parent="#accordionFlushExample">
-            <div class="accordion-body">
+          <div id="pill-edit-order-collapse" class="accordion-collapse collapse" [class.show]="isOrderDetailsOpen"
+            aria-labelledby="pill-edit-order-heading">
+            <div class="accordion-body p-2" style="max-height: 420px; overflow-y: auto; scroll-behavior: smooth;">
               <div *ngFor="let item of activeOrderDetails"
                 class="d-flex justify-content-between px-1 mb-1 align-items-start"
                 [ngClass]="{'text-warning': isItemCancelled(item)}">
@@ -247,7 +249,7 @@
           isShow
         ">
         <div
-          *ngIf="invoices[0].order_type === 'Takeaway' ||invoices[0].order_type === 'dine-in' || invoices[0].order_type === 'Delivery'">
+          *ngIf="invoices[0].order_type === 'Takeaway' ||invoices[0].order_type === 'dine-in' || invoices[0].order_type === 'Delivery' || invoices[0].order_type === 'talabat'">
           <div class="d-flex gap-4" *ngIf="invoices[0]?.transactions">
             <button class="fs-6 rounded-4 w-50 btn" [ngClass]="{
               'btn-action-delete': paymentStatus === 'unpaid' || (invoices[0]?.transactions[0]?.payment_status === 'unpaid' && paymentStatus !== 'paid'),
@@ -266,7 +268,7 @@
         </div>
       </div>
       <div class=" w-100 my-3"
-        *ngIf="paymentStatus == 'paid' &&  ( invoices[0]?.order_type =='Takeaway' || invoices[0]?.order_type =='dine-in' || invoices[0]?.order_type =='Delivery')">
+        *ngIf="paymentStatus == 'paid' &&  ( invoices[0]?.order_type =='Takeaway' || invoices[0]?.order_type =='dine-in' || invoices[0]?.order_type =='Delivery' || invoices[0]?.order_type =='talabat')">
 
         <!-- خيارات الدفع -->
         <div class="card p-3 mb-4">
@@ -292,6 +294,19 @@
               <span class="label-text">كاش + فيزا</span>
             </label>
           </div>
+        </div>
+        <div class="payment-device-select-wrap mb-3" *ngIf="shouldShowPaymentDeviceSelector()">
+          <select class="form-select payment-device-select" [ngModel]="selectedPaymentDeviceId"
+            (ngModelChange)="onPaymentDeviceChange($event)"
+            [ngModelOptions]="{standalone: true}">
+            <option [ngValue]="null">اختر ماكينة دفع</option>
+            <option *ngFor="let device of paymentDevices" [ngValue]="device.id">
+              {{ device.name }}{{ device.isRecommended ? ' (موصى بها)' : '' }}
+            </option>
+          </select>
+        </div>
+        <div *ngIf="paymentDeviceError && shouldShowPaymentDeviceSelector()" class="alert alert-danger py-2 mt-2">
+          <small><i class="fas fa-exclamation-circle me-1"></i> {{ paymentDeviceError }}</small>
         </div>
 
         <!-- محتوى الدفع للكاش أو الفيزا -->

@@ -18,7 +18,7 @@ import { FormsModule } from '@angular/forms';
 import { ConfirmDialogComponent } from "../shared/ui/component/confirm-dialog/confirm-dialog.component";
 import { finalize } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { baseUrl } from '../environment';
+import { baseUrl, baseUrl2 } from '../environment';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { PrintTimeService } from '../services/print-time.service';
 import { ReceiptComponent } from '../receipt/receipt.component';
@@ -33,11 +33,24 @@ import { SilentPrintService } from '../services/silent-print.service';
   providers: [DatePipe],
 })
 export class PillEditComponent {
+  paymentDevices: Array<{
+    id: number;
+    name: string;
+    ip: string;
+    status: 'active' | 'inactive';
+    lastUsedAt?: string | null;
+    isRecommended?: boolean;
+  }> = [];
+  selectedPaymentDeviceId: number | null = null;
+  paymentDeviceError: string = '';
+  readonly LAST_USED_PAYMENT_DEVICE_STORAGE_KEY = 'last_used_payment_device_id';
   @ViewChild('printedPill') printedPill!: ElementRef;
   @ViewChild('printDialog') confirmationDialog!: ConfirmDialogComponent;
   @ViewChild('tipModalContent') tipModalContent!: TemplateRef<any>;
 
   loading: boolean = false;
+  /** تفاصيل الطلب — طي/توسيع مثل order-details */
+  isOrderDetailsOpen = true;
   receiptData: any;
   isPrinting = false;
   // @ViewChild('deliveredButton', { static: false }) deliveredButton!: ElementRef;
@@ -154,6 +167,7 @@ export class PillEditComponent {
     this.fetchPillsDetails(this.pillId);
 
     this.fetchTrackingStatus();
+    this.loadPaymentDevices();
     // this.getNoteFromLocalStorage();
     this.referenceNumber = '';
     this.referenceNumberTouched = false;
@@ -243,7 +257,7 @@ export class PillEditComponent {
 
         // const trackingKey = this.invoices[0]?.['tracking-status'];
         // this.trackingStatus = trackingKey || '';
-        this.orderNumber = response.data.order_id;
+        this.orderNumber = response.data?.order_id != null ? String(response.data.order_id) : '';
         this.couponType = this.invoices[0]?.invoice_summary?.coupon_type;
 
         this.addresDetails = this.invoices[0]?.address_details || {};
@@ -456,6 +470,12 @@ export class PillEditComponent {
     this.paymentError = '';
     this.paymentAmountError = '';
     this.amountError = false;
+    if (status !== 'paid') {
+      this.selectedPaymentDeviceId = null;
+      this.paymentDeviceError = '';
+    } else {
+      this.ensureSelectedPaymentDevice();
+    }
     console.log(this.paymentStatus);
     this.cdr.detectChanges();
   }
@@ -554,6 +574,12 @@ export class PillEditComponent {
     if (this.paymentStatus === 'paid' && !this.isPaymentAmountValid()) {
       this.amountError = true;
       return; // 🔒 منع المتابعة إذا كان المبلغ غير صحيح
+    }
+
+    if (this.shouldShowPaymentDeviceSelector() && !this.selectedPaymentDeviceId) {
+      this.paymentDeviceError = 'يرجى اختيار ماكينة الدفع.';
+      this.loading = false;
+      return;
     }
 
     // التحقق من رقم المرجع للفيزا
@@ -840,9 +866,15 @@ export class PillEditComponent {
         creditAmount = 0;
       }
 
+      if (!this.orderNumber) {
+        console.error('Missing orderNumber, aborting invoice update to avoid invalid URL');
+        this.loading = false;
+        return;
+      }
+
       this.orderService
         .updateInvoiceStatus(
-          this.orderNumber,
+          String(this.orderNumber),
           this.paymentStatus,
           this.trackingStatus,
           cashAmount,
@@ -851,7 +883,8 @@ export class PillEditComponent {
           finalTotal, // استخدام finalTotal بدلاً من totalll || getInvoiceTotal
           tipData, // ✅ إرسال بيانات الإكرامية
           this.referenceNumber,
-          couponData // إرسال بيانات الكوبون
+          couponData, // إرسال بيانات الكوبون
+          this.selectedPaymentDeviceId || undefined
         ).pipe(finalize(() => this.loading = false))
         .subscribe({
           next: async (response) => {
@@ -877,6 +910,8 @@ export class PillEditComponent {
               this.loading = false;
               return; // ❌ منع إظهار رسالة النجاح إذا لم يتم الحفظ
             }
+
+            this.markSelectedPaymentDeviceAsLastUsed();
 
             // ✅ Success - فقط إذا تم الحفظ بنجاح
             this.apiErrors = [];
@@ -2163,6 +2198,7 @@ if (Number(totalPaid.toFixed(2)) < Number(billAmount.toFixed(2))) {
 
   selectPaymentMethod(method: 'cash' | 'credit' | 'cash + credit'): void {
     this.selectedPaymentMethod = method;
+    this.paymentDeviceError = '';
     // إعادة تعيين القيم عند تغيير طريقة الدفع
     if (method === 'cash') {
       this.credit_value = null;
@@ -2185,6 +2221,81 @@ if (Number(totalPaid.toFixed(2)) < Number(billAmount.toFixed(2))) {
     if (method !== 'credit' && method !== 'cash + credit') {
       this.referenceNumberError = '';
     }
+    this.ensureSelectedPaymentDevice();
+  }
+
+  shouldShowPaymentDeviceSelector(): boolean {
+    return this.paymentStatus === 'paid' && (this.selectedPaymentMethod === 'credit' || this.selectedPaymentMethod === 'cash + credit');
+  }
+
+  onPaymentDeviceChange(value: number | string): void {
+    const parsed = Number(value);
+    this.selectedPaymentDeviceId = Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    this.paymentDeviceError = '';
+  }
+
+  private ensureSelectedPaymentDevice(): void {
+    if (!this.shouldShowPaymentDeviceSelector()) {
+      return;
+    }
+    if (this.selectedPaymentDeviceId && this.paymentDevices.some((d) => d.id === this.selectedPaymentDeviceId)) {
+      return;
+    }
+    const recommended = this.paymentDevices.find((d) => d.isRecommended);
+    this.selectedPaymentDeviceId = recommended?.id ?? this.paymentDevices[0]?.id ?? null;
+  }
+
+  private markSelectedPaymentDeviceAsLastUsed(): void {
+    if (!this.shouldShowPaymentDeviceSelector() || !this.selectedPaymentDeviceId) {
+      return;
+    }
+    localStorage.setItem(this.LAST_USED_PAYMENT_DEVICE_STORAGE_KEY, String(this.selectedPaymentDeviceId));
+    this.paymentDevices = this.paymentDevices.map((d) => ({
+      ...d,
+      isRecommended: d.id === this.selectedPaymentDeviceId,
+    }));
+  }
+
+  private loadPaymentDevices(): void {
+    this.http.get<any>(`${baseUrl2}/payment-device/`).subscribe({
+      next: (res) => {
+        const rawDevices = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+        const activeDevices = rawDevices
+          .map((device: any) => ({
+            id: Number(device?.id),
+            name: String(device?.device_name || '').trim(),
+            ip: String(device?.IP || '').trim(),
+            status: device?.status === 'active' ? 'active' : 'inactive',
+            lastUsedAt: device?.last_used_device || null,
+          }))
+          .filter((device: any) => Number.isFinite(device.id) && device.id > 0 && device.status === 'active');
+
+        const storedLastUsedId = Number(localStorage.getItem(this.LAST_USED_PAYMENT_DEVICE_STORAGE_KEY));
+        const backendRecommended = [...activeDevices]
+          .filter((d: any) => !!d.lastUsedAt)
+          .sort((a: any, b: any) => {
+            const aTime = a.lastUsedAt ? new Date(a.lastUsedAt).getTime() : 0;
+            const bTime = b.lastUsedAt ? new Date(b.lastUsedAt).getTime() : 0;
+            return bTime - aTime;
+          })[0];
+
+        const recommendedId = backendRecommended?.id
+          || (activeDevices.some((d: any) => d.id === storedLastUsedId) ? storedLastUsedId : null)
+          || activeDevices[0]?.id
+          || null;
+
+        this.paymentDevices = activeDevices.map((d: any) => ({
+          ...d,
+          isRecommended: recommendedId != null && d.id === recommendedId,
+        }));
+
+        this.ensureSelectedPaymentDevice();
+      },
+      error: () => {
+        this.paymentDevices = [];
+        this.selectedPaymentDeviceId = null;
+      },
+    });
   }
 
   // Helper method to ensure values are never negative (same as cart)
