@@ -2,13 +2,13 @@
 //  export const baseUrlForWebSocket ='https://erpfortest.testdomain100.online/'
 
 //  export const baseUrl ='https://erp-cashier.testdomain100.online/'
-export const baseUrl ='https://erp-cashier.testdomain100.online/'
-export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
+export const baseUrl ='http://127.0.0.1:8000/'
+export const baseUrl2 ='http://127.0.0.1:8000/api'
 
 //test
 export const environment = {
   production: false,
-  broadcast_type: 'socket', // 'pusher' or 'socket'
+  broadcast_type: 'pusher', // 'pusher' or 'socket'
   pusher: {
     key: 'cfd52a74b92f9e278f2d',
     cluster: 'mt1',
