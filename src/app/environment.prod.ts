@@ -9,9 +9,15 @@ export const baseUrlForWebSocket ='https://erpfortest.testdomain100.online/'
 
 export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
 
+<<<<<<< HEAD
+export const baseUrl ='https://erp-cashier.testdomain100.online/'
+// export const baseUrl2 ='https://productowner.testdomain100.online/api'
+export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
+=======
 // export const baseUrl ='http://192.168.11.228:8000/'
 // export const baseUrl2 ='https://productowner.testdomain100.online/api'
 // export const baseUrl2 ='http://192.168.11.228:8000/api'
+>>>>>>> 18e9dc8060704f741f351275470598d524665e95
 
 // export const baseUrl2 ='https://erpmain.alkoot-restaurant.com/api'
 

@@ -502,7 +502,7 @@
       </div>
   </div>
 
-  <p class="text-center fw-bold my-2 total">اجمالي المدفوعات</p>
+  <p class="text-center fw-bold my-2 total">اجمالي المبيعات</p>
     <div class="cash-transfer-print-table-wrap">
       <div class=" table-content">
         <span> عدد الاوردرات </span>
@@ -510,18 +510,24 @@
       </div>
       <div class=" table-content">
         <span> صافي مبلغ نقدية </span>
-        <span>{{ printingData?.cashTotal | number:'1.2-2':'en-US' }}</span>
+        <!-- <span>{{printingData?.cashTotal}}</span> -->
+        <span>{{printingData?.cashTotalWithRefund}}</span>
       </div>
 
       <div class="table-content">
         <span> صافي مبلغ بطاقة </span>
-        <span>{{ printingData?.visaTotal | number:'1.2-2':'en-US' }}</span>
+        <span>{{printingData?.visaTotalWithRefund}}</span>
+      </div>
+
+      <div class="table-content">
+        <span> صافي مبلغ أجل </span>
+        <span>{{printingData?.totalDeferred}}</span>
       </div>
 
 
       <div class="table-content table-content-total-net">
         <span> إجمالي الصافي </span>
-        <span>{{ (printingData?.visaTotal + printingData?.cashTotal) | number }}</span>
+        <span>{{ (printingData?.visaTotalWithRefund + printingData?.cashTotalWithRefund + printingData?.totalDeferred) | number }}</span>
       </div>
       <!-- <div class="table-content">
       <span> مبيعات </span>
@@ -678,8 +684,16 @@
       </div>
 
       <div class="table-content">
-        <span> مبيعات المرتجع </span>
-        <span>{{ printingData?.priceRefund | number:'1.2-2':'en-US' }} </span>
+        <span> مبيعات المرتجع  نقدية</span>
+        <span>{{printingData?.refundTotalCash}} </span>
+      </div>
+      <div class="table-content">
+        <span> مبيعات المرتجع  بطاقة</span>
+        <span>{{printingData?.refundTotalVisa}} </span>
+      </div>
+      <div class="table-content">
+        <span> مبيعات المرتجع  أجل</span>
+        <span>{{printingData?.refundTotalDeferred}} </span>
       </div>
 
     </div>
@@ -697,7 +711,7 @@
 
     </div>
 
-    <p class="text-center fw-bold my-2 total"> المبيعات</p>
+    <!-- <p class="text-center fw-bold my-2 total"> المبيعات</p>
     <div class="cash-transfer-print-table-wrap">
       <div class="table-content">
         <span> مبيعات </span>
@@ -714,7 +728,7 @@
       </div>
 
 
-    </div>
+    </div> -->
     <div *ngIf="orderTypeBreakdownRows.length > 0">
       <p class="text-center fw-bold my-2 total">ملخص أنواع الطلبات</p>
       <div *ngFor="let item of orderTypeBreakdownRows" class="cash-transfer-print-table-wrap cash-transfer-print-table-wrap--category">
@@ -760,26 +774,26 @@
         <span> العدد الاجمالى </span>
         <span>{{printingData?.talabatcount}} </span>
       </div>
-      <div class="table-content">
+      <!-- <div class="table-content">
         <span> عدد نقدية طلبات</span>
         <span>{{printingData?.talabat_cash_count}}</span>
-      </div>
+      </div> -->
       <div class="table-content">
         <span> مبيعات نقدية طلبات</span>
         <span>{{ printingData?.talabatcash | number:'1.2-2':'en-US' }} </span>
       </div>
-      <div class="table-content">
+      <!-- <div class="table-content">
         <span> عدد فيزا طلبات</span>
         <span>{{ printingData?.talabat_visa_count }}</span>
-      </div>
+      </div> -->
       <div class="table-content">
         <span> مبيعات فيزا طلبات</span>
         <span>{{ printingData?.talabatvisa | number:'1.2-2':'en-US' }}</span>
       </div>
-      <div class="table-content">
+      <!-- <div class="table-content">
         <span> عدد اجل طلبات</span>
         <span>{{ printingData?.talabat_deferred_count }}</span>
-      </div>
+      </div> -->
       <div class="table-content">
         <span> مبيعات اجل طلبات</span>
         <span>{{ printingData?.talabatdeferred | number:'1.2-2':'en-US' }}</span>
