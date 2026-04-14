@@ -53,16 +53,22 @@ export class PaymentDeviceFormModalComponent implements OnInit {
       }
 
       this.isSubmitting = true;
+      const normalizedStatus: 'active' | 'inactive' = this.form.status === 'inactive' ? 'inactive' : 'active';
       this.httpClient
         .post(`${baseUrl2}/payment-device/update/${this.device.id}`, {
           device_name: this.form.name.trim(),
           IP: this.form.ip.trim(),
           // Balance: Number(this.form.balance) || 0,
-          status: this.form.status
+          status: normalizedStatus,
+          Status: normalizedStatus,
+          is_active: normalizedStatus === 'active' ? 1 : 0
         })
         .subscribe({
           next: () => {
-            this.activeModal.close(this.form);
+            this.activeModal.close({
+              ...this.form,
+              status: normalizedStatus
+            });
           },
           error: () => {
             this.isSubmitting = false;
@@ -72,16 +78,22 @@ export class PaymentDeviceFormModalComponent implements OnInit {
     }
 
     this.isSubmitting = true;
+    const normalizedStatus: 'active' | 'inactive' = this.form.status === 'inactive' ? 'inactive' : 'active';
     this.httpClient
       .post(`${baseUrl2}/payment-device/store`, {
         device_name: this.form.name.trim(),
         IP: this.form.ip.trim(),
         Balance: Number(this.form.balance) || 0,
-        status: this.form.status
+        status: normalizedStatus,
+        Status: normalizedStatus,
+        is_active: normalizedStatus === 'active' ? 1 : 0
       })
       .subscribe({
         next: () => {
-          this.activeModal.close(this.form);
+          this.activeModal.close({
+            ...this.form,
+            status: normalizedStatus
+          });
         },
         error: () => {
           this.isSubmitting = false;
