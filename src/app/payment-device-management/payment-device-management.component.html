@@ -21,7 +21,7 @@
         <tr *ngFor="let device of devices">
           <td>{{ device.name }}</td>
           <td>{{ device.ip }}</td>
-          <td>{{ device.balance | number:'1.0-2' }} ج.م</td>
+          <td>{{ device.balance | number:'1.2-2':'en-US' }} ج.م</td>
           <td>
             <span [class]="getStatusClass(device.status)">{{ getStatusLabel(device.status) }}</span>
           </td>
