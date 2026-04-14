@@ -36,6 +36,24 @@ html.cash-transfer-print-session #print-section.cash-transfer-print * {
   text-rendering: optimizeSpeed !important;
 }
 
+/* لا يظهر شريط التمرير كخط أحمر عمودي (الـ thumb معرّف أدناه بلون #FE0000 + اتجاه RTL) */
+html.cash-transfer-print-session {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+html.cash-transfer-print-session::-webkit-scrollbar,
+html.cash-transfer-print-session body::-webkit-scrollbar {
+  width: 0 !important;
+  height: 0 !important;
+  background: transparent;
+}
+#print-section.cash-transfer-print {
+  border-left: none !important;
+  border-inline-start: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 html.cash-transfer-print-session #print-section.cash-transfer-print .fw-normal,
 html.cash-transfer-print-session #print-section.cash-transfer-print .fw-light,
 html.cash-transfer-print-session #print-section.cash-transfer-print .fw-lighter {
@@ -258,6 +276,17 @@ html.cash-transfer-print-session #print-section.cash-transfer-print .branch-shif
   }
   body {
     font-size: 15px !important;
+  }
+
+  html::-webkit-scrollbar,
+  body::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    background: transparent;
+  }
+  html {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
   }
 
   /*

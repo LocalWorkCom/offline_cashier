@@ -9,10 +9,17 @@
     <strong>{{ deviceName }}</strong>
     ؟
   </p>
+  <p *ngIf="deviceBalance > 0" class="text-warning mt-3 mb-0">
+    هذا الجهاز عليه معاملات مدفوعة ({{ deviceBalance | number:'1.2-2':'en-US' }} ج.م)،
+    سيتم تحويله إلى غير نشط بدلًا من الحذف للحفاظ على السجل.
+  </p>
+  <p *ngIf="errorMessage" class="text-danger mt-3 mb-0">{{ errorMessage }}</p>
 </div>
 
 <div class="modal-footer border-0">
-  <button class="btn btn-light" (click)="activeModal.dismiss()">إلغاء</button>
-  <button class="btn btn-danger" (click)="confirmDelete()">حذف</button>
+  <button class="btn btn-light" [disabled]="isSubmitting" (click)="activeModal.dismiss()">إلغاء</button>
+  <button class="btn btn-danger" [disabled]="isSubmitting" (click)="confirmDelete()">
+    {{ deviceBalance > 0 ? 'تحويل إلى غير نشط' : 'حذف' }}
+  </button>
 </div>
 

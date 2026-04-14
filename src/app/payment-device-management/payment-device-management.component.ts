@@ -102,15 +102,28 @@ export class PaymentDeviceManagementComponent implements OnInit {
 
     modalRef.componentInstance.deviceName = device.name;
     modalRef.componentInstance.deviceId = device.id;
+    modalRef.componentInstance.deviceIp = device.ip;
+    modalRef.componentInstance.deviceBalance = Number(device.balance) || 0;
+    modalRef.componentInstance.deviceStatus = device.status;
 
     modalRef.result
-      .then((confirmed?: boolean) => {
-        if (!confirmed) {
+      .then((result?: { deleted?: boolean; inactivated?: boolean }) => {
+        if (!result) {
           return;
         }
 
-        this.devices = this.devices.filter((item) => item.id !== device.id);
-        this.persistDevices();
+        if (result.deleted) {
+          this.devices = this.devices.filter((item) => item.id !== device.id);
+          this.persistDevices();
+          return;
+        }
+
+        if (result.inactivated) {
+          this.devices = this.devices.map((item) =>
+            item.id === device.id ? { ...item, status: 'inactive' } : item
+          );
+          this.persistDevices();
+        }
       })
       .catch(() => {});
   }

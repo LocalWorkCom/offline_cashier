@@ -820,8 +820,45 @@ export class CartComponent {
       'dine-in': 'fa-solid fa-utensils',
       'Takeaway': 'fa-solid fa-bag-shopping',
       'Delivery': 'fa-solid fa-truck',
+      'talabat': 'fa-solid fa-store',
     };
     return icons[type] || 'fa-solid fa-circle';
+  }
+
+  getBusinessOrderTypeValue(): 'client_meal' | 'staff_meal' | 'charity_meal' | 'hospitality_meal' {
+    const d = this.orderDetails;
+    const candidates = [
+      d?.business_order_type,
+      d?.meal_order_type,
+      d?.order_type_classification,
+      d?.order_purpose_type,
+      d?.order_type_business,
+      d?.order_type,
+      d?.order_details?.order_type,
+      d?.order_details?.business_order_type,
+      d?.order_details?.meal_order_type,
+      d?.order_details?.order_type_classification,
+      d?.order_details?.order_purpose_type,
+    ];
+    const valid = ['client_meal', 'staff_meal', 'charity_meal', 'hospitality_meal'];
+    for (const candidate of candidates) {
+      const key = String(candidate || '').toLowerCase();
+      if (valid.includes(key)) {
+        return key as 'client_meal' | 'staff_meal' | 'charity_meal' | 'hospitality_meal';
+      }
+    }
+    return 'client_meal';
+  }
+
+  getBusinessOrderTypeShortLabel(value?: string): string {
+    const key = String(value || this.getBusinessOrderTypeValue() || '').toLowerCase();
+    const labels: Record<string, string> = {
+      client_meal: 'عميل',
+      staff_meal: 'موظفين',
+      charity_meal: 'صدقات',
+      hospitality_meal: 'ضيافة',
+    };
+    return labels[key] || 'عميل';
   }
 
   private normalizePaymentMethod(method: any): string {

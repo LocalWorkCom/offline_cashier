@@ -31,7 +31,7 @@
     </a>
   </div>
   }
-  <div *ngIf="!loading && orderDetails?.order_type" class="d-flex justify-content-end align-items-center gap-2 mb-2">
+  <div *ngIf="!loading && orderDetails?.order_type" class="d-flex justify-content-start align-items-center gap-2 mb-2">
     <span class="badge bg-main d-inline-flex align-items-center">
       <i [ngClass]="getOrderTypeIconClass(orderDetails?.order_type)" class="ms-1"></i>
       {{ getOrderTypeShortLabel(orderDetails?.order_type) }}
@@ -117,7 +117,7 @@
     <div class="accordion accordion-flush" id="accordionFlushExample">
       <div class="accordion-item border-0">
         <h2 class="accordion-header" id="flush-headingOne">
-          <button class="accordion-button p-2" type="button" 
+          <button class="accordion-button p-2" type="button"
             [class.collapsed]="!isOrderDetailsOpen"
             (click)="isOrderDetailsOpen = !isOrderDetailsOpen"
             aria-expanded="true">

@@ -4,14 +4,20 @@
 
 export const baseUrlForWebSocket ='https://erpfortest.testdomain100.online/'
 
-/*  export const baseUrl ='http://127.0.0.1:8000/'
- */
+ export const baseUrl ='https://erp-cashier.testdomain100.online/'
+ 
 
-// export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
+export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
 
+<<<<<<< HEAD
 export const baseUrl ='https://erp-cashier.testdomain100.online/'
 // export const baseUrl2 ='https://productowner.testdomain100.online/api'
 export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
+=======
+// export const baseUrl ='http://192.168.11.228:8000/'
+// export const baseUrl2 ='https://productowner.testdomain100.online/api'
+// export const baseUrl2 ='http://192.168.11.228:8000/api'
+>>>>>>> 18e9dc8060704f741f351275470598d524665e95
 
 // export const baseUrl2 ='https://erpmain.alkoot-restaurant.com/api'
 
@@ -19,7 +25,7 @@ export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
 // export const baseUrl='https://erpsystem.testdomain100.online/'
 export const environment = {
   production: true,
-  broadcast_type: 'socket', // 'pusher' or 'socket'
+  broadcast_type: 'pusher', // 'pusher' or 'socket'
   pusher: {
     key: 'cfd52a74b92f9e278f2d',
     cluster: 'mt1',
