@@ -674,6 +674,18 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         paymentAmount: cartTotal,
         billAmount: cartTotal
       };
+    } else if ((this.selectedOrderType === 'talabat' || this.selectedOrderType === 'طلبات') && this.selectedPaymentStatus === 'paid') {
+      // ✅ تهيئة الملخص تلقائياً لطلبات عند الدفع
+      this.finalTipSummary = {
+        total: cartTotal,
+        serviceFee: 0,
+        billAmount: cartTotal,
+        paymentAmount: cartTotal,
+        paymentMethod: 'آجل',
+        tipAmount: 0,
+        grandTotalWithTip: cartTotal,
+        changeToReturn: 0
+      };
     }
 
     console.log('💰 تم تعيين مبلغ الدفع تلقائياً:', cartTotal);
@@ -5424,6 +5436,12 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
 
     localStorage.setItem('selectedPaymentStatus', this.selectedPaymentStatus);
+    
+    // ✅ تحديث ملخص الدفع عند تغيير الحالة
+    if (this.selectedPaymentStatus === 'unpaid') {
+      this.finalTipSummary = null;
+    }
+    this.initializePaymentAmount();
   }
   sharedOrderId: any;
 
@@ -6124,6 +6142,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       this.credit_amountt = 0;
     }
     this.ensureSelectedPaymentDevice();
+    this.initializePaymentAmount();
   }
 
   shouldShowPaymentDeviceSelector(): boolean {
