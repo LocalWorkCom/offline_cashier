@@ -22,7 +22,6 @@ interface PaymentDevice {
   styleUrls: ['./payment-device-management.component.css']
 })
 export class PaymentDeviceManagementComponent implements OnInit {
-  private readonly storageKey = 'payment_devices';
   devices: PaymentDevice[] = [];
 
   constructor(private modalService: NgbModal, private httpClient: HttpClient) {}
@@ -46,17 +45,8 @@ export class PaymentDeviceManagementComponent implements OnInit {
         if (!result) {
           return;
         }
-
-        const newDevice: PaymentDevice = {
-          id: Date.now(),
-          name: result.name.trim(),
-          ip: result.ip.trim(),
-          balance: Number(result.balance) || 0,
-          status: result.status
-        };
-
-        this.devices = [newDevice, ...this.devices];
-        this.persistDevices();
+        // Always reload: server assigns the real primary key (never use Date.now() as id — it breaks update/delete URLs).
+        this.loadDevices();
       })
       .catch(() => {});
   }
@@ -77,19 +67,7 @@ export class PaymentDeviceManagementComponent implements OnInit {
         if (!result) {
           return;
         }
-
-        this.devices = this.devices.map((item) =>
-          item.id === device.id
-            ? {
-                ...item,
-                name: result.name.trim(),
-                ip: result.ip.trim(),
-                balance: Number(result.balance) || 0,
-                status: result.status
-              }
-            : item
-        );
-        this.persistDevices();
+        this.loadDevices();
       })
       .catch(() => {});
   }
@@ -111,18 +89,8 @@ export class PaymentDeviceManagementComponent implements OnInit {
         if (!result) {
           return;
         }
-
-        if (result.deleted) {
-          this.devices = this.devices.filter((item) => item.id !== device.id);
-          this.persistDevices();
-          return;
-        }
-
-        if (result.inactivated) {
-          this.devices = this.devices.map((item) =>
-            item.id === device.id ? { ...item, status: 'inactive' } : item
-          );
-          this.persistDevices();
+        if (result.deleted || result.inactivated) {
+          this.loadDevices();
         }
       })
       .catch(() => {});
@@ -140,22 +108,20 @@ export class PaymentDeviceManagementComponent implements OnInit {
     this.httpClient.get<any>(`${baseUrl2}/payment-device/`).subscribe({
       next: (res) => {
         const apiDevices = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
-        this.devices = apiDevices.map((device: any) => ({
-          id: Number(device?.id) || Date.now(),
-          name: device?.device_name ?? '',
-          ip: device?.IP ?? '',
-          balance: Number(device?.Balance) || 0,
-          status: device?.status === 'active' ? 'active' : 'inactive'
-        }));
+        this.devices = apiDevices
+          .map((device: any) => ({
+            id: Number(device?.id),
+            name: String(device?.device_name ?? '').trim(),
+            ip: String(device?.IP ?? '').trim(),
+            balance: Number(device?.Balance) || 0,
+            status: device?.status === 'active' ? 'active' : 'inactive',
+          }))
+          .filter((d: PaymentDevice) => Number.isFinite(d.id) && d.id > 0);
       },
       error: () => {
         this.devices = [];
       }
     });
-  }
-
-  private persistDevices(): void {
-    localStorage.setItem(this.storageKey, JSON.stringify(this.devices));
   }
 }
 

@@ -16,7 +16,7 @@ import { Router } from '@angular/router';
 declare var bootstrap: any;
 import { FormsModule } from '@angular/forms';
 import { ConfirmDialogComponent } from "../shared/ui/component/confirm-dialog/confirm-dialog.component";
-import { finalize } from 'rxjs';
+import { finalize, take } from 'rxjs';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { baseUrl, baseUrl2 } from '../environment';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
@@ -576,7 +576,7 @@ export class PillEditComponent {
       return; // 🔒 منع المتابعة إذا كان المبلغ غير صحيح
     }
 
-    if (this.shouldShowPaymentDeviceSelector() && !this.selectedPaymentDeviceId) {
+    if (this.shouldShowPaymentDeviceSelector() && !this.isPaymentDeviceSelectionValid()) {
       this.paymentDeviceError = 'يرجى اختيار ماكينة الدفع.';
       this.loading = false;
       return;
@@ -884,7 +884,7 @@ export class PillEditComponent {
           tipData, // ✅ إرسال بيانات الإكرامية
           this.referenceNumber,
           couponData, // إرسال بيانات الكوبون
-          this.selectedPaymentDeviceId || undefined
+          this.effectivePaymentDeviceIdForOrder() ?? undefined
         ).pipe(finalize(() => this.loading = false))
         .subscribe({
           next: async (response) => {
@@ -2228,9 +2228,32 @@ if (Number(totalPaid.toFixed(2)) < Number(billAmount.toFixed(2))) {
     return this.paymentStatus === 'paid' && (this.selectedPaymentMethod === 'credit' || this.selectedPaymentMethod === 'cash + credit');
   }
 
+  private coercePositiveDeviceId(value: unknown): number | null {
+    if (value == null || value === '') {
+      return null;
+    }
+    const n = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+
+  private isPaymentDeviceSelectionValid(): boolean {
+    const n = this.coercePositiveDeviceId(this.selectedPaymentDeviceId);
+    return n != null && this.paymentDevices.some((d) => Number(d.id) === n);
+  }
+
+  private effectivePaymentDeviceIdForOrder(): number | null {
+    if (!this.shouldShowPaymentDeviceSelector()) {
+      return null;
+    }
+    const n = this.coercePositiveDeviceId(this.selectedPaymentDeviceId);
+    if (n == null) {
+      return null;
+    }
+    return this.paymentDevices.some((d) => Number(d.id) === n) ? n : null;
+  }
+
   onPaymentDeviceChange(value: number | string): void {
-    const parsed = Number(value);
-    this.selectedPaymentDeviceId = Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    this.selectedPaymentDeviceId = this.coercePositiveDeviceId(value);
     this.paymentDeviceError = '';
   }
 
@@ -2238,26 +2261,29 @@ if (Number(totalPaid.toFixed(2)) < Number(billAmount.toFixed(2))) {
     if (!this.shouldShowPaymentDeviceSelector()) {
       return;
     }
-    if (this.selectedPaymentDeviceId && this.paymentDevices.some((d) => d.id === this.selectedPaymentDeviceId)) {
+    const n = this.coercePositiveDeviceId(this.selectedPaymentDeviceId);
+    if (n != null && this.paymentDevices.some((d) => Number(d.id) === n)) {
+      this.selectedPaymentDeviceId = n;
       return;
     }
     const recommended = this.paymentDevices.find((d) => d.isRecommended);
-    this.selectedPaymentDeviceId = recommended?.id ?? this.paymentDevices[0]?.id ?? null;
+    this.selectedPaymentDeviceId = recommended?.id ?? null;
   }
 
   private markSelectedPaymentDeviceAsLastUsed(): void {
-    if (!this.shouldShowPaymentDeviceSelector() || !this.selectedPaymentDeviceId) {
+    const n = this.coercePositiveDeviceId(this.selectedPaymentDeviceId);
+    if (!this.shouldShowPaymentDeviceSelector() || n == null) {
       return;
     }
-    localStorage.setItem(this.LAST_USED_PAYMENT_DEVICE_STORAGE_KEY, String(this.selectedPaymentDeviceId));
+    localStorage.setItem(this.LAST_USED_PAYMENT_DEVICE_STORAGE_KEY, String(n));
     this.paymentDevices = this.paymentDevices.map((d) => ({
       ...d,
-      isRecommended: d.id === this.selectedPaymentDeviceId,
+      isRecommended: Number(d.id) === n,
     }));
   }
 
   private loadPaymentDevices(): void {
-    this.http.get<any>(`${baseUrl2}/payment-device/`).subscribe({
+    this.http.get<any>(`${baseUrl2}/payment-device/`).pipe(take(1)).subscribe({
       next: (res) => {
         const rawDevices = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
         const activeDevices = rawDevices
@@ -2279,10 +2305,15 @@ if (Number(totalPaid.toFixed(2)) < Number(billAmount.toFixed(2))) {
             return bTime - aTime;
           })[0];
 
-        const recommendedId = backendRecommended?.id
-          || (activeDevices.some((d: any) => d.id === storedLastUsedId) ? storedLastUsedId : null)
-          || activeDevices[0]?.id
-          || null;
+        let recommendedId: number | null = backendRecommended?.id ?? null;
+        if (
+          recommendedId == null &&
+          Number.isFinite(storedLastUsedId) &&
+          storedLastUsedId > 0 &&
+          activeDevices.some((d: any) => d.id === storedLastUsedId)
+        ) {
+          recommendedId = storedLastUsedId;
+        }
 
         this.paymentDevices = activeDevices.map((d: any) => ({
           ...d,

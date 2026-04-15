@@ -19,7 +19,7 @@ import { ProductsService } from '../services/products.service';
 import { PlaceOrderService } from '../services/place-order.service';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { catchError, finalize, firstValueFrom, Observable, of, Subject, tap } from 'rxjs';
+import { catchError, finalize, firstValueFrom, Observable, of, Subject, take, tap } from 'rxjs';
 import { NgbModal, NgbActiveModal } from '@ng-bootstrap/ng-bootstrap';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { CommonModule, DecimalPipe } from '@angular/common';
@@ -2641,8 +2641,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       cash_amount: this.cash_amountt,
       credit_amount: this.credit_amountt,
       cashier_machine_id: localStorage.getItem('cashier_machine_id'),
-      payment_device_id: this.selectedPaymentDeviceId || null,
-      payment_device: this.selectedPaymentDeviceId || null,
+      payment_device_id: this.effectivePaymentDeviceIdForOrder(),
+      payment_device: this.effectivePaymentDeviceIdForOrder(),
       ...(this.clientPhoneStoredInLocal ? { client_country_code: this.selectedCountry.code || "+20" } : {}),
       ...(this.clientPhoneStoredInLocal ? { client_phone: this.clientPhoneStoredInLocal } : {}),
       ...(this.clientStoredInLocal ? { client_name: this.clientStoredInLocal } : {}),
@@ -2883,7 +2883,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       return;
     }
 
-    if (this.shouldShowPaymentDeviceSelector() && !this.selectedPaymentDeviceId) {
+    if (this.shouldShowPaymentDeviceSelector() && !this.isPaymentDeviceSelectionValid()) {
       this.isLoading = false;
       this.loading = false;
       this.paymentDeviceError = 'يرجى اختيار ماكينة الدفع.';
@@ -3501,6 +3501,10 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     const timeoutPromise = new Promise((_, reject) => {
       setTimeout(() => reject(new Error('Request timeout')), 30000);
     });
+    // إعادة ربط جهاز الدفع من الحالة الحالية (بعد إصلاح ngModel داخل النموذج)
+    const resolvedDeviceId = this.effectivePaymentDeviceIdForOrder();
+    orderData.payment_device_id = resolvedDeviceId;
+    orderData.payment_device = resolvedDeviceId;
     localStorage.removeItem('cart');
     localStorage.removeItem('holdCart');
     localStorage.removeItem('savedOrders');
@@ -6126,9 +6130,34 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     return this.selectedPaymentStatus === 'paid' && (this.selectedPaymentMethod === 'credit' || this.selectedPaymentMethod === 'cash + credit');
   }
 
+  /** Normalizes API/ngModel quirks so 3 and "3" both match `paymentDevices[].id`. */
+  private coercePositiveDeviceId(value: unknown): number | null {
+    if (value == null || value === '') {
+      return null;
+    }
+    const n = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }
+
+  private isPaymentDeviceSelectionValid(): boolean {
+    const n = this.coercePositiveDeviceId(this.selectedPaymentDeviceId);
+    return n != null && this.paymentDevices.some((d) => Number(d.id) === n);
+  }
+
+  /** Id sent on order — only if it exists on the loaded device list (numeric match). */
+  private effectivePaymentDeviceIdForOrder(): number | null {
+    if (!this.shouldShowPaymentDeviceSelector()) {
+      return null;
+    }
+    const n = this.coercePositiveDeviceId(this.selectedPaymentDeviceId);
+    if (n == null) {
+      return null;
+    }
+    return this.paymentDevices.some((d) => Number(d.id) === n) ? n : null;
+  }
+
   onPaymentDeviceChange(value: number | string): void {
-    const parsed = Number(value);
-    this.selectedPaymentDeviceId = Number.isFinite(parsed) && parsed > 0 ? parsed : null;
+    this.selectedPaymentDeviceId = this.coercePositiveDeviceId(value);
     this.paymentDeviceError = '';
   }
 
@@ -6136,21 +6165,24 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     if (!this.shouldShowPaymentDeviceSelector()) {
       return;
     }
-    if (this.selectedPaymentDeviceId && this.paymentDevices.some((d) => d.id === this.selectedPaymentDeviceId)) {
+    const n = this.coercePositiveDeviceId(this.selectedPaymentDeviceId);
+    if (n != null && this.paymentDevices.some((d) => Number(d.id) === n)) {
+      this.selectedPaymentDeviceId = n;
       return;
     }
     const recommended = this.paymentDevices.find((d) => d.isRecommended);
-    this.selectedPaymentDeviceId = recommended?.id ?? this.paymentDevices[0]?.id ?? null;
+    this.selectedPaymentDeviceId = recommended?.id ?? null;
   }
 
   private markSelectedPaymentDeviceAsLastUsed(): void {
-    if (!this.shouldShowPaymentDeviceSelector() || !this.selectedPaymentDeviceId) {
+    const n = this.coercePositiveDeviceId(this.selectedPaymentDeviceId);
+    if (!this.shouldShowPaymentDeviceSelector() || n == null) {
       return;
     }
-    localStorage.setItem(this.LAST_USED_PAYMENT_DEVICE_STORAGE_KEY, String(this.selectedPaymentDeviceId));
+    localStorage.setItem(this.LAST_USED_PAYMENT_DEVICE_STORAGE_KEY, String(n));
     this.paymentDevices = this.paymentDevices.map((d) => ({
       ...d,
-      isRecommended: d.id === this.selectedPaymentDeviceId,
+      isRecommended: Number(d.id) === n,
     }));
   }
 
@@ -6158,13 +6190,14 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     if (!this.selectedPaymentDeviceId) {
       return null;
     }
-    const selectedDevice = this.paymentDevices.find((d) => d.id === this.selectedPaymentDeviceId);
+    const sid = this.coercePositiveDeviceId(this.selectedPaymentDeviceId);
+    const selectedDevice = sid != null ? this.paymentDevices.find((d) => Number(d.id) === sid) : undefined;
     const name = String(selectedDevice?.name || '').trim();
     return name || null;
   }
 
   private loadPaymentDevices(): void {
-    this.http.get<any>(`${baseUrl2}/payment-device/`).subscribe({
+    this.http.get<any>(`${baseUrl2}/payment-device/`).pipe(take(1)).subscribe({
       next: (res) => {
         const rawDevices = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
         const activeDevices = rawDevices
@@ -6186,10 +6219,17 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             return bTime - aTime;
           })[0];
 
-        const recommendedId = backendRecommended?.id
-          || (activeDevices.some((d: PaymentDeviceOption) => d.id === storedLastUsedId) ? storedLastUsedId : null)
-          || activeDevices[0]?.id
-          || null;
+        // Do not default to activeDevices[0]: API order is arbitrary (e.g. "test2" first) and was
+        // crediting the wrong PaymentDevice balance when the cashier did not explicitly pick a terminal.
+        let recommendedId: number | null = backendRecommended?.id ?? null;
+        if (
+          recommendedId == null &&
+          Number.isFinite(storedLastUsedId) &&
+          storedLastUsedId > 0 &&
+          activeDevices.some((d: PaymentDeviceOption) => d.id === storedLastUsedId)
+        ) {
+          recommendedId = storedLastUsedId;
+        }
 
         this.paymentDevices = activeDevices.map((d: PaymentDeviceOption) => ({
           ...d,

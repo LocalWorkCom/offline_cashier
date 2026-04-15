@@ -14,6 +14,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { from, lastValueFrom, Observable, of } from 'rxjs';
 import { baseUrl } from '../environment';
 import { SyncOfflineService } from '../services/sync-offline.service';
+import { totalBalance } from '../services/pusher/totalBalance';
 
 @Component({
   selector: 'app-sidebar',
@@ -138,6 +139,7 @@ export class SidebarComponent implements OnInit {
     private balanceService: BalanceService,
     private closeBalanceService: CloseBalanceService,
     private syncService: SyncOfflineService,
+    private totalBalance: totalBalance,
     @Inject(PLATFORM_ID) private platformId: Object,
     private cdr: ChangeDetectorRef
   ) {}
@@ -809,6 +811,48 @@ proceedToLogout(): void {
     }
   }
 
+  /** Pull get-current-balance so totals cards / localStorage match server after تحويل للخزنة. */
+  private refreshCashierTotalsAfterTransfer(): void {
+    let shiftData: { shift_start?: string; shift_end?: string } | null = null;
+    try {
+      shiftData = JSON.parse(localStorage.getItem('shiftData') || 'null');
+    } catch {
+      shiftData = null;
+    }
+    const body = {
+      cashier_machine_id: localStorage.getItem('cashier_machine_id'),
+      employee_schedule_id: localStorage.getItem('employee_schedule_id'),
+      shift_start: shiftData?.shift_start ?? null,
+      shift_end: shiftData?.shift_end ?? null,
+    };
+    const token = this.authService.getToken();
+    if (!body.cashier_machine_id || !token) {
+      return;
+    }
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    });
+    this.http.post<any>(`${baseUrl}api/cashier/get-current-balance`, body, { headers }).subscribe({
+      next: (r) => {
+        if (r?.status && Array.isArray(r.data)) {
+          this.totalBalance.emitTotals({ data: r.data });
+          const cash = r.data.find((x: { name?: string }) => x?.name === 'cash');
+          const visa = r.data.find((x: { name?: string }) => x?.name === 'visa');
+          const talabat = r.data.find((x: { name?: string }) => x?.name === 'talabat');
+          if (cash) localStorage.setItem('totalcash', String(cash.value));
+          if (visa) {
+            localStorage.setItem('totalvisa', String(visa.value));
+            this.authService.setVisaTotal(Number(visa.value));
+          }
+          if (talabat) localStorage.setItem('talabatData', String(talabat.value));
+          this.cdr.markForCheck();
+        }
+      },
+      error: () => {},
+    });
+  }
+
   async transferMoney() {
     if (!this.transferAmount || this.transferAmount <= 0) {
       this.transferError = 'يرجى إدخال مبلغ    ';
@@ -873,6 +917,7 @@ proceedToLogout(): void {
       if (response?.status && response.code == 200) {
         console.log(response,"alaa");
         this.transferSuccess = 'تم تحويل المبلغ بنجاح';
+        this.refreshCashierTotalsAfterTransfer();
         this.alertError = response?.data?.alert[0];
         // Suppress misleading "amount less than available" alert when entered amount matches
         // available balance (floating-point precision can cause false positives at 2 decimals)
@@ -1079,6 +1124,23 @@ waitForImagesInSection(selector: string): Promise<void> {
     transactionsCount: number;
     totalAmount: number;
   }> {
+    const snapshot = this.printingData?.payment_devices_snapshot;
+    if (Array.isArray(snapshot) && snapshot.length > 0) {
+      return snapshot.map((item: any) => {
+        const deviceId =
+          item?.payment_device_id != null && item?.payment_device_id !== ''
+            ? item.payment_device_id
+            : null;
+        return {
+          name: String(item?.device_name ?? item?.payment_device_name ?? '—'),
+          ip: deviceId != null && deviceId !== '' ? String(deviceId) : '—',
+          serial: '—',
+          transactionsCount: this.toNumberSafe(item?.orders_count ?? item?.ordersCount),
+          totalAmount: this.toNumberSafe(item?.total ?? item?.balance ?? item?.total_amount),
+        };
+      });
+    }
+
     const source =
       this.printingData?.payment_device_breakdown ||
       this.printingData?.payment_devices_breakdown ||
