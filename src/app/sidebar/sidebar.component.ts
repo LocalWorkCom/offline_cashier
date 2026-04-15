@@ -1015,12 +1015,15 @@ waitForImagesInSection(selector: string): Promise<void> {
     const key = String(value || '').toLowerCase();
     const labels: Record<string, string> = {
       client_meal: 'وجبات العميل',
+      regular: 'طلبات عادية',
       staff_meal: 'وجبات الموظفين',
+      staff: 'وجبات الموظفين',
       charity_meal: 'وجبات صدقات',
+      charity: 'وجبات صدقات',
       hospitality_meal: 'وجبات الضيافة',
-      regular: 'وجبات العميل',
+      hospitality: 'وجبات الضيافة',
     };
-    return labels[key] || 'وجبات العميل';
+    return labels[key] || 'طلبات عادية';
   }
 
   private toNumberSafe(value: unknown): number {
@@ -1067,6 +1070,100 @@ waitForImagesInSection(selector: string): Promise<void> {
 
   get orderTypeSummaryTotalAmount(): number {
     return this.orderTypeBreakdownRows.reduce((sum, row) => sum + row.totalAmount, 0);
+  }
+
+  get paymentDeviceReportRows(): Array<{
+    name: string;
+    ip: string;
+    serial: string;
+    transactionsCount: number;
+    totalAmount: number;
+  }> {
+    const source =
+      this.printingData?.payment_device_breakdown ||
+      this.printingData?.payment_devices_breakdown ||
+      this.printingData?.payment_devices ||
+      this.printingData?.card_payment_devices ||
+      this.printingData?.visa_payment_devices ||
+      this.printingData?.device_breakdown ||
+      this.printingData?.devices_breakdown ||
+      [];
+
+    if (!Array.isArray(source)) {
+      return [];
+    }
+
+    return source.map((item: any) => ({
+      name: String(item?.device_name ?? item?.name ?? item?.machine_name ?? item?.terminal_name ?? '—'),
+      ip: String(item?.ip ?? item?.ip_address ?? item?.IP ?? '—'),
+      serial: String(
+        item?.serial_number ??
+          item?.serial ??
+          item?.reference_id ??
+          item?.reference ??
+          item?.ref_id ??
+          item?.terminal_id ??
+          '—'
+      ),
+      transactionsCount: this.toNumberSafe(
+        item?.transactions_count ??
+          item?.transaction_count ??
+          item?.transactions ??
+          item?.count ??
+          item?.orders_count
+      ),
+      totalAmount: this.toNumberSafe(
+        item?.total_amount ??
+          item?.amount ??
+          item?.total ??
+          item?.collected_amount ??
+          item?.visa_total ??
+          item?.card_total
+      ),
+    }));
+  }
+
+  get paymentDeviceReportGrandTransactions(): number {
+    return this.paymentDeviceReportRows.reduce((sum, row) => sum + row.transactionsCount, 0);
+  }
+
+  get paymentDeviceReportGrandAmount(): number {
+    return this.paymentDeviceReportRows.reduce((sum, row) => sum + row.totalAmount, 0);
+  }
+
+  private isNearlyEqual(left: number, right: number, epsilon = 0.01): boolean {
+    return Math.abs(left - right) < epsilon;
+  }
+
+  /**
+   * Normalizes tip values for print view when backend duplicates mixed-payment tips
+   * in both cash and visa fields (same tip value repeated twice).
+   */
+  get normalizedTipSummary(): { total: number; cash: number; visa: number } {
+    const tipCash = this.toNumberSafe(this.printingData?.tipCash);
+    const tipVisa = this.toNumberSafe(this.printingData?.tipVisa);
+    const tipTotal = this.toNumberSafe(this.printingData?.tipTotal);
+
+    const duplicatedAcrossMethods =
+      tipCash > 0 &&
+      tipVisa > 0 &&
+      this.isNearlyEqual(tipCash, tipVisa) &&
+      this.isNearlyEqual(tipTotal, tipCash + tipVisa);
+
+    if (duplicatedAcrossMethods) {
+      return {
+        total: tipCash,
+        cash: tipCash,
+        visa: 0,
+      };
+    }
+
+    const computedTotal = tipTotal > 0 ? tipTotal : tipCash + tipVisa;
+    return {
+      total: computedTotal,
+      cash: tipCash,
+      visa: tipVisa,
+    };
   }
 
   print(id: number): void {

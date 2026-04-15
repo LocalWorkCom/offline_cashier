@@ -86,6 +86,14 @@
   border: 1px solid #FE0000;
 }
 
+.btn-save:hover,
+.btn-save:focus,
+.btn-save:active {
+  background: #FE0000 !important;
+  border-color: #FE0000 !important;
+  color: #fff !important;
+}
+
 @media (max-width: 767.98px) {
   .status-row {
     flex-direction: column;
