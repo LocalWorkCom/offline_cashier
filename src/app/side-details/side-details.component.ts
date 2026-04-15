@@ -3612,7 +3612,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
         return;
       }
 
-      this.markSelectedPaymentDeviceAsLastUsed();
+      this.markSelectedPaymentDeviceAsLastUsed(resolvedDeviceId);
 
       // تنظيف البيانات
       const savedOrders = JSON.parse(localStorage.getItem('savedOrders') || '[]');
@@ -6174,9 +6174,16 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.selectedPaymentDeviceId = recommended?.id ?? null;
   }
 
-  private markSelectedPaymentDeviceAsLastUsed(): void {
-    const n = this.coercePositiveDeviceId(this.selectedPaymentDeviceId);
-    if (!this.shouldShowPaymentDeviceSelector() || n == null) {
+  /** Persist last-used terminal after a successful paid order (id should match what was sent on the order). */
+  private markSelectedPaymentDeviceAsLastUsed(paidDeviceId?: number | null): void {
+    if (!this.shouldShowPaymentDeviceSelector()) {
+      return;
+    }
+    const n =
+      paidDeviceId !== undefined
+        ? this.coercePositiveDeviceId(paidDeviceId)
+        : this.coercePositiveDeviceId(this.selectedPaymentDeviceId);
+    if (n == null) {
       return;
     }
     localStorage.setItem(this.LAST_USED_PAYMENT_DEVICE_STORAGE_KEY, String(n));
@@ -6219,16 +6226,18 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
             return bTime - aTime;
           })[0];
 
-        // Do not default to activeDevices[0]: API order is arbitrary (e.g. "test2" first) and was
-        // crediting the wrong PaymentDevice balance when the cashier did not explicitly pick a terminal.
-        let recommendedId: number | null = backendRecommended?.id ?? null;
-        if (
-          recommendedId == null &&
+        const storedLastUsedValid =
           Number.isFinite(storedLastUsedId) &&
           storedLastUsedId > 0 &&
-          activeDevices.some((d: PaymentDeviceOption) => d.id === storedLastUsedId)
-        ) {
+          activeDevices.some((d: PaymentDeviceOption) => d.id === storedLastUsedId);
+
+        // Prefer localStorage: it reflects the last successful paid order on this cashier session.
+        // Backend last_used_device can point at another terminal (other shift / race) and was overriding Bank Misr, etc.
+        let recommendedId: number | null = null;
+        if (storedLastUsedValid) {
           recommendedId = storedLastUsedId;
+        } else if (backendRecommended?.id != null) {
+          recommendedId = backendRecommended.id;
         }
 
         this.paymentDevices = activeDevices.map((d: PaymentDeviceOption) => ({
