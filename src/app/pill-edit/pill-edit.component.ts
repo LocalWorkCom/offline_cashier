@@ -872,6 +872,8 @@ export class PillEditComponent {
         return;
       }
 
+      const resolvedPillPaymentDeviceId = this.effectivePaymentDeviceIdForOrder();
+
       this.orderService
         .updateInvoiceStatus(
           String(this.orderNumber),
@@ -884,7 +886,7 @@ export class PillEditComponent {
           tipData, // ✅ إرسال بيانات الإكرامية
           this.referenceNumber,
           couponData, // إرسال بيانات الكوبون
-          this.effectivePaymentDeviceIdForOrder() ?? undefined
+          resolvedPillPaymentDeviceId ?? undefined
         ).pipe(finalize(() => this.loading = false))
         .subscribe({
           next: async (response) => {
@@ -911,7 +913,7 @@ export class PillEditComponent {
               return; // ❌ منع إظهار رسالة النجاح إذا لم يتم الحفظ
             }
 
-            this.markSelectedPaymentDeviceAsLastUsed();
+            this.markSelectedPaymentDeviceAsLastUsed(resolvedPillPaymentDeviceId);
 
             // ✅ Success - فقط إذا تم الحفظ بنجاح
             this.apiErrors = [];
@@ -2270,9 +2272,15 @@ if (Number(totalPaid.toFixed(2)) < Number(billAmount.toFixed(2))) {
     this.selectedPaymentDeviceId = recommended?.id ?? null;
   }
 
-  private markSelectedPaymentDeviceAsLastUsed(): void {
-    const n = this.coercePositiveDeviceId(this.selectedPaymentDeviceId);
-    if (!this.shouldShowPaymentDeviceSelector() || n == null) {
+  private markSelectedPaymentDeviceAsLastUsed(paidDeviceId?: number | null): void {
+    if (!this.shouldShowPaymentDeviceSelector()) {
+      return;
+    }
+    const n =
+      paidDeviceId !== undefined
+        ? this.coercePositiveDeviceId(paidDeviceId)
+        : this.coercePositiveDeviceId(this.selectedPaymentDeviceId);
+    if (n == null) {
       return;
     }
     localStorage.setItem(this.LAST_USED_PAYMENT_DEVICE_STORAGE_KEY, String(n));
@@ -2305,14 +2313,16 @@ if (Number(totalPaid.toFixed(2)) < Number(billAmount.toFixed(2))) {
             return bTime - aTime;
           })[0];
 
-        let recommendedId: number | null = backendRecommended?.id ?? null;
-        if (
-          recommendedId == null &&
+        const storedLastUsedValid =
           Number.isFinite(storedLastUsedId) &&
           storedLastUsedId > 0 &&
-          activeDevices.some((d: any) => d.id === storedLastUsedId)
-        ) {
+          activeDevices.some((d: any) => d.id === storedLastUsedId);
+
+        let recommendedId: number | null = null;
+        if (storedLastUsedValid) {
           recommendedId = storedLastUsedId;
+        } else if (backendRecommended?.id != null) {
+          recommendedId = backendRecommended.id;
         }
 
         this.paymentDevices = activeDevices.map((d: any) => ({
