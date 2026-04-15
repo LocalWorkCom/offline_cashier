@@ -627,7 +627,10 @@
           </ng-container>
         </div>
         <div class="payment-device-select-wrap mb-3" *ngIf="shouldShowPaymentDeviceSelector()">
-          <select class="form-select payment-device-select" [ngModel]="selectedPaymentDeviceId"
+          <!-- standalone: ngModel داخل <form> بدون name كان يسبب عدم مزامنة القيمة مع المكوّن → يُرسل آخر id موصى به (مثلاً 6) -->
+          <select class="form-select payment-device-select" name="paymentDeviceId"
+            [ngModelOptions]="{standalone: true}"
+            [(ngModel)]="selectedPaymentDeviceId"
             (ngModelChange)="onPaymentDeviceChange($event)">
             <option [ngValue]="null">اختر ماكينة الدفع</option>
             <option *ngFor="let device of paymentDevices" [ngValue]="device.id">

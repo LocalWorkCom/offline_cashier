@@ -296,9 +296,10 @@
           </div>
         </div>
         <div class="payment-device-select-wrap mb-3" *ngIf="shouldShowPaymentDeviceSelector()">
-          <select class="form-select payment-device-select" [ngModel]="selectedPaymentDeviceId"
-            (ngModelChange)="onPaymentDeviceChange($event)"
-            [ngModelOptions]="{standalone: true}">
+          <select class="form-select payment-device-select" name="pillPaymentDeviceId"
+            [ngModelOptions]="{standalone: true}"
+            [(ngModel)]="selectedPaymentDeviceId"
+            (ngModelChange)="onPaymentDeviceChange($event)">
             <option [ngValue]="null">اختر ماكينة دفع</option>
             <option *ngFor="let device of paymentDevices" [ngValue]="device.id">
               {{ device.name }}{{ device.isRecommended ? ' (موصى بها)' : '' }}
