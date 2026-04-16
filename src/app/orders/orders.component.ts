@@ -915,6 +915,13 @@ export class OrdersComponent implements OnDestroy {
     }
   }
 
+  isTalabatDeferredOrder(order: any): boolean {
+    return (
+      order?.order_details?.order_type === 'talabat' &&
+      order?.order_details?.payment_method === 'deferred'
+    );
+  }
+
   calculateItemPrice(item: any): number {
     const quantity = item.selectedQuantity ?? item.quantity;
 
@@ -2316,10 +2323,11 @@ export class OrdersComponent implements OnDestroy {
     this.returnCashAmount = null;
     this.returnCreditAmount = null;
 
+    const shouldSelectAllItems = this.isTalabatDeferredOrder(order);
     if (order && order.order_items) {
       order.order_items.forEach((item: any) => {
-        item.isChecked = false;
-        item.selectedQuantity = item.quantity;
+        item.isChecked = shouldSelectAllItems;
+        item.selectedQuantity = shouldSelectAllItems ? 0 : item.quantity;
       });
     }
   }
