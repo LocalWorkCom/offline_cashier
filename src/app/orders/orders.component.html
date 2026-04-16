@@ -618,15 +618,16 @@
                                   <div class="d-flex justify-content-between align-items-center">
                                     <div>
                                       <span><input class="form-check-input" type="checkbox" value="" id="checkDefault"
-                                          [(ngModel)]="item.isChecked" (ngModelChange)="onItemCheckChange(item)" [id]="'check-' + i"></span>
+                                          [(ngModel)]="item.isChecked" (ngModelChange)="onItemCheckChange(item)"
+                                          [id]="'check-' + i" [disabled]="isTalabatDeferredOrder(order)"></span>
                                       <span> x {{ item.selectedQuantity ?? item.quantity }}
                                         <span>{{item.dish_name}} </span></span>
                                     </div>
                                     <div class="d-flex align-items-center justify-content-between">
                                       <span class="px-3 fw-bold">{{ item.total_dish_price }} {{ order.currency_symbol
                                         }}</span>
-                                      <div class="qty" *ngIf="item.isChecked">
-                                        <span class="dec minus" (click)="decreaseItem(item, i)">
+                                      <div class="qty" *ngIf="item.isChecked && !isTalabatDeferredOrder(order)">
+                                        <span class="dec minus" (click)="decreaseItem(item, i)" >
                                           <i class="fa fa-minus" aria-hidden="true"></i>
                                         </span>
                                         <span class="num mx-2">{{ item.selectedQuantity ?? item.quantity }}</span>
