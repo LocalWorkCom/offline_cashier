@@ -12,9 +12,10 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import * as bootstrap from 'bootstrap';
 import { HttpClientModule } from '@angular/common/http';
 import { from, lastValueFrom, Observable, of } from 'rxjs';
-import { baseUrl } from '../environment';
+import { baseUrl, baseUrl2 } from '../environment';
 import { SyncOfflineService } from '../services/sync-offline.service';
 import { totalBalance } from '../services/pusher/totalBalance';
+import { PaymentDeviceListRefreshService } from '../services/payment-device-list-refresh.service';
 
 @Component({
   selector: 'app-sidebar',
@@ -141,7 +142,8 @@ export class SidebarComponent implements OnInit {
     private syncService: SyncOfflineService,
     private totalBalance: totalBalance,
     @Inject(PLATFORM_ID) private platformId: Object,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private paymentDeviceListRefresh: PaymentDeviceListRefreshService
   ) {}
 
   isSyncing = false;
@@ -853,6 +855,47 @@ proceedToLogout(): void {
     });
   }
 
+  /** لقطة أرصدة الماكينات من الـ API بعد التحويل = خط الأساس؛ العرض يصبح 0 ثم يزيد مع كل دفع جديد. */
+  private capturePaymentDeviceBaselineAfterTransfer(): void {
+    const token = this.authService.getToken();
+    if (!token) {
+      this.paymentDeviceListRefresh.notify();
+      return;
+    }
+    const headers = new HttpHeaders({
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    });
+    this.http.get<any>(`${baseUrl2}/payment-device/`, { headers }).subscribe({
+      next: (res) => {
+        const list = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
+        const rows = list
+          .map((device: any) => ({
+            id: Number(device?.id),
+            balance: this.parsePaymentDeviceApiBalance(device?.Balance),
+          }))
+          .filter((x: { id: number }) => Number.isFinite(x.id) && x.id > 0);
+        this.paymentDeviceListRefresh.recordBaselineFromDevices(rows);
+        this.paymentDeviceListRefresh.notify();
+      },
+      error: () => {
+        this.paymentDeviceListRefresh.notify();
+      },
+    });
+  }
+
+  private parsePaymentDeviceApiBalance(value: unknown): number {
+    if (value == null || value === '') {
+      return 0;
+    }
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    const s = String(value).replace(/,/g, '').trim();
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
+  }
+
   async transferMoney() {
     if (!this.transferAmount || this.transferAmount <= 0) {
       this.transferError = 'يرجى إدخال مبلغ    ';
@@ -918,6 +961,7 @@ proceedToLogout(): void {
         console.log(response,"alaa");
         this.transferSuccess = 'تم تحويل المبلغ بنجاح';
         this.refreshCashierTotalsAfterTransfer();
+        this.capturePaymentDeviceBaselineAfterTransfer();
         this.alertError = response?.data?.alert[0];
         // Suppress misleading "amount less than available" alert when entered amount matches
         // available balance (floating-point precision can cause false positives at 2 decimals)
@@ -1071,39 +1115,247 @@ waitForImagesInSection(selector: string): Promise<void> {
     return labels[key] || 'طلبات عادية';
   }
 
+  /** Meal-purpose keys used for «ملخص أنواع الطلبات»; excludes POS channel types (dine-in, talabat, …). */
+  private readonly businessMealCanonicalKeys = new Set([
+    'client_meal',
+    'staff_meal',
+    'charity_meal',
+    'hospitality_meal',
+  ]);
+
+  /** POS / fulfilment channel keys often mixed into the same API array and double-count with meal purpose. */
+  private readonly orderChannelCanonicalKeys = new Set([
+    'dine-in',
+    'dine_in',
+    'takeaway',
+    'delivery',
+    'talabat',
+    'pickup',
+    'drive',
+    'drive_thru',
+    'drivethru',
+  ]);
+
+  private normalizeCanonicalBusinessOrderKey(raw: unknown): string {
+    let key = String(raw || '')
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, '_');
+    const synonyms: Record<string, string> = {
+      charity: 'charity_meal',
+      staff: 'staff_meal',
+      hospitality: 'hospitality_meal',
+      client: 'client_meal',
+      clientmeal: 'client_meal',
+      charitymeal: 'charity_meal',
+      staffmeal: 'staff_meal',
+      hospitalitymeal: 'hospitality_meal',
+    };
+    if (synonyms[key]) {
+      key = synonyms[key];
+    }
+    return key;
+  }
+
+  private extractSummaryRowRawKey(item: any): string {
+    const raw =
+      item?.business_order_type ??
+      item?.meal_order_type ??
+      item?.order_purpose_type ??
+      item?.order_type_classification ??
+      item?.order_type ??
+      item?.type;
+    if (raw != null && String(raw).trim() !== '') {
+      return String(raw).trim();
+    }
+    const name = item?.name;
+    if (typeof name === 'string' && /^[a-z0-9_-]+$/i.test(name.trim())) {
+      return name.trim();
+    }
+    return 'regular';
+  }
+
+  private extractSummaryRowOrdersCount(item: any): number {
+    return this.toNumberSafe(
+      item?.distinct_orders ??
+        item?.unique_orders ??
+        item?.unique_order_count ??
+        item?.orders_count ??
+        item?.ordersCount ??
+        item?.order_count ??
+        item?.count ??
+        item?.orders
+    );
+  }
+
+  private mergeBreakdownRowsByCanonicalKey(
+    rows: Array<{ key: string; label: string; ordersCount: number; totalAmount: number }>
+  ): Array<{ key: string; label: string; ordersCount: number; totalAmount: number }> {
+    const map = new Map<
+      string,
+      { key: string; label: string; ordersCount: number; totalAmount: number }
+    >();
+    for (const row of rows) {
+      const canon = this.normalizeCanonicalBusinessOrderKey(row.key);
+      const existing = map.get(canon);
+      if (!existing) {
+        map.set(canon, {
+          key: canon,
+          label: this.normalizeBusinessOrderTypeLabel(canon),
+          ordersCount: row.ordersCount,
+          totalAmount: row.totalAmount,
+        });
+      } else {
+        existing.ordersCount += row.ordersCount;
+        existing.totalAmount += row.totalAmount;
+      }
+    }
+    return Array.from(map.values());
+  }
+
+  /**
+   * When the API mixes meal-purpose rows with channel rows (dine-in, talabat, …), summing both
+   * inflates «إجمالي عدد الطلبات». Keep only meal-purpose rows if any exist.
+   */
+  private filterChannelRowsWhenMealBreakdownPresent(
+    rows: Array<{ key: string; label: string; ordersCount: number; totalAmount: number }>
+  ): Array<{ key: string; label: string; ordersCount: number; totalAmount: number }> {
+    const hasMeal = rows.some((r) => this.businessMealCanonicalKeys.has(this.normalizeCanonicalBusinessOrderKey(r.key)));
+    if (!hasMeal) {
+      return rows;
+    }
+    return rows.filter((r) => !this.orderChannelCanonicalKeys.has(this.normalizeCanonicalBusinessOrderKey(r.key)));
+  }
+
+  /**
+   * When the backend joins by payment leg, each split order appears once per method but
+   * `orders_number` stays the true distinct order count. Redistribute that total across meal-type rows.
+   */
+  private splitIntegerProportionally(total: number, weights: number[]): number[] {
+    const n = weights.length;
+    if (n === 0) {
+      return [];
+    }
+    const wsum = weights.reduce((a, b) => a + b, 0);
+    if (wsum <= 0) {
+      return weights.map(() => 0);
+    }
+    const exacts = weights.map((w) => (total * w) / wsum);
+    const floors = exacts.map((x) => Math.floor(x));
+    let rem = total - floors.reduce((a, b) => a + b, 0);
+    const idxByFrac = weights
+      .map((_, i) => i)
+      .sort((i, j) => exacts[j] - floors[j] - (exacts[i] - floors[i]));
+    const result = [...floors];
+    let k = 0;
+    while (rem > 0 && k < idxByFrac.length) {
+      result[idxByFrac[k]]++;
+      rem--;
+      k++;
+    }
+    return result;
+  }
+
+  private reconcileMealBreakdownOrderCounts(
+    rows: Array<{ key: string; label: string; ordersCount: number; totalAmount: number }>,
+    data: any
+  ): Array<{ key: string; label: string; ordersCount: number; totalAmount: number }> {
+    const officialOrders = this.toNumberSafe(data?.orders_number ?? data?.ordersNumber);
+    if (officialOrders <= 0 || rows.length === 0) {
+      return rows;
+    }
+    const mealIndices: number[] = [];
+    let inflatedSum = 0;
+    rows.forEach((r, i) => {
+      const k = this.normalizeCanonicalBusinessOrderKey(r.key);
+      if (this.businessMealCanonicalKeys.has(k)) {
+        mealIndices.push(i);
+        inflatedSum += r.ordersCount;
+      }
+    });
+    if (mealIndices.length === 0 || inflatedSum <= officialOrders) {
+      return rows;
+    }
+    const weights = mealIndices.map((i) => Math.max(0, rows[i].ordersCount));
+    const allocated = this.splitIntegerProportionally(officialOrders, weights);
+    const out = rows.map((r) => ({ ...r }));
+    mealIndices.forEach((idx, j) => {
+      const oldC = out[idx].ordersCount;
+      const newC = allocated[j] ?? 0;
+      out[idx] = { ...out[idx], ordersCount: newC };
+      if (oldC > 0 && newC >= 0 && oldC !== newC) {
+        out[idx].totalAmount = out[idx].totalAmount * (newC / oldC);
+      }
+    });
+    return out;
+  }
+
+  private finalizeOrderTypeBreakdownRows(
+    rows: Array<{ key: string; label: string; ordersCount: number; totalAmount: number }>,
+    data: any
+  ): Array<{ key: string; label: string; ordersCount: number; totalAmount: number }> {
+    const merged = this.mergeBreakdownRowsByCanonicalKey(rows);
+    const filtered = this.filterChannelRowsWhenMealBreakdownPresent(merged);
+    return this.reconcileMealBreakdownOrderCounts(filtered, data);
+  }
+
   private toNumberSafe(value: unknown): number {
     const num = Number(value);
     return Number.isFinite(num) ? num : 0;
   }
 
   private buildOrderTypeBreakdownRows(data: any): Array<{ key: string; label: string; ordersCount: number; totalAmount: number }> {
-    const directArray =
-      data?.order_type_summary ||
-      data?.order_types_summary ||
-      data?.order_types_breakdown ||
-      data?.order_types ||
-      data?.orderTypeSummary;
+    const arraySources = [
+      data?.business_order_type_summary,
+      data?.meal_order_type_summary,
+      data?.business_order_types_summary,
+      data?.order_type_summary,
+      data?.order_types_summary,
+      data?.order_types_breakdown,
+      data?.orderTypeSummary,
+      data?.order_types,
+    ];
 
-    if (Array.isArray(directArray)) {
-      return directArray.map((item: any) => {
-        const key = String(item?.order_type || item?.type || item?.name || 'client_meal');
-        return {
-          key,
-          label: this.normalizeBusinessOrderTypeLabel(key),
-          ordersCount: this.toNumberSafe(item?.orders_count ?? item?.count ?? item?.orders ?? item?.total_orders),
-          totalAmount: this.toNumberSafe(item?.total_amount ?? item?.amount ?? item?.total ?? item?.sum),
-        };
-      });
+    for (const candidate of arraySources) {
+      if (
+        Array.isArray(candidate) &&
+        candidate.length > 0 &&
+        candidate.every((x) => x != null && typeof x === 'object')
+      ) {
+        const rows = candidate.map((item: any) => {
+          const rawKey = this.extractSummaryRowRawKey(item);
+          const key = this.normalizeCanonicalBusinessOrderKey(rawKey);
+          return {
+            key,
+            label: this.normalizeBusinessOrderTypeLabel(key),
+            ordersCount: this.extractSummaryRowOrdersCount(item),
+            totalAmount: this.toNumberSafe(item?.total_amount ?? item?.amount ?? item?.total ?? item?.sum),
+          };
+        });
+        return this.finalizeOrderTypeBreakdownRows(rows, data);
+      }
     }
 
     const objectData = data?.order_types;
     if (objectData && typeof objectData === 'object' && !Array.isArray(objectData)) {
-      return Object.entries(objectData).map(([key, value]: [string, any]) => ({
-        key,
-        label: this.normalizeBusinessOrderTypeLabel(key),
-        ordersCount: this.toNumberSafe(value?.orders_count ?? value?.count ?? value?.orders),
-        totalAmount: this.toNumberSafe(value?.total_amount ?? value?.amount ?? value?.total),
-      }));
+      const rows = Object.entries(objectData).map(([key, value]: [string, any]) => {
+        const canon = this.normalizeCanonicalBusinessOrderKey(key);
+        return {
+          key: canon,
+          label: this.normalizeBusinessOrderTypeLabel(canon),
+          ordersCount: this.toNumberSafe(
+            value?.distinct_orders ??
+              value?.unique_orders ??
+              value?.orders_count ??
+              value?.ordersCount ??
+              value?.order_count ??
+              value?.count ??
+              value?.orders
+          ),
+          totalAmount: this.toNumberSafe(value?.total_amount ?? value?.amount ?? value?.total),
+        };
+      });
+      return this.finalizeOrderTypeBreakdownRows(rows, data);
     }
 
     return [];
@@ -1115,6 +1367,25 @@ waitForImagesInSection(selector: string): Promise<void> {
 
   get orderTypeSummaryTotalAmount(): number {
     return this.orderTypeBreakdownRows.reduce((sum, row) => sum + row.totalAmount, 0);
+  }
+
+  /**
+   * «عدد الخصومات» — الـ API قد يضاعف العدد (خصم نسبة + نفس الخصم كسطر آخر، أو أكثر من فاتورة لنفس الطلب).
+   * لا يمكن أن يتجاوز عدد تطبيقات الخصم عدد الأوردرات في نفس ملخص الوردية.
+   */
+  get printingCouponCountDisplay(): number {
+    const d = this.printingData;
+    if (!d) {
+      return 0;
+    }
+    const raw = this.toNumberSafe(
+      d.couponCountFixed ?? d.coupon_count_fixed ?? d.couponCount ?? d.coupon_count
+    );
+    const orders = this.toNumberSafe(d.orders_number ?? d.ordersNumber);
+    if (orders > 0 && raw > orders) {
+      return orders;
+    }
+    return raw;
   }
 
   get paymentDeviceReportRows(): Array<{

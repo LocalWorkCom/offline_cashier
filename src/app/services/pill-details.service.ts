@@ -47,7 +47,9 @@ export class PillDetailsService {
       coupon_type?: string;
       coupon_title?: string;
     },
-    paymentDeviceId?: number
+    paymentDeviceId?: number,
+    /** Preserved on update so reports (e.g. طلبات) keep correct order_type when paying from pill-edit */
+    orderType?: string | null
   ): Observable<any> {
     const token = localStorage.getItem('authToken');
     if (!token) {
@@ -98,6 +100,10 @@ export class PillDetailsService {
       payment_status: finalPaymentStatus,
       tip: tip || null,
     };
+
+    if (orderType != null && String(orderType).trim() !== '') {
+      payload.order_type = String(orderType).trim();
+    }
   
     // 1. إضافة حالة التوصيل إذا كان الطلب توصيل وكانت الحالة موجودة
     if (DeliveredOrNot && trackingStatus && trackingStatus.trim() !== '') {
@@ -121,7 +127,7 @@ export class PillDetailsService {
         payload.reference_number = referenceNumber.trim();
       }
 
-      if (paymentDeviceId != null) {
+      if (paymentDeviceId != null && Number.isFinite(Number(paymentDeviceId)) && Number(paymentDeviceId) > 0) {
         payload.payment_device_id = Number(paymentDeviceId);
         payload.payment_device = Number(paymentDeviceId);
       }
