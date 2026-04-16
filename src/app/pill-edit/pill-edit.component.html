@@ -507,37 +507,43 @@
       </p>
     </div> -->
       </div>
-      <div class="d-flex justify-content-between align-items-center py-3" *ngIf="(invoices && invoices.length > 0) ">
-        <h5 class="mb-0" *ngIf="invoices[0]?.transactions?.length">
-          <span class="badge bg-success text-white">
-            الدفع :
-            {{invoices[0].transactions[0].payment_status=== "paid" && invoices[0]?.transactions?.length && invoices[0]?.transactions[0]?.payment_method === "cash" ? "كاش" : (invoices[0].transactions[0].payment_status=== "paid" && invoices[0]?.transactions[0]?.payment_method === "credit" ? "فيزا" : "غير محدد") }}
+
+    </div>
+     <div class="d-flex justify-content-between align-items-center py-3" *ngIf="invoices && invoices.length > 0">
+        <h5 class="mb-0" *ngIf="invoices?.length > 0 && invoices[0]?.transactions">
+          <span class="badge bg-success text-white" *ngIf="invoices[0].transactions.length == 1">
+            طريقة الدفع :
+            {{
+           invoices[0].transactions[0].payment_method === "credit" && invoices[0].transactions[0].payment_status === "paid"
+            ? "فيزا"
+            : invoices[0].transactions[0].payment_method === "cash" && invoices[0].transactions[0].payment_status === "paid"
+              ? "كاش"
+              : invoices[0].transactions[0].payment_method === "deferred"
+                ? "آجل"
+                : "غير محدد" 
+            }}
           </span>
         </h5>
 
-        <div class="d-flex align-items-center" *ngIf="invoices[0]?.transactions">
-          <p *ngIf="invoices[0].transactions[0]?.payment_status" class="mb-0 fw-bold">
-            {{ invoices[0].transactions[0].payment_status=== "paid" ? "مدفوعة" : "غير مدفوعة" }}
+        <div class="d-flex align-items-center">
+          <p *ngIf="paymentStatus" class="mb-0 fw-bold">
+            {{ paymentStatus === "paid" ? "مدفوعة" : "غير مدفوعة" }}
           </p>
         </div>
       </div>
       <!-- Cash - visa -->
-      @if(invoices?.length > 0 && invoices[0]?.transactions){
-      <div *ngIf="invoices[0]?.transactions?.length" class="ps-2">
+      <div *ngIf="invoices?.length > 0 && invoices[0]?.transactions?.length">
         <div *ngFor="let inv of invoices[0].transactions">
           <div class="d-flex justify-content-between align-items-center my-1 fw-bold"
-            *ngIf="invoices[0]?.transactions?.[0]?.payment_status == 'paid'">
+            *ngIf="invoices[0].transactions[0]?.payment_status == 'paid'">
             <div>
-              {{ inv.payment_method === 'cash' ? ' الكاش' : ' الفيزا' }}
+              {{ inv.payment_method === "cash" && inv.payment_status === 'paid' ? " الكاش" : inv.payment_method === "credit" && inv.payment_status === 'paid' ? " الفيزا" : inv.payment_method === "deferred" ? "آجل" : "غير محدد" }}
             </div>
-            <div>{{ inv.paid }} {{invoices[0]?.currency_symbol}}</div>
+            <div>{{ inv.paid | number:'1.2-2' }} {{ invoices[0].currency_symbol }}</div>
           </div>
-
         </div>
-      </div>}
+      </div>
       <!-- Cash - visa -->
-    </div>
-
 
     <div class="card px-4 py-2 my-2" *ngFor="let item of invoiceSummary">
       <h5 class="d-flex align-items-center gap-2 flex-wrap">
