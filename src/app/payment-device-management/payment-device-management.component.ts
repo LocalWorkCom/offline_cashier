@@ -1,10 +1,12 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
 import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { Subscription } from 'rxjs';
 import { PaymentDeviceDeleteModalComponent } from './payment-device-delete-modal.component';
 import { PaymentDeviceFormModalComponent, PaymentDeviceFormResult } from './payment-device-form-modal.component';
 import { baseUrl2 } from '../environment';
 import { HttpClient } from '@angular/common/http';
+import { PaymentDeviceListRefreshService } from '../services/payment-device-list-refresh.service';
 
 interface PaymentDevice {
   id: number;
@@ -21,13 +23,27 @@ interface PaymentDevice {
   templateUrl: './payment-device-management.component.html',
   styleUrls: ['./payment-device-management.component.css']
 })
-export class PaymentDeviceManagementComponent implements OnInit {
+export class PaymentDeviceManagementComponent implements OnInit, OnDestroy {
   devices: PaymentDevice[] = [];
+  private refreshSub?: Subscription;
 
-  constructor(private modalService: NgbModal, private httpClient: HttpClient) {}
+  constructor(
+    private modalService: NgbModal,
+    private httpClient: HttpClient,
+    private paymentDeviceListRefresh: PaymentDeviceListRefreshService
+  ) {}
 
   ngOnInit(): void {
     this.loadDevices();
+    this.refreshSub = this.paymentDeviceListRefresh.refresh$.subscribe(() => this.loadDevices());
+  }
+
+  ngOnDestroy(): void {
+    this.refreshSub?.unsubscribe();
+  }
+
+  displayBalance(device: PaymentDevice): number {
+    return this.paymentDeviceListRefresh.displayBalanceAfterBaseline(device.id, device.balance);
   }
 
   openCreateModal(): void {
@@ -60,7 +76,7 @@ export class PaymentDeviceManagementComponent implements OnInit {
 
     modalRef.componentInstance.mode = 'edit';
     modalRef.componentInstance.title = 'تعديل جهاز الدفع';
-    modalRef.componentInstance.device = { ...device };
+    modalRef.componentInstance.device = { ...device, balance: this.displayBalance(device) };
 
     modalRef.result
       .then((result?: PaymentDeviceFormResult) => {
@@ -81,7 +97,7 @@ export class PaymentDeviceManagementComponent implements OnInit {
     modalRef.componentInstance.deviceName = device.name;
     modalRef.componentInstance.deviceId = device.id;
     modalRef.componentInstance.deviceIp = device.ip;
-    modalRef.componentInstance.deviceBalance = Number(device.balance) || 0;
+    modalRef.componentInstance.deviceBalance = Number(this.displayBalance(device)) || 0;
     modalRef.componentInstance.deviceStatus = device.status;
 
     modalRef.result
@@ -113,7 +129,7 @@ export class PaymentDeviceManagementComponent implements OnInit {
             id: Number(device?.id),
             name: String(device?.device_name ?? '').trim(),
             ip: String(device?.IP ?? '').trim(),
-            balance: Number(device?.Balance) || 0,
+            balance: this.parseBalanceNumber(device?.Balance),
             status: device?.status === 'active' ? 'active' : 'inactive',
           }))
           .filter((d: PaymentDevice) => Number.isFinite(d.id) && d.id > 0);
@@ -122,6 +138,18 @@ export class PaymentDeviceManagementComponent implements OnInit {
         this.devices = [];
       }
     });
+  }
+
+  private parseBalanceNumber(value: unknown): number {
+    if (value == null || value === '') {
+      return 0;
+    }
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value;
+    }
+    const s = String(value).replace(/,/g, '').trim();
+    const n = Number(s);
+    return Number.isFinite(n) ? n : 0;
   }
 }
 

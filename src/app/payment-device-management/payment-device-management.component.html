@@ -12,7 +12,12 @@
         <tr>
           <th class="text-end">اسم الجهاز</th>
           <th class="text-end">IP</th>
-          <th class="text-end">الرصيد</th>
+          <th
+            class="text-end"
+            title="بعد نجاح «تحويل النقدية» يُحسب الرصيد المعروض كفرق عن لحظة التحويل (يبدأ من 0 ويزيد مع مدفوعات الفيزا لكل ماكينة خلال الشيفت). لا يُعدّل حقل الرصيد في قاعدة البيانات من هنا."
+          >
+            الرصيد
+          </th>
           <th class="text-end">الحالة</th>
           <th class="text-end">الإجراءات</th>
         </tr>
@@ -21,7 +26,7 @@
         <tr *ngFor="let device of devices">
           <td>{{ device.name }}</td>
           <td>{{ device.ip }}</td>
-          <td>{{ device.balance | number:'1.2-2':'en-US' }} ج.م</td>
+          <td>{{ displayBalance(device) | number:'1.2-2':'en-US' }} ج.م</td>
           <td>
             <span [class]="getStatusClass(device.status)">{{ getStatusLabel(device.status) }}</span>
           </td>

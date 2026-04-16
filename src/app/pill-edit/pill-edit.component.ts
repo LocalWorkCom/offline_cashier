@@ -341,6 +341,8 @@ export class PillEditComponent {
           this.couponCode = '';
         }
 
+        this.syncPaymentMethodAndDeviceFromInvoice();
+
         // Merged order fix: invoice API may return only primary order items. Fetch full order and use merged items if more.
         const orderId = response.data.order_id;
         const invoiceItemsCount = (this.orderDetails?.flat() || []).length;
@@ -860,10 +862,13 @@ export class PillEditComponent {
           localStorage.setItem('paid_order_credit', JSON.stringify(newTotalCredit));
         }
       }
+      // Talabat: لا تفرض كاش كامل إذا كان المستخدم أدخل فيزا/مختلطاً — يفسد التقارير ويمنع إرسال ماكينة الدفع
       if (this.orderType == 'talabat' && this.paymentStatus == 'unpaid') {
         this.paymentStatus = 'paid';
-        cashAmount = finalTotal;
-        creditAmount = 0;
+        if ((Number(cashAmount) || 0) <= 0 && (Number(creditAmount) || 0) <= 0) {
+          cashAmount = finalTotal;
+          creditAmount = 0;
+        }
       }
 
       if (!this.orderNumber) {
@@ -872,7 +877,13 @@ export class PillEditComponent {
         return;
       }
 
-      const resolvedPillPaymentDeviceId = this.effectivePaymentDeviceIdForOrder();
+      const finalCreditAmt = Number(creditAmount) || 0;
+      const resolvedPillPaymentDeviceId = this.resolvePaymentDeviceIdForInvoiceUpdate(finalCreditAmt);
+      if (this.paymentStatus === 'paid' && finalCreditAmt > 0 && resolvedPillPaymentDeviceId == null) {
+        this.paymentDeviceError = 'يرجى اختيار ماكينة الدفع للفيزا.';
+        this.loading = false;
+        return;
+      }
 
       this.orderService
         .updateInvoiceStatus(
@@ -886,7 +897,8 @@ export class PillEditComponent {
           tipData, // ✅ إرسال بيانات الإكرامية
           this.referenceNumber,
           couponData, // إرسال بيانات الكوبون
-          resolvedPillPaymentDeviceId ?? undefined
+          resolvedPillPaymentDeviceId ?? undefined,
+          this.orderType || undefined
         ).pipe(finalize(() => this.loading = false))
         .subscribe({
           next: async (response) => {
@@ -2238,6 +2250,81 @@ export class PillEditComponent {
     return Number.isFinite(n) && n > 0 ? n : null;
   }
 
+  /**
+   * Align pill-edit payment UI with loaded invoice transactions.
+   * Default selectedPaymentMethod was 'cash', so visa / طلبات flows skipped the device selector and never sent payment_device_id.
+   */
+  private syncPaymentMethodAndDeviceFromInvoice(): void {
+    const txs = this.invoices?.[0]?.transactions;
+    if (!Array.isArray(txs) || txs.length === 0) {
+      return;
+    }
+
+    const paid = (t: any) => String(t?.payment_status || '').toLowerCase() === 'paid';
+    const amount = (t: any) => Number(t?.paid) || 0;
+    const method = (t: any) => String(t?.payment_method || '').toLowerCase();
+
+    const cashPaid = txs.some((t: any) => paid(t) && method(t) === 'cash' && amount(t) > 0);
+    const creditPaid = txs.some((t: any) => paid(t) && method(t) === 'credit' && amount(t) > 0);
+
+    if (cashPaid && creditPaid) {
+      this.selectedPaymentMethod = 'cash + credit';
+    } else if (creditPaid) {
+      this.selectedPaymentMethod = 'credit';
+    } else if (cashPaid) {
+      this.selectedPaymentMethod = 'cash';
+    }
+
+    const creditTx =
+      txs.find((t: any) => paid(t) && method(t) === 'credit' && amount(t) > 0) ||
+      txs.find((t: any) => method(t) === 'credit');
+    if (creditTx) {
+      const raw =
+        creditTx.payment_device_id ??
+        creditTx.payment_device ??
+        this.invoices?.[0]?.payment_device_id ??
+        this.invoices?.[0]?.payment_device;
+      const n = this.coercePositiveDeviceId(raw);
+      if (n != null) {
+        this.selectedPaymentDeviceId = n;
+      }
+    }
+
+    const ps = String(this.paymentStatus || '').toLowerCase();
+    if (ps === 'paid' || paid(txs[0])) {
+      this.ensureSelectedPaymentDevice();
+    }
+  }
+
+  /** Device id sent on invoice update whenever there is a visa (credit) leg — UI, last-used LS, or existing transaction. */
+  private resolvePaymentDeviceIdForInvoiceUpdate(finalCreditAmount: number): number | null {
+    if (this.paymentStatus !== 'paid' || !(Number(finalCreditAmount) > 0)) {
+      return null;
+    }
+    const fromUi = this.effectivePaymentDeviceIdForOrder();
+    if (fromUi != null) {
+      return fromUi;
+    }
+    const stored = Number(localStorage.getItem(this.LAST_USED_PAYMENT_DEVICE_STORAGE_KEY));
+    if (Number.isFinite(stored) && stored > 0) {
+      if (this.paymentDevices.length === 0 || this.paymentDevices.some((d) => Number(d.id) === stored)) {
+        return stored;
+      }
+    }
+    const txs = this.invoices?.[0]?.transactions;
+    if (Array.isArray(txs)) {
+      const creditTx =
+        txs.find((t: any) => String(t?.payment_method || '').toLowerCase() === 'credit' && Number(t?.paid) > 0) ||
+        txs.find((t: any) => String(t?.payment_method || '').toLowerCase() === 'credit');
+      const raw = creditTx?.payment_device_id ?? creditTx?.payment_device;
+      const n = this.coercePositiveDeviceId(raw);
+      if (n != null) {
+        return n;
+      }
+    }
+    return null;
+  }
+
   private isPaymentDeviceSelectionValid(): boolean {
     const n = this.coercePositiveDeviceId(this.selectedPaymentDeviceId);
     return n != null && this.paymentDevices.some((d) => Number(d.id) === n);
@@ -2331,6 +2418,9 @@ export class PillEditComponent {
         }));
 
         this.ensureSelectedPaymentDevice();
+        if (this.invoices?.length) {
+          this.syncPaymentMethodAndDeviceFromInvoice();
+        }
       },
       error: () => {
         this.paymentDevices = [];
