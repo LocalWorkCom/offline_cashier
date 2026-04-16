@@ -1401,13 +1401,31 @@ waitForImagesInSection(selector: string): Promise<void> {
         const deviceId =
           item?.payment_device_id != null && item?.payment_device_id !== ''
             ? item.payment_device_id
-            : null;
+            : item?.id != null && item?.id !== ''
+              ? item.id
+              : null;
+        const ipFromApi = String(
+          item?.ip ?? item?.IP ?? item?.ip_address ?? item?.device_ip ?? ''
+        ).trim();
+        const identifier =
+          ipFromApi ||
+          (deviceId != null && deviceId !== '' ? String(deviceId) : '—');
         return {
-          name: String(item?.device_name ?? item?.payment_device_name ?? '—'),
-          ip: deviceId != null && deviceId !== '' ? String(deviceId) : '—',
+          name: String(item?.device_name ?? item?.payment_device_name ?? item?.name ?? '—'),
+          ip: identifier,
           serial: '—',
-          transactionsCount: this.toNumberSafe(item?.orders_count ?? item?.ordersCount),
-          totalAmount: this.toNumberSafe(item?.total ?? item?.balance ?? item?.total_amount),
+          transactionsCount: this.toNumberSafe(
+            item?.orders_count ?? item?.ordersCount ?? item?.transactions_count ?? item?.count
+          ),
+          totalAmount: this.toNumberSafe(
+            item?.total ??
+              item?.balance ??
+              item?.total_amount ??
+              item?.visa_total ??
+              item?.card_total ??
+              item?.amount ??
+              item?.collected_amount
+          ),
         };
       });
     }

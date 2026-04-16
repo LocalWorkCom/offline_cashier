@@ -42,8 +42,13 @@ export class PaymentDeviceManagementComponent implements OnInit, OnDestroy {
     this.refreshSub?.unsubscribe();
   }
 
+  /**
+   * إدارة الأجهزة (الإعدادات): نعرض رصيد الـ API الفعلي.
+   * تعديل «خط الأساس» بعد تحويل النقدية مخصص لسياق الكاشير وليس لإخفاء أرصدة الماكينات هنا.
+   */
   displayBalance(device: PaymentDevice): number {
-    return this.paymentDeviceListRefresh.displayBalanceAfterBaseline(device.id, device.balance);
+    const n = Number(device?.balance);
+    return Number.isFinite(n) ? n : 0;
   }
 
   openCreateModal(): void {
@@ -131,7 +136,9 @@ export class PaymentDeviceManagementComponent implements OnInit, OnDestroy {
           .filter((d: PaymentDevice) => Number.isFinite(d.id) && d.id > 0);
       },
       error: () => {
-        this.devices = [];
+        if (this.devices.length === 0) {
+          this.devices = [];
+        }
       }
     });
   }
