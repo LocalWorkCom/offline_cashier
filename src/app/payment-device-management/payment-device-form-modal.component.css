@@ -1,6 +1,11 @@
 .payment-device-modal {
-  padding: 6px 8px 12px;
+  padding: 0 8px 12px;
   width: 100%;
+  padding-top: 0.35rem;
+}
+
+.payment-device-modal-body {
+  padding-inline: 4px;
 }
 
 .modal-title-main {
@@ -12,18 +17,22 @@
 }
 
 .btn-close-red {
+  position: absolute;
+  top: 0.35rem;
+  inset-inline-start: 0.35rem;
+  z-index: 2;
   width: 44px;
   height: 44px;
   border: 0;
   border-radius: 6px;
-  background: #FE0000;
+  background: #fe0000;
   color: #fff;
   font-size: 1.8rem;
   line-height: 1;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin-right: auto;
+  margin: 0;
 }
 
 .input-pill {
@@ -35,23 +44,29 @@
 }
 
 .status-row {
-  /* display: flex; */
-  align-items: center;
-  /* justify-content: space-between; */
-  gap: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  width: 100%;
+  gap: 0.65rem;
 }
 
 .status-label {
   font-size: 1.1rem;
   font-weight: 700;
+  flex-shrink: 0;
 }
 
 .status-options {
   display: flex;
-  justify-content:right;
-  gap: 36px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 2.25rem;
+  flex-wrap: wrap;
+  width: 100%;
 }
 
+/* RTL: «نشط» أولاً في DOM يظهر يمين المجموعة، «غير نشط» يساره — كما في Figma */
 .status-check {
   display: flex;
   align-items: center;
@@ -76,33 +91,26 @@
 
 .btn-cancel {
   background: #fff;
-  color: #FE0000;
-  border: 1px solid #FE0000;
+  color: #fe0000;
+  border: 1px solid #fe0000;
 }
 
 .btn-save {
-  background: #FE0000;
+  background: #fe0000;
   color: #fff;
-  border: 1px solid #FE0000;
+  border: 1px solid #fe0000;
 }
 
 .btn-save:hover,
 .btn-save:focus,
 .btn-save:active {
-  background: #FE0000 !important;
-  border-color: #FE0000 !important;
+  background: #fe0000 !important;
+  border-color: #fe0000 !important;
   color: #fff !important;
 }
 
 @media (max-width: 767.98px) {
-  .status-row {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
   .status-options {
-    width: 100%;
     justify-content: space-between;
     gap: 16px;
   }

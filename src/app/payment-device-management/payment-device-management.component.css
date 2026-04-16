@@ -1,9 +1,123 @@
+.payment-device-page {
+  width: 100%;
+}
+
+.payment-device-page-heading {
+  color: #111827;
+  font-size: clamp(1.05rem, 2.2vw, 1.35rem);
+  line-height: 1.45;
+  letter-spacing: -0.02em;
+}
+
+.payment-device-settings-prefix {
+  color: #6b7280;
+  font-weight: 600;
+  font-size: 0.92em;
+}
+
+.payment-device-title-sep {
+  color: #9ca3af;
+  margin: 0 0.35rem;
+  font-weight: 400;
+}
+
+.payment-device-page-title-inline {
+  font-weight: 800;
+  color: #111827;
+}
+
+.payment-device-add-btn {
+  font-weight: 700;
+  box-shadow: 0 4px 14px rgba(220, 53, 69, 0.35);
+}
+
+.payment-device-table-card {
+  background: #ffffff;
+  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08);
+}
+
+.payment-device-table-head {
+  background: #ffffff;
+  border-bottom: 1px solid #e8eaed;
+}
+
+.payment-device-table-head th {
+  color: #374151;
+  font-weight: 700;
+  font-size: 0.95rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e8eaed;
+  vertical-align: middle;
+}
+
 th,
 td {
   white-space: nowrap;
 }
 
+.payment-device-cell {
+  color: #1f2937;
+  font-weight: 500;
+  vertical-align: middle;
+}
+
+.payment-device-row--active td {
+  background-color: #fff5f8;
+  border-color: transparent;
+}
+
+.payment-device-row--inactive td {
+  background-color: #f3f4f6;
+  border-color: transparent;
+}
+
+.payment-device-row--empty td {
+  background: #ffffff;
+}
+
+.payment-device-status-badge {
+  font-size: 0.875rem;
+  font-weight: 600;
+  border: 0;
+}
+
+.payment-device-status-badge--active {
+  background: #d1fae5 !important;
+  color: #065f46 !important;
+}
+
+.payment-device-status-badge--inactive {
+  background: #fce7f3 !important;
+  color: #9d174d !important;
+}
+
+.payment-device-actions-toggle {
+  text-decoration: none;
+  padding: 0.35rem 0.5rem !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #374151 !important;
+  line-height: 1;
+}
+
+.payment-device-actions-toggle:hover,
+.payment-device-actions-toggle:focus,
+.payment-device-actions-toggle:focus-visible {
+  color: #111827 !important;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+.payment-device-actions-toggle.dropdown-toggle::after {
+  display: none !important;
+}
+
 tbody tr:last-child td {
   border-bottom: 0;
 }
-
