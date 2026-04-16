@@ -174,8 +174,8 @@
         <span class="d-value">{{ summary.subtotal_price_before_coupon  | number:'1.2-2' }} {{ summary.currency_symbol }}</span>
       </div>
 
-       <div class="summary-row">
-        <span class="d-label">الخدمة({{ summary.service_percentage }}%) </span>
+       <div class="summary-row" *ngIf="data.invoices[0]?.order_type !== 'talabat'">
+        <span class="d-label" >الخدمة({{ summary.service_percentage }}%) </span>
         <span class="d-value">{{ summary.service_fees | number:'1.2-2' }} {{ summary.currency_symbol }}</span>
       </div>
 
