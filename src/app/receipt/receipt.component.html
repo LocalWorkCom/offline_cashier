@@ -39,10 +39,6 @@
       </div>
 
       <div class="info-row">
-        <span class="d-label">وقت الطباعة :</span>
-        <span class="d-value" style="display: inline-flex; direction: ltr; align-items: center;"><span>{{ getOrderDateTimeSeperated().timeStr }}</span><span style="width: 20px;"></span><span>{{ getOrderDateTimeSeperated().dateStr }}</span></span>
-      </div>
-      <div class="info-row">
         <span class="d-label">وقت إنشاء الطلب :</span>
         <span class="d-value" style="display: inline-flex; direction: ltr; align-items: center;"><span>{{ getOrderPlacedAtSeparated().timeStr }}</span><span style="width: 20px;"></span><span>{{ getOrderPlacedAtSeparated().dateStr }}</span></span>
       </div>
@@ -178,8 +174,8 @@
         <span class="d-value">{{ summary.subtotal_price_before_coupon  | number:'1.2-2' }} {{ summary.currency_symbol }}</span>
       </div>
 
-       <div class="summary-row">
-        <span class="d-label">الخدمة({{ summary.service_percentage }}%) </span>
+       <div class="summary-row" *ngIf="data.invoices[0]?.order_type !== 'talabat'">
+        <span class="d-label" >الخدمة({{ summary.service_percentage }}%) </span>
         <span class="d-value">{{ summary.service_fees | number:'1.2-2' }} {{ summary.currency_symbol }}</span>
       </div>
 

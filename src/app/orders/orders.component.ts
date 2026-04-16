@@ -3061,7 +3061,7 @@ export class OrdersComponent implements OnDestroy {
     const totalCredit = localStorage.getItem('totalvisa');
     const totalTalabat = localStorage.getItem('talabatData');
 
-    if (order.order_details.order_type == 'talabat') {
+    if (order.order_details.order_type == 'talabat' && order.order_details.payment_method == 'deferred') {
       return Number(totalTalabat) >= Number(order.total_price);
     }
     // console.log("totalCash",totalCash,totalCredit);
