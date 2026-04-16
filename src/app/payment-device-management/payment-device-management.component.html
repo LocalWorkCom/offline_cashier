@@ -1,54 +1,85 @@
-<div class="d-flex justify-content-end mb-3">
-  <button class="btn btn-danger rounded-pill px-4" (click)="openCreateModal()">
-    <i class="fas fa-plus-circle me-2"></i>
-    إضافة جهاز
-  </button>
-</div>
+<div class="payment-device-page" dir="rtl">
+  <div class="payment-device-page-toolbar d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <h4 class="payment-device-page-heading mb-0 text-end">
+      <span class="payment-device-settings-prefix">الإعدادات</span>
+      <span class="payment-device-title-sep" aria-hidden="true">›</span>
+      <span class="payment-device-page-title-inline">إدارة أجهزة الدفع</span>
+    </h4>
+    <button type="button" class="btn btn-danger rounded-pill px-4 payment-device-add-btn" (click)="openCreateModal()">
+      <i class="fas fa-plus-circle ms-2"></i>
+      إضافة جهاز
+    </button>
+  </div>
 
-<div class="card border-0 shadow-sm rounded-4 overflow-hidden">
-  <div class="table-responsive">
-    <table class="table align-middle mb-0">
-      <thead class="table-light">
-        <tr>
-          <th class="text-end">اسم الجهاز</th>
-          <th class="text-end">IP</th>
-          <th
-            class="text-end"
-            title="بعد نجاح «تحويل النقدية» يُحسب الرصيد المعروض كفرق عن لحظة التحويل (يبدأ من 0 ويزيد مع مدفوعات الفيزا لكل ماكينة خلال الشيفت). لا يُعدّل حقل الرصيد في قاعدة البيانات من هنا."
+  <div class="card border-0 shadow payment-device-table-card rounded-4 overflow-hidden">
+    <div class="table-responsive">
+      <table class="table align-middle mb-0 payment-device-table">
+        <thead class="payment-device-table-head">
+          <tr>
+            <th class="text-end">اسم الجهاز</th>
+            <th class="text-end">IP</th>
+            <th
+              class="text-end"
+              title="بعد نجاح «تحويل النقدية» يُحسب الرصيد المعروض كفرق عن لحظة التحويل (يبدأ من 0 ويزيد مع مدفوعات الفيزا لكل ماكينة خلال الشيفت). لا يُعدّل حقل الرصيد في قاعدة البيانات من هنا."
+            >
+              الرصيد
+            </th>
+            <th class="text-end">الحالة</th>
+            <th class="text-end">الإجراءات</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr
+            *ngFor="let device of devices"
+            [class.payment-device-row--active]="device.status === 'active'"
+            [class.payment-device-row--inactive]="device.status === 'inactive'"
           >
-            الرصيد
-          </th>
-          <th class="text-end">الحالة</th>
-          <th class="text-end">الإجراءات</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let device of devices">
-          <td>{{ device.name }}</td>
-          <td>{{ device.ip }}</td>
-          <td>{{ displayBalance(device) | number:'1.2-2':'en-US' }} ج.م</td>
-          <td>
-            <span [class]="getStatusClass(device.status)">{{ getStatusLabel(device.status) }}</span>
-          </td>
-          <td>
-            <div class="d-flex gap-2">
-              <button class="btn btn-sm btn-outline-secondary" (click)="openEditModal(device)">
-                <i class="fas fa-edit"></i>
-              </button>
-              <button class="btn btn-sm btn-outline-danger" (click)="openDeleteModal(device)">
-                <i class="fas fa-trash"></i>
-              </button>
-            </div>
-          </td>
-        </tr>
+            <td class="payment-device-cell">{{ device.name }}</td>
+            <td class="payment-device-cell">{{ device.ip }}</td>
+            <td class="payment-device-cell">{{ displayBalance(device) | number:'1.2-2':'en-US' }} ج.م</td>
+            <td class="payment-device-cell">
+              <span
+                class="badge rounded-pill payment-device-status-badge px-3 py-2"
+                [ngClass]="
+                  device.status === 'active'
+                    ? 'payment-device-status-badge--active'
+                    : 'payment-device-status-badge--inactive'
+                "
+              >
+                {{ getStatusLabel(device.status) }}
+              </span>
+            </td>
+            <td class="text-end pe-3 payment-device-cell">
+              <div ngbDropdown placement="bottom-end" container="body">
+                <button
+                  type="button"
+                  class="btn btn-link text-secondary payment-device-actions-toggle px-2 py-1"
+                  ngbDropdownToggle
+                  aria-label="المزيد من الإجراءات"
+                >
+                  <i class="fa-solid fa-ellipsis-vertical fa-lg"></i>
+                </button>
+                <div ngbDropdownMenu class="dropdown-menu-end shadow border-0 py-1 rounded-3">
+                  <button type="button" class="dropdown-item text-end" ngbDropdownItem (click)="openEditModal(device)">
+                    <i class="fas fa-edit ms-2 text-dark"></i>
+                    تعديل
+                  </button>
+                  <button type="button" class="dropdown-item text-end text-danger" ngbDropdownItem (click)="openDeleteModal(device)">
+                    <i class="fas fa-trash-alt ms-2"></i>
+                    حذف
+                  </button>
+                </div>
+              </div>
+            </td>
+          </tr>
 
-        <tr *ngIf="!devices.length">
-          <td colspan="5" class="text-center text-muted py-4">
-            لا توجد أجهزة دفع حالياً
-          </td>
-        </tr>
-      </tbody>
-    </table>
+          <tr *ngIf="!devices.length" class="payment-device-row--empty">
+            <td colspan="5" class="text-center text-muted py-4">
+              لا توجد أجهزة دفع حالياً
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
   </div>
 </div>
-

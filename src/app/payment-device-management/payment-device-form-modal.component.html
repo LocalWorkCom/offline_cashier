@@ -1,9 +1,14 @@
-<div class="payment-device-modal " dir="rtl">
-  <div class="modal-header border-0 pb-0">
-    <button type="button" class="btn-close-red" aria-label="Close" (click)="activeModal.dismiss()">×</button>
-  </div>
+<div class="payment-device-modal position-relative" dir="rtl">
+  <button
+    type="button"
+    class="btn-close-red"
+    aria-label="إغلاق"
+    (click)="activeModal.dismiss()"
+  >
+    ×
+  </button>
 
-  <div class="modal-body pt-0">
+  <div class="modal-body pt-4 payment-device-modal-body">
     <h2 class="modal-title-main">{{ mode === 'edit' ? 'تعديل جهاز الدفع' : 'اضافة جهاز جديد' }}</h2>
 
     <div class="row g-3 mt-3">
@@ -16,8 +21,8 @@
     </div>
     <br>
 
-    <div class="status-row mt-3">
-      <div class="status-label">الحالة</div>
+    <div class="status-row">
+      <div class="status-label mb-0">الحالة</div>
       <div class="status-options">
         <div class="form-check status-check">
           <input
@@ -50,7 +55,5 @@
       {{ mode === 'edit' ? 'حفظ' : 'حفظ' }}
     </button>
     <button class="btn btn-cancel" (click)="activeModal.dismiss()">الغاء</button>
-    
   </div>
 </div>
-

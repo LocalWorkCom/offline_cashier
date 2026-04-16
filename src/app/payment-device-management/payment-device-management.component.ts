@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
+import { NgbDropdownModule, NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { Subscription } from 'rxjs';
 import { PaymentDeviceDeleteModalComponent } from './payment-device-delete-modal.component';
 import { PaymentDeviceFormModalComponent, PaymentDeviceFormResult } from './payment-device-form-modal.component';
@@ -19,7 +19,7 @@ interface PaymentDevice {
 @Component({
   selector: 'app-payment-device-management',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, NgbDropdownModule],
   templateUrl: './payment-device-management.component.html',
   styleUrls: ['./payment-device-management.component.css']
 })
@@ -114,10 +114,6 @@ export class PaymentDeviceManagementComponent implements OnInit, OnDestroy {
 
   getStatusLabel(status: PaymentDevice['status']): string {
     return status === 'active' ? 'نشط' : 'غير نشط';
-  }
-
-  getStatusClass(status: PaymentDevice['status']): string {
-    return status === 'active' ? 'text-success' : 'text-danger';
   }
 
   private loadDevices(): void {
