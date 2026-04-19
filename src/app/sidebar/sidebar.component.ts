@@ -60,12 +60,16 @@ export class SidebarComponent implements OnInit {
   reasonError: any;
   printingData: any;
   orderTypeBreakdownRows: Array<{ key: string; label: string; ordersCount: number; totalAmount: number }> = [];
-  /** الفرق = النقدية المتوقعة - النقدية الموجودة (لطباعة التقرير) */
+  /**
+   * فرق العهدة في طباعة التحويل: الفعلي − مطلق المتوقع.
+   * عند سالب المتوقع يُفسر غالباً كـ«عجز» بالمقدار |متوقع| فيطابق «الموجود − العجز» (مثال: 1000−526=474 لا 1000−(−526)).
+   * عند موجب المتوقع يعادل «فعلي − متوقع» العادي.
+   */
   get printingDeficitCash(): number {
     if (!this.printingData) return 0;
     const expected = Number(this.printingData?.cashTotalwithoutRefund) || 0;
     const actual = Number(this.printingData?.actualAmount) || 0;
-    return expected - actual;
+    return Math.round((actual - Math.abs(expected)) * 100) / 100;
   }
 
   /**
