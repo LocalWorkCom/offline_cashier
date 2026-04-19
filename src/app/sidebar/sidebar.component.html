@@ -510,28 +510,28 @@
     <div class="cash-transfer-print-table-wrap">
       <div class=" table-content">
         <span> عدد الاوردرات </span>
-        <span>{{printingData?.orders_number}}</span>
+        <span>{{ (printingData?.orders_number ?? 0) | number:'1.0-0':'en-US' }}</span>
       </div>
       <div class=" table-content">
         <span> صافي مبلغ نقدية </span>
         <!-- <span>{{printingData?.cashTotal}}</span> -->
-        <span>{{printingData?.cashTotalWithRefund}}</span>
+        <span>{{ (printingData?.cashTotalWithRefund ?? 0) | number:'1.2-2':'en-US' }}</span>
       </div>
 
       <div class="table-content">
         <span> صافي مبلغ بطاقة </span>
-        <span>{{printingData?.visaTotalWithRefund}}</span>
+        <span>{{ (printingData?.visaTotalWithRefund ?? 0) | number:'1.2-2':'en-US' }}</span>
       </div>
 
       <div class="table-content">
         <span> صافي مبلغ أجل </span>
-        <span>{{printingData?.totalDeferred}}</span>
+        <span>{{ (printingData?.totalDeferred ?? 0) | number:'1.2-2':'en-US' }}</span>
       </div>
 
 
       <div class="table-content table-content-total-net">
         <span> إجمالي الصافي </span>
-        <span>{{ (printingData?.visaTotalWithRefund + printingData?.cashTotalWithRefund + printingData?.totalDeferred) | number }}</span>
+        <span>{{ ((printingData?.visaTotalWithRefund ?? 0) + (printingData?.cashTotalWithRefund ?? 0) + (printingData?.totalDeferred ?? 0)) | number:'1.2-2':'en-US' }}</span>
       </div>
       <!-- <div class="table-content">
       <span> مبيعات </span>
@@ -569,7 +569,7 @@
       </div>
       <div class="table-content">
         <span> الفرق </span>
-        <span>{{ printingDeficitCash | number:'1.2-2' }} </span>
+        <span>{{ printingDeficitCash | number:'1.2-2':'en-US' }} </span>
       </div>
 
     </div>
@@ -684,20 +684,20 @@
     <div class="cash-transfer-print-table-wrap">
       <div class=" table-content">
         <span> عدد الطلبات المرتجعة </span>
-        <span>{{printingData?.orders_number_refund}}</span>
+        <span>{{ (printingData?.orders_number_refund ?? 0) | number:'1.0-0':'en-US' }}</span>
       </div>
 
       <div class="table-content">
         <span> مبيعات المرتجع  نقدية</span>
-        <span>{{printingData?.refundTotalCash}} </span>
+        <span>{{ (printingData?.refundTotalCash ?? 0) | number:'1.2-2':'en-US' }} </span>
       </div>
       <div class="table-content">
         <span> مبيعات المرتجع  بطاقة</span>
-        <span>{{printingData?.refundTotalVisa}} </span>
+        <span>{{ (printingData?.refundTotalVisa ?? 0) | number:'1.2-2':'en-US' }} </span>
       </div>
       <div class="table-content">
         <span> مبيعات المرتجع  أجل</span>
-        <span>{{printingData?.refundTotalDeferred}} </span>
+        <span>{{ (printingData?.refundTotalDeferred ?? 0) | number:'1.2-2':'en-US' }} </span>
       </div>
 
     </div>
@@ -705,7 +705,7 @@
     <div class="cash-transfer-print-table-wrap">
       <div class=" table-content">
         <span> عدد الخصومات </span>
-        <span>{{ printingCouponCountDisplay }}</span>
+        <span>{{ (printingCouponCountDisplay ?? 0) | number:'1.0-0':'en-US' }}</span>
       </div>
       <div class=" table-content">
         <span> مبلغ الخصم </span>
@@ -738,21 +738,21 @@
       <div *ngFor="let item of orderTypeBreakdownRows" class="cash-transfer-print-table-wrap cash-transfer-print-table-wrap--category">
         <div class="table-content">
           <span>{{ item.label }}</span>
-          <span>{{ item.ordersCount }}</span>
+          <span>{{ item.ordersCount | number:'1.0-0':'en-US' }}</span>
         </div>
         <div class="table-content">
           <span>الإجمالي</span>
-          <span>{{ item.totalAmount | number:'1.2-2' }}</span>
+          <span>{{ item.totalAmount | number:'1.2-2':'en-US' }}</span>
         </div>
       </div>
       <div class="cash-transfer-print-table-wrap">
         <div class="table-content">
           <span>إجمالي عدد الطلبات</span>
-          <span>{{ orderTypeSummaryOrdersCount }}</span>
+          <span>{{ orderTypeSummaryOrdersCount | number:'1.0-0':'en-US' }}</span>
         </div>
         <div class="table-content">
           <span>إجمالي المبلغ</span>
-          <span>{{ orderTypeSummaryTotalAmount | number:'1.2-2' }}</span>
+          <span>{{ orderTypeSummaryTotalAmount | number:'1.2-2':'en-US' }}</span>
         </div>
       </div>
     </div>
@@ -776,7 +776,7 @@
     <div class="cash-transfer-print-table-wrap">
       <div class="table-content">
         <span> العدد الاجمالى </span>
-        <span>{{printingData?.talabatcount}} </span>
+        <span>{{ (printingData?.talabatcount ?? 0) | number:'1.0-0':'en-US' }} </span>
       </div>
       <!-- <div class="table-content">
         <span> عدد نقدية طلبات</span>
@@ -811,7 +811,7 @@
     <div class="cash-transfer-print-table-wrap">
       <div class=" table-content">
         <span> عدد الطلبات المرتجعة التابعة للطلبات </span>
-        <span>{{printingData?.talabat_full_return_count}}</span>
+        <span>{{ (printingData?.talabat_full_return_count ?? 0) | number:'1.0-0':'en-US' }}</span>
       </div>
 
       <div class="table-content">
@@ -825,15 +825,15 @@
     <div class="cash-transfer-print-table-wrap">
       <div class="table-content">
         <span> مجموع الإكراميات </span>
-        <span>{{ normalizedTipSummary.total | number:'1.2-2' }} ج.م</span>
+        <span>{{ normalizedTipSummary.total | number:'1.2-2':'en-US' }} ج.م</span>
       </div>
       <div class="table-content">
         <span> الإكراميات كاش </span>
-        <span>{{ normalizedTipSummary.cash | number:'1.2-2' }} ج.م</span>
+        <span>{{ normalizedTipSummary.cash | number:'1.2-2':'en-US' }} ج.م</span>
       </div>
       <div class="table-content">
         <span> الإكراميات فيزا </span>
-        <span>{{ normalizedTipSummary.visa | number:'1.2-2' }} ج.م</span>
+        <span>{{ normalizedTipSummary.visa | number:'1.2-2':'en-US' }} ج.م</span>
       </div>
     </div>
 
@@ -859,7 +859,7 @@
       </div> -->
       <div class="table-content">
         <span>عدد طلبات ماكينة الدفع</span>
-        <span>{{ deviceRow.transactionsCount }}</span>
+        <span>{{ deviceRow.transactionsCount | number:'1.0-0':'en-US' }}</span>
       </div>
       <div class="table-content">
         <span>الإجمالي</span>
@@ -869,7 +869,7 @@
     <div class="cash-transfer-print-table-wrap">
       <div class="table-content table-content-total-net">
         <span>الإجمالي العام (العمليات)</span>
-        <span>{{ paymentDeviceReportGrandTransactions }}</span>
+        <span>{{ paymentDeviceReportGrandTransactions | number:'1.0-0':'en-US' }}</span>
       </div>
       <div class="table-content table-content-total-net">
         <span>الإجمالي العام (المبلغ)</span>

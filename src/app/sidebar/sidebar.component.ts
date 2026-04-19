@@ -60,12 +60,16 @@ export class SidebarComponent implements OnInit {
   reasonError: any;
   printingData: any;
   orderTypeBreakdownRows: Array<{ key: string; label: string; ordersCount: number; totalAmount: number }> = [];
-  /** الفرق = النقدية المتوقعة - النقدية الموجودة (لطباعة التقرير) */
+  /**
+   * فرق العهدة في طباعة التحويل: الفعلي − مطلق المتوقع.
+   * عند سالب المتوقع يُفسر غالباً كـ«عجز» بالمقدار |متوقع| فيطابق «الموجود − العجز» (مثال: 1000−526=474 لا 1000−(−526)).
+   * عند موجب المتوقع يعادل «فعلي − متوقع» العادي.
+   */
   get printingDeficitCash(): number {
     if (!this.printingData) return 0;
     const expected = Number(this.printingData?.cashTotalwithoutRefund) || 0;
     const actual = Number(this.printingData?.actualAmount) || 0;
-    return expected - actual;
+    return Math.round((actual - Math.abs(expected)) * 100) / 100;
   }
 
   /**
@@ -1401,13 +1405,31 @@ waitForImagesInSection(selector: string): Promise<void> {
         const deviceId =
           item?.payment_device_id != null && item?.payment_device_id !== ''
             ? item.payment_device_id
-            : null;
+            : item?.id != null && item?.id !== ''
+              ? item.id
+              : null;
+        const ipFromApi = String(
+          item?.ip ?? item?.IP ?? item?.ip_address ?? item?.device_ip ?? ''
+        ).trim();
+        const identifier =
+          ipFromApi ||
+          (deviceId != null && deviceId !== '' ? String(deviceId) : '—');
         return {
-          name: String(item?.device_name ?? item?.payment_device_name ?? '—'),
-          ip: deviceId != null && deviceId !== '' ? String(deviceId) : '—',
+          name: String(item?.device_name ?? item?.payment_device_name ?? item?.name ?? '—'),
+          ip: identifier,
           serial: '—',
-          transactionsCount: this.toNumberSafe(item?.orders_count ?? item?.ordersCount),
-          totalAmount: this.toNumberSafe(item?.total ?? item?.balance ?? item?.total_amount),
+          transactionsCount: this.toNumberSafe(
+            item?.orders_count ?? item?.ordersCount ?? item?.transactions_count ?? item?.count
+          ),
+          totalAmount: this.toNumberSafe(
+            item?.total ??
+              item?.balance ??
+              item?.total_amount ??
+              item?.visa_total ??
+              item?.card_total ??
+              item?.amount ??
+              item?.collected_amount
+          ),
         };
       });
     }
