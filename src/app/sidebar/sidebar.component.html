@@ -953,14 +953,14 @@
 
   <div class="text-center mt-3">
     <p class="fw-bold"> النقدية المتوقعة :
-      <span>{{ reportData.expectedCash | number:'1.2-2' }} {{currency_Symbol}}</span>
+      <span>{{ reportData.expectedCashV2 | number:'1.2-2' }} {{currency_Symbol}}</span>
     </p>
     <p class="fw-bold"> النقدية الموجودة :
       <span>{{reportData.cashTotalLogout | number:'1.2-2'}} {{currency_Symbol}}</span>
     </p>
     <p class="fw-bold">الفرق :
       <span [class.text-black]="reportData.cashDifference < 0" [class.text-black]="reportData.cashDifference >= 0">
-        {{reportData.cashDifference | number:'1.2-2'}} {{currency_Symbol}}
+        {{reportData.expectedCashV2 - reportData.cashTotalLogout | number:'1.2-2'}} {{currency_Symbol}}
       </span>
     </p>
   </div>

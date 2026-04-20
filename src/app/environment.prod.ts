@@ -9,9 +9,9 @@ export const baseUrlForWebSocket ='https://erpfortest.testdomain100.online/'
 
 // export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
 
-export const baseUrl ='https://erp-cashier.testdomain100.online/'
+export const baseUrl ='https://productowner.testdomain100.online/'
 // export const baseUrl2 ='https://productowner.testdomain100.online/api'
-export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
+export const baseUrl2 ='https://productowner.testdomain100.online/api'
 
 // export const baseUrl2 ='https://erpmain.alkoot-restaurant.com/api'
 
