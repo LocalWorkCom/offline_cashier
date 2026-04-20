@@ -23,6 +23,7 @@ import { NgbModal } from '@ng-bootstrap/ng-bootstrap';
 import { PrintTimeService } from '../services/print-time.service';
 import { ReceiptComponent } from '../receipt/receipt.component';
 import { SilentPrintService } from '../services/silent-print.service';
+import { PaymentDeviceListRefreshService } from '../services/payment-device-list-refresh.service';
 
 
 @Component({
@@ -140,7 +141,8 @@ export class PillEditComponent {
     private http: HttpClient,
     private modalService: NgbModal,
     private printTime: PrintTimeService,
-    private silentPrint: SilentPrintService
+    private silentPrint: SilentPrintService,
+    private paymentDeviceListRefresh: PaymentDeviceListRefreshService
   ) {
     this.currencySymbol = localStorage.getItem('currency_symbol') || 'ج.م';
   }
@@ -926,6 +928,9 @@ export class PillEditComponent {
             }
 
             this.markSelectedPaymentDeviceAsLastUsed(resolvedPillPaymentDeviceId);
+            if (finalCreditAmt > 0 && resolvedPillPaymentDeviceId != null) {
+              this.paymentDeviceListRefresh.notify();
+            }
 
             // ✅ Success - فقط إذا تم الحفظ بنجاح
             this.apiErrors = [];
@@ -2301,9 +2306,16 @@ if (Number(totalPaid.toFixed(2)) < Number(billAmount.toFixed(2))) {
     if (this.paymentStatus !== 'paid' || !(Number(finalCreditAmount) > 0)) {
       return null;
     }
+    this.ensureSelectedPaymentDevice();
     const fromUi = this.effectivePaymentDeviceIdForOrder();
     if (fromUi != null) {
       return fromUi;
+    }
+    if (this.paymentDevices.length === 1) {
+      const only = this.coercePositiveDeviceId(this.paymentDevices[0].id);
+      if (only != null) {
+        return only;
+      }
     }
     const stored = Number(localStorage.getItem(this.LAST_USED_PAYMENT_DEVICE_STORAGE_KEY));
     if (Number.isFinite(stored) && stored > 0) {
@@ -2356,7 +2368,8 @@ if (Number(totalPaid.toFixed(2)) < Number(billAmount.toFixed(2))) {
       return;
     }
     const recommended = this.paymentDevices.find((d) => d.isRecommended);
-    this.selectedPaymentDeviceId = recommended?.id ?? null;
+    const firstActive = this.paymentDevices[0];
+    this.selectedPaymentDeviceId = recommended?.id ?? firstActive?.id ?? null;
   }
 
   private markSelectedPaymentDeviceAsLastUsed(paidDeviceId?: number | null): void {

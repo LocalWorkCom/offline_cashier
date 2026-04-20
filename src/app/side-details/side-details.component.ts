@@ -6190,7 +6190,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       return;
     }
     const recommended = this.paymentDevices.find((d) => d.isRecommended);
-    this.selectedPaymentDeviceId = recommended?.id ?? null;
+    const firstActive = this.paymentDevices[0];
+    this.selectedPaymentDeviceId = recommended?.id ?? firstActive?.id ?? null;
   }
 
   /** Persist last-used terminal after a successful paid order (id should match what was sent on the order). */
