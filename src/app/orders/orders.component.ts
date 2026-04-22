@@ -55,6 +55,10 @@ import { totalBalance } from '../services/pusher/totalBalance';
   ],
 })
 export class OrdersComponent implements OnDestroy {
+  cancelReasons: Array<{ id: string; label: string; isOther: boolean }> = [];
+  selectedCancelReasonId: string = '';
+  customCancelReason: string = '';
+  isCancelReasonsLoading: boolean = false;
   private isOnline: boolean = navigator.onLine;
   isLastOrderLoading: boolean = false;
   lastOrderError: string = '';
@@ -188,6 +192,7 @@ export class OrdersComponent implements OnDestroy {
     });
 
     this.fetchOrdersData();
+    this.loadCancelReasons();
     this.fetchOrderTypeCounts();
     // if (this.isOnline == false) {
     //   // this.loadOrdersFromIndexedDB();
@@ -2113,6 +2118,79 @@ export class OrdersComponent implements OnDestroy {
   selectedReturnPaymentMethod: string = 'cash'; // Default payment method for return invoice
   returnCashAmount: number | null = null;
   returnCreditAmount: number | null = null;
+
+  private loadCancelReasons(): void {
+    this.isCancelReasonsLoading = true;
+    const endpoints = [
+      `${baseUrl}api/orders/cashier/cancel-reasons`,
+      // `${baseUrl}api/orders/cashier/request-cancel/reasons`,
+    ];
+
+    const tryEndpoint = (index: number) => {
+      if (index >= endpoints.length) {
+        this.cancelReasons = [{ id: 'other', label: 'أخرى', isOther: true }];
+        this.isCancelReasonsLoading = false;
+        return;
+      }
+
+      this.http.get<any>(endpoints[index]).subscribe({
+        next: (res) => {
+          const rawList = Array.isArray(res?.data)
+            ? res.data
+            : Array.isArray(res)
+              ? res
+              : [];
+
+          const normalized = rawList
+            .map((item: any, i: number) => {
+              const id = String(item?.id ?? item?.value ?? i + 1);
+              const label = String(
+                item?.name || ''
+              ).trim();
+              if (!label) return null;
+              const normalizedLabel = label.replace(/\s/g, '').toLowerCase();
+              const isOther =
+                normalizedLabel.includes('other') ||
+                normalizedLabel.includes('اخرى') ||
+                normalizedLabel.includes('أخرى');
+              return { id: isOther ? 'other' : id, label, isOther };
+            })
+            .filter(Boolean) as Array<{ id: string; label: string; isOther: boolean }>;
+
+          const hasOther = normalized.some((x) => x.isOther);
+          this.cancelReasons = hasOther
+            ? normalized
+            : [...normalized, { id: 'other', label: 'أخرى', isOther: true }];
+          this.isCancelReasonsLoading = false;
+        },
+        error: () => {
+          tryEndpoint(index + 1);
+        },
+      });
+    };
+
+    tryEndpoint(0);
+  }
+
+  get showCustomCancelReasonInput(): boolean {
+    return this.selectedCancelReasonId === 'other';
+  }
+
+  onCancelReasonChanged(): void {
+    if (!this.showCustomCancelReasonInput) {
+      this.customCancelReason = '';
+    }
+  }
+
+  private getResolvedCancelReason(): string {
+    if (this.showCustomCancelReasonInput) {
+      return this.customCancelReason?.trim() || '';
+    }
+    const selected = this.cancelReasons.find(
+      (reason) => reason.id === this.selectedCancelReasonId
+    );
+    return selected?.label?.trim() || '';
+  }
   /*   submitCancelRequest(order: any): void {
     const selectedItems = order.order_items
       .filter((item: any) => item.isChecked)
@@ -2316,6 +2394,8 @@ export class OrdersComponent implements OnDestroy {
   prepareOrderForCancel(order: any): void {
     this.cancelReason = '';
     this.cancelReasonTouched = false;
+    this.selectedCancelReasonId = '';
+    this.customCancelReason = '';
     this.cancelErrorMessage = '';
     this.cancelSuccessMessage = '';
     this.isSubmitting = false;
@@ -2413,7 +2493,9 @@ export class OrdersComponent implements OnDestroy {
 
     // Validate cancelReason
     this.cancelReasonTouched = true;
-    if (!this.cancelReason || !this.cancelReason.trim()) {
+    const resolvedCancelReason = this.getResolvedCancelReason();
+    this.cancelReason = resolvedCancelReason;
+    if (!resolvedCancelReason) {
       this.cancelErrorMessage = 'يرجى إدخال سبب الإرجاع';
       this.cancelSuccessMessage = '';
       this.isSubmitting = false;
@@ -2466,7 +2548,7 @@ export class OrdersComponent implements OnDestroy {
 
         // })),
         type: 'full',
-        reason: this.cancelReason || '',
+        reason: resolvedCancelReason,
         payment_method: 'deferred',
         payment_method2: null,
       };
@@ -2481,7 +2563,7 @@ export class OrdersComponent implements OnDestroy {
 
         })),
         type: isFullReturn ? 'full' : 'partial',
-        reason: this.cancelReason || '',
+        reason: resolvedCancelReason,
         payment_method: paymentMethod,
         payment_method2: paymentMethod2,
       };
@@ -2493,21 +2575,21 @@ export class OrdersComponent implements OnDestroy {
 
     console.log('Sending:', body, selectedItems, order);
 
-    // Save to IndexedDB first to match removeDish logic
-    this.dbService.saveOrderToPrintkitchen(order.order_details.order_id, "cancel").then(() => {
-      console.log('order cancelled and saved to printkitchen indexeddb', order.order_details.order_id);
+    const submitCancelAfterReasonStore = () => {
+      // Save to IndexedDB first to match removeDish logic
+      this.dbService.saveOrderToPrintkitchen(order.order_details.order_id, "cancel").then(() => {
+        console.log('order cancelled and saved to printkitchen indexeddb', order.order_details.order_id);
+        this.http
+          .post(`${baseUrl}api/orders/cashier/request-cancel`, body)
+          .subscribe({
+            next: (res: any) => {
+              this.isSubmitting = false; // ✅ رجّع الزرار بعد الرد
 
-      this.http
-        .post(`${baseUrl}api/orders/cashier/request-cancel`, body)
-        .subscribe({
-          next: (res: any) => {
-            this.isSubmitting = false; // ✅ رجّع الزرار بعد الرد
-
-            this.cancelSuccessMessage = 'تم إرسال طلب المرتجع بنجاح';
-            this.cancelErrorMessage = '';
-            setTimeout(() => {
-              this.cancelSuccessMessage = '';
-            }, 2000);
+              this.cancelSuccessMessage = 'تم إرسال طلب المرتجع بنجاح';
+              this.cancelErrorMessage = '';
+              setTimeout(() => {
+                this.cancelSuccessMessage = '';
+              }, 2000);
 
             if (!res?.status) {
               let errorText = 'حدث خطأ أثناء الإرسال';
@@ -2541,6 +2623,8 @@ export class OrdersComponent implements OnDestroy {
               this.cancelErrorMessage = '';
               this.cancelReason = '';
               this.cancelReasonTouched = false;
+              this.selectedCancelReasonId = '';
+              this.customCancelReason = '';
               this.refreshCashierTotalsAfterReturn();
               const modal_id = `modal-${order.order_details.order_id}`;
               const currentModal = document.getElementById(modal_id);
@@ -2559,6 +2643,8 @@ export class OrdersComponent implements OnDestroy {
                     });
                     this.cancelReason = '';
                     this.cancelReasonTouched = false;
+                    this.selectedCancelReasonId = '';
+                    this.customCancelReason = '';
                   },
                   { once: true }
                 );
@@ -2610,11 +2696,11 @@ export class OrdersComponent implements OnDestroy {
               */
 
             }
-          },
+            },
 
-          error: (err) => {
-            this.isSubmitting = false; // ✅ رجّع الزرار بعد الفشل
-            console.error('Error:', err);
+            error: (err) => {
+              this.isSubmitting = false; // ✅ رجّع الزرار بعد الفشل
+              console.error('Error:', err);
 
             let errorText;
             const reasonErrors = err?.error?.errorData?.error?.reason;
@@ -2640,12 +2726,35 @@ export class OrdersComponent implements OnDestroy {
             setTimeout(() => {
               this.cancelErrorMessage = '';
             }, 4000);
+            },
+          });
+      }).catch((err) => {
+        console.error('error saving to printkitchen indexeddb', err);
+        this.isSubmitting = false; // reset flag if save failed
+      });
+    };
+
+    if (this.showCustomCancelReasonInput) {
+      this.http
+        .post(`${baseUrl}api/orders/cashier/cancel-reasons/store`, {
+          reason: this.customCancelReason.trim(),
+        })
+        .subscribe({
+          next: () => {
+            submitCancelAfterReasonStore();
+          },
+          error: (err) => {
+            this.isSubmitting = false;
+            this.cancelSuccessMessage = '';
+            this.cancelErrorMessage = err?.error?.message || 'فشل حفظ سبب "أخرى"';
+            setTimeout(() => {
+              this.cancelErrorMessage = '';
+            }, 4000);
           },
         });
-    }).catch((err) => {
-      console.error('error saving to printkitchen indexeddb', err);
-      this.isSubmitting = false; // reset flag if save failed
-    });
+    } else {
+      submitCancelAfterReasonStore();
+    }
   }
 
   /** Refresh home totals cards (cash / visa) after return; matches get-current-balance used by app-totals-card. */
