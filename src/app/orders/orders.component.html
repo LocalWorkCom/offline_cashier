@@ -746,18 +746,40 @@
                           </div>
                         }
                         <div class="my-4">
-                          <label for="exampleFormControlTextarea1" class="form-label fw-bold"> اخبرنا السبب </label>
-                          <textarea
-                            class="form-control"
-                            [class.is-invalid]="cancelReasonTouched && !cancelReason.trim()"
-                            [class.is-valid]="cancelReasonTouched && cancelReason.trim()"
-                            id="exampleFormControlTextarea1"
-                            rows="3"
-                            placeholder="اخبرنا السبب"
-                            [(ngModel)]="cancelReason"
+                          <label for="cancelReasonSelect" class="form-label fw-bold">اختر سبب الإرجاع</label>
+                          <select
+                            id="cancelReasonSelect"
+                            class="form-select"
+                            [class.is-invalid]="cancelReasonTouched && !selectedCancelReasonId"
+                            [class.is-valid]="cancelReasonTouched && !!selectedCancelReasonId"
+                            [(ngModel)]="selectedCancelReasonId"
+                            (change)="onCancelReasonChanged()"
                             (blur)="cancelReasonTouched = true"
-                            required></textarea>
-                          <div *ngIf="cancelReasonTouched && !cancelReason.trim()" class="invalid-feedback">
+                            [disabled]="isCancelReasonsLoading">
+                            <option value="" disabled>اختر السبب</option>
+                            <option *ngFor="let reason of cancelReasons" [value]="reason.id">
+                              {{ reason.label }}
+                            </option>
+                            <!-- <option value="other">أخرى</option> -->
+                          </select>
+
+                          <div *ngIf="showCustomCancelReasonInput" class="mt-3">
+                            <label for="cancelReasonOther" class="form-label fw-bold">اخبرنا السبب</label>
+                            <textarea
+                              id="cancelReasonOther"
+                              class="form-control"
+                              rows="3"
+                              placeholder="اخبرنا السبب"
+                              [(ngModel)]="customCancelReason"
+                              [class.is-invalid]="cancelReasonTouched && !customCancelReason.trim()"
+                              [class.is-valid]="cancelReasonTouched && customCancelReason.trim()"
+                              (blur)="cancelReasonTouched = true"
+                              required></textarea>
+                          </div>
+
+                          <div
+                            *ngIf="cancelReasonTouched && (!selectedCancelReasonId || (showCustomCancelReasonInput && !customCancelReason.trim()))"
+                            class="invalid-feedback d-block">
                             يرجى إدخال سبب الإرجاع
                           </div>
                         </div>
