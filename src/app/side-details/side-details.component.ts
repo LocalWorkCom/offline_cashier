@@ -2647,7 +2647,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       delivery_id: this.selectedDriverId || null,
       delivery_fees: this.delivery_fees || 0,
       branch_id: branchId,
-      payment_method: this.selectedPaymentMethod ?? 'cash',
+      payment_method: resolvedPaymentStatus=='unpaid' ? 'cash' : (this.selectedPaymentMethod ?? 'cash'),
       payment_status: resolvedPaymentStatus,
       // cash_amount: this.selectedPaymentMethod === "cash" ? this.finalTipSummary?.billAmount ?? 0 : 0,
       // credit_amount: this.selectedPaymentMethod === "credit" ? this.finalTipSummary?.billAmount ?? 0 : 0,
@@ -2678,7 +2678,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       returned_amount: this.finalTipSummary?.changeToReturn ?? 0,
       menu_integration: this.selectedOrderType === 'talabat' ? true : false,
       payment_status_menu_integration: resolvedPaymentStatus,
-      payment_method_menu_integration: this.selectedPaymentMethod,
+      payment_method_menu_integration: resolvedPaymentStatus=='unpaid' ? 'cash' : (this.selectedPaymentMethod ?? 'cash'),
 
       // dalia end tips
     };
