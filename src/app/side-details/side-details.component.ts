@@ -2645,6 +2645,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       type: this.selectedOrderType,
       order_type: this.selectedBusinessOrderType || 'client_meal',
       delivery_id: this.selectedDriverId || null,
+      delivery_fees: this.delivery_fees || 0,
       branch_id: branchId,
       payment_method: this.selectedPaymentMethod ?? 'cash',
       payment_status: resolvedPaymentStatus,
