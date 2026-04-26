@@ -50,7 +50,7 @@
               'has-value': form.get('address_phone')?.value,
          }" [ngClass]="{
           'is-invalid': (submitted || sumbitSearch) && addressPhone?.invalid
-        }" />
+        }"    (input)="onlyNumbers($event)" />
           </div>
           <small class="text-danger pt-5"
             *ngIf="addressPhone?.errors?.['required'] && (form.controls['address_phone'].touched || (submitted||sumbitSearch))">

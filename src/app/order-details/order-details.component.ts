@@ -261,7 +261,9 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
 
   /** Apply branch delivery_fees only when order has no valid fee (e.g. after change-type-to-delivery). Do not override when order already has a valid delivery_fees (e.g. 25) so paid/correct orders show the same as printed invoice. */
   private applyBranchDeliveryFees(summary: any, currentDeliveryFees: number): { deliveryFees: number; orderSummary: any } {
-    const branchFee = this.getBranchDeliveryFees();
+    // const branchFee = this.getBranchDeliveryFees();
+    // console.log("summary -dalia",summary);
+    const branchFee = summary.delivery_fees;
     if (summary == null) return { deliveryFees: currentDeliveryFees, orderSummary: summary };
     const oldFee = this.safeNum(summary.delivery_fees);
     // If order already has a valid delivery fee (e.g. from area or paid invoice), keep it — do not replace with branch default.
@@ -516,6 +518,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
     this.deliveryFees = applied.deliveryFees;
     this.orderDetails = order;
     this.orderItems = this.filterMovedOrderItems(order.order_details || []);
+    console.log("applied.orderSummary-dalia",applied.orderSummary);
     this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
     // After split or merge, coupon must not apply; remove it from displayed summary when requested
     if (this.clearCouponAfterSplit) {
