@@ -79,7 +79,10 @@
       </div>
       <hr class="divider"/>
       <div class="summary-row">
-        <span class="d-label">Invoice : {{ data.branchDetails[0].invoice_number }} </span>
+        <span class="d-label">
+          <span style="display: inline-flex; direction: ltr; unicode-bidi: isolate; align-items: center;">Invoice : {{ data.branchDetails[0].invoice_number }}</span>
+        </span>
+        <!-- <span></span> -->
         <span class="d-value" *ngIf="data.invoices[0]?.order_type === 'dine-in'"> {{ getTableNumber() }} : Table </span>
 
       </div>
