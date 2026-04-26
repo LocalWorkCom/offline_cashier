@@ -35,7 +35,7 @@
   line-height: 1.4;
 }
 
-.branch-phone {  
+.branch-phone {
   margin: 0px;
   text-align: center;
 }
@@ -104,7 +104,7 @@
   margin: 3px 0;
 }
 
-.products-table th {  
+.products-table th {
   padding: 2px;
   text-align: right;
 }
@@ -173,6 +173,15 @@
   padding: 2px 4px;
 }
 
+.summary-row1 {
+  display: flex;
+  align-items: center;
+}
+
+.d-label1 {
+  margin-right: auto;
+}
+
 .summary-row {
   display: flex;
   justify-content: space-between;
@@ -190,7 +199,7 @@
   flex: 1;
 }
 
-.total-row {  
+.total-row {
   margin: 3px 0;
 }
 
@@ -204,7 +213,7 @@
   margin-bottom: 8px;
 }
 
-.products-count p {  
+.products-count p {
   margin: 0;
 }
 
@@ -221,7 +230,7 @@
   font-weight: bold !important;
 }
 
-.d-label { 
+.d-label {
   text-align: right;
   flex: 1;
 }
@@ -243,7 +252,7 @@
     margin-top: 0 !important;
     padding-top: 0 !important;
   }
-  
+
   .logo-container {
     margin-top: 0 !important;
     padding-top: 0 !important;
@@ -252,10 +261,10 @@
   .logo-img {
     max-width: 40mm !important; /* Slightly smaller logo to fit better */
   }
-  
+
   .printSection * {
     font-weight: bold !important;
-    -webkit-print-color-adjust: exact; 
+    -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
     font-size: 11px !important;
   }
@@ -264,7 +273,7 @@
     padding: 0;
     border: none;
   }
-  
+
   .tr-first {
     text-align: center;
   }
@@ -282,7 +291,7 @@
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  
+
   hr.divider {
     border: none !important;
     background: black !important;
