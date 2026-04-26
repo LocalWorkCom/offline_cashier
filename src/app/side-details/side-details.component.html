@@ -631,8 +631,8 @@
           <select class="form-select payment-device-select" name="paymentDeviceId"
             [ngModelOptions]="{standalone: true}"
             [(ngModel)]="selectedPaymentDeviceId"
-            (ngModelChange)="onPaymentDeviceChange($event)">
-            <option [ngValue]="null">اختر ماكينة الدفع</option>
+            (ngModelChange)="onPaymentDeviceChange($event)" placeholder="اختر ماكينة الدفع">
+            <!-- <option [ngValue]="null">اختر ماكينة الدفع</option> -->
             <option *ngFor="let device of paymentDevices" [ngValue]="device.id">
               {{ device.name }}{{ device.isRecommended ? ' (موصى بها)' : '' }}
             </option>
@@ -644,7 +644,7 @@
         <div *ngIf="formSubmitted && selectedPaymentStatus === 'paid' && !selectedPaymentMethod" class="alert alert-danger py-2 mt-2">
           <small><i class="fas fa-exclamation-circle me-1"></i> يرجى اختيار طريقة الدفع (كاش/فيزا)</small>
         </div>
-        
+
         <ng-container *ngIf="selectedOrderType !== 'talabat' && selectedPaymentStatus === 'paid'">
           <!-- إدخال الدفع عند اختيار كاش أو كاش + فيزا -->
           <div

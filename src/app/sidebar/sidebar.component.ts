@@ -199,7 +199,7 @@ export class SidebarComponent implements OnInit {
   async openSyncModal() {
     if (!isPlatformBrowser(this.platformId)) return;
     const { Modal } = await import('bootstrap');
-    
+
     // Hide logout modal if it's open
     const logoutModalElement = document.getElementById('logoutModal');
     if (logoutModalElement) {
@@ -656,7 +656,7 @@ proceedToLogout(): void {
       summary?.expectedCloseCash !== undefined
         ? summary.expectedCloseCash
         : cashTotal + cash_sales;
-        
+
     const expectedVisa =
       summary?.expectedCloseVisa !== undefined
         ? summary.expectedCloseVisa
@@ -1408,6 +1408,7 @@ waitForImagesInSection(selector: string): Promise<void> {
     totalAmount: number;
   }> {
     const snapshot = this.printingData?.payment_devices_snapshot;
+    console.log("snapshot -dalia",snapshot);
     if (Array.isArray(snapshot) && snapshot.length > 0) {
       return snapshot.map((item: any) => {
         const deviceId =
@@ -1416,7 +1417,7 @@ waitForImagesInSection(selector: string): Promise<void> {
             : null;
         return {
           name: String(item?.device_name ?? item?.payment_device_name ?? '—'),
-          ip: deviceId != null && deviceId !== '' ? String(deviceId) : '—',
+          ip: String(item?.IP ?? item?.ip_address ?? item?.IP ?? '—'),
           serial: '—',
           transactionsCount: this.toNumberSafe(item?.orders_count ?? item?.ordersCount),
           totalAmount: this.toNumberSafe(item?.total ?? item?.balance ?? item?.total_amount),
