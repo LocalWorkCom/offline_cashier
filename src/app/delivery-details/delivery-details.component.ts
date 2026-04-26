@@ -150,7 +150,7 @@ export class DeliveryDetailsComponent implements OnInit, OnDestroy {
   }
   //
   ngOnInit() {
-    
+
     if (this.selectedAddress) {
       this.userAddNewAddress = false;
     }
@@ -516,9 +516,9 @@ export class DeliveryDetailsComponent implements OnInit, OnDestroy {
     this.form
       .get('whatsapp_number_code')
       ?.setValue(this.countryCode?.value || this.selectedWhatsappCountry);
- 
- 
-    this.form.get('country_code')?.valueChanges.subscribe((value) => { 
+
+
+    this.form.get('country_code')?.valueChanges.subscribe((value) => {
       this.selectedCountry = value;
       const phoneControl = this.form.get('address_phone');
       if (phoneControl) {
@@ -536,11 +536,11 @@ export class DeliveryDetailsComponent implements OnInit, OnDestroy {
       //   ]);
       // }
     });
- 
+
     this.form.get('whatsapp_number')?.valueChanges.subscribe((value) => {
-      const codeControl = this.form.get('whatsapp_number_code');  
-       
-      if (value && value.trim() !== '') { 
+      const codeControl = this.form.get('whatsapp_number_code');
+
+      if (value && value.trim() !== '') {
         codeControl?.setValidators([Validators.required]);
       } else {
         codeControl?.clearValidators();
@@ -1126,7 +1126,7 @@ export class DeliveryDetailsComponent implements OnInit, OnDestroy {
             if (res.status == true) {
               if (typeof res.data === 'object' && res.data !== null) {
                 // this.allUserAddress = {...res.data,country_code:{code:res.data.country_code,flag:res.data['country_flag']||null}};
-                
+
                     this.clientName?.setValue(res.data[0].user_name)
                 this.allUserAddress = res.data.map((item: any) => ({
                   ...item,
@@ -1134,7 +1134,7 @@ export class DeliveryDetailsComponent implements OnInit, OnDestroy {
                     code: item?.country_code ?? null,
                     flag: item?.country_flag ?? null,
                   },
-                }));// fatma: must ask BE to return country_code as object of flag,code not code only 
+                }));// fatma: must ask BE to return country_code as object of flag,code not code only
 
                 this.userStoredAddress = res.data.map((address: any) => {
                   this.userId = address.user_id;
@@ -1194,7 +1194,7 @@ export class DeliveryDetailsComponent implements OnInit, OnDestroy {
         ...storedAddressData,
         client_name: this.clientName?.value || storedAddressData.user_name,
       whatsapp_number: this.whatsappPhone, // hereeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee
-      whatsapp_number_code: this.form.get('whatsapp_number_code')?.value, 
+      whatsapp_number_code: this.form.get('whatsapp_number_code')?.value,
       };
 
       localStorage.setItem('form_data', JSON.stringify(formData));
@@ -1258,23 +1258,29 @@ export class DeliveryDetailsComponent implements OnInit, OnDestroy {
   }
   listenToChangeWhatsappCountry(){
  this.whatsappNumberCode?.valueChanges.subscribe((value) => {
-      const whatsappNumControl = this.form.get('whatsapp_number');  
-      if (value) { 
+      const whatsappNumControl = this.form.get('whatsapp_number');
+      if (value) {
         this.selectedWhatsappCountry=value;
         whatsappNumControl?.setValidators([Validators.required,Validators.pattern(
             new RegExp(`^\\d{${this.whatsappNumberCode?.value?.phoneLength}}$`)
-          )]); 
+          )]);
       } else {
-        whatsappNumControl?.clearValidators(); 
-      }  
+        whatsappNumControl?.clearValidators();
+      }
     });
   }
  listenToAddressChange() {
   this.selectedAddressControl.valueChanges
     .subscribe(arg => {
       this.clientName?.setValue(arg.client_name)
-      
+
     });
+}
+
+onlyNumbers(event: any) {
+  const input = event.target;
+  input.value = input.value.replace(/[^0-9]/g, '');
+  this.form.get('address_phone')?.setValue(input.value);
 }
 
 }

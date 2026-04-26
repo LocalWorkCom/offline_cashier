@@ -45,12 +45,12 @@
           <div class="mb-3 input-group">
             <span class="input-group-text" id="basic-addon1" *ngIf="form.get('address_phone')?.value">ادخل رقم العميل
             </span>
-            <input type="number" class="form-control text-end" placeholder="ادخل رقم الهاتف"
+            <input type="text" class="form-control text-end" placeholder="ادخل رقم الهاتف"
               formControlName="address_phone" [ngClass]="{
               'has-value': form.get('address_phone')?.value,
          }" [ngClass]="{
           'is-invalid': (submitted || sumbitSearch) && addressPhone?.invalid
-        }" />
+        }"    (input)="onlyNumbers($event)" />
           </div>
           <small class="text-danger pt-5"
             *ngIf="addressPhone?.errors?.['required'] && (form.controls['address_phone'].touched || (submitted||sumbitSearch))">
