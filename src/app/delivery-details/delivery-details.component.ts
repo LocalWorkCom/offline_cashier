@@ -1283,5 +1283,10 @@ onlyNumbers(event: any) {
   this.form.get('address_phone')?.setValue(input.value);
 }
 
+onlyNumbersWhatsapp(event: any) {
+  const input = event.target;
+  input.value = input.value.replace(/[^0-9]/g, '');
+  this.form.get('whatsapp_number')?.setValue(input.value);
+}
 }
 // aml
