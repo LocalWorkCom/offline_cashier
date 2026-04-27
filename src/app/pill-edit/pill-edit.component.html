@@ -299,8 +299,8 @@
           <select class="form-select payment-device-select" name="pillPaymentDeviceId"
             [ngModelOptions]="{standalone: true}"
             [(ngModel)]="selectedPaymentDeviceId"
-            (ngModelChange)="onPaymentDeviceChange($event)">
-            <option [ngValue]="null">اختر ماكينة دفع</option>
+            (ngModelChange)="onPaymentDeviceChange($event)" placeholder="اختر ماكينة دفع">
+            <!-- <option [ngValue]="null" >اختر ماكينة دفع</option> -->
             <option *ngFor="let device of paymentDevices" [ngValue]="device.id">
               {{ device.name }}{{ device.isRecommended ? ' (موصى بها)' : '' }}
             </option>
@@ -520,7 +520,7 @@
               ? "كاش"
               : invoices[0].transactions[0].payment_method === "deferred"
                 ? "آجل"
-                : "غير محدد" 
+                : "غير محدد"
             }}
           </span>
         </h5>

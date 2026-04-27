@@ -473,7 +473,7 @@
       <p class="total" style="margin-bottom: 0px;"><span>ملخص وردية المطعم :</span> <span class="fw-normal">24 ساعة</span></p>
     </div>
     <div class="total text-center">
-      <span>من : </span> 
+      <span>من : </span>
       <span class="fw-normal print-transfer-datetime">{{ printingData?.start_shift }}</span>
     </div>
     <div class="total text-center">
@@ -513,24 +513,24 @@
         <span>{{ (printingData?.orders_number ?? 0) | number:'1.0-0':'en-US' }}</span>
       </div>
       <div class=" table-content">
-        <span> صافي مبلغ نقدية </span>
+        <span>  مبلغ نقدية </span>
         <!-- <span>{{printingData?.cashTotal}}</span> -->
         <span>{{ (printingData?.cashTotalWithRefund ?? 0) | number:'1.2-2':'en-US' }}</span>
       </div>
 
       <div class="table-content">
-        <span> صافي مبلغ بطاقة </span>
+        <span>  مبلغ بطاقة </span>
         <span>{{ (printingData?.visaTotalWithRefund ?? 0) | number:'1.2-2':'en-US' }}</span>
       </div>
 
       <div class="table-content">
-        <span> صافي مبلغ أجل </span>
+        <span>  مبلغ أجل </span>
         <span>{{ (printingData?.totalDeferred ?? 0) | number:'1.2-2':'en-US' }}</span>
       </div>
 
 
       <div class="table-content table-content-total-net">
-        <span> إجمالي الصافي </span>
+        <span> إجمالي  </span>
         <span>{{ ((printingData?.visaTotalWithRefund ?? 0) + (printingData?.cashTotalWithRefund ?? 0) + (printingData?.totalDeferred ?? 0)) | number:'1.2-2':'en-US' }}</span>
       </div>
       <!-- <div class="table-content">
@@ -622,21 +622,21 @@
       <div class="branch-shift-rows">
         <div class="branch-shift-row">
           <span class="branch-shift-row-label">{{ branchShiftReport.report_scope === 'cashier_machine' ? 'أول رصيد فتح' : 'أول رصيد فتح (كاش)' }}</span>
-          <span class="branch-shift-row-value">{{ branchShiftReport.first_open_balance | number:'1.2-2':'en-US' }} {{
+          <span class="branch-shift-row-value">{{ printingData?.start_shift_cash  | number:'1.2-2':'en-US' }} {{
             currency_Symbol }}</span>
         </div>
         <div class="branch-shift-row">
           <span class="branch-shift-row-label">{{ branchShiftReport.report_scope === 'cashier_machine' ? 'آخر رصيد إغلاق' : 'آخر رصيد إغلاق مسجّل' }}</span>
-          <span class="branch-shift-row-value">{{ branchShiftReport.last_close_balance | number:'1.2-2':'en-US' }} {{
+          <span class="branch-shift-row-value">{{ printingData?.actualAmount  | number:'1.2-2':'en-US' }} {{
             currency_Symbol }}</span>
         </div>
         <div class="branch-shift-row">
           <span class="branch-shift-row-label branch-shift-row-label--keep-phrase">{{ branchShiftReport.report_scope === 'cashier_machine' ? 'اجمالى مبيعات الكاش' : 'إجمالي مبيعات كاش (مدفوع)' }}</span>
-          <span class="branch-shift-row-value">{{ branchShiftReport.total_cash_sales | number:'1.2-2':'en-US' }} {{currency_Symbol}}</span>
+          <span class="branch-shift-row-value">{{ printingData?.cashTotalWithRefund | number:'1.2-2':'en-US' }} {{currency_Symbol}}</span>
         </div>
         <div class="branch-shift-row">
           <span class="branch-shift-row-label">مرتجعات كاش</span>
-          <span class="branch-shift-row-value">{{ branchShiftReport.total_cash_returns | number:'1.2-2':'en-US' }} {{
+          <span class="branch-shift-row-value">{{ printingData?.refundTotalCash | number:'1.2-2':'en-US' }} {{
             currency_Symbol }}</span>
         </div>
         @if (branchShiftReport.report_scope !== 'cashier_machine') {
@@ -648,7 +648,7 @@
         }
         <div class="branch-shift-row branch-shift-row-emphasis">
           <span class="branch-shift-row-label">{{ branchShiftReport.report_scope === 'cashier_machine' ? 'النقدية المتوقعة (وردية الفرع)' : 'النقدية المتوقعة (حسب وردية الفرع/الماكينة)' }}</span>
-          <span class="branch-shift-row-value">{{ branchShiftReport.expected_cash | number:'1.2-2':'en-US' }} {{
+          <span class="branch-shift-row-value">{{ (printingData?.cashTotalWithRefund + branchShiftReport.first_open_balance) - printingData?.refundTotalCash | number:'1.2-2':'en-US' }} {{
             currency_Symbol }}</span>
         </div>
         <div class="branch-shift-row">
@@ -658,7 +658,7 @@
         </div>
         <div class="branch-shift-row branch-shift-row-emphasis">
           <span class="branch-shift-row-label">{{ branchShiftReport.report_scope === 'cashier_machine' ? 'الفرق (متوقع vs فعلى)' : 'الفرق (فعلي − متوقع)' }}</span>
-          <span class="branch-shift-row-value">{{ branchShiftDifferenceDisplay != null ? (branchShiftDifferenceDisplay |
+          <span class="branch-shift-row-value">{{ branchShiftDifferenceDisplay != null ? ( ((printingData?.cashTotalWithRefund + branchShiftReport.first_open_balance) - printingData?.refundTotalCash) - (branchShiftActualCashDisplay) |
             number:'1.2-2':'en-US') + ' ' + currency_Symbol : '—' }}</span>
         </div>
       </div>
@@ -953,14 +953,14 @@
 
   <div class="text-center mt-3">
     <p class="fw-bold"> النقدية المتوقعة :
-      <span>{{ reportData.expectedCash | number:'1.2-2' }} {{currency_Symbol}}</span>
+      <span>{{ reportData.expectedCashV2 | number:'1.2-2' }} {{currency_Symbol}}</span>
     </p>
     <p class="fw-bold"> النقدية الموجودة :
       <span>{{reportData.cashTotalLogout | number:'1.2-2'}} {{currency_Symbol}}</span>
     </p>
     <p class="fw-bold">الفرق :
       <span [class.text-black]="reportData.cashDifference < 0" [class.text-black]="reportData.cashDifference >= 0">
-        {{reportData.cashDifference | number:'1.2-2'}} {{currency_Symbol}}
+        {{reportData.expectedCashV2 - reportData.cashTotalLogout | number:'1.2-2'}} {{currency_Symbol}}
       </span>
     </p>
   </div>

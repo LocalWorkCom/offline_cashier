@@ -236,7 +236,7 @@
         <span>- {{ orderSummary.coupon_value | number:'1.2-2' }}</span> {{ currencySymbol }}
       </h6>
     </div>
-    <div class="d-flex justify-content-between px-2 mb-1 " *ngIf="orderDetails?.order_type === 'Delivery' && orderSummary.delivery_fees">
+    <div class="d-flex justify-content-between px-2 mb-1 " *ngIf="orderDetails?.order_type === 'Delivery'">
       <h6> رسوم التوصيل</h6>
       <h6 *ngIf="orderDetails?.status_order !== 'cancelled'">
         <span>{{ orderSummary.delivery_fees | number:'1.2-2' }}</span> {{ currencySymbol }}

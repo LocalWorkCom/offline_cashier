@@ -5,7 +5,7 @@
 export const baseUrlForWebSocket ='https://erpfortest.testdomain100.online/'
 
 //  export const baseUrl ='https://erp-cashier.testdomain100.online/'
- 
+
 
 // export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
 

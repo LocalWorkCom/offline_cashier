@@ -50,7 +50,7 @@
               'has-value': form.get('address_phone')?.value,
          }" [ngClass]="{
           'is-invalid': (submitted || sumbitSearch) && addressPhone?.invalid
-        }" />
+        }"    (input)="onlyNumbers($event)" />
           </div>
           <small class="text-danger pt-5"
             *ngIf="addressPhone?.errors?.['required'] && (form.controls['address_phone'].touched || (submitted||sumbitSearch))">
@@ -144,14 +144,16 @@
         <div class="d-flex align-items-center mb-1">
           <h6 class="mb-0">هل هذا رقم واتساب ؟</h6>
           <input
-            type="checkbox"
+            type="radio"
+            name="isWhatsappNumber"
             class="form-check-input mx-2"
             [checked]="useSameNumberForWhatsapp"
             (change)="useSameWhatsapp(true)" />
           <a class="text-success fw-bold p-1 mx-1 text-decoration-underline" (click)="useSameWhatsapp(true)">نعم</a>
 
           <input
-            type="checkbox"
+            type="radio"
+            name="isWhatsappNumber"
             class="form-check-input mx-2"
             [checked]="!useSameNumberForWhatsapp"
             (change)="useSameWhatsapp(false)" />

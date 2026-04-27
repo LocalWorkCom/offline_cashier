@@ -78,10 +78,16 @@
         <span class="d-value">{{ getTrackingStatusTranslation(data.invoices[0]['tracking-status']) }}</span>
       </div>
       <hr class="divider"/>
-      <div class="summary-row">
-        <span class="d-label">Invoice : {{ data.branchDetails[0].invoice_number }} </span>
-        <span class="d-value" *ngIf="data.invoices[0]?.order_type === 'dine-in'"> {{ getTableNumber() }} : Table </span>
+      <div class="summary-row1">
+        <span class="d-label1">
+          <span style="direction: ltr; unicode-bidi: isolate;">
+            Invoice : {{ data.branchDetails[0].invoice_number }}
+          </span>
+        </span>
 
+        <span class="d-value" *ngIf="data.invoices[0]?.order_type === 'dine-in'">
+          {{ getTableNumber() }} : Table
+        </span>
       </div>
       <div class="summary-row">
         <span class="d-label">

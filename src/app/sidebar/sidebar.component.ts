@@ -106,6 +106,7 @@ export class SidebarComponent implements OnInit {
     cashTotalLogout: number;
     /** متوقع في الدرج = open + مبيعات الجلسة − ما تم تحويله للخزنة (نفس منطق الـ API) */
     expectedCash: number;
+    expectedCashV2: number;
     expectedVisa: number;
     cashDifference: number;
     visaTotal: number;
@@ -125,6 +126,7 @@ export class SidebarComponent implements OnInit {
     /** من استجابة الإغلاق: open + مبيعات − balance_after_sent_to_safe */
     expectedCloseCash?: number;
     expectedCloseVisa?: number;
+    cashSalesV2?: number;
   } | null = null;
   currentBalance: {
     cash: number;
@@ -193,7 +195,7 @@ export class SidebarComponent implements OnInit {
   async openSyncModal() {
     if (!isPlatformBrowser(this.platformId)) return;
     const { Modal } = await import('bootstrap');
-    
+
     // Hide logout modal if it's open
     const logoutModalElement = document.getElementById('logoutModal');
     if (logoutModalElement) {
@@ -543,6 +545,7 @@ export class SidebarComponent implements OnInit {
           visaSales: Number(response.data.session_visa_sales) || 0,
           expectedCloseCash: Number.isFinite(exCash) ? exCash : undefined,
           expectedCloseVisa: Number.isFinite(exVisa) ? exVisa : undefined,
+          cashSalesV2 : Number(response.data.cash_sales_V2) || 0,
         };
 
         // Set form as submitted
@@ -623,6 +626,7 @@ proceedToLogout(): void {
     const visaTotalLogoutStr = localStorage.getItem('visaTotallogout');
     const cash_salesStr = localStorage.getItem('paid_order_cash');
     const visa_salesStr = localStorage.getItem('paid_order_credit');
+    const totalgetcurrentcash = localStorage.getItem('totalcash');
 
     const parseValue = (value: string | null): number => {
       if (!value) return 0;
@@ -639,13 +643,16 @@ proceedToLogout(): void {
     const visaTotal = summary?.openVisa ?? parseValue(visaTotalStr);
     const cashTotalLogout = parseValue(cashTotalLogoutStr);
     const visaTotalLogout = parseValue(visaTotalLogoutStr);
-    const cash_sales = summary?.cashSales ?? parseValue(cash_salesStr);
+    const cash_sales = summary?.cashSalesV2 ?? parseValue(cash_salesStr);
+    // const cash_sales = Number(totalgetcurrentcash) - Number(cashTotalStr);
     const visa_sales = summary?.visaSales ?? parseValue(visa_salesStr);
+    const expectedCashV2 = summary?.openCash !== undefined ? summary?.openCash + (summary?.cashSalesV2 ?? 0) : summary?.expectedCloseCash;
 
     const expectedCash =
       summary?.expectedCloseCash !== undefined
         ? summary.expectedCloseCash
         : cashTotal + cash_sales;
+
     const expectedVisa =
       summary?.expectedCloseVisa !== undefined
         ? summary.expectedCloseVisa
@@ -657,6 +664,7 @@ proceedToLogout(): void {
     this.logoutSessionSummary = null;
 
     this.reportData = {
+      expectedCashV2: expectedCashV2 ?? 0,
       cashTotal,
       cashTotalLogout,
       expectedCash,
@@ -1396,6 +1404,7 @@ waitForImagesInSection(selector: string): Promise<void> {
     totalAmount: number;
   }> {
     const snapshot = this.printingData?.payment_devices_snapshot;
+    console.log("snapshot -dalia",snapshot);
     if (Array.isArray(snapshot) && snapshot.length > 0) {
       const filtered = snapshot.filter((item: any) => !this.isNonTerminalPaymentDeviceRow(item));
       if (filtered.length === 0) {
@@ -1405,31 +1414,13 @@ waitForImagesInSection(selector: string): Promise<void> {
         const deviceId =
           item?.payment_device_id != null && item?.payment_device_id !== ''
             ? item.payment_device_id
-            : item?.id != null && item?.id !== ''
-              ? item.id
-              : null;
-        const ipFromApi = String(
-          item?.ip ?? item?.IP ?? item?.ip_address ?? item?.device_ip ?? ''
-        ).trim();
-        const identifier =
-          ipFromApi ||
-          (deviceId != null && deviceId !== '' ? String(deviceId) : '—');
+            : null;
         return {
-          name: String(item?.device_name ?? item?.payment_device_name ?? item?.name ?? '—'),
-          ip: identifier,
+          name: String(item?.device_name ?? item?.payment_device_name ?? '—'),
+          ip: String(item?.IP ?? item?.ip_address ?? item?.IP ?? '—'),
           serial: '—',
-          transactionsCount: this.toNumberSafe(
-            item?.orders_count ?? item?.ordersCount ?? item?.transactions_count ?? item?.count
-          ),
-          totalAmount: this.toNumberSafe(
-            item?.total ??
-              item?.balance ??
-              item?.total_amount ??
-              item?.visa_total ??
-              item?.card_total ??
-              item?.amount ??
-              item?.collected_amount
-          ),
+          transactionsCount: this.toNumberSafe(item?.orders_count ?? item?.ordersCount),
+          totalAmount: this.toNumberSafe(item?.total ?? item?.balance ?? item?.total_amount),
         };
       });
     }

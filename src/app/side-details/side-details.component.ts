@@ -2616,8 +2616,8 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
 
       itemsWithCategory.push(itemData);
     }
-    
-    
+
+
 
 
     // ✅ لو الكوبون أو الخصم جعل المبلغ المستحق = 0 (بدون طلبات)
@@ -2645,8 +2645,9 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       type: this.selectedOrderType,
       order_type: this.selectedBusinessOrderType || 'client_meal',
       delivery_id: this.selectedDriverId || null,
+      delivery_fees: this.delivery_fees || 0,
       branch_id: branchId,
-      payment_method: this.selectedPaymentMethod ?? 'cash',
+      payment_method: resolvedPaymentStatus=='unpaid' ? 'cash' : (this.selectedPaymentMethod ?? 'cash'),
       payment_status: resolvedPaymentStatus,
       // cash_amount: this.selectedPaymentMethod === "cash" ? this.finalTipSummary?.billAmount ?? 0 : 0,
       // credit_amount: this.selectedPaymentMethod === "credit" ? this.finalTipSummary?.billAmount ?? 0 : 0,
@@ -2677,7 +2678,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
       returned_amount: this.finalTipSummary?.changeToReturn ?? 0,
       menu_integration: this.selectedOrderType === 'talabat' ? true : false,
       payment_status_menu_integration: resolvedPaymentStatus,
-      payment_method_menu_integration: this.selectedPaymentMethod,
+      payment_method_menu_integration: resolvedPaymentStatus=='unpaid' ? 'cash' : (this.selectedPaymentMethod ?? 'cash'),
 
       // dalia end tips
     };
@@ -5436,7 +5437,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     }
 
     localStorage.setItem('selectedPaymentStatus', this.selectedPaymentStatus);
-    
+
     // ✅ تحديث ملخص الدفع عند تغيير الحالة
     if (this.selectedPaymentStatus === 'unpaid') {
       this.finalTipSummary = null;
@@ -6582,7 +6583,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     this.selectedSuggestionType = type; // هنا يتم حفظ النوع الذي تم الضغط عليه
     this.selectedPaymentSuggestion = paymentAmount;
     // ✅ التحقق من أن المبلغ غير صفر أو سالب
-    if (paymentAmount <= 0) {
+    if (paymentAmount < 0) {
       this.paymentError = 'المبلغ المقترح غير صالح';
       return;
     }
@@ -6603,7 +6604,7 @@ export class SideDetailsComponent implements OnInit, AfterViewInit {
     console.log('Bill Amount:', billAmount, 'Entered:', this.cashPaymentInput);
     const currentPaymentInput = this.cashPaymentInput;
     // ✅ إضافة تحقق صريح للمبلغ المدخل
-    if (currentPaymentInput <= 0) {
+    if (currentPaymentInput < 0) {
       this.paymentError = 'يرجى إدخال مبلغ صحيح أكبر من الصفر';
       return;
     }
