@@ -2741,6 +2741,7 @@ export class OrdersComponent implements OnDestroy {
         })
         .subscribe({
           next: () => {
+            this.loadCancelReasons();
             submitCancelAfterReasonStore();
           },
           error: (err) => {
