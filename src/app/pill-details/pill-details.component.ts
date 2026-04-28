@@ -580,11 +580,18 @@ private processPillDetails(data: any): void {
 
     try {
 
-    console.log('Printing invoice...........');
-    const response = await this.printedInvoiceService
-    .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
-    .toPromise();
-  console.log('Print invoice response:', response);
+    // API الطباعة تؤثر على تقرير النقدية، لذلك لا تُستدعى إلا للطباعة النهائية.
+    if (isFinal) {
+      console.log('Printing invoice...........');
+      const response = await this.printedInvoiceService
+      .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod, true)
+      .toPromise();
+      console.log('Print invoice response:', response);
+      if (!response?.status) {
+        alert(response?.message || 'تعذر تنفيذ API الطباعة');
+        return;
+      }
+    }
 
 this.cdr.detectChanges();
 // Allow time for view to update

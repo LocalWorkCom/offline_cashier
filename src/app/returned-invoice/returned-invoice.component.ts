@@ -305,14 +305,17 @@ isFinal=false;
     }
 
     try {
-      const response = await this.printedInvoiceService
-        .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod)
-        .toPromise();
-if(response.status==false){
-  alert(response.message);
-  return;
-}
-      console.log('Print invoice response:', response);
+      // API الطباعة تؤثر على تقرير النقدية، لذلك لا تُستدعى إلا للطباعة النهائية.
+      if (isFinal) {
+        const response = await this.printedInvoiceService
+          .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod, true)
+          .toPromise();
+        if (response?.status == false) {
+          alert(response?.message);
+          return;
+        }
+        console.log('Print invoice response:', response);
+      }
 
       const printContent = document.getElementById('printSection');
       if (!printContent) {
