@@ -9,6 +9,13 @@
   letter-spacing: -0.02em;
 }
 
+.payment-device-page-toolbar {
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+
 .payment-device-settings-prefix {
   color: #6b7280;
   font-weight: 600;
@@ -33,15 +40,22 @@
 
 .payment-device-table-card {
   background: #ffffff;
-  box-shadow: 0 8px 30px rgba(15, 23, 42, 0.08);
+  box-shadow: none;
+}
+
+.payment-device-table {
+  border-collapse: separate !important;
+  border-spacing: 0 10px !important;
 }
 
 .payment-device-table-head {
-  background: #ffffff;
+  background: #eef0f3;
   border-bottom: 1px solid #e8eaed;
 }
 
+.payment-device-table-head tr,
 .payment-device-table-head th {
+  background: #eef0f3 !important;
   color: #374151;
   font-weight: 700;
   font-size: 0.95rem;
@@ -64,12 +78,26 @@ td {
 
 .payment-device-row--active td {
   background-color: #fff5f8;
-  border-color: transparent;
+  border-top: 1px solid #eceff3;
+  border-bottom: 1px solid #eceff3;
 }
 
 .payment-device-row--inactive td {
   background-color: #f3f4f6;
-  border-color: transparent;
+  border-top: 1px solid #eceff3;
+  border-bottom: 1px solid #eceff3;
+}
+
+.payment-device-table tbody tr td:first-child {
+  border-right: 1px solid #eceff3;
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+.payment-device-table tbody tr td:last-child {
+  border-left: 1px solid #eceff3;
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
 }
 
 .payment-device-row--empty td {
@@ -118,6 +146,28 @@ td {
   display: none !important;
 }
 
+.payment-device-actions-menu {
+  box-shadow: 0 10px 24px rgba(107, 114, 128, 0.36) !important;
+}
+
+.payment-device-actions-menu .dropdown-item {
+  background: #eef0f3;
+  border-radius: 8px;
+  margin: 4px 6px;
+  width: calc(100% - 12px);
+}
+
+.payment-device-actions-menu .dropdown-item:hover,
+.payment-device-actions-menu .dropdown-item:focus {
+  background: #e5e7eb;
+}
+
+.payment-device-empty-card {
+  background: #ffffff;
+  box-shadow: 0 8px 22px rgba(107, 114, 128, 0.14);
+}
+
 tbody tr:last-child td {
   border-bottom: 0;
 }
+

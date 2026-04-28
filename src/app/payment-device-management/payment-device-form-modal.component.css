@@ -13,7 +13,13 @@
   font-size: clamp(1.6rem, 2.8vw, 2.2rem);
   font-weight: 800;
   color: #212529;
-  margin: 6px 0 0;
+  margin: 0;
+}
+
+.modal-title-wrap {
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
 }
 
 .btn-close-red {
@@ -47,6 +53,7 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+  text-align: right;
   width: 100%;
   gap: 0.65rem;
 }
@@ -58,12 +65,14 @@
 }
 
 .status-options {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 2.25rem;
-  flex-wrap: wrap;
-  width: 100%;
+  justify-content: flex-end;
+  direction: rtl;
+  gap: 17.4rem;
+  flex-wrap: nowrap;
+  width: auto;
+  align-self: flex-start;
 }
 
 /* RTL: «نشط» أولاً في DOM يظهر يمين المجموعة، «غير نشط» يساره — كما في Figma */
@@ -111,7 +120,8 @@
 
 @media (max-width: 767.98px) {
   .status-options {
-    justify-content: space-between;
+    justify-content: flex-start;
+    flex-wrap: wrap;
     gap: 16px;
   }
 

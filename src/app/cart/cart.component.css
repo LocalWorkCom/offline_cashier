@@ -154,6 +154,41 @@
 .tab-pane img {
     height: 25px;
 }
+
+.delivery-type-strip {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.delivery-type-pill {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    padding: 0.2rem 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.delivery-type-pill--main {
+    background-color: #fe0000;
+    color: #fff;
+}
+
+.delivery-type-pill--light {
+    background-color: #e9ecef;
+    color: #212529;
+    border: none;
+    padding: 0.6rem 1rem;
+    font-size: 1rem;
+    font-weight: 600;
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+}
+
 .btn:hover {
     background: #FE0000;
     border: 2px solid #FE0000;

@@ -34,7 +34,12 @@ export class PrintedInvoiceService {
     this.kitchenPrintLastByOrderId.delete(String(orderId));
   }
 
-  printInvoice(order_id: number, cashier_machine_id: any, payment_method: any): Observable<any> {
+  printInvoice(
+    order_id: number,
+    cashier_machine_id: any,
+    payment_method: any,
+    isFinalPrint: boolean = true
+  ): Observable<any> {
     const token = localStorage.getItem('authToken');
     const headers = new HttpHeaders({
       Authorization: `Bearer ${token}`,
@@ -44,7 +49,8 @@ export class PrintedInvoiceService {
     const body = {
       order_id,
       cashier_machine_id,
-      payment_method// Adding cashier_machine as 1
+      payment_method,
+      is_final_print: isFinalPrint
     };
 
     return this.http.post(`${this.apiUrl}/invoices/print`, body, { headers });

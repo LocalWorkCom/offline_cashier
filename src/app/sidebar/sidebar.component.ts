@@ -60,16 +60,12 @@ export class SidebarComponent implements OnInit {
   reasonError: any;
   printingData: any;
   orderTypeBreakdownRows: Array<{ key: string; label: string; ordersCount: number; totalAmount: number }> = [];
-  /**
-   * فرق العهدة في طباعة التحويل: الفعلي − مطلق المتوقع.
-   * عند سالب المتوقع يُفسر غالباً كـ«عجز» بالمقدار |متوقع| فيطابق «الموجود − العجز» (مثال: 1000−526=474 لا 1000−(−526)).
-   * عند موجب المتوقع يعادل «فعلي − متوقع» العادي.
-   */
+  /** فرق العهدة في طباعة التحويل: الفعلي − المتوقع */
   get printingDeficitCash(): number {
     if (!this.printingData) return 0;
     const expected = Number(this.printingData?.cashTotalwithoutRefund) || 0;
     const actual = Number(this.printingData?.actualAmount) || 0;
-    return Math.round((actual - Math.abs(expected)) * 100) / 100;
+    return Math.round((actual - expected) * 100) / 100;
   }
 
   /**
@@ -1410,7 +1406,11 @@ waitForImagesInSection(selector: string): Promise<void> {
     const snapshot = this.printingData?.payment_devices_snapshot;
     console.log("snapshot -dalia",snapshot);
     if (Array.isArray(snapshot) && snapshot.length > 0) {
-      return snapshot.map((item: any) => {
+      const filtered = snapshot.filter((item: any) => !this.isNonTerminalPaymentDeviceRow(item));
+      if (filtered.length === 0) {
+        return [];
+      }
+      return filtered.map((item: any) => {
         const deviceId =
           item?.payment_device_id != null && item?.payment_device_id !== ''
             ? item.payment_device_id
@@ -1439,7 +1439,12 @@ waitForImagesInSection(selector: string): Promise<void> {
       return [];
     }
 
-    return source.map((item: any) => ({
+    const filteredSource = source.filter((item: any) => !this.isNonTerminalPaymentDeviceRow(item));
+    if (filteredSource.length === 0) {
+      return [];
+    }
+
+    return filteredSource.map((item: any) => ({
       name: String(item?.device_name ?? item?.name ?? item?.machine_name ?? item?.terminal_name ?? '—'),
       ip: String(item?.ip ?? item?.ip_address ?? item?.IP ?? '—'),
       serial: String(
@@ -1467,6 +1472,30 @@ waitForImagesInSection(selector: string): Promise<void> {
           item?.card_total
       ),
     }));
+  }
+
+  /**
+   * صف تجميعي بدون ماكينة دفع حقيقية (لا payment_device_id ولا عمليات على جهاز) — لا يُعرض في التقرير.
+   */
+  private isNonTerminalPaymentDeviceRow(item: any): boolean {
+    const name = String(
+      item?.device_name ?? item?.payment_device_name ?? item?.name ?? item?.machine_name ?? item?.terminal_name ?? ''
+    );
+    if (/إجمالي الشيفت|غير مرتبطة|لا يوجد تفصيل|التجميع|shift total|no per-device|not linked/i.test(name)) {
+      return true;
+    }
+    const pid = item?.payment_device_id ?? item?.payment_device?.id;
+    const hasDeviceId =
+      pid != null &&
+      pid !== '' &&
+      !(typeof pid === 'string' && pid.trim() === '');
+    const oc = this.toNumberSafe(
+      item?.orders_count ?? item?.ordersCount ?? item?.transactions_count ?? item?.count ?? item?.transactions
+    );
+    if (!hasDeviceId && oc === 0) {
+      return true;
+    }
+    return false;
   }
 
   get paymentDeviceReportGrandTransactions(): number {

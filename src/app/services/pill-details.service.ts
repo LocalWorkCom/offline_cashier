@@ -157,6 +157,7 @@ export class PillDetailsService {
       paymentStatus,
       cash_amount: payload.cash_amount,
       credit_amount: payload.credit_amount,
+      payment_device_id: payload.payment_device_id,
       total: payload.total,
       couponData: payload.coupon_code ? {
         coupon_code: payload.coupon_code,
