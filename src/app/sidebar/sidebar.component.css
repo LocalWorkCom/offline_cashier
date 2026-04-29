@@ -531,6 +531,21 @@
   font-weight: 600;
 }
 
+/* Prevent faded/weak logout report print on thermal printers. */
+#logout-report-section.logout-print-strong,
+#logout-report-section.logout-print-strong *,
+#logout-report-section.logout-print-strong p,
+#logout-report-section.logout-print-strong span,
+#logout-report-section.logout-print-strong td,
+#logout-report-section.logout-print-strong th {
+  color: #000 !important;
+  opacity: 1 !important;
+  font-weight: 700 !important;
+  -webkit-text-fill-color: #000 !important;
+  print-color-adjust: exact !important;
+  -webkit-print-color-adjust: exact !important;
+}
+
 #dd {
   width: 100%;
   position: relative;
