@@ -1,5 +1,7 @@
 <div id="printSection" class="printSection">
   <div class="receipt-content">
+
+ 
     <!-- Header Section -->
     <div class="branch-info" *ngFor="let item of data.branchDetails">
     <div class="header-section">
@@ -118,7 +120,7 @@
       </div>
       <div class="summary-row" *ngIf="data.invoices[0]?.order_type !== 'dine-in'">
         <span class="d-label">رقم العميل:</span>
-        <span class="d-value">{{ getCustomerPhone() }}</span>
+        <span class="d-value" style="direction: ltr; unicode-bidi: isolate;">    {{ formatPhone(data.invoices[0]) }} </span>
       </div>
       <div class="summary-row" *ngIf="data.invoices[0]['order_type'] == 'Delivery'" >
         <span class="d-label">عنوان التوصيل:</span>
