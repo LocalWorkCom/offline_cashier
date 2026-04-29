@@ -168,7 +168,7 @@
       <div class="mb-3 d-flex gap-2 align-items-start">
         <div class="w-75">
           <input type="text" class="form-control" formControlName="whatsapp_number" [(ngModel)]="whatsappPhone"
-            placeholder="رقم الواتساب" />
+            placeholder="رقم الواتساب" (input)="onlyNumbersWhatsapp($event)" />
           <div *ngIf="submitted && form.controls['whatsapp_number'].invalid"
             class="invalid-feedback d-block text-danger small">
             <div *ngIf="submitted && form.controls['whatsapp_number'].invalid"

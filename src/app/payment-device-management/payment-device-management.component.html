@@ -73,7 +73,14 @@
             </td>
           </tr>
 
-          <tr *ngIf="!devices.length" class="payment-device-row--empty">
+          <tr *ngIf="isLoading" class="payment-device-row--empty">
+            <td colspan="5" class="text-center text-muted py-4">
+              <span class="spinner-border spinner-border-sm ms-2" role="status" aria-hidden="true"></span>
+              جاري تحميل أجهزة الدفع...
+            </td>
+          </tr>
+
+          <tr *ngIf="!isLoading && !devices.length" class="payment-device-row--empty">
             <td colspan="5" class="text-center text-muted py-4">
               لا توجد أجهزة دفع حالياً
             </td>

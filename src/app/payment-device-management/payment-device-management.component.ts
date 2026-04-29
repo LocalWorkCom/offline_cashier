@@ -25,6 +25,7 @@ interface PaymentDevice {
 })
 export class PaymentDeviceManagementComponent implements OnInit, OnDestroy {
   devices: PaymentDevice[] = [];
+  isLoading = false;
   private refreshSub?: Subscription;
 
   constructor(
@@ -122,8 +123,15 @@ export class PaymentDeviceManagementComponent implements OnInit, OnDestroy {
   }
 
   private loadDevices(): void {
-    this.httpClient.get<any>(`${baseUrl2}/payment-device/`).subscribe({
-      next: (res) => {
+    this.isLoading = true;
+    this.httpClient.get<any>(`${baseUrl2}/payment-device/`, { observe: 'response' }).subscribe({
+      next: (response) => {
+        if (response.status !== 200) {
+          this.devices = [];
+          this.isLoading = false;
+          return;
+        }
+        const res = response.body;
         const apiDevices = Array.isArray(res) ? res : Array.isArray(res?.data) ? res.data : [];
         this.devices = apiDevices
           .map((device: any) => ({
@@ -134,11 +142,13 @@ export class PaymentDeviceManagementComponent implements OnInit, OnDestroy {
             status: device?.status === 'active' ? 'active' : 'inactive',
           }))
           .filter((d: PaymentDevice) => Number.isFinite(d.id) && d.id > 0);
+        this.isLoading = false;
       },
       error: () => {
         if (this.devices.length === 0) {
           this.devices = [];
         }
+        this.isLoading = false;
       }
     });
   }

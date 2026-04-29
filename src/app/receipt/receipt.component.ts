@@ -267,7 +267,22 @@ export class ReceiptComponent {
     if (invoice.client && invoice.client.flag !== 'unknown') {
       return invoice.client.phone || 'N/A';
     }
-    return invoice.address?.address_phone || invoice.client_phone || 'N/A';
+    return  invoice.address?.address_phone || invoice.client_phone || 'N/A';
+  }
+
+  formatPhone(invoice: any): string {
+    const phone = this.getCustomerPhone() || '';
+    const code = invoice?.address_details?.country_code || '';
+  
+    if (!phone && !code) return '-';
+  
+    // إزالة أي مسافات أو رموز غريبة
+    const cleanPhone = phone.replace(/[^0-9]/g, '');
+  
+    // لو الكود موجود ضيف +
+    const cleanCode = code ? `${code}` : '';
+  
+    return `${cleanCode} ${cleanPhone}`.trim();
   }
 
   getDeliveryAddress(): string {
