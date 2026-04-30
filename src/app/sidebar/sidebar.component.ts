@@ -989,7 +989,7 @@ proceedToLogout(): void {
         }
        this.print(response.data.newBranchSafe.id);
 
-       window.location.reload();
+      //  window.location.reload();
       } else {
         this.transferError = response?.message || 'فشل في عملية التحويل';
       }
