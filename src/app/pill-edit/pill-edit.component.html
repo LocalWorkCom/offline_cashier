@@ -609,11 +609,17 @@
       </div>
       <div class="d-flex flex-column">
         <hr />
+        <div class="d-flex justify-content-between px-2 mb-1 align-items-center">
+          <h5>المجموع الكلى قبل الخصم</h5>
+          <h6>
+            <span>{{ originalTotal | number:'1.2-2' }} {{ currencySymbol }}</span>
+          </h6>
+        </div>
 
         <div class="d-flex justify-content-between px-2 mb-1 align-items-center">
-          <h4 class="mb-0" style="font-weight: bold !important">
-            المجموع الكلى
-          </h4>
+          <h5 class="mb-0" >
+            المجموع الكلى بعد الخصم
+          </h5>
           <h6 class="fw-bold mb-0 fs-4 text-end" *ngIf="invoices[0]?.invoice_summary">
             <!-- ملخص العرض يستبعد العناصر الملغاة؛ totalll بعد الكوبون -->
             <span>{{ (totalll !== null && totalll !== undefined ? totalll : (displayInvoiceSummary?.total_price ?? invoices[0].invoice_summary.total_price)) | number:'1.2-2' }} {{ invoices[0].currency_symbol }}</span>
