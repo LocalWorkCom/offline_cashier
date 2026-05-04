@@ -78,6 +78,27 @@
       </li>
     </ul>
 
+    <ul class="nav nav-pills mb-4 px-0 w-100 d-flex flex-row">
+      <li class="nav-item flex-fill mx-1">
+        <button class="nav-link sub w-100" [ngClass]="{ active: paymentFilter === 'all' }"
+          (click)="selectPaymentFilter('all')">
+          الكل
+        </button>
+      </li>
+      <li class="nav-item flex-fill mx-1">
+        <button class="nav-link sub w-100" [ngClass]="{ active: paymentFilter === 'paid' }"
+          (click)="selectPaymentFilter('paid')">
+          مدفوع
+        </button>
+      </li>
+      <li class="nav-item flex-fill mx-1">
+        <button class="nav-link sub w-100" [ngClass]="{ active: paymentFilter === 'unpaid' }"
+          (click)="selectPaymentFilter('unpaid')">
+          غير مدفوع
+        </button>
+      </li>
+    </ul>
+
 
     <div class="tab-content second-sub" id="pills-tabContent6" aria-live="polite">
       <div *ngFor="let statusGroup of filteredPillsByStatus; let i = index" class="tab-pane fade"
