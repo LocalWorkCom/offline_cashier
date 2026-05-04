@@ -9,7 +9,6 @@ import { PillDetailsService } from '../services/pill-details.service';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { DatePipe } from '@angular/common';
-import { PrintedInvoiceService } from '../services/printed-invoice.service';
 import { Router } from '@angular/router';
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
 import { finalize } from 'rxjs';
@@ -67,7 +66,6 @@ isPrinting = false;
     private orderService: PillDetailsService,
     private cdr: ChangeDetectorRef,
     private datePipe: DatePipe,
-    private printedInvoiceService: PrintedInvoiceService,
     private router: Router,
     private printTime: PrintTimeService) {}
   private extractDateAndTime(branch: any): void {
@@ -305,17 +303,7 @@ isFinal=false;
     }
 
     try {
-      // API الطباعة تؤثر على تقرير النقدية، لذلك لا تُستدعى إلا للطباعة النهائية.
-      if (isFinal) {
-        const response = await this.printedInvoiceService
-          .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod, true)
-          .toPromise();
-        if (response?.status == false) {
-          alert(response?.message);
-          return;
-        }
-        console.log('Print invoice response:', response);
-      }
+      // طباعة من صفحة المرتجع: نسخة ورقية فقط — بدون API يؤثر على تقرير النقدية.
 
       const printContent = document.getElementById('printSection');
       if (!printContent) {
