@@ -43,6 +43,7 @@ export class PillDetailsComponent implements OnInit, OnDestroy {
   currencySymbol = localStorage.getItem('currency_symbol');
   note = localStorage.getItem('additionalNote');
   invoices: any[] = [];
+  originalTotal: any;
   pillDetails: any;
   receiptData: any;
   branchDetails: any;
@@ -287,6 +288,7 @@ private processPillDetails(data: any): void {
     ).subscribe({
       next: (response: any) => {
         this.order_id = response.data.order_id;
+        this.originalTotal = response.data.original_total;
 
         this.invoices = (response.data.invoices || []).map((inv: any) => {
           const creatorName = inv.created_by_username || response.data.created_by_username || '---';

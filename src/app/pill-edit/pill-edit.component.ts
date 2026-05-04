@@ -54,6 +54,7 @@ export class PillEditComponent {
   isOrderDetailsOpen = true;
   receiptData: any;
   isPrinting = false;
+  originalTotal: any;
   // @ViewChild('deliveredButton', { static: false }) deliveredButton!: ElementRef;
   invoices: any[] = [];
   pillDetails: any;
@@ -225,7 +226,8 @@ export class PillEditComponent {
     console.log('aaaaaaaaaaaaa');
     this.pillDetailsService.getPillsDetailsById(pillId).subscribe({
       next: (response: any) => {
-        this.order_id = response.data.order_id
+        this.order_id = response.data.order_id;
+        this.originalTotal = response.data.original_total;
         this.invoices = response.data.invoices;
         // الحصول على tracking-status
         const trackingKey = this.invoices[0]?.['tracking-status']

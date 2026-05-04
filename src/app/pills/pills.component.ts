@@ -35,6 +35,7 @@ export class PillsComponent implements OnInit, OnDestroy {
     done: 'مكتملة',
   };
   selectedStatusLabel: string = 'all';
+  paymentFilter: 'all' | 'paid' | 'unpaid' = 'all';
   searchOrderNumber: string = '';
   searchText: any;
   filteredPillsByStatus: any[] | undefined;
@@ -452,6 +453,17 @@ console.log(newOrder);
     this.fetchInvoiceCounts();
   }
 
+  selectPaymentFilter(filter: 'all' | 'paid' | 'unpaid'): void {
+    this.paymentFilter = filter;
+    this.selectedStatus = 0;
+    this.selectedStatusLabel = 'all';
+    this.currentPage = 1;
+
+    // Payment status filter is applied locally on the fetched list for both modes.
+    this.updatePillsByStatus();
+    this.cdr.detectChanges();
+  }
+
   private loadFromIndexedDB(): void {
     this.dbService
       .getPills()
@@ -594,6 +606,12 @@ console.log(newOrder);
           String(p.order_number || '').toLowerCase().includes(search) ||
           String(p.invoice_number || '').toLowerCase().includes(search) ||
           String(p.invoice_id || '').toLowerCase().includes(search)
+      );
+    }
+
+    if (this.paymentFilter !== 'all') {
+      list = list.filter(
+        (p: any) => (p.payment_status || '').toLowerCase() === this.paymentFilter
       );
     }
 
