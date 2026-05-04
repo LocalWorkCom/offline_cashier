@@ -57,6 +57,14 @@
   align-items: end;
 }
 
+.sideCart-plate-price {
+  width: 100%;
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+  text-align: left;
+  direction: ltr;
+}
+
 .qty {
   display: flex;
   align-items: center;

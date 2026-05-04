@@ -649,4 +649,4 @@
     ></p-confirmDialog> -->
 
 <app-confirm-dialog #confirmPrintDialog (actionResult)="printInvoice($event)" [header]="'تأكيد'"
-  message='هل هذه الطباعة النهائية؟' [acceptLabel]="'نعم'" [rejectLabel]="'لا'"></app-confirm-dialog>
+  message='هل تريد إظهار عبارة «نسخة نهائية» على الفاتورة؟ (للعرض على الورق فقط — لا يُسجّل مبيعات في تقرير التحويل للنقدية)' [acceptLabel]="'نعم'" [rejectLabel]="'لا'"></app-confirm-dialog>

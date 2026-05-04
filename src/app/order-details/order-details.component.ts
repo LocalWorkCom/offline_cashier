@@ -356,7 +356,17 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
       this.orderSummary = this.recalculateSummaryFromDisplayedItems(applied.orderSummary, this.orderItems);
 
       const totalPrice = Number(this.orderSummary?.total_price ?? this.orderSummary?.total ?? 0);
-      const isPaidByTotal = !isNaN(totalPrice) && totalPrice <= 0;
+      const couponType = String(this.orderSummary?.coupon_type ?? '').toLowerCase();
+      const couponValue = Number(this.orderSummary?.coupon_value ?? 0);
+      const hasCouponApplied =
+        this.orderSummary?.coupon_id != null ||
+        (!isNaN(couponValue) && couponValue > 0);
+      const isPaidByTotal =
+        !isNaN(totalPrice) &&
+        totalPrice <= 0 &&
+        hasCouponApplied &&
+        (couponType === 'percentage' || couponType === 'percent') &&
+        couponValue === 100;
       if (!this.orderDetails.transactions || !Array.isArray(this.orderDetails.transactions) || this.orderDetails.transactions.length === 0) {
         const isPaid = this.orderDetails.payment_status === 'paid' || isPaidByTotal;
         this.orderDetails.transactions = [{
@@ -542,7 +552,17 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
 
     // ✅ تطبيع transactions لو الـ API ما رجّعش مصفوفة
     const totalPrice = Number(this.orderSummary?.total_price ?? this.orderSummary?.total ?? 0);
-    const isPaidByTotal = !isNaN(totalPrice) && totalPrice <= 0;
+    const couponType = String(this.orderSummary?.coupon_type ?? '').toLowerCase();
+    const couponValue = Number(this.orderSummary?.coupon_value ?? 0);
+    const hasCouponApplied =
+      this.orderSummary?.coupon_id != null ||
+      (!isNaN(couponValue) && couponValue > 0);
+    const isPaidByTotal =
+      !isNaN(totalPrice) &&
+      totalPrice <= 0 &&
+      hasCouponApplied &&
+      (couponType === 'percentage' || couponType === 'percent') &&
+      couponValue === 100;
     if (!order.transactions || !Array.isArray(order.transactions) || order.transactions.length === 0) {
       const isPaid = order.payment_status === 'paid' || isPaidByTotal;
       order.transactions = [{
@@ -634,7 +654,18 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
 
             // ✅ تطبيع transactions: لو الـ API ما رجّعش مصفوفة أو رجّعها فاضية
             const totalPrice = Number(this.orderSummary?.total_price ?? this.orderSummary?.total ?? 0);
-            const isPaidByTotal = !isNaN(totalPrice) && totalPrice <= 0;
+            const couponType = String(this.orderSummary?.coupon_type ?? '').toLowerCase();
+            const couponValue = Number(this.orderSummary?.coupon_value ?? 0);
+            const hasCouponApplied =
+              this.orderSummary?.coupon_id != null ||
+              (!isNaN(couponValue) && couponValue > 0);
+            // اعتبر الطلب "مدفوع" تلقائياً فقط في حالة كوبون 100%، وليس لمجرد أن الإجمالي أصبح 0 بعد الإلغاء/الحذف.
+            const isPaidByTotal =
+              !isNaN(totalPrice) &&
+              totalPrice <= 0 &&
+              hasCouponApplied &&
+              (couponType === 'percentage' || couponType === 'percent') &&
+              couponValue === 100;
             if (!order.transactions || !Array.isArray(order.transactions) || order.transactions.length === 0) {
               const isPaid = order.payment_status === 'paid' || isPaidByTotal;
               order.transactions = [{
@@ -644,7 +675,7 @@ export class OrderDetailsComponent implements OnInit, OnDestroy {
                 paid: isPaid ? totalPrice : 0
               }];
             } else if (isPaidByTotal && order.transactions[0]?.payment_status === 'unpaid') {
-              // لو الإجمالي = 0 (كوبون 100%) لكن الحالة غير مدفوعة → نصلحها
+              // فقط في حالة كوبون 100%: لو الإجمالي = 0 والحالة غير مدفوعة → نصلحها.
               order.transactions[0].payment_status = 'paid';
               order.transactions[0].paid = totalPrice;
             }

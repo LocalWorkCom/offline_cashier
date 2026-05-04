@@ -1218,22 +1218,14 @@ export class OrdersComponent implements OnDestroy {
   /** True if this order is the secondary (merged-into-another) order. Hides edit/remove for it.
    * The primary order (that received the merge) must still allow edit QTY and remove item. */
   isMergedOrder(order: any): boolean {
-    if (!order?.order_details) return false;
-    const status = order.order_details.status;
-    const mergedIntoOrderId = order.order_details.merged_into_order_id ?? order.merged_into_order_id;
-    // Only the secondary order (merged INTO another, cancelled) hides edit/remove.
-    return status === 'cancelled' && !!mergedIntoOrderId;
+    // Do not infer merged state from parent/merged ids alone.
+    // Those ids can also appear in split/cancel flows and hide actions incorrectly.
+    return false;
   }
 
   getStatusText(order: any): string {
     // Handle both old format (status string) and new format (order object)
     const status = typeof order === 'string' ? order : (order?.order_details?.status || order?.status);
-    const mergedIntoOrderId = typeof order === 'object' ? (order?.order_details?.merged_into_order_id || order?.merged_into_order_id) : null;
-
-    // Check if the order is cancelled AND merged into another order
-    if (status === 'cancelled' && mergedIntoOrderId) {
-      return 'تم الدمج';
-    }
 
     switch (status) {
       case 'all':
@@ -2403,10 +2395,14 @@ export class OrdersComponent implements OnDestroy {
     this.returnCashAmount = null;
     this.returnCreditAmount = null;
 
-    const shouldSelectAllItems = this.isTalabatDeferredOrder(order);
+    const isDeleteFlow =
+      order?.order_details?.payment_status === 'unpaid' &&
+      order?.order_details?.status === 'pending';
+    const shouldSelectAllItems = this.isTalabatDeferredOrder(order) || isDeleteFlow;
     if (order && order.order_items) {
       order.order_items.forEach((item: any) => {
         item.isChecked = shouldSelectAllItems;
+        // In delete/full-cancel flow, preselect full quantity so submit works directly.
         item.selectedQuantity = shouldSelectAllItems ? 0 : item.quantity;
       });
     }
@@ -2576,16 +2572,33 @@ export class OrdersComponent implements OnDestroy {
     console.log('Sending:', body, selectedItems, order);
 
     const submitCancelAfterReasonStore = () => {
+      const isDirectDeleteFlow =
+        order?.order_details?.payment_status === 'unpaid' &&
+        order?.order_details?.status === 'pending' &&
+        isFullReturn;
+
       // Save to IndexedDB first to match removeDish logic
       this.dbService.saveOrderToPrintkitchen(order.order_details.order_id, "cancel").then(() => {
         console.log('order cancelled and saved to printkitchen indexeddb', order.order_details.order_id);
+        const endpoint = isDirectDeleteFlow
+          ? `${baseUrl}api/orders/cashier/order-cancel`
+          : `${baseUrl}api/orders/cashier/request-cancel`;
+        const payload = isDirectDeleteFlow
+          ? {
+            order_id: order.order_details.order_id,
+            type: 1,
+          }
+          : body;
+
         this.http
-          .post(`${baseUrl}api/orders/cashier/request-cancel`, body)
+          .post(endpoint, payload)
           .subscribe({
             next: (res: any) => {
               this.isSubmitting = false; // ✅ رجّع الزرار بعد الرد
 
-              this.cancelSuccessMessage = 'تم إرسال طلب المرتجع بنجاح';
+              this.cancelSuccessMessage = isDirectDeleteFlow
+                ? 'تم حذف الطلب بنجاح'
+                : 'تم إرسال طلب المرتجع بنجاح';
               this.cancelErrorMessage = '';
               setTimeout(() => {
                 this.cancelSuccessMessage = '';
@@ -2619,7 +2632,9 @@ export class OrdersComponent implements OnDestroy {
             }
 
             if (res?.status === true) {
-              this.cancelSuccessMessage = 'تم إرسال طلب المرتجع بنجاح';
+              this.cancelSuccessMessage = isDirectDeleteFlow
+                ? 'تم حذف الطلب بنجاح'
+                : 'تم إرسال طلب المرتجع بنجاح';
               this.cancelErrorMessage = '';
               this.cancelReason = '';
               this.cancelReasonTouched = false;

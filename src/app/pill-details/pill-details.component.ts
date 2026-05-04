@@ -10,7 +10,6 @@ import { PillDetailsService } from '../services/pill-details.service';
 import { CommonModule, DecimalPipe } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
 import { DatePipe } from '@angular/common';
-import { PrintedInvoiceService } from '../services/printed-invoice.service';
 import { Router } from '@angular/router';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { ShowLoaderUntilPageLoadedDirective } from '../core/directives/show-loader-until-page-loaded.directive';
@@ -78,7 +77,6 @@ export class PillDetailsComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private datePipe: DatePipe,
     private dbService: IndexeddbService,
-    private printedInvoiceService: PrintedInvoiceService,
     private router: Router,
     private printTime: PrintTimeService,
     private silentPrint: SilentPrintService) { }
@@ -579,19 +577,8 @@ private processPillDetails(data: any): void {
     }
 
     try {
-
-    // API الطباعة تؤثر على تقرير النقدية، لذلك لا تُستدعى إلا للطباعة النهائية.
-    if (isFinal) {
-      console.log('Printing invoice...........');
-      const response = await this.printedInvoiceService
-      .printInvoice(this.orderNumber, this.cashier_machine_id, this.paymentMethod, true)
-      .toPromise();
-      console.log('Print invoice response:', response);
-      if (!response?.status) {
-        alert(response?.message || 'تعذر تنفيذ API الطباعة');
-        return;
-      }
-    }
+    // صفحة تفاصيل الفاتورة: طباعة نسخة فقط — لا نستدعي API الطباعة لأنه يُسجّل في تقرير النقدية/الوردية.
+    // (تسجيل المبيعات يتم عند إتمام الطلب/الدفع من شاشة الكاشير، وليس عند إعادة طباعة فاتورة قديمة.)
 
 this.cdr.detectChanges();
 // Allow time for view to update
