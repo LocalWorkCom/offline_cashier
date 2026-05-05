@@ -269,11 +269,21 @@
     </div>
     }
     }
+
     <div class="total">
-      <p class="fw-bold">
-        المجموع الكلى
+      <p >
+        المجموع الكلى قبل الخصم
       </p>
-      <p class="fw-bold">
+      <p >
+        {{ originalTotal | number:'1.2-2' }} {{ currencySymbol }}
+      </p>
+    </div> 
+
+    <div class="total">
+      <p>
+        المجموع الكلى بعد الخصم
+      </p>
+      <p>
         {{ orderSummary?.total_price | number:'1.2-2' }} {{ currencySymbol }}
       </p>
     </div>

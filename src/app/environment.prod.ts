@@ -5,7 +5,7 @@
 export const baseUrlForWebSocket ='https://erpfortest.testdomain100.online/'
 
 //  export const baseUrl ='https://erp-cashier.testdomain100.online/'
- export const baseUrl ='https://erpmain.alkoot-restaurant.com/'
+ export const baseUrl ='https://erp-cashier.testdomain100.online/'
 
 
 // export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
@@ -14,7 +14,7 @@ export const baseUrlForWebSocket ='https://erpfortest.testdomain100.online/'
 // export const baseUrl2 ='https://productowner.testdomain100.online/api'
 // export const baseUrl2 ='https://erp-cashier-on.testdomain100.online/api'
 
-export const baseUrl2 ='https://erpmain.alkoot-restaurant.com/api'
+export const baseUrl2 ='https://erp-cashier.testdomain100.online/api'
 
 //for test domain
 // export const baseUrl='https://erpsystem.testdomain100.online/'

@@ -31,6 +31,7 @@ export class CartComponent {
   cartItems: any[] = [];
   currencySymbol = localStorage.getItem('currency_symbol');
   isLoading: boolean = false;
+  originalTotal: any;
   selectedOrderType: string = '';
   orderType: string = ''; // User-selected order type
   serviceFeeDisplay: string = ''; // Display service fee correctly
@@ -223,6 +224,7 @@ export class CartComponent {
         ) {
           this.allOrderDetails = response.data
           const order = response.data.orderDetails[0];
+          this.originalTotal = order.original_total;
           this.cartItems = order.order_details
           this.orderSummary = order.order_summary;
           this.currencySymbol = order.currency_symbol;
