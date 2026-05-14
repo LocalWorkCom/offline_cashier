@@ -11,6 +11,7 @@ import { ModalStateService } from '../services/modal-state.service';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TotalsCardComponent } from "../totals-card/totals-card.component";
+import { replaceFailedToFetchMessage } from '../utils/network-error-message';
 
 @Component({
   selector: 'app-home',
@@ -49,6 +50,10 @@ export class HomeComponent implements OnInit, OnDestroy {
   deficitVisa = 0;
   deficitMessage = '';
 visaTotal: number = 0;
+  /** يمنع النقر المتكرر على حفظ؛ يُعاد بعد انتهاء الطلب أو خطأ السيرفر */
+  isSavingBalance = false;
+  /** يمنع النقر المتكرر على بدء الوردية (بعد تنبيه الفارق) */
+  isStartingShift = false;
 
   private readonly BALANCE_OPENED_KEY = 'isBalanceOpened';
   enteredVisa: number | string | null | any = null;
@@ -413,6 +418,10 @@ this.enteredVisa= this.currentBalance?.visa
     }
     else
     {
+      if (this.isSavingBalance) {
+        return;
+      }
+      this.isSavingBalance = true;
       try {
         const response = await this.balanceService.submitOpeningBalance(cashAmount, visaAmount).toPromise();
         console.log('API Response:', response);
@@ -444,9 +453,11 @@ this.enteredVisa= this.currentBalance?.visa
       } catch (error: any) {
         console.error('API Error:', error); // Log the error
         if (Array.isArray(error?.error?.errorData?.error)) {
-          this.errorMessage = error.error.errorData.error[0];
+          this.errorMessage = replaceFailedToFetchMessage(
+            error.error.errorData.error[0]
+          );
         } else if (error.error?.message) {
-          this.errorMessage = error.error.message;
+          this.errorMessage = replaceFailedToFetchMessage(error.error.message);
         } else {
           this.errorMessage = "حدث خطأ في الاتصال بالخادم.";
         }
@@ -457,6 +468,8 @@ this.enteredVisa= this.currentBalance?.visa
         } else {
           this.modalStateService.setModalOpen(true);
         }
+      } finally {
+        this.isSavingBalance = false;
       }
     }
 
@@ -477,9 +490,17 @@ this.enteredVisa= this.currentBalance?.visa
   }
 
   startShift(): void {
-    localStorage.setItem(this.BALANCE_OPENED_KEY, 'true');
-    this.hideModal(true);
-    location.reload();
+    if (this.isStartingShift) {
+      return;
+    }
+    this.isStartingShift = true;
+    try {
+      localStorage.setItem(this.BALANCE_OPENED_KEY, 'true');
+      this.hideModal(true);
+      location.reload();
+    } catch {
+      this.isStartingShift = false;
+    }
   }
 
 }
