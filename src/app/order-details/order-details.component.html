@@ -273,7 +273,7 @@
     </div>
 
    
-    <div class="d-flex justify-content-between px-2 mb-1 border-top py-2">
+    <div class="d-flex justify-content-between px-2 mb-1 border-top py-2" *ngIf="orderDetails?.order_type !== 'talabat'">
       <h5>المجموع الكلى قبل الخصم</h5>
       <h6>
         <span>{{ orderDetails?.original_total  | number:'1.2-2' }}</span> {{ currencySymbol }}
@@ -281,7 +281,8 @@
     </div>
 
     <div class="d-flex justify-content-between px-2 mb-1 border-top py-2">
-      <h5>المجموع الكلى بعد الخصم</h5>
+      <h5 *ngIf="orderDetails?.order_type !== 'talabat'">المجموع الكلى بعد الخصم</h5>
+      <h5 *ngIf="orderDetails?.order_type == 'talabat'">المجموع الكلى </h5>
       <h4>
         @if(orderDetails?.status_order !== 'cancelled')
         {
