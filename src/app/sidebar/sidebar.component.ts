@@ -1,4 +1,4 @@
-import { catchError, finalize, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, switchMap, take, tap } from 'rxjs/operators';
 import { Component, OnInit, Inject, PLATFORM_ID, Input, ChangeDetectorRef } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Router } from '@angular/router';
@@ -1693,7 +1693,9 @@ private waitForRender(selector: string): Observable<Element> {
   }
 
   this.clearPosSessionSalesAccumulators();
-  location.reload();
+  setTimeout(() => {
+    this.performLogout();
+  }, 300);
   }
 
   /** After branch-safe transfer print: reset client-side sales counters so the next segment starts from zero. */
