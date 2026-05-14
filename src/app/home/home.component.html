@@ -110,14 +110,20 @@
 
       <div class="modal-footer border-0">
         <!-- Start Shift Button (shown when deficit exists) -->
-        <button *ngIf="showDeficitMessage" type="button" class="btn btn-primary w-100 py-2" (click)="startShift()">
-          <i class="fas fa-play-circle me-2"></i>بدء الوردية
+        <button *ngIf="showDeficitMessage" type="button" class="btn btn-primary w-100 py-2"
+          [disabled]="isStartingShift" (click)="startShift()">
+          <span *ngIf="isStartingShift" class="spinner-border spinner-border-sm me-2" role="status"
+            aria-hidden="true"></span>
+          <i *ngIf="!isStartingShift" class="fas fa-play-circle me-2"></i>{{ isStartingShift ? 'جاري البدء...' :
+          'بدء الوردية' }}
         </button>
 
         <!-- Save Button (shown when no deficit) -->
         <button *ngIf="!showDeficitMessage" type="button" class="btn btn-primary w-100 py-2"
-          (click)="validateAndSave()">
-          <i class="fas fa-save me-2"></i>حفظ
+          [disabled]="isSavingBalance" (click)="validateAndSave()">
+          <span *ngIf="isSavingBalance" class="spinner-border spinner-border-sm me-2" role="status"
+            aria-hidden="true"></span>
+          <i *ngIf="!isSavingBalance" class="fas fa-save me-2"></i>{{ isSavingBalance ? 'جاري الحفظ...' : 'حفظ' }}
         </button>
       </div>
     </div>
